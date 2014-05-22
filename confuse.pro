@@ -16,6 +16,10 @@ TEMPLATE = app
 
 
 SOURCES += \
-    fwup.c
+    fwup.c \
+    sha2.c
 
 LIBS += -lconfuse -larchive
+
+HEADERS += \
+    sha2.h

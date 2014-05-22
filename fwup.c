@@ -1,9 +1,12 @@
 
-#include "confuse.h"
+#include <confuse.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+
 #include <archive.h>
 #include <archive_entry.h>
+#include "sha2.h"
 
 struct function_info {
     cfg_opt_t *opt;
@@ -63,6 +66,8 @@ static void free_functions()
 
 void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
 {
+    (void) index;
+
     int argc;
     char **argv;
     if (!lookup_function(opt, &argc, &argv)) {
@@ -85,6 +90,8 @@ void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
  */
 static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
+    (void) cfg;
+
     add_function(opt, argc, argv);
     cfg_opt_set_print_func(opt, print_func);
 
@@ -125,9 +132,41 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
         return -1;
     }
 
-    cfg_setstr(sec, "sha256", "abcdefg");
-    cfg_setint(sec, "length", 1234);
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        cfg_error(cfg, "Cannot open '%s'", path);
+        return -1;
+    }
+
+    SHA256_CTX ctx256;
+    char buffer[1024];
+    size_t len = fread(buffer, 1, sizeof(buffer), fp);
+    size_t total = len;
+    while (len > 0) {
+        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
+        total += len;
+        len = fread(buffer, 1, sizeof(buffer), fp);
+    }
+    char digest[SHA256_DIGEST_STRING_LENGTH];
+    SHA256_End(&ctx256, digest);
+
+    cfg_setstr(sec, "sha256", digest);
+    cfg_setint(sec, "length", total);
     return 0;
+}
+
+static void set_now_time()
+{
+    time_t t = time(NULL);
+    struct tm *tmp = localtime(&t);
+    if (tmp == NULL) {
+        perror("localtime");
+        exit(1);
+    }
+
+    char outstr[200];
+    strftime(outstr, sizeof(outstr), "%a, %d %b %Y %T %z", tmp);
+    setenv("NOW", outstr, 1);
 }
 
 int main(int argc, char **argv)
@@ -208,6 +247,8 @@ int main(int argc, char **argv)
         //CFG_FUNC("include", &cfg_include),
         CFG_END()
     };
+
+    set_now_time();
 
     cfg = cfg_init(opts, 0);
 
