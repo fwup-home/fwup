@@ -18,4 +18,4 @@ TEMPLATE = app
 SOURCES += \
     fwup.c
 
-LIBS += -lconfuse
+LIBS += -lconfuse -larchive

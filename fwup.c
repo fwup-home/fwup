@@ -2,6 +2,8 @@
 #include "confuse.h"
 #include <string.h>
 #include <stdlib.h>
+#include <archive.h>
+#include <archive_entry.h>
 
 struct function_info {
     cfg_opt_t *opt;
@@ -83,19 +85,6 @@ void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
  */
 static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
-    int i;
-
-    /* at least one parameter is required */
-    if(argc == 0) {
-        cfg_error(cfg, "Too few parameters for the '%s' function",
-                  opt->name);
-        return -1;
-    }
-
-    printf("%s called with %d parameters:\n", opt->name, argc);
-    for(i = 0; i < argc; i++)
-        printf("parameter %d: '%s'\n", i, argv[i]);
-
     add_function(opt, argc, argv);
     cfg_opt_set_print_func(opt, print_func);
 
@@ -120,21 +109,24 @@ int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
     return 0;
 }
 
-int cb_validate_bookmark(cfg_t *cfg, cfg_opt_t *opt)
+static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
 {
-    /* only validate the last bookmark */
+    // This is called for each file-resource, so we only need to
+    // validate the last one.
     cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
     if(!sec)
     {
         cfg_error(cfg, "section is NULL!?");
         return -1;
     }
-    if(cfg_getstr(sec, "machine") == 0)
-    {
-        cfg_error(cfg, "machine option must be set for bookmark '%s'",
-                  cfg_title(sec));
+    const char *path = cfg_getstr(sec, "host-path");
+    if (!path) {
+        cfg_error(cfg, "host-path must be set for file-report '%s'", cfg_title(sec));
         return -1;
     }
+
+    cfg_setstr(sec, "sha256", "abcdefg");
+    cfg_setint(sec, "length", 1234);
     return 0;
 }
 
@@ -144,6 +136,8 @@ int main(int argc, char **argv)
     int ret;
     static cfg_opt_t file_resource_opts[] = {
         CFG_STR("host-path", 0, CFGF_NONE),
+        CFG_INT("length", 0, CFGF_NONE),
+        CFG_STR("sha256", 0, CFGF_NONE),
         CFG_END()
     };
     static cfg_opt_t mbr_partition_opts[] = {
@@ -218,7 +212,7 @@ int main(int argc, char **argv)
     cfg = cfg_init(opts, 0);
 
     /* set a validating callback function for bookmark sections */
-//    cfg_set_validate_func(cfg, "constants", &cb_validate_constants);
+    cfg_set_validate_func(cfg, "file-resource", &cb_validate_file_resource);
 
     ret = cfg_parse(cfg, argc > 1 ? argv[1] : "fwupdate.conf");
     printf("ret == %d\n", ret);
@@ -231,11 +225,31 @@ int main(int argc, char **argv)
     }
 
     /* print the parsed values to another file */
-    {
-        FILE *fp = fopen("test.conf.out", "w");
-        //cfg_set_print_func(cfg, "func", print_func);
+    {        
+        char *configtxt;
+        size_t configtxt_len;
+        FILE *fp = open_memstream(&configtxt, &configtxt_len);
         cfg_print(cfg, fp);
         fclose(fp);
+
+        struct archive *a = archive_write_new();
+        archive_write_set_format_zip(a);
+        if (archive_write_open_filename(a, "test.zip") != ARCHIVE_OK) {
+            fprintf(stderr, "Error writing to .zip file");
+            return 3;
+        }
+        struct archive_entry *entry = archive_entry_new();
+        archive_entry_set_pathname(entry, "config.txt");
+        archive_entry_set_size(entry, configtxt_len);
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0644);
+        archive_write_header(a, entry);
+        archive_write_data(a, configtxt, configtxt_len);
+        archive_entry_free(entry);
+
+        archive_write_close(a);
+        archive_write_free(a);
+        free(configtxt);
     }
 
     free_functions();
