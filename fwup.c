@@ -3,14 +3,85 @@
 #include <string.h>
 #include <stdlib.h>
 
+struct function_info {
+    cfg_opt_t *opt;
+    int argc;
+    char **argv;
+    struct function_info *next;
+};
+
+static struct function_info *functions = 0;
+
+static void add_function(cfg_opt_t *opt, int argc, const char **argv)
+{
+    struct function_info *info = (struct function_info *) malloc(sizeof(struct function_info));
+    info->opt = opt;
+    info->argc = argc;
+    if (argc > 0) {
+        info->argv = (char **) malloc(argc * sizeof(char *));
+        int i;
+        for (i = 0; i < argc; i++)
+            info->argv[i] = strdup(argv[i]);
+    } else
+        info->argv = 0;
+
+    info->next = functions;
+    functions = info;
+}
+
+static int lookup_function(const cfg_opt_t *opt, int *argc, char ***argv)
+{
+    struct function_info *f = functions;
+    while (f) {
+        if (opt == f->opt) {
+            *argc = f->argc;
+            *argv = f->argv;
+            return 1;
+        }
+        f = f->next;
+    }
+    return 0;
+}
+
+static void free_functions()
+{
+    struct function_info *f = functions;
+    functions = 0;
+
+    while (f) {
+        int i;
+        for (i = 0; i < f->argc; i++)
+            free(f->argv[i]);
+        free(f->argv);
+        struct function_info *next = f->next;
+        free(f);
+        f = next;
+    }
+}
+
 void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
 {
-    fprintf(fp, "%s(foo)", opt->name);
+    int argc;
+    char **argv;
+    if (!lookup_function(opt, &argc, &argv)) {
+        fprintf(fp, "%s(?)", opt->name);
+        return;
+    }
+
+    fprintf(fp, "%s(", opt->name);
+    if (argc > 0) {
+        fprintf(fp, "%s", argv[0]);
+
+        int i;
+        for (i = 1; i < argc; i++)
+            fprintf(fp, ",%s", argv[i]);
+    }
+    fprintf(fp, ")");
 }
 
 /* function callback
  */
-int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
     int i;
 
@@ -21,9 +92,13 @@ int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
         return -1;
     }
 
-    printf("cb_func() called with %d parameters:\n", argc);
+    printf("%s called with %d parameters:\n", opt->name, argc);
     for(i = 0; i < argc; i++)
         printf("parameter %d: '%s'\n", i, argv[i]);
+
+    add_function(opt, argc, argv);
+    cfg_opt_set_print_func(opt, print_func);
+
     return 0;
 }
 
@@ -100,15 +175,7 @@ int main(int argc, char **argv)
     CFG_FUNC("fat_rm", cb_func), \
     CFG_FUNC("fs_write", cb_func)
 
-    static cfg_opt_t update_on_init_opts[] = {
-        CFG_ON_EVENT_FUNCTIONS,
-        CFG_END()
-    };
-    static cfg_opt_t update_on_finish_opts[] = {
-        CFG_ON_EVENT_FUNCTIONS,
-        CFG_END()
-    };
-    static cfg_opt_t update_on_error_opts[] = {
+    static cfg_opt_t update_on_event_opts[] = {
         CFG_ON_EVENT_FUNCTIONS,
         CFG_END()
     };
@@ -120,9 +187,9 @@ int main(int argc, char **argv)
     static cfg_opt_t update_opts[] = {
         CFG_INT("require-partition1-offset", 0, CFGF_NONE),
         CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
-        CFG_SEC("on-init", update_on_init_opts, CFGF_NONE),
-        CFG_SEC("on-finish", update_on_finish_opts, CFGF_NONE),
-        CFG_SEC("on-error", update_on_error_opts, CFGF_NONE),
+        CFG_SEC("on-init", update_on_event_opts, CFGF_NONE),
+        CFG_SEC("on-finish", update_on_event_opts, CFGF_NONE),
+        CFG_SEC("on-error", update_on_event_opts, CFGF_NONE),
         CFG_SEC("on-resource", update_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()
     };
@@ -135,6 +202,7 @@ int main(int argc, char **argv)
         CFG_STR("meta-description", 0, CFGF_NONE),
         CFG_STR("meta-version", 0, CFGF_NONE),
         CFG_STR("meta-author", 0, CFGF_NONE),
+        CFG_STR("meta-creation-date", 0, CFGF_NONE),
 
         CFG_STR("require-fwupdate-version", "0.0", CFGF_NONE),
         CFG_FUNC("define", cb_define),
@@ -146,9 +214,6 @@ int main(int argc, char **argv)
         //CFG_FUNC("include", &cfg_include),
         CFG_END()
     };
-
-    /* for some reason, MS Visual C++ chokes on this (?) */
-    printf("Using %s\n\n", confuse_copyright);
 
     cfg = cfg_init(opts, 0);
 
@@ -173,6 +238,7 @@ int main(int argc, char **argv)
         fclose(fp);
     }
 
+    free_functions();
     cfg_free(cfg);
     return 0;
 }
