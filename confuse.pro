@@ -17,9 +17,19 @@ TEMPLATE = app
 
 SOURCES += \
     fwup.c \
-    sha2.c
+    sha2.c \
+    fatfs.c \
+    fatfs/src/ff.c \
+    mbr.c
 
 LIBS += -lconfuse -larchive
 
 HEADERS += \
-    sha2.h
+    sha2.h \
+    fatfs.h \
+    fatfs/src/ff.h \
+    fatfs/src/ffconf.h \
+    mbr.h
+
+OTHER_FILES += \
+    fwupdate.conf

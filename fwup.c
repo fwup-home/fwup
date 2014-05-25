@@ -180,8 +180,8 @@ int main(int argc, char **argv)
         CFG_END()
     };
     static cfg_opt_t mbr_partition_opts[] = {
-        CFG_INT("offset", 0, CFGF_NONE),
-        CFG_INT("count", 0, CFGF_NONE),
+        CFG_INT("block-offset", 0, CFGF_NONE),
+        CFG_INT("block-count", 0, CFGF_NONE),
         CFG_INT("type", 0, CFGF_NONE),
         CFG_END()
     };
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
         CFG_END()
     };
     static cfg_opt_t fatfs_resource_opts[] = {
-        CFG_INT("fat-type", 0, CFGF_NONE),
+        CFG_INT("block-count", 0, CFGF_NONE),
         CFG_SEC("file", fatfs_file_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()
     };
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
             return 3;
         }
         struct archive_entry *entry = archive_entry_new();
-        archive_entry_set_pathname(entry, "config.txt");
+        archive_entry_set_pathname(entry, "meta.conf");
         archive_entry_set_size(entry, configtxt_len);
         archive_entry_set_filetype(entry, AE_IFREG);
         archive_entry_set_perm(entry, 0644);
