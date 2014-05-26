@@ -185,28 +185,22 @@ int main(int argc, char **argv)
         CFG_INT("type", 0, CFGF_NONE),
         CFG_END()
     };
-    static cfg_opt_t mbr_resource_opts[] = {
+    static cfg_opt_t mbr_opts[] = {
         CFG_STR("bootstrap-code-path", 0, CFGF_NONE),
         CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_END()
-    };
-    static cfg_opt_t fatfs_file_opts[] = {
-        CFG_STR("resource", 0, CFGF_NONE),
-        CFG_INT("permissions", 0, CFGF_NONE),
-        CFG_END()
-    };
-    static cfg_opt_t fatfs_resource_opts[] = {
-        CFG_INT("block-count", 0, CFGF_NONE),
-        CFG_SEC("file", fatfs_file_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()
     };
 
 #define CFG_ON_EVENT_FUNCTIONS \
     CFG_FUNC("raw_write", cb_func), \
+    CFG_FUNC("fat_mkfs", cb_func), \
     CFG_FUNC("fat_write", cb_func), \
     CFG_FUNC("fat_mv", cb_func), \
     CFG_FUNC("fat_rm", cb_func), \
-    CFG_FUNC("fs_write", cb_func)
+    CFG_FUNC("fs_write", cb_func), \
+    CFG_FUNC("fw_create", cb_func), \
+    CFG_FUNC("fw_add_local_file", cb_func), \
+    CFG_FUNC("mbr_write", cb_func)
 
     static cfg_opt_t update_on_event_opts[] = {
         CFG_ON_EVENT_FUNCTIONS,
@@ -219,15 +213,12 @@ int main(int argc, char **argv)
     };
     static cfg_opt_t update_opts[] = {
         CFG_INT("require-partition1-offset", 0, CFGF_NONE),
+        CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
         CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
         CFG_SEC("on-init", update_on_event_opts, CFGF_NONE),
         CFG_SEC("on-finish", update_on_event_opts, CFGF_NONE),
         CFG_SEC("on-error", update_on_event_opts, CFGF_NONE),
         CFG_SEC("on-resource", update_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_END()
-    };
-    static cfg_opt_t fw_resource_opts[] = {
-        CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE),
         CFG_END()
     };
     cfg_opt_t opts[] = {
@@ -240,9 +231,7 @@ int main(int argc, char **argv)
         CFG_STR("require-fwupdate-version", "0.0", CFGF_NONE),
         CFG_FUNC("define", cb_define),
         CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_SEC("mbr-resource", mbr_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_SEC("fatfs-resource", fatfs_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_SEC("fw-resource", fw_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+        CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE),
         //CFG_FUNC("include", &cfg_include),
         CFG_END()
