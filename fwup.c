@@ -1,7 +1,23 @@
+/*
+ * Copyright 2014 LKC Technologies, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <confuse.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 
 #include <archive.h>
@@ -168,6 +184,51 @@ static void set_now_time()
     char outstr[200];
     strftime(outstr, sizeof(outstr), "%a, %d %b %Y %T %z", tmp);
     setenv("NOW", outstr, 1);
+}
+
+// Global options
+static bool numeric_progress = false;
+static bool quiet = false;
+
+//FIXME!!
+#define PACKAGE_NAME "fwup"
+#define PACKAGE_VERSION "0.1"
+
+static void print_version()
+{
+    fprintf(stderr, "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+}
+
+static void print_usage(const char *argv0)
+{
+    fprintf(stderr, "Usage: %s [options] [path]\n", argv0);
+    fprintf(stderr, "  -d <Device file for the memory card>\n");
+    fprintf(stderr, "  -f   Run SDCard auto-detection and print the device path\n");
+    fprintf(stderr, "  -n   Report numeric progress\n");
+    fprintf(stderr, "  -o <Offset from the beginning of the memory card>\n");
+    fprintf(stderr, "  -p   Report progress (default)\n");
+    fprintf(stderr, "  -q   Quiet\n");
+    fprintf(stderr, "  -r   Read from the memory card\n");
+    fprintf(stderr, "  -s <Amount to read/write>\n");
+    fprintf(stderr, "  -t   Run the TRIM command on the memory card before copying\n");
+    fprintf(stderr, "  -v   Print out the version and exit\n");
+    fprintf(stderr, "  -w   Write to the memory card (default)\n");
+    fprintf(stderr, "  -y   Accept automatically found memory card\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "The [path] specifies the location of the image to copy to or from\n");
+    fprintf(stderr, "the memory card. If it is unspecified or '-', the image will either\n");
+    fprintf(stderr, "be read from stdin (-w) or written to stdout (-r).\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "The -d argument does not need to be a device file. It can also be a regular file.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples:\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Write the file sdcard.img to an automatically detected SD Card:\n");
+    fprintf(stderr, "  %s sdcard.img\n", argv0);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Read the master boot record (512 bytes @ offset 0) from /dev/sdc:\n");
+    fprintf(stderr, "  %s -r -s 512 -o 0 -d /dev/sdc mbr.img\n", argv0);
+    fprintf(stderr, "\n");
 }
 
 int main(int argc, char **argv)
