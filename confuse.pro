@@ -20,7 +20,10 @@ SOURCES += \
     sha2.c \
     fatfs.c \
     fatfs/src/ff.c \
-    mbr.c
+    mbr.c \
+    cfgfile.c \
+    util.c \
+    mmc.c
 
 LIBS += -lconfuse -larchive
 
@@ -29,7 +32,10 @@ HEADERS += \
     fatfs.h \
     fatfs/src/ff.h \
     fatfs/src/ffconf.h \
-    mbr.h
+    mbr.h \
+    cfgfile.h \
+    util.h \
+    mmc.h
 
 OTHER_FILES += \
     fwupdate.conf \

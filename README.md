@@ -59,9 +59,9 @@ Usage: fwup [options]
   -m   Print metadata in the firmware update
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
-  -p   Report progress when applying (default)
   -q   Quiet
   -t <task> Task to apply within the firmware update
+  -v   Print version and exit
   -y   Accept automatically found memory card when applying a firmware update
 
 Examples:

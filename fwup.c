@@ -18,173 +18,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h>
+#include <err.h>
+
+#include "cfgfile.h"
+#include "util.h"
+#include "mmc.h"
 
 #include <archive.h>
 #include <archive_entry.h>
 #include "sha2.h"
-
-struct function_info {
-    cfg_opt_t *opt;
-    int argc;
-    char **argv;
-    struct function_info *next;
-};
-
-static struct function_info *functions = 0;
-
-static void add_function(cfg_opt_t *opt, int argc, const char **argv)
-{
-    struct function_info *info = (struct function_info *) malloc(sizeof(struct function_info));
-    info->opt = opt;
-    info->argc = argc;
-    if (argc > 0) {
-        info->argv = (char **) malloc(argc * sizeof(char *));
-        int i;
-        for (i = 0; i < argc; i++)
-            info->argv[i] = strdup(argv[i]);
-    } else
-        info->argv = 0;
-
-    info->next = functions;
-    functions = info;
-}
-
-static int lookup_function(const cfg_opt_t *opt, int *argc, char ***argv)
-{
-    struct function_info *f = functions;
-    while (f) {
-        if (opt == f->opt) {
-            *argc = f->argc;
-            *argv = f->argv;
-            return 1;
-        }
-        f = f->next;
-    }
-    return 0;
-}
-
-static void free_functions()
-{
-    struct function_info *f = functions;
-    functions = 0;
-
-    while (f) {
-        int i;
-        for (i = 0; i < f->argc; i++)
-            free(f->argv[i]);
-        free(f->argv);
-        struct function_info *next = f->next;
-        free(f);
-        f = next;
-    }
-}
-
-void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
-{
-    (void) index;
-
-    int argc;
-    char **argv;
-    if (!lookup_function(opt, &argc, &argv)) {
-        fprintf(fp, "%s(?)", opt->name);
-        return;
-    }
-
-    fprintf(fp, "%s(", opt->name);
-    if (argc > 0) {
-        fprintf(fp, "%s", argv[0]);
-
-        int i;
-        for (i = 1; i < argc; i++)
-            fprintf(fp, ",%s", argv[i]);
-    }
-    fprintf(fp, ")");
-}
-
-/* function callback
- */
-static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
-{
-    (void) cfg;
-
-    add_function(opt, argc, argv);
-    cfg_opt_set_print_func(opt, print_func);
-
-    return 0;
-}
-
-int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
-{
-    /* at least one parameter is required */
-    if(argc != 2) {
-        cfg_error(cfg, "Too few parameters for the '%s' function",
-                  opt->name);
-        return -1;
-    }
-
-    // Update the environment. (Overwrite since it is easy for the
-    // user to specifya non-overwriting version by supplying a default)
-    if (setenv(argv[0], argv[1], 1) < 0) {
-        cfg_error(cfg, "setenv failed");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
-{
-    // This is called for each file-resource, so we only need to
-    // validate the last one.
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-    if(!sec)
-    {
-        cfg_error(cfg, "section is NULL!?");
-        return -1;
-    }
-    const char *path = cfg_getstr(sec, "host-path");
-    if (!path) {
-        cfg_error(cfg, "host-path must be set for file-report '%s'", cfg_title(sec));
-        return -1;
-    }
-
-    FILE *fp = fopen(path, "rb");
-    if (!fp) {
-        cfg_error(cfg, "Cannot open '%s'", path);
-        return -1;
-    }
-
-    SHA256_CTX ctx256;
-    char buffer[1024];
-    size_t len = fread(buffer, 1, sizeof(buffer), fp);
-    size_t total = len;
-    while (len > 0) {
-        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
-        total += len;
-        len = fread(buffer, 1, sizeof(buffer), fp);
-    }
-    char digest[SHA256_DIGEST_STRING_LENGTH];
-    SHA256_End(&ctx256, digest);
-
-    cfg_setstr(sec, "sha256", digest);
-    cfg_setint(sec, "length", total);
-    return 0;
-}
-
-static void set_now_time()
-{
-    time_t t = time(NULL);
-    struct tm *tmp = localtime(&t);
-    if (tmp == NULL) {
-        perror("localtime");
-        exit(1);
-    }
-
-    char outstr[200];
-    strftime(outstr, sizeof(outstr), "%a, %d %b %Y %T %z", tmp);
-    setenv("NOW", outstr, 1);
-}
 
 // Global options
 static bool numeric_progress = false;
@@ -201,120 +43,138 @@ static void print_version()
 
 static void print_usage(const char *argv0)
 {
-    fprintf(stderr, "Usage: %s [options] [path]\n", argv0);
+    fprintf(stderr, "Usage: %s [options]\n", argv0);
+    fprintf(stderr, "  -a   Apply the firmware update\n");
+    fprintf(stderr, "  -c   Create the firmware update\n");
     fprintf(stderr, "  -d <Device file for the memory card>\n");
-    fprintf(stderr, "  -f   Run SDCard auto-detection and print the device path\n");
+    fprintf(stderr, "  -f <fwupdate.conf> Specify the firmware update configuration file\n");
+    fprintf(stderr, "  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
+    fprintf(stderr, "  -l   List the available tasks in a firmware update\n");
+    fprintf(stderr, "  -m   Print metadata in the firmware update\n");
     fprintf(stderr, "  -n   Report numeric progress\n");
-    fprintf(stderr, "  -o <Offset from the beginning of the memory card>\n");
-    fprintf(stderr, "  -p   Report progress (default)\n");
+    fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     fprintf(stderr, "  -q   Quiet\n");
-    fprintf(stderr, "  -r   Read from the memory card\n");
-    fprintf(stderr, "  -s <Amount to read/write>\n");
-    fprintf(stderr, "  -t   Run the TRIM command on the memory card before copying\n");
-    fprintf(stderr, "  -v   Print out the version and exit\n");
-    fprintf(stderr, "  -w   Write to the memory card (default)\n");
-    fprintf(stderr, "  -y   Accept automatically found memory card\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "The [path] specifies the location of the image to copy to or from\n");
-    fprintf(stderr, "the memory card. If it is unspecified or '-', the image will either\n");
-    fprintf(stderr, "be read from stdin (-w) or written to stdout (-r).\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "The -d argument does not need to be a device file. It can also be a regular file.\n");
+    fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
+    fprintf(stderr, "  -v   Print version and exit\n");
+    fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
+    fprintf(stderr, "  -z   Print the memory card that would be automatically detected and exit\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples:\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "Write the file sdcard.img to an automatically detected SD Card:\n");
-    fprintf(stderr, "  %s sdcard.img\n", argv0);
+    fprintf(stderr, "Create a firmware update archive:\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "Read the master boot record (512 bytes @ offset 0) from /dev/sdc:\n");
-    fprintf(stderr, "  %s -r -s 512 -o 0 -d /dev/sdc mbr.img\n", argv0);
+    fprintf(stderr, "  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", argv0);
     fprintf(stderr, "\n");
+    fprintf(stderr, "Apply the firmware update to /dev/sdc and specify the 'upgrade' task:\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  $ %s -a -d /dev/sdc -i myfirmware.fw -t upgrade\n", argv0);
 }
+
+#define CMD_NONE    0
+#define CMD_APPLY   1
+#define CMD_CREATE  2
+#define CMD_LIST    3
+#define CMD_METADATA 4
 
 int main(int argc, char **argv)
 {
+    const char *configfile = "fwupdate.conf";
     cfg_t *cfg;
-    int ret;
-    static cfg_opt_t file_resource_opts[] = {
-        CFG_STR("host-path", 0, CFGF_NONE),
-        CFG_INT("length", 0, CFGF_NONE),
-        CFG_STR("sha256", 0, CFGF_NONE),
-        CFG_END()
-    };
-    static cfg_opt_t mbr_partition_opts[] = {
-        CFG_INT("block-offset", 0, CFGF_NONE),
-        CFG_INT("block-count", 0, CFGF_NONE),
-        CFG_INT("type", 0, CFGF_NONE),
-        CFG_END()
-    };
-    static cfg_opt_t mbr_opts[] = {
-        CFG_STR("bootstrap-code-path", 0, CFGF_NONE),
-        CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_END()
-    };
+    int command = CMD_NONE;
 
-#define CFG_ON_EVENT_FUNCTIONS \
-    CFG_FUNC("raw_write", cb_func), \
-    CFG_FUNC("fat_mkfs", cb_func), \
-    CFG_FUNC("fat_write", cb_func), \
-    CFG_FUNC("fat_mv", cb_func), \
-    CFG_FUNC("fat_rm", cb_func), \
-    CFG_FUNC("fw_create", cb_func), \
-    CFG_FUNC("fw_add_local_file", cb_func), \
-    CFG_FUNC("mbr_write", cb_func)
+    const char *mmc_device = NULL;
+    const char *input_firmware = NULL;
+    const char *output_firmware = NULL;
+    const char *task = NULL;
+    bool accept_found_device = false;
 
-    static cfg_opt_t update_on_event_opts[] = {
-        CFG_ON_EVENT_FUNCTIONS,
-        CFG_END()
-    };
-    static cfg_opt_t update_on_resource_opts[] = {
-        CFG_STR("verify-on-the-fly", cfg_false, CFGF_NONE),
-        CFG_ON_EVENT_FUNCTIONS,
-        CFG_END()
-    };
-    static cfg_opt_t update_opts[] = {
-        CFG_INT("require-partition1-offset", 0, CFGF_NONE),
-        CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
-        CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
-        CFG_SEC("on-init", update_on_event_opts, CFGF_NONE),
-        CFG_SEC("on-finish", update_on_event_opts, CFGF_NONE),
-        CFG_SEC("on-error", update_on_event_opts, CFGF_NONE),
-        CFG_SEC("on-resource", update_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_END()
-    };
-    cfg_opt_t opts[] = {
-        CFG_STR("meta-product", 0, CFGF_NONE),
-        CFG_STR("meta-description", 0, CFGF_NONE),
-        CFG_STR("meta-version", 0, CFGF_NONE),
-        CFG_STR("meta-author", 0, CFGF_NONE),
-        CFG_STR("meta-creation-date", 0, CFGF_NONE),
+    if (argc == 1) {
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-        CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
-        CFG_FUNC("define", cb_define),
-        CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-        CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE),
-        //CFG_FUNC("include", &cfg_include),
-        CFG_END()
-    };
+    int opt;
+    while ((opt = getopt(argc, argv, "acd:f:i:lmno:pqt:yz")) != -1) {
+        switch (opt) {
+        case 'a':
+            command = CMD_APPLY;
+            break;
+        case 'c':
+            command = CMD_CREATE;
+            break;
+        case 'd':
+            mmc_device = optarg;
+            break;
+        case 'f':
+            configfile = optarg;
+            break;
+        case 'i':
+            input_firmware = optarg;
+            break;
+        case 'l':
+            command = CMD_LIST;
+            break;
+        case 'm':
+            command = CMD_METADATA;
+            break;
+        case 'o':
+            output_firmware = optarg;
+            break;
+        case 'n':
+            numeric_progress = true;
+            break;
+        case 'q':
+            quiet = true;
+            break;
+        case 't':
+            task = optarg;
+            break;
+        case 'v':
+            print_version();
+            exit(EXIT_SUCCESS);
+            break;
+        case 'y':
+            accept_found_device = true;
+            break;
+        case 'z':
+            mmc_device = mmc_find_device();
+            printf("%s", mmc_device);
+            exit(EXIT_SUCCESS);
+            break;
+        default: /* '?' */
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (quiet && numeric_progress)
+        errx(EXIT_FAILURE, "pick either -n or -q, but not both");
+
+    if (command == CMD_NONE)
+        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, or -z");
+
+    if (optind < argc)
+        errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
 
     set_now_time();
 
-    cfg = cfg_init(opts, 0);
+    {
+        FILE *fp = fopen(configfile, "r");
+        if (!fp)
+            err(EXIT_FAILURE, "Can't read %s", configfile);
 
-    /* set a validating callback function for bookmark sections */
-    cfg_set_validate_func(cfg, "file-resource", &cb_validate_file_resource);
+        fseek(fp, 0, SEEK_END);
+        size_t len = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        char *buffer = (char *) malloc(len + 1);
+        if (fread(buffer, 1, len, fp) != len)
+            err(EXIT_FAILURE, "Couldn't read %s", configfile);
+        fclose(fp);
+        buffer[len] = 0;
 
-    ret = cfg_parse(cfg, argc > 1 ? argv[1] : "fwupdate.conf");
-    printf("ret == %d\n", ret);
-    if(ret == CFG_FILE_ERROR) {
-        perror("fwupdate.conf");
-        return 1;
-    } else if(ret == CFG_PARSE_ERROR) {
-        fprintf(stderr, "parse error\n");
-        return 2;
+        if (cfgfile_parse(buffer, &cfg) < 0)
+            errx(EXIT_FAILURE, "Error parsing %s", configfile);
     }
-
     /* print the parsed values to another file */
     {        
         char *configtxt;
@@ -343,8 +203,7 @@ int main(int argc, char **argv)
         free(configtxt);
     }
 
-    free_functions();
-    cfg_free(cfg);
+    cfgfile_free(cfg);
     return 0;
 }
 
