@@ -32,4 +32,5 @@ HEADERS += \
     mbr.h
 
 OTHER_FILES += \
-    fwupdate.conf
+    fwupdate.conf \
+    README.md

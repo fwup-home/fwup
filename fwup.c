@@ -107,8 +107,9 @@ int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
         return -1;
     }
 
-    // Update the environment, but don't overwrite (for now)
-    if (setenv(argv[0], argv[1], 0) < 0) {
+    // Update the environment. (Overwrite since it is easy for the
+    // user to specifya non-overwriting version by supplying a default)
+    if (setenv(argv[0], argv[1], 1) < 0) {
         cfg_error(cfg, "setenv failed");
         return -1;
     }
@@ -197,7 +198,6 @@ int main(int argc, char **argv)
     CFG_FUNC("fat_write", cb_func), \
     CFG_FUNC("fat_mv", cb_func), \
     CFG_FUNC("fat_rm", cb_func), \
-    CFG_FUNC("fs_write", cb_func), \
     CFG_FUNC("fw_create", cb_func), \
     CFG_FUNC("fw_add_local_file", cb_func), \
     CFG_FUNC("mbr_write", cb_func)
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
         CFG_STR("meta-author", 0, CFGF_NONE),
         CFG_STR("meta-creation-date", 0, CFGF_NONE),
 
-        CFG_STR("require-fwupdate-version", "0.0", CFGF_NONE),
+        CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
         CFG_FUNC("define", cb_define),
         CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
