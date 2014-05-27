@@ -41,6 +41,10 @@ int mbr_verify(const struct mbr_partition partitions[4])
             return -1;
         }
 
+        // Check if empty.
+        if (partitions[i].partition_type == 0)
+            continue;
+
         int ileft = partitions[i].block_offset;
         int iright = ileft + partitions[i].block_count - 1;
         int j;
@@ -84,18 +88,21 @@ static int create_partition(const struct mbr_partition *partition, uint8_t *outp
 
     output[4] = partition->partition_type;
 
-    if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
-        return -1;
+    // Fill in the rest if this entry is actually used.
+    if (partition->partition_type != 0) {
+        if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
+            return -1;
 
-    output[8]  = partition->block_offset & 0xff;
-    output[9]  = (partition->block_offset >> 8) & 0xff;
-    output[10] = (partition->block_offset >> 16) & 0xff;
-    output[11] = (partition->block_offset >> 24) & 0xff;
+        output[8]  = partition->block_offset & 0xff;
+        output[9]  = (partition->block_offset >> 8) & 0xff;
+        output[10] = (partition->block_offset >> 16) & 0xff;
+        output[11] = (partition->block_offset >> 24) & 0xff;
 
-    output[12] = partition->block_count & 0xff;
-    output[13] = (partition->block_count >> 8) & 0xff;
-    output[14] = (partition->block_count >> 16) & 0xff;
-    output[15] = (partition->block_count >> 24) & 0xff;
+        output[12] = partition->block_count & 0xff;
+        output[13] = (partition->block_count >> 8) & 0xff;
+        output[14] = (partition->block_count >> 16) & 0xff;
+        output[15] = (partition->block_count >> 24) & 0xff;
+    }
 
     return 0;
 }

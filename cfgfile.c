@@ -1,4 +1,8 @@
 #include "cfgfile.h"
+#include "mbr.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 struct function_info {
     cfg_opt_t *opt;
@@ -56,7 +60,7 @@ static void free_functions()
     }
 }
 
-void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
+static void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
 {
     (void) index;
 
@@ -90,7 +94,7 @@ static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
     return 0;
 }
 
-int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
     /* at least one parameter is required */
     if(argc != 2) {
@@ -125,28 +129,61 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
         return -1;
     }
 
-#if 0
-    FILE *fp = fopen(path, "rb");
-    if (!fp) {
-        cfg_error(cfg, "Cannot open '%s'", path);
+    return 0;
+}
+
+static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
+{
+    // This is called for each mbr, so we only need to
+    // validate the last one.
+    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
+    if(!sec)
+    {
+        cfg_error(cfg, "section is NULL!?");
         return -1;
     }
 
-    SHA256_CTX ctx256;
-    char buffer[1024];
-    size_t len = fread(buffer, 1, sizeof(buffer), fp);
-    size_t total = len;
-    while (len > 0) {
-        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
-        total += len;
-        len = fread(buffer, 1, sizeof(buffer), fp);
-    }
-    char digest[SHA256_DIGEST_STRING_LENGTH];
-    SHA256_End(&ctx256, digest);
+    // TODO - validate bootstrap-code-path
 
-    cfg_setstr(sec, "sha256", digest);
-    cfg_setint(sec, "length", total);
-#endif
+    cfg_t *partition;
+    int i;
+    int found_partitions = 0;
+
+    struct mbr_partition partitions[4];
+    memset(partitions, 0, sizeof(partitions));
+
+    while ((partition = cfg_getnsec(sec, "partition", i++)) != NULL) {
+        int partition_ix = strtoul(cfg_title(partition), NULL, 0);
+        if (partition_ix < 0 || partition_ix >= 4) {
+            cfg_error(cfg, "partition must be numbered 0 through 3");
+            return -1;
+        }
+        if (found_partitions & (1 << partition_ix)) {
+            cfg_error(cfg, "invalid or duplicate partition number found");
+            return -1;
+        }
+        found_partitions = found_partitions | (1 << partition_ix);
+
+        partitions[partition_ix].partition_type = cfg_getint(partition, "type");
+        partitions[partition_ix].block_offset = cfg_getint(partition, "block-offset");
+        partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
+
+        if (partitions[partition_ix].partition_type < 0 ||
+                partitions[partition_ix].block_offset < 0 ||
+                partitions[partition_ix].block_count < 0) {
+            cfg_error(cfg, "type, block-offset, and block-count must all be positive and specified");
+            return -1;
+        }
+    }
+
+    if (found_partitions == 0)
+        cfg_error(cfg, "empty partition table?");
+
+    if (mbr_verify(partitions) < 0) {
+        cfg_error(cfg, mbr_last_error());
+        return -1;
+    }
+
     return 0;
 }
 
@@ -157,9 +194,9 @@ static cfg_opt_t file_resource_opts[] = {
     CFG_END()
 };
 static cfg_opt_t mbr_partition_opts[] = {
-    CFG_INT("block-offset", 0, CFGF_NONE),
-    CFG_INT("block-count", 0, CFGF_NONE),
-    CFG_INT("type", 0, CFGF_NONE),
+    CFG_INT("block-offset", -1, CFGF_NONE),
+    CFG_INT("block-count", -1, CFGF_NONE),
+    CFG_INT("type", -1, CFGF_NONE),
     CFG_END()
 };
 static cfg_opt_t mbr_opts[] = {
@@ -214,14 +251,28 @@ cfg_opt_t opts[] = {
 };
 
 
-int cfgfile_parse(const char *buffer, cfg_t **cfg)
+int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
 {
     *cfg = cfg_init(opts, 0);
 
     /* set a validating callback function for sections */
     cfg_set_validate_func(*cfg, "file-resource", &cb_validate_file_resource);
+    cfg_set_validate_func(*cfg, "mbr", &cb_validate_mbr);
 
     if (cfg_parse_buf(*cfg, buffer) != 0)
+        return -1;
+    else
+        return 0;
+}
+
+int cfgfile_parse_file(const char *filename, cfg_t **cfg)
+{
+    *cfg = cfg_init(opts, 0);
+
+    /* set a validating callback function for sections */
+    cfg_set_validate_func(*cfg, "file-resource", &cb_validate_file_resource);
+    cfg_set_validate_func(*cfg, "mbr", &cb_validate_mbr);
+    if (cfg_parse(*cfg, filename) != 0)
         return -1;
     else
         return 0;

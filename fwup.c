@@ -23,6 +23,7 @@
 #include "cfgfile.h"
 #include "util.h"
 #include "mmc.h"
+#include "fwup_create.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -79,7 +80,6 @@ static void print_usage(const char *argv0)
 int main(int argc, char **argv)
 {
     const char *configfile = "fwupdate.conf";
-    cfg_t *cfg;
     int command = CMD_NONE;
 
     const char *mmc_device = NULL;
@@ -150,31 +150,35 @@ int main(int argc, char **argv)
     if (quiet && numeric_progress)
         errx(EXIT_FAILURE, "pick either -n or -q, but not both");
 
-    if (command == CMD_NONE)
-        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, or -z");
-
     if (optind < argc)
         errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
 
-    set_now_time();
+    switch (command) {
+    case CMD_NONE:
+        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, or -z");
+        break;
 
-    {
-        FILE *fp = fopen(configfile, "r");
-        if (!fp)
-            err(EXIT_FAILURE, "Can't read %s", configfile);
+    case CMD_APPLY:
+        errx(EXIT_FAILURE, "not implemented");
+        break;
 
-        fseek(fp, 0, SEEK_END);
-        size_t len = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-        char *buffer = (char *) malloc(len + 1);
-        if (fread(buffer, 1, len, fp) != len)
-            err(EXIT_FAILURE, "Couldn't read %s", configfile);
-        fclose(fp);
-        buffer[len] = 0;
+    case CMD_CREATE:
+        if (!output_firmware)
+            errx(EXIT_FAILURE, "specify the output firmware file name");
 
-        if (cfgfile_parse(buffer, &cfg) < 0)
-            errx(EXIT_FAILURE, "Error parsing %s", configfile);
+        fwup_create(configfile, output_firmware);
+        break;
+
+    case CMD_LIST:
+        errx(EXIT_FAILURE, "not implemented");
+        break;
+
+    case CMD_METADATA:
+        errx(EXIT_FAILURE, "not implemented");
+        break;
     }
+
+#if 0
     /* print the parsed values to another file */
     {        
         char *configtxt;
@@ -202,8 +206,8 @@ int main(int argc, char **argv)
         archive_write_free(a);
         free(configtxt);
     }
+#endif
 
-    cfgfile_free(cfg);
     return 0;
 }
 

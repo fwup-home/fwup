@@ -23,7 +23,8 @@ SOURCES += \
     mbr.c \
     cfgfile.c \
     util.c \
-    mmc.c
+    mmc.c \
+    fwup_create.c
 
 LIBS += -lconfuse -larchive
 
@@ -35,7 +36,8 @@ HEADERS += \
     mbr.h \
     cfgfile.h \
     util.h \
-    mmc.h
+    mmc.h \
+    fwup_create.h
 
 OTHER_FILES += \
     fwupdate.conf \
