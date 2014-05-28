@@ -17,11 +17,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <err.h>
 #include <getopt.h>
 
 #include "mmc.h"
+#include "fwup_apply.h"
 #include "fwup_create.h"
+#include "fwup_list.h"
 
 // Global options
 static bool numeric_progress = false;
@@ -147,24 +150,42 @@ int main(int argc, char **argv)
     if (optind < argc)
         errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
 
+    // Normalize the firmware filenames in the case that the user wants
+    // to use stdin/stdout
+    if (input_firmware && strcmp(input_firmware, "-") == 0)
+        input_firmware = 0;
+    if (output_firmware && strcmp(output_firmware, "-") == 0)
+        output_firmware = 0;
+
     switch (command) {
     case CMD_NONE:
         errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, or -z");
         break;
 
     case CMD_APPLY:
-        errx(EXIT_FAILURE, "not implemented");
+        if (!mmc_device) {
+            mmc_device = mmc_find_device();
+            if (!accept_found_device) {
+                if (strcmp(input_firmware, "-") == 0)
+                    errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", mmc_device);
+
+                char sizestr[16];
+                mmc_pretty_size(mmc_device_size(mmc_device), sizestr);
+                fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, mmc_device);
+                int response = fgetc(stdin);
+                if (response != 'y' && response != 'Y')
+                    errx(EXIT_FAILURE, "aborted");
+            }
+        }
+        fwup_apply(input_firmware, mmc_device);
         break;
 
     case CMD_CREATE:
-        if (!output_firmware)
-            errx(EXIT_FAILURE, "specify the output firmware file name");
-
         fwup_create(configfile, output_firmware);
         break;
 
     case CMD_LIST:
-        errx(EXIT_FAILURE, "not implemented");
+        fwup_list(input_firmware);
         break;
 
     case CMD_METADATA:

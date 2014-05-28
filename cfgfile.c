@@ -5,6 +5,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <archive.h>
+#include <archive_entry.h>
+
 
 /* function callback
  */
@@ -110,7 +113,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     // TODO - validate bootstrap-code-path
 
     cfg_t *partition;
-    int i;
+    int i = 0;
     int found_partitions = 0;
 
     struct mbr_partition partitions[4];
@@ -155,7 +158,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
 static int cb_validate_on_init(cfg_t *cfg, cfg_opt_t *opt)
 {
     (void) cfg;
-
+    (void) opt;
 #if 0
     cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
 
@@ -316,6 +319,69 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
         return 0;
 }
 
+static char *read_meta_conf(const char *fw_filename)
+{
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+    int rc = archive_read_open_filename(a, fw_filename, 16384);
+    if (rc != ARCHIVE_OK) {
+        set_last_error("Cannot open archive");
+        return 0;
+    }
+
+    struct archive_entry *ae;
+    rc = archive_read_next_header(a, &ae);
+    if (rc != ARCHIVE_OK) {
+        set_last_error("Error reading archive");
+        return 0;
+    }
+
+    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0) {
+        set_last_error("Expecting meta.conf to be first file");
+        return 0;
+    }
+
+    if (!archive_entry_size_is_set(ae)) {
+        set_last_error("Expecting meta.conf size to be set");
+        return 0;
+    }
+
+    ssize_t total_size = archive_entry_size(ae);
+    if (total_size < 10 || total_size > 50000) {
+        set_last_error("Unexpected meta.conf size");
+        return 0;
+    }
+
+    char *buffer = (char *) malloc(total_size + 1);
+    ssize_t size_left = total_size;
+    while (size_left > 0) {
+      ssize_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
+      if (len <= 0) {
+          set_last_error("Error reading all of meta.conf");
+          return 0;
+      }
+      size_left -= len;
+    }
+    buffer[total_size] = 0;
+    archive_read_free(a);
+    return buffer;
+}
+
+int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
+{
+    char *meta_conf = read_meta_conf(filename);
+    if (!meta_conf)
+        return -1;
+
+    if (cfgfile_parse_buffer(meta_conf, cfg) < 0) {
+        set_last_error("Unexpected error parsing meta.conf");
+        free(meta_conf);
+        return -1;
+    }
+    free(meta_conf);
+
+    return 0;
+}
 
 void cfgfile_free(cfg_t *cfg)
 {

@@ -25,7 +25,9 @@ SOURCES += \
     util.c \
     mmc.c \
     fwup_create.c \
-    functions.c
+    functions.c \
+    fwup_apply.c \
+    fwup_list.c
 
 LIBS += -lconfuse -larchive
 
@@ -39,7 +41,9 @@ HEADERS += \
     util.h \
     mmc.h \
     fwup_create.h \
-    functions.h
+    functions.h \
+    fwup_apply.h \
+    fwup_list.h
 
 OTHER_FILES += \
     fwupdate.conf \

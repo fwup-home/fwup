@@ -31,7 +31,19 @@
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
 
-static size_t device_size(const char *devpath)
+void mmc_pretty_size(size_t amount, char *out)
+{
+    if (amount >= ONE_GiB)
+        sprintf(out, "%.2f GiB", ((double) amount) / ONE_GiB);
+    else if (amount >= ONE_MiB)
+        sprintf(out, "%.2f MiB", ((double) amount) / ONE_MiB);
+    else if (amount >= ONE_KiB)
+        sprintf(out, "%d KiB", (int) (amount / ONE_KiB));
+    else
+        sprintf(out, "%d bytes", (int) amount);
+}
+
+size_t mmc_device_size(const char *devpath)
 {
     int fd = open(devpath, O_RDONLY);
     if (fd < 0)
@@ -46,7 +58,7 @@ static size_t device_size(const char *devpath)
 static bool is_mmc_device(const char *devpath)
 {
     // Check 1: Path exists and can read length
-    size_t len = device_size(devpath);
+    size_t len = mmc_device_size(devpath);
     if (len == 0)
         return false;
 
@@ -88,13 +100,13 @@ char *mmc_find_device()
     }
 
     if (possible_ix == 1) {
-    // Success.
-    return possible[0];
+        // Success.
+        return possible[0];
     } else if (possible_ix == 0) {
-    if (getuid() != 0)
-        errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
-    else
-        errx(EXIT_FAILURE, "No memory cards found.");
+        if (getuid() != 0)
+            errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
+        else
+            errx(EXIT_FAILURE, "No memory cards found.");
     } else {
         fprintf(stderr, "Too many possible memory cards found: \n");
         for (i = 0; i < possible_ix; i++)

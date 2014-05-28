@@ -17,6 +17,10 @@
 #ifndef MMC_H
 #define MMC_H
 
+#include <stddef.h>
+
+void mmc_pretty_size(size_t amount, char *out);
+size_t mmc_device_size(const char *devpath);
 char *mmc_find_device();
 
 #endif // MMC_H
