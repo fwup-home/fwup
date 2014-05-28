@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-#include <confuse.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <err.h>
+#include <getopt.h>
 
-#include "cfgfile.h"
-#include "util.h"
 #include "mmc.h"
 #include "fwup_create.h"
-
-#include <archive.h>
-#include <archive_entry.h>
-#include "sha2.h"
 
 // Global options
 static bool numeric_progress = false;
@@ -177,30 +171,6 @@ int main(int argc, char **argv)
         errx(EXIT_FAILURE, "not implemented");
         break;
     }
-
-#if 0
-    /* print the parsed values to another file */
-    {        
-        struct archive *a = archive_write_new();
-        archive_write_set_format_zip(a);
-        if (archive_write_open_filename(a, "test.zip") != ARCHIVE_OK) {
-            fprintf(stderr, "Error writing to .zip file");
-            return 3;
-        }
-        struct archive_entry *entry = archive_entry_new();
-        archive_entry_set_pathname(entry, "meta.conf");
-        archive_entry_set_size(entry, configtxt_len);
-        archive_entry_set_filetype(entry, AE_IFREG);
-        archive_entry_set_perm(entry, 0644);
-        archive_write_header(a, entry);
-        archive_write_data(a, configtxt, configtxt_len);
-        archive_entry_free(entry);
-
-        archive_write_close(a);
-        archive_write_free(a);
-        free(configtxt);
-    }
-#endif
 
     return 0;
 }

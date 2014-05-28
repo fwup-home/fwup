@@ -8,28 +8,54 @@
 
 /* function callback
  */
-static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int cb_func(enum fun_context_type ctype, cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
+    struct fun_context fctx;
+    memset(&fctx, 0, sizeof(fctx));
+    fctx.type = ctype;
+
+
     // Convert to the normal argc/argv
-    int nargc = argc + 1;
-    const char *nargv[nargc];
+    fctx.argc = argc + 1;
+    const char *nargv[fctx.argc];
     nargv[0] = opt->name;
     memcpy(&nargv[1], argv, sizeof(const char *) * argc);
+    fctx.argv = nargv;
 
-    if (fun_validate(nargc, nargv) < 0) {
+    if (fun_validate(&fctx) < 0) {
         cfg_error(cfg, last_error());
         return -1;
     }
 
     char str_argc[5];
-    sprintf(str_argc, "%d", nargc);
+    sprintf(str_argc, "%d", fctx.argc);
 
-    cfg_addlist(cfg, "funlist", 2, str_argc, nargv[0]);
+    cfg_addlist(cfg, "funlist", 2, str_argc, fctx.argv[0]);
     int i;
-    for (i = 1; i < nargc; i++)
-        cfg_addlist(cfg, "funlist", 1, nargv[i]);
+    for (i = 1; i < fctx.argc; i++)
+        cfg_addlist(cfg, "funlist", 1, fctx.argv[i]);
 
     return 0;
+}
+
+static int cb_on_init_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    return cb_func(FUN_CONTEXT_INIT, cfg, opt, argc, argv);
+}
+
+static int cb_on_finish_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    return cb_func(FUN_CONTEXT_FINISH, cfg, opt, argc, argv);
+}
+
+static int cb_on_error_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    return cb_func(FUN_CONTEXT_ERROR, cfg, opt, argc, argv);
+}
+
+static int cb_on_resource_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    return cb_func(FUN_CONTEXT_FILE, cfg, opt, argc, argv);
 }
 
 static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
@@ -205,33 +231,41 @@ static cfg_opt_t mbr_opts[] = {
     CFG_END()
 };
 
-#define CFG_ON_EVENT_FUNCTIONS \
+#define CFG_ON_EVENT_FUNCTIONS(CB) \
     CFG_STR_LIST("funlist", 0, CFGF_NONE), \
-    CFG_FUNC("raw_write", cb_func), \
-    CFG_FUNC("fat_mkfs", cb_func), \
-    CFG_FUNC("fat_write", cb_func), \
-    CFG_FUNC("fat_mv", cb_func), \
-    CFG_FUNC("fat_rm", cb_func), \
-    CFG_FUNC("fw_create", cb_func), \
-    CFG_FUNC("fw_add_local_file", cb_func), \
-    CFG_FUNC("mbr_write", cb_func)
+    CFG_FUNC("raw_write", CB), \
+    CFG_FUNC("fat_mkfs", CB), \
+    CFG_FUNC("fat_write", CB), \
+    CFG_FUNC("fat_mv", CB), \
+    CFG_FUNC("fat_rm", CB), \
+    CFG_FUNC("fw_create", CB), \
+    CFG_FUNC("fw_add_local_file", CB), \
+    CFG_FUNC("mbr_write", CB)
 
-static cfg_opt_t update_on_event_opts[] = {
-    CFG_ON_EVENT_FUNCTIONS,
+static cfg_opt_t update_on_init_opts[] = {
+    CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),
+    CFG_END()
+};
+static cfg_opt_t update_on_finish_opts[] = {
+    CFG_ON_EVENT_FUNCTIONS(cb_on_finish_func),
+    CFG_END()
+};
+static cfg_opt_t update_on_error_opts[] = {
+    CFG_ON_EVENT_FUNCTIONS(cb_on_error_func),
     CFG_END()
 };
 static cfg_opt_t update_on_resource_opts[] = {
     CFG_STR("verify-on-the-fly", cfg_false, CFGF_NONE),
-    CFG_ON_EVENT_FUNCTIONS,
+    CFG_ON_EVENT_FUNCTIONS(cb_on_resource_func),
     CFG_END()
 };
 static cfg_opt_t update_opts[] = {
     CFG_INT("require-partition1-offset", 0, CFGF_NONE),
     CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
-    CFG_SEC("on-init", update_on_event_opts, CFGF_NONE),
-    CFG_SEC("on-finish", update_on_event_opts, CFGF_NONE),
-    CFG_SEC("on-error", update_on_event_opts, CFGF_NONE),
+    CFG_SEC("on-init", update_on_init_opts, CFGF_NONE),
+    CFG_SEC("on-finish", update_on_finish_opts, CFGF_NONE),
+    CFG_SEC("on-error", update_on_error_opts, CFGF_NONE),
     CFG_SEC("on-resource", update_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_END()
 };
