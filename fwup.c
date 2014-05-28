@@ -25,6 +25,7 @@
 #include "fwup_apply.h"
 #include "fwup_create.h"
 #include "fwup_list.h"
+#include "fwup_metadata.h"
 
 // Global options
 static bool numeric_progress = false;
@@ -189,7 +190,7 @@ int main(int argc, char **argv)
         break;
 
     case CMD_METADATA:
-        errx(EXIT_FAILURE, "not implemented");
+        fwup_metadata(input_firmware);
         break;
     }
 

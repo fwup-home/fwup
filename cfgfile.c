@@ -283,7 +283,7 @@ cfg_opt_t opts[] = {
     CFG_FUNC("define", cb_define),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-    CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE),
+    CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     //CFG_FUNC("include", &cfg_include),
     CFG_END()
 };
