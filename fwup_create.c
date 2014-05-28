@@ -37,6 +37,13 @@ static void compute_file_metadata(cfg_t *cfg)
     }
 }
 
+static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
+{
+    FILE *fp = open_memstream(output, &len);
+    cfg_print(cfg, fp);
+    fclose(fp);
+}
+
 void fwup_create(const char *configfile, const char *output_firmware)
 {
     cfg_t *cfg;

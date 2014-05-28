@@ -1,95 +1,33 @@
 #include "cfgfile.h"
 #include "mbr.h"
+#include "functions.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-struct function_info {
-    cfg_opt_t *opt;
-    int argc;
-    char **argv;
-    struct function_info *next;
-};
-
-static struct function_info *functions = 0;
-
-static void add_function(cfg_opt_t *opt, int argc, const char **argv)
-{
-    struct function_info *info = (struct function_info *) malloc(sizeof(struct function_info));
-    info->opt = opt;
-    info->argc = argc;
-    if (argc > 0) {
-        info->argv = (char **) malloc(argc * sizeof(char *));
-        int i;
-        for (i = 0; i < argc; i++)
-            info->argv[i] = strdup(argv[i]);
-    } else
-        info->argv = 0;
-
-    info->next = functions;
-    functions = info;
-}
-
-static int lookup_function(const cfg_opt_t *opt, int *argc, char ***argv)
-{
-    struct function_info *f = functions;
-    while (f) {
-        if (opt == f->opt) {
-            *argc = f->argc;
-            *argv = f->argv;
-            return 1;
-        }
-        f = f->next;
-    }
-    return 0;
-}
-
-static void free_functions()
-{
-    struct function_info *f = functions;
-    functions = 0;
-
-    while (f) {
-        int i;
-        for (i = 0; i < f->argc; i++)
-            free(f->argv[i]);
-        free(f->argv);
-        struct function_info *next = f->next;
-        free(f);
-        f = next;
-    }
-}
-
-static void print_func(cfg_opt_t *opt, unsigned int index, FILE *fp)
-{
-    (void) index;
-
-    int argc;
-    char **argv;
-    if (!lookup_function(opt, &argc, &argv)) {
-        fprintf(fp, "%s(?)", opt->name);
-        return;
-    }
-
-    fprintf(fp, "%s(", opt->name);
-    if (argc > 0) {
-        fprintf(fp, "%s", argv[0]);
-
-        int i;
-        for (i = 1; i < argc; i++)
-            fprintf(fp, ",%s", argv[i]);
-    }
-    fprintf(fp, ")");
-}
 
 /* function callback
  */
 static int cb_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
-    (void) cfg;
+    // Convert to the normal argc/argv
+    int nargc = argc + 1;
+    const char *nargv[nargc];
+    nargv[0] = opt->name;
+    memcpy(&nargv[1], argv, sizeof(const char *) * argc);
 
-    add_function(opt, argc, argv);
-    cfg_opt_set_print_func(opt, print_func);
+    if (fun_validate(nargc, nargv) < 0) {
+        cfg_error(cfg, last_error());
+        return -1;
+    }
+
+    char str_argc[5];
+    sprintf(str_argc, "%d", nargc);
+
+    cfg_addlist(cfg, "funlist", 2, str_argc, nargv[0]);
+    int i;
+    for (i = 1; i < nargc; i++)
+        cfg_addlist(cfg, "funlist", 1, nargv[i]);
 
     return 0;
 }
@@ -180,10 +118,72 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
         cfg_error(cfg, "empty partition table?");
 
     if (mbr_verify(partitions) < 0) {
-        cfg_error(cfg, mbr_last_error());
+        cfg_error(cfg, last_error());
         return -1;
     }
 
+    return 0;
+}
+
+
+static int cb_validate_on_init(cfg_t *cfg, cfg_opt_t *opt)
+{
+    (void) cfg;
+
+#if 0
+    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
+
+    int i;
+    for(i = 0; i < cfg_opt_size(opt); i++)
+    {
+        sec = cfg_opt_getnsec(opt, i);
+        cfg_indent(fp, indent);
+        if(is_set(CFGF_TITLE, opt->flags))
+            fprintf(fp, "%s \"%s\" {\n", opt->name, cfg_title(sec));
+        else
+            fprintf(fp, "%s {\n", opt->name);
+        cfg_print_indent(sec, fp, indent + 1);
+        cfg_indent(fp, indent);
+        fprintf(fp, "}\n");
+    }
+
+    int i;
+    for (i = 0; i < cfg_opt_size(opt); i++) {
+        cfg_t *subsec = cfg_opt_getnsec()
+        fprintf(stderr, "%s\n", opt->name);
+        int j;
+        for (j = 0; opt->subopts[j].name; j++) {
+            fprintf(stderr, "  %s\n", opt->subopts[j].name);
+        }
+    }
+#endif
+
+#if 0
+    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
+    if(!sec)
+    {
+        cfg_error(cfg, "section is NULL!?");
+        return -1;
+    }
+
+
+    int i;
+    for (i = 0; sec->opts[i].name; i++) {
+        cfg_opt_t *funcall = &sec->opts[i];
+        if (funcall->type == CFGT_FUNC) {
+            int argc;
+            char **argv;
+            if (lookup_function(funcall, &argc, &argv) < 0) {
+                cfg_error(cfg, "What? %s", funcall->name);
+                return -1;
+            }
+            if (fun_validate(argc, argv) < 0) {
+                cfg_error(cfg, last_error());
+                return -1;
+            }
+        }
+    }
+#endif
     return 0;
 }
 
@@ -206,6 +206,7 @@ static cfg_opt_t mbr_opts[] = {
 };
 
 #define CFG_ON_EVENT_FUNCTIONS \
+    CFG_STR_LIST("funlist", 0, CFGF_NONE), \
     CFG_FUNC("raw_write", cb_func), \
     CFG_FUNC("fat_mkfs", cb_func), \
     CFG_FUNC("fat_write", cb_func), \
@@ -256,8 +257,10 @@ int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
     *cfg = cfg_init(opts, 0);
 
     /* set a validating callback function for sections */
-    cfg_set_validate_func(*cfg, "file-resource", &cb_validate_file_resource);
-    cfg_set_validate_func(*cfg, "mbr", &cb_validate_mbr);
+    cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
+    cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
+
+    cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
 
     if (cfg_parse_buf(*cfg, buffer) != 0)
         return -1;
@@ -270,8 +273,9 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     *cfg = cfg_init(opts, 0);
 
     /* set a validating callback function for sections */
-    cfg_set_validate_func(*cfg, "file-resource", &cb_validate_file_resource);
-    cfg_set_validate_func(*cfg, "mbr", &cb_validate_mbr);
+    cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
+    cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
+    cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
     if (cfg_parse(*cfg, filename) != 0)
         return -1;
     else
@@ -281,6 +285,5 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
 
 void cfgfile_free(cfg_t *cfg)
 {
-    free_functions();
     cfg_free(cfg);
 }

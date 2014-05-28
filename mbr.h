@@ -31,6 +31,4 @@ int mbr_create(const struct mbr_partition partitions[4], const uint8_t *bootstra
 int mbr_verify(const struct mbr_partition partitions[4]);
 int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4]);
 
-const char *mbr_last_error();
-
 #endif // MBR_H

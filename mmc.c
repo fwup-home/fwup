@@ -15,6 +15,7 @@
  */
 
 #include "mmc.h"
+#include "util.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,8 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
 #define ONE_KiB  (1024ULL)
 #define ONE_MiB  (1024 * ONE_KiB)

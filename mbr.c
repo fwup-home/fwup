@@ -15,6 +15,8 @@
  */
 
 #include "mbr.h"
+#include "util.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,8 +25,6 @@
 // the types of memory that we use.
 #define SECTORS_PER_HEAD    63
 #define HEADS_PER_CYLINDER  255
-
-static const char *last_error = NULL;
 
 /**
  * @brief mbr_verify check that the specified partitions make sense and don't overlap
@@ -37,7 +37,7 @@ int mbr_verify(const struct mbr_partition partitions[4])
     // Check for overlap
     for (i = 0; i < 4; i++) {
         if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0) {
-            last_error = "invalid partition type";
+            set_last_error("invalid partition type");
             return -1;
         }
 
@@ -57,7 +57,7 @@ int mbr_verify(const struct mbr_partition partitions[4])
 
             if ((ileft >= jleft && ileft <= jright) ||
                 (iright >= jleft && iright <= jright)) {
-                last_error = "partitions overlap";
+                set_last_error("partitions overlap");
                 return -1;
             }
         }
@@ -134,15 +134,6 @@ int mbr_create(const struct mbr_partition partitions[4], const uint8_t *bootstra
     return 0;
 }
 
-/**
- * @brief Return a string describing the most recent error return
- * @return a string or NULL if no error
- */
-const char *mbr_last_error()
-{
-    return last_error;
-}
-
 static int read_partition(const uint8_t *input, struct mbr_partition *partition)
 {
     if (input[0] & 0x80)
@@ -171,7 +162,7 @@ int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4])
     memset(partitions, 0, 4 * sizeof(struct mbr_partition));
 
     if (input[510] != 0x55 || input[511] != 0xaa) {
-        last_error = "MBR signature missing";
+        set_last_error("MBR signature missing");
         return -1;
     }
 

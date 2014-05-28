@@ -18,6 +18,7 @@
 
 #include "fatfs/src/diskio.h"		/* FatFs lower layer API */
 #include "fatfs/src/ff.h"
+#include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -29,9 +30,43 @@ static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
 static FIL fil_;
-static FRESULT last_error_ = FR_OK;
 
-#define CHECK(CMD) do { if ((last_error_ = CMD) != FR_OK) return -1; } while (0)
+const char *fatfs_error_to_string(FRESULT err)
+{
+    switch (err) {
+    case FR_OK: return "Succeeded";
+    case FR_DISK_ERR: return "A hard error occurred in the low level disk I/O layer";
+    case FR_INT_ERR: return "Assertion failed";
+    case FR_NOT_READY: return "The physical drive cannot work";
+    case FR_NO_FILE: return "Could not find the file";
+    case FR_NO_PATH: return "Could not find the path";
+    case FR_INVALID_NAME: return "The path name format is invalid";
+    case FR_DENIED: return "Access denied due to prohibited access or directory full";
+    case FR_EXIST: return "Access denied due to prohibited access";
+    case FR_INVALID_OBJECT: return "The file/directory object is invalid";
+    case FR_WRITE_PROTECTED: return "The physical drive is write protected";
+    case FR_INVALID_DRIVE: return "The logical drive number is invalid";
+    case FR_NOT_ENABLED: return "The volume has no work area";
+    case FR_NO_FILESYSTEM: return "There is no valid FAT volume";
+    case FR_MKFS_ABORTED: return "The f_mkfs() aborted due to any parameter error";
+    case FR_TIMEOUT: return "Could not get a grant to access the volume within defined period";
+    case FR_LOCKED: return "The operation is rejected according to the file sharing policy";
+    case FR_NOT_ENOUGH_CORE: return "LFN working buffer could not be allocated";
+    case FR_TOO_MANY_OPEN_FILES: return "Number of open files > _FS_SHARE";
+    default:
+    case FR_INVALID_PARAMETER: return "Invalid";
+    }
+}
+
+static FRESULT fatfs_error(FRESULT rc)
+{
+    if (rc != FR_OK)
+        set_last_error(fatfs_error_to_string(rc));
+
+    return rc;
+}
+
+#define CHECK(CMD) do { if (fatfs_error(CMD) != FR_OK) return -1; } while (0)
 #define MAYBE_MOUNT(FATFP) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; CHECK(f_mount(&fs_, "", 0)); } } while (0)
 
 /**
@@ -123,33 +158,6 @@ int fatfs_closefs()
     f_mount(NULL, "", 0);
     fatfp_ = NULL;
     return 0;
-}
-
-const char *fatfs_last_error()
-{
-    switch (last_error_) {
-    case FR_OK: return "Succeeded";
-    case FR_DISK_ERR: return "A hard error occurred in the low level disk I/O layer";
-    case FR_INT_ERR: return "Assertion failed";
-    case FR_NOT_READY: return "The physical drive cannot work";
-    case FR_NO_FILE: return "Could not find the file";
-    case FR_NO_PATH: return "Could not find the path";
-    case FR_INVALID_NAME: return "The path name format is invalid";
-    case FR_DENIED: return "Access denied due to prohibited access or directory full";
-    case FR_EXIST: return "Access denied due to prohibited access";
-    case FR_INVALID_OBJECT: return "The file/directory object is invalid";
-    case FR_WRITE_PROTECTED: return "The physical drive is write protected";
-    case FR_INVALID_DRIVE: return "The logical drive number is invalid";
-    case FR_NOT_ENABLED: return "The volume has no work area";
-    case FR_NO_FILESYSTEM: return "There is no valid FAT volume";
-    case FR_MKFS_ABORTED: return "The f_mkfs() aborted due to any parameter error";
-    case FR_TIMEOUT: return "Could not get a grant to access the volume within defined period";
-    case FR_LOCKED: return "The operation is rejected according to the file sharing policy";
-    case FR_NOT_ENOUGH_CORE: return "LFN working buffer could not be allocated";
-    case FR_TOO_MANY_OPEN_FILES: return "Number of open files > _FS_SHARE";
-    default:
-    case FR_INVALID_PARAMETER: return "Invalid";
-    }
 }
 
 // Implementation of callbacks

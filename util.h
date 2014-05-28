@@ -18,5 +18,9 @@
 #define UTIL_H
 
 void set_now_time();
+void set_last_error(const char *msg);
+const char *last_error();
+
+#define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
 #endif // UTIL_H

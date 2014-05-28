@@ -16,7 +16,11 @@
 
 #include "util.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+
+static const char *last_error_message = NULL;
 
 void set_now_time()
 {
@@ -30,4 +34,18 @@ void set_now_time()
     char outstr[200];
     strftime(outstr, sizeof(outstr), "%a, %d %b %Y %T %z", tmp);
     setenv("NOW", outstr, 1);
+}
+
+/**
+ * @brief Our errno!
+ * @param msg
+ */
+void set_last_error(const char *msg)
+{
+    last_error_message = msg;
+}
+
+const char *last_error()
+{
+    return last_error_message;
 }

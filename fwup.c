@@ -181,12 +181,6 @@ int main(int argc, char **argv)
 #if 0
     /* print the parsed values to another file */
     {        
-        char *configtxt;
-        size_t configtxt_len;
-        FILE *fp = open_memstream(&configtxt, &configtxt_len);
-        cfg_print(cfg, fp);
-        fclose(fp);
-
         struct archive *a = archive_write_new();
         archive_write_set_format_zip(a);
         if (archive_write_open_filename(a, "test.zip") != ARCHIVE_OK) {
