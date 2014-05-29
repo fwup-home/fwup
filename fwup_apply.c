@@ -15,8 +15,34 @@
  */
 
 #include "fwup_apply.h"
+#include "util.h"
+#include "cfgfile.h"
 
-void fwup_apply(const char *fw_filename, const char *output_filename)
+#include <archive.h>
+#include <archive_entry.h>
+#include <confuse.h>
+#include <string.h>
+
+int fwup_apply(const char *fw_filename, const char *output_filename)
 {
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+    int rc = archive_read_open_filename(a, fw_filename, 16384);
+    if (rc != ARCHIVE_OK)
+        ERR_RETURN("Cannot open archive");
 
+    struct archive_entry *ae;
+    rc = archive_read_next_header(a, &ae);
+    if (rc != ARCHIVE_OK)
+        ERR_RETURN("Error reading archive");
+
+    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
+        ERR_RETURN("Expecting meta.conf to be first file");
+
+    cfg_t *cfg;
+    if (cfgfile_parse_fw_ae(a, ae, &cfg) < 0)
+        return -1;
+
+    archive_read_free(a);
+    return 0;
 }

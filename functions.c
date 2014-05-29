@@ -95,20 +95,15 @@ int fun_run(struct fun_context *fctx)
 
 int raw_write_validate(struct fun_context *fctx)
 {
-    if (fctx->type != FUN_CONTEXT_FILE) {
-        set_last_error("raw_write only usable in on-resource");
-        return -1;
-    }
-    if (fctx->argc != 2) {
-        set_last_error("raw_write requires a block offset");
-        return -1;
-    }
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("raw_write only usable in on-resource");
+
+    if (fctx->argc != 2)
+        ERR_RETURN("raw_write requires a block offset");
 
     int offset = strtoul(fctx->argv[1], 0, 0);
-    if (offset < 0) {
-        set_last_error("block offset should be non-negative");
-        return -1;
-    }
+    if (offset < 0)
+        ERR_RETURN("block offset should be non-negative");
 
     return 0;
 }
@@ -121,69 +116,54 @@ int raw_write_run(struct fun_context *fctx)
 
 int fat_mkfs_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 3) {
-        set_last_error("fat_mkfs requires a block offset and block count");
-        return -1;
-    }
+    if (fctx->argc != 3)
+        ERR_RETURN("fat_mkfs requires a block offset and block count");
 
     return 0;
 }
 
 int fat_write_validate(struct fun_context *fctx)
 {
-    if (fctx->type != FUN_CONTEXT_FILE) {
-        set_last_error("fat_write only usable in on-resource");
-        return -1;
-    }
-    if (fctx->argc != 3) {
-        set_last_error("fat_write requires a block offset and destination filename");
-        return -1;
-    }
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("fat_write only usable in on-resource");
+
+    if (fctx->argc != 3)
+        ERR_RETURN("fat_write requires a block offset and destination filename");
 
     return 0;
 }
 int fat_mv_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 4) {
-        set_last_error("fat_mv requires a block offset, old filename, new filename");
-        return -1;
-    }
+    if (fctx->argc != 4)
+        ERR_RETURN("fat_mv requires a block offset, old filename, new filename");
 
     return 0;
 }
 int fat_rm_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 3) {
-        set_last_error("fat_rm requires a block offset and filename");
-        return -1;
-    }
+    if (fctx->argc != 3)
+        ERR_RETURN("fat_rm requires a block offset and filename");
 
     return 0;
 }
 int fw_create_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 2) {
-        set_last_error("fw_create requires a filename");
-        return -1;
-    }
+    if (fctx->argc != 2)
+        ERR_RETURN("fw_create requires a filename");
 
     return 0;
 }
 int fw_add_local_file_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 4) {
-        set_last_error("fw_add_local_file requires a firmware filename, filename, and file with the contents");
-        return -1;
-    }
+    if (fctx->argc != 4)
+        ERR_RETURN("fw_add_local_file requires a firmware filename, filename, and file with the contents");
 
     return 0;
 }
 int mbr_write_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 2) {
-        set_last_error("mbr_write requires an mbr");
-        return -1;
-    }
+    if (fctx->argc != 2)
+        ERR_RETURN("mbr_write requires an mbr");
 
     return 0;
 }

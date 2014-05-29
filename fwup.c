@@ -22,6 +22,7 @@
 #include <getopt.h>
 
 #include "mmc.h"
+#include "util.h"
 #include "fwup_apply.h"
 #include "fwup_create.h"
 #include "fwup_list.h"
@@ -178,19 +179,27 @@ int main(int argc, char **argv)
                     errx(EXIT_FAILURE, "aborted");
             }
         }
-        fwup_apply(input_firmware, mmc_device);
+        if (fwup_apply(input_firmware, mmc_device) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
         break;
 
     case CMD_CREATE:
-        fwup_create(configfile, output_firmware);
+        if (fwup_create(configfile, output_firmware) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
         break;
 
     case CMD_LIST:
-        fwup_list(input_firmware);
+        if (fwup_list(input_firmware) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
         break;
 
     case CMD_METADATA:
-        fwup_metadata(input_firmware);
+        if (fwup_metadata(input_firmware) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
         break;
     }
 

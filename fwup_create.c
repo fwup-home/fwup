@@ -19,13 +19,12 @@
 #include "util.h"
 #include "sha2.h"
 
-#include <err.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <archive.h>
 #include <archive_entry.h>
 
-static void compute_file_metadata(cfg_t *cfg)
+static int compute_file_metadata(cfg_t *cfg)
 {
     cfg_t *sec;
     int i = 0;
@@ -33,11 +32,11 @@ static void compute_file_metadata(cfg_t *cfg)
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *path = cfg_getstr(sec, "host-path");
         if (!path)
-            errx(EXIT_FAILURE, "host-path must be set for file-report '%s'", cfg_title(sec));
+            ERR_RETURN("host-path must be set for file-report");
 
         FILE *fp = fopen(path, "rb");
         if (!fp)
-            err(EXIT_FAILURE, "Cannot open '%s'", path);
+            ERR_RETURN("can't open file-resource");
 
         SHA256_CTX ctx256;
         char buffer[1024];
@@ -54,6 +53,8 @@ static void compute_file_metadata(cfg_t *cfg)
         cfg_setstr(sec, "sha256", digest);
         cfg_setint(sec, "length", total);
     }
+
+    return 0;
 }
 
 static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
@@ -82,7 +83,7 @@ static void add_meta_conf(cfg_t *cfg, struct archive *a)
     free(configtxt);
 }
 
-static void add_file_resources(cfg_t *cfg, struct archive *a)
+static int add_file_resources(cfg_t *cfg, struct archive *a)
 {
     cfg_t *sec;
     int i = 0;
@@ -93,11 +94,11 @@ static void add_file_resources(cfg_t *cfg, struct archive *a)
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *hostpath = cfg_getstr(sec, "host-path");
         if (!hostpath)
-            errx(EXIT_FAILURE, "host-path must be set for file-report '%s'", cfg_title(sec));
+            ERR_RETURN("host-path must be set for file-report");
 
         FILE *fp = fopen(hostpath, "rb");
         if (!fp)
-            err(EXIT_FAILURE, "Cannot open '%s'", hostpath);
+            ERR_RETURN("can't open file-resource");
 
         size_t total_len = cfg_getint(sec, "length");
         struct archive_entry *entry = archive_entry_new();
@@ -118,6 +119,8 @@ static void add_file_resources(cfg_t *cfg, struct archive *a)
         archive_entry_free(entry);
     }
     free(buffer);
+
+    return 0;
 }
 
 static int create_archive(cfg_t *cfg, const char *filename)
@@ -129,7 +132,8 @@ static int create_archive(cfg_t *cfg, const char *filename)
 
     add_meta_conf(cfg, a);
 
-    add_file_resources(cfg, a);
+    if (add_file_resources(cfg, a) < 0)
+        return -1;
 
     archive_write_close(a);
     archive_write_free(a);
@@ -137,7 +141,7 @@ static int create_archive(cfg_t *cfg, const char *filename)
     return 0;
 }
 
-void fwup_create(const char *configfile, const char *output_firmware)
+int fwup_create(const char *configfile, const char *output_firmware)
 {
     cfg_t *cfg;
 
@@ -145,14 +149,16 @@ void fwup_create(const char *configfile, const char *output_firmware)
 
     // Parse configuration
     if (cfgfile_parse_file(configfile, &cfg) < 0)
-        errx(EXIT_FAILURE, "Error parsing '%s'", configfile);
+        return -1;
 
     // Compute all metadata
-    compute_file_metadata(cfg);
+    if (compute_file_metadata(cfg))
+        return -1;
 
     // Create the archive
     if (create_archive(cfg, output_firmware) < 0)
-        errx(EXIT_FAILURE, "Errore creating archive '%s'", output_firmware);
+        ERR_RETURN("Errore creating archive");
 
     cfgfile_free(cfg);
+    return 0;
 }

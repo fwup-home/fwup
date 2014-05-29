@@ -19,8 +19,12 @@
 
 #include <confuse.h>
 
+struct archive;
+struct archive_entry;
+
 int cfgfile_parse_file(const char *filename, cfg_t **cfg);
 int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg);
+int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg);
 int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg);
 void cfgfile_free(cfg_t *cfg);
 

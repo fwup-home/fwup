@@ -316,9 +316,9 @@ int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
     cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
 
     if (cfg_parse_buf(*cfg, buffer) != 0)
-        return -1;
-    else
-        return 0;
+        ERR_RETURN("Error parsing configuration file");
+
+    return 0;
 }
 
 int cfgfile_parse_file(const char *filename, cfg_t **cfg)
@@ -330,71 +330,57 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
     cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
     if (cfg_parse(*cfg, filename) != 0)
-        return -1;
-    else
-        return 0;
+        ERR_RETURN("Error parsing configuration file");
+
+    return 0;
 }
 
-static char *read_meta_conf(const char *fw_filename)
+int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg)
 {
-    struct archive *a = archive_read_new();
-    archive_read_support_format_zip(a);
-    int rc = archive_read_open_filename(a, fw_filename, 16384);
-    if (rc != ARCHIVE_OK) {
-        set_last_error("Cannot open archive");
-        return 0;
-    }
-
-    struct archive_entry *ae;
-    rc = archive_read_next_header(a, &ae);
-    if (rc != ARCHIVE_OK) {
-        set_last_error("Error reading archive");
-        return 0;
-    }
-
-    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0) {
-        set_last_error("Expecting meta.conf to be first file");
-        return 0;
-    }
-
-    if (!archive_entry_size_is_set(ae)) {
-        set_last_error("Expecting meta.conf size to be set");
-        return 0;
-    }
+    if (!archive_entry_size_is_set(ae))
+        ERR_RETURN("Expecting meta.conf size to be set");
 
     ssize_t total_size = archive_entry_size(ae);
-    if (total_size < 10 || total_size > 50000) {
-        set_last_error("Unexpected meta.conf size");
-        return 0;
-    }
+    if (total_size < 10 || total_size > 50000)
+        ERR_RETURN("Unexpected meta.conf size");
 
-    char *buffer = (char *) malloc(total_size + 1);
+    char *meta_conf = (char *) malloc(total_size + 1);
     ssize_t size_left = total_size;
     while (size_left > 0) {
-      ssize_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
-      if (len <= 0) {
-          set_last_error("Error reading all of meta.conf");
-          return 0;
-      }
+      ssize_t len = archive_read_data(a, &meta_conf[total_size - size_left], size_left);
+      if (len <= 0)
+          ERR_RETURN("Error reading all of meta.conf");
       size_left -= len;
     }
-    buffer[total_size] = 0;
-    archive_read_free(a);
-    return buffer;
+    meta_conf[total_size] = 0;
+
+    if (cfgfile_parse_buffer(meta_conf, cfg) < 0) {
+        free(meta_conf);
+        ERR_RETURN("Unexpected error parsing meta.conf");
+    }
+    free(meta_conf);
+
+    return 0;
 }
 
 int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
 {
-    char *meta_conf = read_meta_conf(filename);
-    if (!meta_conf)
-        return -1;
+    struct archive *a = archive_read_new();
+    archive_read_support_format_zip(a);
+    int rc = archive_read_open_filename(a, filename, 16384);
+    if (rc != ARCHIVE_OK)
+        ERR_RETURN("Cannot open archive");
 
-    if (cfgfile_parse_buffer(meta_conf, cfg) < 0) {
-        set_last_error("Unexpected error parsing meta.conf");
-        free(meta_conf);
+    struct archive_entry *ae;
+    rc = archive_read_next_header(a, &ae);
+    if (rc != ARCHIVE_OK)
+        ERR_RETURN("Error reading archive");
+
+    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
+        ERR_RETURN("Expecting meta.conf to be first file");
+
+    if (cfgfile_parse_fw_ae(a, ae, cfg) < 0)
         return -1;
-    }
-    free(meta_conf);
 
     return 0;
 }

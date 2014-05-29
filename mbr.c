@@ -36,10 +36,8 @@ int mbr_verify(const struct mbr_partition partitions[4])
     int i;
     // Check for overlap
     for (i = 0; i < 4; i++) {
-        if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0) {
-            set_last_error("invalid partition type");
-            return -1;
-        }
+        if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0)
+            ERR_RETURN("invalid partition type");
 
         // Check if empty.
         if (partitions[i].partition_type == 0)
@@ -56,10 +54,8 @@ int mbr_verify(const struct mbr_partition partitions[4])
             int jright = jleft + partitions[j].block_count - 1;
 
             if ((ileft >= jleft && ileft <= jright) ||
-                (iright >= jleft && iright <= jright)) {
-                set_last_error("partitions overlap");
-                return -1;
-            }
+                (iright >= jleft && iright <= jright))
+                ERR_RETURN("partitions overlap");
         }
     }
 
@@ -161,10 +157,8 @@ int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4])
 {
     memset(partitions, 0, 4 * sizeof(struct mbr_partition));
 
-    if (input[510] != 0x55 || input[511] != 0xaa) {
-        set_last_error("MBR signature missing");
-        return -1;
-    }
+    if (input[510] != 0x55 || input[511] != 0xaa)
+        ERR_RETURN("MBR signature missing");
 
     int i;
     for (i = 0; i < 4; i++) {

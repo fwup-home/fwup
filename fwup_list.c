@@ -43,13 +43,14 @@ static void list_tasks(cfg_t *cfg)
         printf("%s\n", tasks[i]);
 }
 
-void fwup_list(const char *fw_filename)
+int fwup_list(const char *fw_filename)
 {
     cfg_t *cfg;
     if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg) < 0)
-        errx(EXIT_FAILURE, "%s", last_error());
+        return -1;
 
     list_tasks(cfg);
 
     cfgfile_free(cfg);
+    return 0;
 }

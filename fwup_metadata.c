@@ -36,13 +36,14 @@ static void list_metadata(cfg_t *cfg)
     list_one(cfg, "meta-creation-date");
 }
 
-void fwup_metadata(const char *fw_filename)
+int fwup_metadata(const char *fw_filename)
 {
     cfg_t *cfg;
     if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg) < 0)
-        errx(EXIT_FAILURE, "%s", last_error());
+        return -1;
 
     list_metadata(cfg);
 
     cfgfile_free(cfg);
+    return 0;
 }
