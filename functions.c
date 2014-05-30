@@ -18,9 +18,12 @@
 #include "util.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "fatfs.h"
 
 static int raw_write_validate(struct fun_context *fctx);
 static int raw_write_run(struct fun_context *fctx);
@@ -55,6 +58,8 @@ static struct fun_info fun_table[] = {
     {"fw_add_local_file", fw_add_local_file_validate, fw_add_local_file_run },
     {"mbr_write", mbr_write_validate, mbr_write_run }
 };
+
+#define CHECK_ARG_UINT(ARG, MSG) do { errno=0; strtoul(ARG, NULL, 0); if (errno != 0) ERR_RETURN(MSG); } while (0)
 
 static struct fun_info *lookup(int argc, const char **argv)
 {
@@ -145,9 +150,7 @@ int raw_write_validate(struct fun_context *fctx)
     if (fctx->argc != 2)
         ERR_RETURN("raw_write requires a block offset");
 
-    int offset = strtoul(fctx->argv[1], 0, 0);
-    if (offset < 0)
-        ERR_RETURN("block offset should be non-negative");
+    CHECK_ARG_UINT(fctx->argv[1], "raw_write requires a non-negative integer block offset");
 
     return 0;
 }
@@ -183,12 +186,19 @@ int fat_mkfs_validate(struct fun_context *fctx)
     if (fctx->argc != 3)
         ERR_RETURN("fat_mkfs requires a block offset and block count");
 
+    CHECK_ARG_UINT(fctx->argv[1], "fat_mkfs requires a non-negative integer block offset");
+    CHECK_ARG_UINT(fctx->argv[2], "fat_mkfs requires a non-negative integer block count");
+
     return 0;
 }
 
 int fat_mkfs_run(struct fun_context *fctx)
 {
-    return 0;
+    FILE *fatfp;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+        return -1;
+
+    return fatfs_mkfs(fatfp, strtoul(fctx->argv[2], NULL, 0));
 }
 
 int fat_write_validate(struct fun_context *fctx)
@@ -199,10 +209,31 @@ int fat_write_validate(struct fun_context *fctx)
     if (fctx->argc != 3)
         ERR_RETURN("fat_write requires a block offset and destination filename");
 
+    CHECK_ARG_UINT(fctx->argv[1], "fat_write requires a non-negative integer block offset");
+
     return 0;
 }
 int fat_write_run(struct fun_context *fctx)
 {
+    FILE *fatfp;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+        return -1;
+
+    for (;;) {
+        int64_t offset;
+        size_t len;
+        const void *buffer;
+
+        if (fctx->read(fctx, &buffer, &len, &offset) < 0)
+            return -1;
+
+        // Check if done.
+        if (len == 0)
+            break;
+
+        if (fatfs_pwrite(fatfp, fctx->argv[2], (int) offset, buffer, len) < 0)
+            return -1;
+    }
     return 0;
 }
 
@@ -211,10 +242,18 @@ int fat_mv_validate(struct fun_context *fctx)
     if (fctx->argc != 4)
         ERR_RETURN("fat_mv requires a block offset, old filename, new filename");
 
+    CHECK_ARG_UINT(fctx->argv[1], "fat_mv requires a non-negative integer block offset");
     return 0;
 }
 int fat_mv_run(struct fun_context *fctx)
 {
+    FILE *fatfp;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+        return -1;
+
+    // TODO: Ignore the error code here??
+    fatfs_mv(fatfp, fctx->argv[2], fctx->argv[3]);
+
     return 0;
 }
 
@@ -224,10 +263,19 @@ int fat_rm_validate(struct fun_context *fctx)
     if (fctx->argc != 3)
         ERR_RETURN("fat_rm requires a block offset and filename");
 
+    CHECK_ARG_UINT(fctx->argv[1], "fat_rm requires a non-negative integer block offset");
+
     return 0;
 }
 int fat_rm_run(struct fun_context *fctx)
 {
+    FILE *fatfp;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+        return -1;
+
+    // TODO: Ignore the error code here??
+    fatfs_rm(fatfp, fctx->argv[2]);
+
     return 0;
 }
 

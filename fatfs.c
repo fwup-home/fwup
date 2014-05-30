@@ -30,6 +30,7 @@ static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
 static FIL fil_;
+static DWORD fattime_;
 
 const char *fatfs_error_to_string(FRESULT err)
 {
@@ -112,6 +113,19 @@ int fatfs_mkdir(FILE *fatfp, const char *dir)
 }
 
 /**
+ * @brief fatfs_rm Delete a file
+ * @param fatfp the raw file system data
+ * @param filename the name of the file
+ * @return 0 on success
+ */
+int fatfs_rm(FILE *fatfp, const char *filename)
+{
+    MAYBE_MOUNT(fatfp);
+    close_open_files();
+    CHECK(f_unlink(filename));
+    return 0;
+}
+/**
  * @brief fatfs_mv rename a file
  * @param fatfp the raw file system data
  * @param from_name original filename
@@ -146,7 +160,8 @@ int fatfs_pwrite(FILE *fatfp, const char *filename, int offset, const char *buff
     UINT bw;
     CHECK(f_write(&fil_, buffer, size, &bw));
     if (size != bw)
-        return FR_DENIED;
+        ERR_RETURN("Error writing file to FAT");
+
     return 0;
 }
 
@@ -249,22 +264,19 @@ DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive nmuber (0..) */
     return RES_PARERR;
 }
 
-DWORD get_fattime()
+int fatfs_set_time(struct tm *tmp)
 {
-    time_t t = time(NULL);
-    struct tm *tmp = localtime(&t);
-    if (tmp == NULL) {
-        perror("localtime");
-        exit(1);
-    }
-
-    // Return the time the FAT way.
-    DWORD fattime = ((tmp->tm_year - 80) << 25) |
+    fattime_ = ((tmp->tm_year - 80) << 25) |
             (tmp->tm_mon << 21) |
             (tmp->tm_mday << 16) |
             (tmp->tm_hour << 11) |
             (tmp->tm_min << 5) |
             (tmp->tm_sec >> 1);
 
-    return fattime;
+    return 0;
+}
+
+DWORD get_fattime()
+{
+    return fattime_;
 }

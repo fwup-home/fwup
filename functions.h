@@ -49,6 +49,9 @@ struct fun_context {
     // Callback for reporting progress
     void (*report_progress)(struct fun_context *fctx, int progress_units);
 
+    // Callback for getting a file handle for use with the fatfs code.
+    int (*fatfs_ptr)(struct fun_context *fctx, int64_t block_offset, FILE **fatfs);
+
     // Output file descriptor. <= 0 if not opened. (stdin is never ok)
     int output_fd;
 

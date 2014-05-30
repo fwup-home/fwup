@@ -17,6 +17,10 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+struct tm;
+
+int timestamp_to_tm(const char *timestamp, struct tm *tmp);
+const char *get_creation_timestamp();
 void set_now_time();
 void set_last_error(const char *msg);
 const char *last_error();

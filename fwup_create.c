@@ -115,7 +115,7 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
         size_t total_read = len;
         while (len > 0) {
             ssize_t written = archive_write_data(a, buffer, len);
-            if (written != len)
+            if (written != (ssize_t) len)
                 ERR_RETURN("error writing to archive");
 
             len = fread(buffer, 1, buffer_len, fp);
@@ -159,13 +159,15 @@ int fwup_create(const char *configfile, const char *output_firmware)
     if (cfgfile_parse_file(configfile, &cfg) < 0)
         return -1;
 
+    // Force the creation date to be set
+
     // Compute all metadata
     if (compute_file_metadata(cfg))
         return -1;
 
     // Create the archive
     if (create_archive(cfg, output_firmware) < 0)
-        ERR_RETURN("Errore creating archive");
+        ERR_RETURN("Error creating archive");
 
     cfgfile_free(cfg);
     return 0;

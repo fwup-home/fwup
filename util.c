@@ -16,24 +16,47 @@
 
 #include "util.h"
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
+char *strptime(const char *s, const char *format, struct tm *tm);
+
 static const char *last_error_message = NULL;
+static char time_string[200] = {0};
+
+static const char *timestamp_format = "%Y-%m-%dT%H:%M:%SZ";
+
+const char *get_creation_timestamp()
+{
+    // Ensure that if the creation timestamp is queried more than
+    // once that the same string gets returned.
+    if (*time_string == '\0') {
+        time_t t = time(NULL);
+        struct tm *tmp = gmtime(&t);
+        if (tmp == NULL) {
+            perror("gmtime");
+            exit(1);
+        }
+
+        strftime(time_string, sizeof(time_string), timestamp_format, tmp);
+    }
+
+    return time_string;
+}
+
+int timestamp_to_tm(const char *timestamp, struct tm *tmp)
+{
+    if (strptime(timestamp, timestamp_format, tmp) == NULL)
+        ERR_RETURN("error parsing timestamp");
+    else
+        return 0;
+}
 
 void set_now_time()
 {
-    time_t t = time(NULL);
-    struct tm *tmp = localtime(&t);
-    if (tmp == NULL) {
-        perror("localtime");
-        exit(1);
-    }
-
-    char outstr[200];
-    strftime(outstr, sizeof(outstr), "%a, %d %b %Y %T %z", tmp);
-    setenv("NOW", outstr, 1);
+    setenv("NOW", get_creation_timestamp(), 1);
 }
 
 /**

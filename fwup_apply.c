@@ -23,11 +23,13 @@
 #include <confuse.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
 #include "functions.h"
+#include "fatfs.h"
 
 static bool task_is_applicable(cfg_t *task)
 {
@@ -74,6 +76,10 @@ static int run_event(struct fun_context *fctx, cfg_t *task, const char *event_ty
 struct fwup_data
 {
     struct archive *a;
+    FILE *fatfs;
+    int64_t current_fatfs_block_offset;
+    char *fatfs_buffer;
+    size_t fatfs_size;
 };
 
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset)
@@ -91,11 +97,68 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 }
 
+static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FILE **fatfs)
+{
+    struct fwup_data *p = (struct fwup_data *) fctx->cookie;
+
+    // Check if this is the first time or if block offset changed
+    if (!p->fatfs || block_offset != p->current_fatfs_block_offset) {
+
+        // If the FATFS is being used, then flush it to disk
+        if (p->fatfs) {
+            fatfs_closefs();
+            fclose(p->fatfs);
+            p->fatfs = NULL;
+
+            ssize_t rc = pwrite(fctx->output_fd, p->fatfs_buffer, p->fatfs_size, p->current_fatfs_block_offset * 512);
+            free(p->fatfs_buffer);
+
+            if (rc != (ssize_t) p->fatfs_size)
+                ERR_RETURN("Error writing FATFS");
+        }
+
+        // Handle the case where a negative block offset is used to flush
+        // everything to disk, but not perform an operation.
+        if (block_offset >= 0) {
+            p->current_fatfs_block_offset = block_offset;
+            p->fatfs = open_memstream(&p->fatfs_buffer, &p->fatfs_size);
+            if (!p->fatfs)
+                ERR_RETURN("Error creating buffer for FATFS");
+        }
+    }
+
+    if (fatfs)
+        *fatfs = p->fatfs;
+    return 0;
+}
+
+static int set_time_from_cfg(cfg_t *cfg)
+{
+    // The purpose of this function is to set all timestamps that we create
+    // (e.g., FATFS timestamps) to the firmware creation date. This is needed
+    // to make sure that the images that we create are bit-for-bit identical.
+    const char *timestr = cfg_getstr(cfg, "meta-creation-date");
+    if (!timestr)
+        ERR_RETURN("Firmware missing meta-creation-date");
+
+    struct tm tmp;
+    if (timestamp_to_tm(timestr, &tmp) < 0)
+        return -1;
+
+    fatfs_set_time(&tmp);
+    return 0;
+}
+
 int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename)
 {
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.output_fd = STDOUT_FILENO;
+    fctx.fatfs_ptr = fatfs_ptr_callback;
+
+    struct fwup_data private_data;
+    memset(&private_data, 0, sizeof(private_data));
+    fctx.cookie = &private_data;
 
     if (output_filename) {
         fctx.output_fd = open(output_filename, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
@@ -104,6 +167,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     }
 
     struct archive *a = archive_read_new();
+    private_data.a = a;
     archive_read_support_format_zip(a);
     int rc = archive_read_open_filename(a, fw_filename, 16384);
     if (rc != ARCHIVE_OK)
@@ -121,6 +185,9 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (cfgfile_parse_fw_ae(a, ae, &cfg) < 0)
         return -1;
 
+    if (set_time_from_cfg(cfg) < 0)
+        return -1;
+
     cfg_t *task = find_task(cfg, task_prefix);
     if (task == 0)
         ERR_RETURN("Couldn't find applicable task");
@@ -129,10 +196,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (run_event(&fctx, task, "on-init", NULL) < 0)
         return -1;
 
-    struct fwup_data private_data;
     fctx.type = FUN_CONTEXT_FILE;
-    fctx.cookie = &private_data;
-    private_data.a = a;
     fctx.read = read_callback;
     while (archive_read_next_header(a, &ae) == ARCHIVE_OK) {
         const char *filename = archive_entry_pathname(ae);
@@ -148,6 +212,10 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 
     fctx.type = FUN_CONTEXT_FINISH;
     if (run_event(&fctx, task, "on-finish", NULL) < 0)
+        return -1;
+
+    // Flush the FATFS code in case it was used.
+    if (fatfs_ptr_callback(&fctx, -1, NULL) < 0)
         return -1;
 
     close(fctx.output_fd);
