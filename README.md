@@ -92,21 +92,21 @@ substitution inside of the configuration files. Keep in mind that environment va
 resolved on the host during firmware update creation. Environment variables are referenced as
 follows:
 
-   key = ${ANY_ENVIRONMENT_VARIABLE}
+    key = ${ANY_ENVIRONMENT_VARIABLE}
 
 It is possible to provide default values for environment variables using the `:-` symbol:
 
-   key = ${ANY_ENVIRONMENT_VARIABLE:-adefault}
+    key = ${ANY_ENVIRONMENT_VARIABLE:-adefault}
 
 Inside configuration files, it can be useful to define constants that are used throughout
 the file. All constants are stored as environment variables and overwrite environment
 variables with the same name.
 
-   define(MY_CONSTANT, 5)
+    define(MY_CONSTANT, 5)
 
 To define a constant that does not override the environment, do the following:
 
-   define(MY_CONSTANT, ${MY_CONSTANT:-5})
+    define(MY_CONSTANT, ${MY_CONSTANT:-5})
 
 
 ## Global scope
