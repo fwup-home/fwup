@@ -41,7 +41,7 @@ static int compute_file_metadata(cfg_t *cfg)
         SHA256_CTX ctx256;
         char buffer[1024];
         size_t len = fread(buffer, 1, sizeof(buffer), fp);
-        size_t total = len;
+        size_t total = 0;
         while (len > 0) {
             SHA256_Update(&ctx256, (unsigned char*) buffer, len);
             total += len;
@@ -112,10 +112,18 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
         archive_write_header(a, entry);
 
         size_t len = fread(buffer, 1, buffer_len, fp);
+        size_t total_read = len;
         while (len > 0) {
-            archive_write_data(a, buffer, len);
+            ssize_t written = archive_write_data(a, buffer, len);
+            if (written != len)
+                ERR_RETURN("error writing to archive");
+
             len = fread(buffer, 1, buffer_len, fp);
+            total_read += len;
         }
+        if (total_read != total_len)
+            ERR_RETURN("read an unexpected amount of data");
+
         archive_entry_free(entry);
     }
     free(buffer);

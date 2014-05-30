@@ -16,7 +16,6 @@
 
 #include "fwup_metadata.h"
 #include <confuse.h>
-#include <err.h>
 #include <stdlib.h>
 
 #include "cfgfile.h"

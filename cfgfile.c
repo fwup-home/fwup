@@ -33,13 +33,15 @@ static int cb_func(enum fun_context_type ctype, cfg_t *cfg, cfg_opt_t *opt, int 
     memset(&fctx, 0, sizeof(fctx));
     fctx.type = ctype;
 
-
     // Convert to the normal argc/argv
     fctx.argc = argc + 1;
-    const char *nargv[fctx.argc];
-    nargv[0] = opt->name;
-    memcpy(&nargv[1], argv, sizeof(const char *) * argc);
-    fctx.argv = nargv;
+    if (fctx.argc > FUN_MAX_ARGS || fctx.argc < 1) {
+        cfg_error(cfg, "Too many arguments passed to '%s'", opt->name);
+        return -1;
+    }
+
+    fctx.argv[0] = opt->name;
+    memcpy(&fctx.argv[1], argv, sizeof(const char *) * argc);
 
     if (fun_validate(&fctx) < 0) {
         cfg_error(cfg, last_error());
@@ -261,31 +263,31 @@ static cfg_opt_t mbr_opts[] = {
     CFG_FUNC("fw_add_local_file", CB), \
     CFG_FUNC("mbr_write", CB)
 
-static cfg_opt_t update_on_init_opts[] = {
+static cfg_opt_t task_on_init_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),
     CFG_END()
 };
-static cfg_opt_t update_on_finish_opts[] = {
+static cfg_opt_t task_on_finish_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_finish_func),
     CFG_END()
 };
-static cfg_opt_t update_on_error_opts[] = {
+static cfg_opt_t task_on_error_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_error_func),
     CFG_END()
 };
-static cfg_opt_t update_on_resource_opts[] = {
+static cfg_opt_t task_on_resource_opts[] = {
     CFG_STR("verify-on-the-fly", cfg_false, CFGF_NONE),
     CFG_ON_EVENT_FUNCTIONS(cb_on_resource_func),
     CFG_END()
 };
-static cfg_opt_t update_opts[] = {
+static cfg_opt_t task_opts[] = {
     CFG_INT("require-partition1-offset", 0, CFGF_NONE),
     CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
-    CFG_SEC("on-init", update_on_init_opts, CFGF_NONE),
-    CFG_SEC("on-finish", update_on_finish_opts, CFGF_NONE),
-    CFG_SEC("on-error", update_on_error_opts, CFGF_NONE),
-    CFG_SEC("on-resource", update_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_SEC("on-init", task_on_init_opts, CFGF_NONE),
+    CFG_SEC("on-finish", task_on_finish_opts, CFGF_NONE),
+    CFG_SEC("on-error", task_on_error_opts, CFGF_NONE),
+    CFG_SEC("on-resource", task_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_END()
 };
 cfg_opt_t opts[] = {
@@ -299,7 +301,7 @@ cfg_opt_t opts[] = {
     CFG_FUNC("define", cb_define),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-    CFG_SEC("update", update_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     //CFG_FUNC("include", &cfg_include),
     CFG_END()
 };
@@ -313,7 +315,7 @@ int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
     cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
 
-    cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
+    cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
 
     if (cfg_parse_buf(*cfg, buffer) != 0)
         ERR_RETURN("Error parsing configuration file");
@@ -328,7 +330,7 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     /* set a validating callback function for sections */
     cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
-    cfg_set_validate_func(*cfg, "update|on-init", cb_validate_on_init);
+    cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
     if (cfg_parse(*cfg, filename) != 0)
         ERR_RETURN("Error parsing configuration file");
 

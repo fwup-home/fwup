@@ -16,7 +16,6 @@
 
 #include "fwup_list.h"
 #include <confuse.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 

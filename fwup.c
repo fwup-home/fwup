@@ -165,6 +165,9 @@ int main(int argc, char **argv)
         break;
 
     case CMD_APPLY:
+        if (!task)
+            errx(EXIT_FAILURE, "specify a task (-t)");
+
         if (!mmc_device) {
             mmc_device = mmc_find_device();
             if (!accept_found_device) {
@@ -179,7 +182,7 @@ int main(int argc, char **argv)
                     errx(EXIT_FAILURE, "aborted");
             }
         }
-        if (fwup_apply(input_firmware, mmc_device) < 0)
+        if (fwup_apply(input_firmware, task, mmc_device) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;

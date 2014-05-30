@@ -60,7 +60,7 @@ Usage: fwup [options]
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -q   Quiet
-  -t <task> Task to apply within the firmware update
+  -t <task> Task to apply within the firmware update package
   -v   Print version and exit
   -y   Accept automatically found memory card when applying a firmware update
 
@@ -129,7 +129,7 @@ Scope                | Description
 ---------------------|------------
 file-resource        | Defines a reference to a file that should be included in the archive
 mbr                  | Defines the master boot record contents on the destination
-update               | Defines a firmware update task (referenced using -t from the command line)
+task                 | Defines a firmware update task (referenced using -t from the command line)
 
 ## file-resource
 
@@ -181,13 +181,14 @@ mbr mbr-a {
 }
 ```
 
-## update
+## task
 
-The `update` section specifies a firmware update task. These sections are the main part of the
+The `task` section specifies a firmware update task. These sections are the main part of the
 firmware update archive since they describe the conditions upon which an update is applied
-and the steps to apply the update. Each `update` section must have a name, but the names do
-not need to be unique. When multiple `update` sections with the same name exist, they will
-be checked one-by-one for the first one that applies to the target configuration. This can
+and the steps to apply the update. Each `task` section must have a unique name, but when searching
+for a task, the firmware update tool only does a prefix match. This lets you define multiple tasks
+that can be evaluated based on conditions on the target hardware. The first matching task is the
+one that gets applied. This can
 be useful if the upgrade process is different based on the version of firmware currently
 on the target, the target architecture, etc. The following table lists the supported
 constraints:
@@ -199,13 +200,13 @@ require-partition1-offset     | Require that the block offset of partition 1 be 
 
 *Many more constraints to be added as needed*
 
-Each update can have options to change how it is applied:
+Each task can have options to change how it is applied:
 
 Option                        | Description
 ------------------------------|------------
 verify-on-the-fly             | If `true`, the files are verified as they are written to the media. This speeds up processing and reduces memory in many cases.
 
-The remainder of the `update` section is a list of event handlers. Event handlers are
+The remainder of the `task` section is a list of event handlers. Event handlers are
 organized as scopes. An event handler matches during the application of a firmware update
 when an event occurs. Events include initialization, completion, errors, and files being
 decompressed from the archive. Since archives are processed in a streaming manner, the
@@ -215,7 +216,7 @@ sections are specified in the desired order. The following table lists supported
 
 Event                         | Description
 ------------------------------|------------
-on-init                       | First event sent when the update is applied
+on-init                       | First event sent when the task is applied
 on-finish                     | Final event sent assuming no errors are detected during event processing
 on-error                      | Sent if an error occurs so that intermediate files can be cleaned up
 on-resource <resource name>   | Sent as events occur. Currently, this is sent as `file-resources` are processed from the archive. If `verify-on-the-fly` is set, then this event is sent at the start of the file. Otherwise, it is sent when the file has been read and verified completely.
