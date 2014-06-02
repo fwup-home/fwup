@@ -168,3 +168,62 @@ int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4])
 
     return 0;
 }
+
+static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, int *found_partitions)
+{
+    cfg_t *partition;
+    int i = 0;
+    int found = 0;
+
+    memset(partitions, 0, 4 * sizeof(struct mbr_partition));
+
+    while ((partition = cfg_getnsec(cfg, "partition", i++)) != NULL) {
+        int partition_ix = strtoul(cfg_title(partition), NULL, 0);
+        if (partition_ix < 0 || partition_ix >= 4)
+            ERR_RETURN("partition must be numbered 0 through 3");
+
+        if (found & (1 << partition_ix))
+            ERR_RETURN("invalid or duplicate partition number found");
+        found = found | (1 << partition_ix);
+
+        partitions[partition_ix].partition_type = cfg_getint(partition, "type");
+        partitions[partition_ix].block_offset = cfg_getint(partition, "block-offset");
+        partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
+
+        if (partitions[partition_ix].partition_type < 0 ||
+                partitions[partition_ix].block_offset < 0 ||
+                partitions[partition_ix].block_count < 0)
+            ERR_RETURN("type, block-offset, and block-count must all be positive and specified");
+    }
+
+    if (found_partitions)
+        *found_partitions = found;
+    return 0;
+}
+
+int mbr_verify_cfg(cfg_t *cfg)
+{
+    int found_partitions = 0;
+    struct mbr_partition partitions[4];
+
+    if (mbr_cfg_to_partitions(cfg, partitions, &found_partitions) < 0)
+        return -1;
+
+    if (found_partitions == 0)
+        ERR_RETURN("empty partition table?");
+
+    return mbr_verify(partitions);
+}
+
+
+int mbr_create_cfg(cfg_t *cfg, uint8_t output[512])
+{
+    struct mbr_partition partitions[4];
+
+    if (mbr_cfg_to_partitions(cfg, partitions, NULL) < 0)
+        return -1;
+
+    // TODO: support bootstrap
+
+    return mbr_create(partitions, NULL, output);
+}

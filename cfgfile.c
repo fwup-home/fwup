@@ -128,46 +128,8 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
         return -1;
     }
 
-    // TODO - validate bootstrap-code-path
-
-    cfg_t *partition;
-    int i = 0;
-    int found_partitions = 0;
-
-    struct mbr_partition partitions[4];
-    memset(partitions, 0, sizeof(partitions));
-
-    while ((partition = cfg_getnsec(sec, "partition", i++)) != NULL) {
-        int partition_ix = strtoul(cfg_title(partition), NULL, 0);
-        if (partition_ix < 0 || partition_ix >= 4) {
-            cfg_error(cfg, "partition must be numbered 0 through 3");
-            return -1;
-        }
-        if (found_partitions & (1 << partition_ix)) {
-            cfg_error(cfg, "invalid or duplicate partition number found");
-            return -1;
-        }
-        found_partitions = found_partitions | (1 << partition_ix);
-
-        partitions[partition_ix].partition_type = cfg_getint(partition, "type");
-        partitions[partition_ix].block_offset = cfg_getint(partition, "block-offset");
-        partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
-
-        if (partitions[partition_ix].partition_type < 0 ||
-                partitions[partition_ix].block_offset < 0 ||
-                partitions[partition_ix].block_count < 0) {
-            cfg_error(cfg, "type, block-offset, and block-count must all be positive and specified");
-            return -1;
-        }
-    }
-
-    if (found_partitions == 0)
-        cfg_error(cfg, "empty partition table?");
-
-    if (mbr_verify(partitions) < 0) {
+    if (mbr_verify_cfg(sec) < 0)
         cfg_error(cfg, last_error());
-        return -1;
-    }
 
     return 0;
 }

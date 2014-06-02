@@ -181,19 +181,18 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
         ERR_RETURN("Expecting meta.conf to be first file");
 
-    cfg_t *cfg;
-    if (cfgfile_parse_fw_ae(a, ae, &cfg) < 0)
+    if (cfgfile_parse_fw_ae(a, ae, &fctx.cfg) < 0)
         return -1;
 
-    if (set_time_from_cfg(cfg) < 0)
+    if (set_time_from_cfg(fctx.cfg) < 0)
         return -1;
 
-    cfg_t *task = find_task(cfg, task_prefix);
-    if (task == 0)
+    fctx.task = find_task(fctx.cfg, task_prefix);
+    if (fctx.task == 0)
         ERR_RETURN("Couldn't find applicable task");
 
     fctx.type = FUN_CONTEXT_INIT;
-    if (run_event(&fctx, task, "on-init", NULL) < 0)
+    if (run_event(&fctx, fctx.task, "on-init", NULL) < 0)
         return -1;
 
     fctx.type = FUN_CONTEXT_FILE;
@@ -204,14 +203,14 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
             continue;
 
         const char *resource_name = &filename[5];
-        if (run_event(&fctx, task, "on-resource", resource_name) < 0)
+        if (run_event(&fctx, fctx.task, "on-resource", resource_name) < 0)
             return -1;
     }
 
     archive_read_free(a);
 
     fctx.type = FUN_CONTEXT_FINISH;
-    if (run_event(&fctx, task, "on-finish", NULL) < 0)
+    if (run_event(&fctx, fctx.task, "on-finish", NULL) < 0)
         return -1;
 
     // Flush the FATFS code in case it was used.

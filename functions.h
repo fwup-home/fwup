@@ -39,8 +39,11 @@ struct fun_context {
     int argc;
     const char *argv[FUN_MAX_ARGS];
 
-    // If the context supplies data, this is the expected byte count
-    size_t expected_bytecount;
+    // Root meta.conf configuration
+    cfg_t *cfg;
+
+    // Task configuration
+    cfg_t *task;
 
     // If the context supplies data, this function gets it. If read returns 0,
     // no more data is available. If <0, then there's an error.

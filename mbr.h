@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <confuse.h>
 
 struct mbr_partition {
     bool boot_flag;     // true to mark as boot partition
@@ -26,6 +27,9 @@ struct mbr_partition {
     int block_offset;
     int block_count;
 };
+
+int mbr_verify_cfg(cfg_t *cfg);
+int mbr_create_cfg(cfg_t *cfg, uint8_t output[512]);
 
 int mbr_create(const struct mbr_partition partitions[4], const uint8_t *bootstrap, uint8_t output[512]);
 int mbr_verify(const struct mbr_partition partitions[4]);

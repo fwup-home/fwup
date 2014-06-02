@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "fatfs.h"
+#include "mbr.h"
 
 static int raw_write_validate(struct fun_context *fctx);
 static int raw_write_run(struct fun_context *fctx);
@@ -308,9 +309,26 @@ int mbr_write_validate(struct fun_context *fctx)
     if (fctx->argc != 2)
         ERR_RETURN("mbr_write requires an mbr");
 
+    const char *mbr_name = fctx->argv[1];
+    cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
+
+    if (!mbrsec)
+        ERR_RETURN("mbr_write can't find mbr reference");
+
     return 0;
 }
 int mbr_write_run(struct fun_context *fctx)
 {
+    const char *mbr_name = fctx->argv[1];
+    cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
+    uint8_t buffer[512];
+
+    if (mbr_create_cfg(mbrsec, buffer) < 0)
+        return -1;
+
+    ssize_t written = pwrite(fctx->output_fd, buffer, 512, 0);
+    if (written != 512)
+        ERR_RETURN("unexpected error writing to destination");
+
     return 0;
 }
