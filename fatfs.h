@@ -26,11 +26,11 @@
 struct tm;
 int fatfs_set_time(struct tm *tmp);
 
-int fatfs_mkfs(FILE *fatfp, int block_count);
-int fatfs_mkdir(FILE *fatfp, const char *dir);
-int fatfs_mv(FILE *fatfp, const char *from_name, const char *to_name);
-int fatfs_rm(FILE *fatfp, const char *filename);
-int fatfs_pwrite(FILE *fatfp, const char *filename, int offset, const char *buffer, size_t size);
+int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count);
+int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir);
+int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name);
+int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename);
+int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset, const char *filename, int offset, const char *buffer, size_t size);
 int fatfs_closefs();
 
 #endif // FATFS_H

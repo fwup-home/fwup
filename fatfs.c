@@ -26,6 +26,7 @@
 
 // Globals since that's how the FatFS code like to work.
 static FILE *fatfp_ = NULL;
+static size_t fatfp_offset_ = 0;
 static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
@@ -68,20 +69,21 @@ static FRESULT fatfs_error(FRESULT rc)
 }
 
 #define CHECK(CMD) do { if (fatfs_error(CMD) != FR_OK) return -1; } while (0)
-#define MAYBE_MOUNT(FATFP) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; CHECK(f_mount(&fs_, "", 0)); } } while (0)
+#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = OFFSET; CHECK(f_mount(&fs_, "", 0)); } } while (0)
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
  * @param fatfp the file to contain the raw filesystem data
+ * @param fatfp_offset the offset within fatfp for where to start
  * @param block_count how many 512 blocks
  * @return 0 on success
  */
-int fatfs_mkfs(FILE *fatfp, int block_count)
+int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count)
 {
     // The block count is only used for f_mkfs according to the docs.
     block_count_ = block_count;
 
-    MAYBE_MOUNT(fatfp);
+    MAYBE_MOUNT(fatfp, fatfp_offset);
     CHECK(f_mkfs("", 1, 0));
 
     return 0;
@@ -101,12 +103,13 @@ static void close_open_files()
 /**
  * @brief fatfs_mkdir Make a directory
  * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
  * @param dir the name of the directory
  * @return 0 on success
  */
-int fatfs_mkdir(FILE *fatfp, const char *dir)
+int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir)
 {
-    MAYBE_MOUNT(fatfp);
+    MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
     CHECK(f_mkdir(dir));
     return 0;
@@ -115,12 +118,13 @@ int fatfs_mkdir(FILE *fatfp, const char *dir)
 /**
  * @brief fatfs_rm Delete a file
  * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
  * @param filename the name of the file
  * @return 0 on success
  */
-int fatfs_rm(FILE *fatfp, const char *filename)
+int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename)
 {
-    MAYBE_MOUNT(fatfp);
+    MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
     CHECK(f_unlink(filename));
     return 0;
@@ -128,21 +132,22 @@ int fatfs_rm(FILE *fatfp, const char *filename)
 /**
  * @brief fatfs_mv rename a file
  * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
  * @param from_name original filename
  * @param to_name new filename
  * @return 0 on success
  */
-int fatfs_mv(FILE *fatfp, const char *from_name, const char *to_name)
+int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name)
 {
-    MAYBE_MOUNT(fatfp);
+    MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
     CHECK(f_rename(from_name, to_name));
     return 0;
 }
 
-int fatfs_pwrite(FILE *fatfp, const char *filename, int offset, const char *buffer, size_t size)
+int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset,const char *filename, int offset, const char *buffer, size_t size)
 {
-    MAYBE_MOUNT(fatfp);
+    MAYBE_MOUNT(fatfp, fatfp_offset);
 
     // Check if this is the same file as a previous pwrite call
     if (current_file_ && strcmp(current_file_, filename) != 0)
@@ -194,7 +199,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    size_t byte_offset = sector * 512;
+    size_t byte_offset = fatfp_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
     if (fseek(fatfp_, byte_offset, SEEK_SET) < 0)
@@ -218,7 +223,7 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    size_t byte_offset = sector * 512;
+    size_t byte_offset = fatfp_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
     if (fseek(fatfp_, byte_offset, SEEK_SET) < 0)

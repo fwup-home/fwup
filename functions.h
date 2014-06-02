@@ -55,7 +55,7 @@ struct fun_context {
     void (*report_progress)(struct fun_context *fctx, int progress_units);
 
     // Callback for getting a file handle for use with the fatfs code.
-    int (*fatfs_ptr)(struct fun_context *fctx, int64_t block_offset, FILE **fatfp);
+    int (*fatfs_ptr)(struct fun_context *fctx, int64_t block_offset, bool going_to_call_mkfs, FILE **fatfp, size_t *fatfp_offset);
 
     // Callback for creating a subarchive
     int (*subarchive_ptr)(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created);

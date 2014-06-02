@@ -120,7 +120,7 @@ meta-product         | product name
 meta-description     | Description of product or firmware update
 meta-version         | Firmware update version
 meta-author          | Author or company behind the update
-meta-creation-date   | Timestamp when the update was created
+meta-creation-date   | Timestamp when the update was created (automatically added)
 
 After setting the above options, it is necessary to create scopes for other options. The
 currently available scopes are:

@@ -197,10 +197,11 @@ int fat_mkfs_validate(struct fun_context *fctx)
 int fat_mkfs_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+    size_t offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), true, &fatfp, &offset) < 0)
         return -1;
 
-    return fatfs_mkfs(fatfp, strtoul(fctx->argv[2], NULL, 0));
+    return fatfs_mkfs(fatfp, offset, strtoul(fctx->argv[2], NULL, 0));
 }
 
 int fat_write_validate(struct fun_context *fctx)
@@ -218,8 +219,12 @@ int fat_write_validate(struct fun_context *fctx)
 int fat_write_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+    size_t fatfp_offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
         return -1;
+
+    // enforce truncation semantics if the file exists
+    fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
 
     for (;;) {
         int64_t offset;
@@ -233,7 +238,7 @@ int fat_write_run(struct fun_context *fctx)
         if (len == 0)
             break;
 
-        if (fatfs_pwrite(fatfp, fctx->argv[2], (int) offset, buffer, len) < 0)
+        if (fatfs_pwrite(fatfp, fatfp_offset, fctx->argv[2], (int) offset, buffer, len) < 0)
             return -1;
     }
     return 0;
@@ -250,11 +255,12 @@ int fat_mv_validate(struct fun_context *fctx)
 int fat_mv_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+    size_t fatfp_offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
         return -1;
 
     // TODO: Ignore the error code here??
-    fatfs_mv(fatfp, fctx->argv[2], fctx->argv[3]);
+    fatfs_mv(fatfp, fatfp_offset, fctx->argv[2], fctx->argv[3]);
 
     return 0;
 }
@@ -272,11 +278,12 @@ int fat_rm_validate(struct fun_context *fctx)
 int fat_rm_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp) < 0)
+    size_t fatfp_offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
         return -1;
 
     // TODO: Ignore the error code here??
-    fatfs_rm(fatfp, fctx->argv[2]);
+    fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
 
     return 0;
 }
