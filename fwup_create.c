@@ -18,6 +18,7 @@
 #include "cfgfile.h"
 #include "util.h"
 #include "sha2.h"
+#include "fwfile.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,76 +58,16 @@ static int compute_file_metadata(cfg_t *cfg)
     return 0;
 }
 
-static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
-{
-    FILE *fp = open_memstream(output, len);
-    cfg_print(cfg, fp);
-    fclose(fp);
-}
-
-static void add_meta_conf(cfg_t *cfg, struct archive *a)
-{
-    char *configtxt;
-    size_t configtxt_len;
-
-    cfg_to_string(cfg, &configtxt, &configtxt_len);
-
-    struct archive_entry *entry = archive_entry_new();
-    archive_entry_set_pathname(entry, "meta.conf");
-    archive_entry_set_size(entry, configtxt_len);
-    archive_entry_set_filetype(entry, AE_IFREG);
-    archive_entry_set_perm(entry, 0644);
-    archive_write_header(a, entry);
-    archive_write_data(a, configtxt, configtxt_len);
-    archive_entry_free(entry);
-
-    free(configtxt);
-}
-
 static int add_file_resources(cfg_t *cfg, struct archive *a)
 {
     cfg_t *sec;
     int i = 0;
 
-    size_t buffer_len = 64 * 1024;
-    char *buffer = (char *) malloc(buffer_len);
-
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *hostpath = cfg_getstr(sec, "host-path");
-        if (!hostpath)
-            ERR_RETURN("host-path must be set for file-report");
-
-        FILE *fp = fopen(hostpath, "rb");
-        if (!fp)
-            ERR_RETURN("can't open file-resource");
-
-        size_t total_len = cfg_getint(sec, "length");
-        struct archive_entry *entry = archive_entry_new();
-
-        char destpath[256];
-        sprintf(destpath, "data/%s", cfg_title(sec));
-        archive_entry_set_pathname(entry, destpath);
-        archive_entry_set_size(entry, total_len);
-        archive_entry_set_filetype(entry, AE_IFREG);
-        archive_entry_set_perm(entry, 0644);
-        archive_write_header(a, entry);
-
-        size_t len = fread(buffer, 1, buffer_len, fp);
-        size_t total_read = len;
-        while (len > 0) {
-            ssize_t written = archive_write_data(a, buffer, len);
-            if (written != (ssize_t) len)
-                ERR_RETURN("error writing to archive");
-
-            len = fread(buffer, 1, buffer_len, fp);
-            total_read += len;
-        }
-        if (total_read != total_len)
-            ERR_RETURN("read an unexpected amount of data");
-
-        archive_entry_free(entry);
+        if (fwfile_add_local_file(a, cfg_title(sec), hostpath) < 0)
+            return -1;
     }
-    free(buffer);
 
     return 0;
 }
@@ -136,9 +77,10 @@ static int create_archive(cfg_t *cfg, const char *filename)
     struct archive *a = archive_write_new();
     archive_write_set_format_zip(a);
     if (archive_write_open_filename(a, filename) != ARCHIVE_OK)
-        return -1;
+        ERR_RETURN("error creating archive");
 
-    add_meta_conf(cfg, a);
+    if (fwfile_add_meta_conf(cfg, a) < 0)
+        return -1;
 
     if (add_file_resources(cfg, a) < 0)
         return -1;
@@ -153,6 +95,7 @@ int fwup_create(const char *configfile, const char *output_firmware)
 {
     cfg_t *cfg;
 
+    // Set the NOW environment variable for use by the config script.
     set_now_time();
 
     // Parse configuration
@@ -160,6 +103,7 @@ int fwup_create(const char *configfile, const char *output_firmware)
         return -1;
 
     // Force the creation date to be set
+    cfg_setstr(cfg, "meta-creation-date", get_creation_timestamp());
 
     // Compute all metadata
     if (compute_file_metadata(cfg))

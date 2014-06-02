@@ -76,10 +76,14 @@ static int run_event(struct fun_context *fctx, cfg_t *task, const char *event_ty
 struct fwup_data
 {
     struct archive *a;
-    FILE *fatfs;
+
+    FILE *fatfp;
     int64_t current_fatfs_block_offset;
     char *fatfs_buffer;
     size_t fatfs_size;
+
+    struct archive *subarchive;
+    char *subarchive_path;
 };
 
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset)
@@ -97,18 +101,18 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 }
 
-static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FILE **fatfs)
+static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FILE **fatfp)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
     // Check if this is the first time or if block offset changed
-    if (!p->fatfs || block_offset != p->current_fatfs_block_offset) {
+    if (!p->fatfp || block_offset != p->current_fatfs_block_offset) {
 
         // If the FATFS is being used, then flush it to disk
-        if (p->fatfs) {
+        if (p->fatfp) {
             fatfs_closefs();
-            fclose(p->fatfs);
-            p->fatfs = NULL;
+            fclose(p->fatfp);
+            p->fatfp = NULL;
 
             ssize_t rc = pwrite(fctx->output_fd, p->fatfs_buffer, p->fatfs_size, p->current_fatfs_block_offset * 512);
             free(p->fatfs_buffer);
@@ -121,14 +125,52 @@ static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FI
         // everything to disk, but not perform an operation.
         if (block_offset >= 0) {
             p->current_fatfs_block_offset = block_offset;
-            p->fatfs = open_memstream(&p->fatfs_buffer, &p->fatfs_size);
-            if (!p->fatfs)
+            p->fatfp = open_memstream(&p->fatfs_buffer, &p->fatfs_size);
+            if (!p->fatfp)
                 ERR_RETURN("Error creating buffer for FATFS");
         }
     }
 
-    if (fatfs)
-        *fatfs = p->fatfs;
+    if (fatfp)
+        *fatfp = p->fatfp;
+    return 0;
+}
+
+static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created)
+{
+    struct fwup_data *p = (struct fwup_data *) fctx->cookie;
+
+    if (created)
+        *created = false;
+
+    // Check if this is the first time to get this archive or if the path
+    // has changed.
+    if (!p->subarchive || strcmp(archive_path, p->subarchive_path) != 0) {
+        if (p->subarchive) {
+            archive_write_close(p->subarchive);
+            archive_write_free(p->subarchive);
+            p->subarchive = NULL;
+            free(p->subarchive_path);
+            p->subarchive_path = NULL;
+        }
+
+        if (archive_path) {
+            p->subarchive = archive_write_new();
+            archive_write_set_format_zip(p->subarchive);
+            if (archive_write_open_filename(p->subarchive, archive_path) != ARCHIVE_OK) {
+                archive_write_free(p->subarchive);
+                p->subarchive = NULL;
+                ERR_RETURN("error creating archive");
+            }
+
+            p->subarchive_path = strdup(archive_path);
+            if (created)
+                *created = true;
+        }
+
+    }
+    if (a)
+        *a = p->subarchive;
     return 0;
 }
 
@@ -155,6 +197,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     memset(&fctx, 0, sizeof(fctx));
     fctx.output_fd = STDOUT_FILENO;
     fctx.fatfs_ptr = fatfs_ptr_callback;
+    fctx.subarchive_ptr = subarchive_ptr_callback;
 
     struct fwup_data private_data;
     memset(&private_data, 0, sizeof(private_data));
@@ -215,6 +258,10 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 
     // Flush the FATFS code in case it was used.
     if (fatfs_ptr_callback(&fctx, -1, NULL) < 0)
+        return -1;
+
+    // Flush an subarchive that's being built.
+    if (subarchive_ptr_callback(&fctx, "", NULL, NULL) < 0)
         return -1;
 
     close(fctx.output_fd);

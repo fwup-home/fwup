@@ -24,6 +24,9 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+// Global variable for passing the top level cfg pointer through libconfuse
+// This is needed for validating some of the function calls.
+static cfg_t *toplevel_cfg;
 
 /* function callback
  */
@@ -32,6 +35,8 @@ static int cb_func(enum fun_context_type ctype, cfg_t *cfg, cfg_opt_t *opt, int 
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.type = ctype;
+    fctx.cfg = toplevel_cfg;
+    fctx.task = cfg;
 
     // Convert to the normal argc/argv
     fctx.argc = argc + 1;
@@ -287,15 +292,16 @@ int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
 
 int cfgfile_parse_file(const char *filename, cfg_t **cfg)
 {
-    *cfg = cfg_init(opts, 0);
+    toplevel_cfg = cfg_init(opts, 0);
 
     /* set a validating callback function for sections */
-    cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
-    cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
-    cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
-    if (cfg_parse(*cfg, filename) != 0)
+    cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
+    cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
+    cfg_set_validate_func(toplevel_cfg, "task|on-init", cb_validate_on_init);
+    if (cfg_parse(toplevel_cfg, filename) != 0)
         ERR_RETURN("Error parsing configuration file");
 
+    *cfg = toplevel_cfg;
     return 0;
 }
 

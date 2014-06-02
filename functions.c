@@ -25,6 +25,7 @@
 
 #include "fatfs.h"
 #include "mbr.h"
+#include "fwfile.h"
 
 static int raw_write_validate(struct fun_context *fctx);
 static int raw_write_run(struct fun_context *fctx);
@@ -289,6 +290,17 @@ int fw_create_validate(struct fun_context *fctx)
 }
 int fw_create_run(struct fun_context *fctx)
 {
+    struct archive *a;
+    bool created;
+    if (fctx->subarchive_ptr(fctx, fctx->argv[1], &a, &created) < 0)
+        return -1;
+
+    if (!created)
+        ERR_RETURN("fw_create called on archive that was already open");
+
+    if (fwfile_add_meta_conf(fctx->cfg, a) < 0)
+        return -1;
+
     return 0;
 }
 
@@ -301,6 +313,17 @@ int fw_add_local_file_validate(struct fun_context *fctx)
 }
 int fw_add_local_file_run(struct fun_context *fctx)
 {
+    struct archive *a;
+    bool created;
+    if (fctx->subarchive_ptr(fctx, fctx->argv[1], &a, &created) < 0)
+        return -1;
+
+    if (created)
+        ERR_RETURN("call fw_create before calling fw_add_local_file");
+
+    if (fwfile_add_local_file(a, fctx->argv[2], fctx->argv[3]) < 0)
+        return -1;
+
     return 0;
 }
 

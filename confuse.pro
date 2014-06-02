@@ -28,7 +28,8 @@ SOURCES += \
     functions.c \
     fwup_apply.c \
     fwup_list.c \
-    fwup_metadata.c
+    fwup_metadata.c \
+    fwfile.c
 
 LIBS += -lconfuse -larchive
 
@@ -45,7 +46,8 @@ HEADERS += \
     functions.h \
     fwup_apply.h \
     fwup_list.h \
-    fwup_metadata.h
+    fwup_metadata.h \
+    fwfile.h
 
 OTHER_FILES += \
     fwupdate.conf \
