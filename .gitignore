@@ -15,3 +15,5 @@ configure
 depcomp
 install-sh
 missing
+.dirstamp
+fwup.pro.user

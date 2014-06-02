@@ -1,14 +1,10 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2014-05-21T16:46:47
-#
-#-------------------------------------------------
+# This file is handy for debugging fwup in QtCreator
 
 QT       += core
 
 QT       -= gui
 
-TARGET = confuse
+TARGET = fwup
 CONFIG   += console
 CONFIG   -= app_bundle
 
