@@ -27,14 +27,11 @@
 #include "fwup_create.h"
 #include "fwup_list.h"
 #include "fwup_metadata.h"
+#include "config.h"
 
 // Global options
 static bool numeric_progress = false;
 static bool quiet = false;
-
-//FIXME!!
-#define PACKAGE_NAME "fwup"
-#define PACKAGE_VERSION "0.1"
 
 static void print_version()
 {
@@ -43,6 +40,8 @@ static void print_version()
 
 static void print_usage(const char *argv0)
 {
+    print_version();
+    fprintf(stderr, "\n");
     fprintf(stderr, "Usage: %s [options]\n", argv0);
     fprintf(stderr, "  -a   Apply the firmware update\n");
     fprintf(stderr, "  -c   Create the firmware update\n");
@@ -93,7 +92,7 @@ int main(int argc, char **argv)
     }
 
     int opt;
-    while ((opt = getopt(argc, argv, "acd:f:i:lmno:pqt:yz")) != -1) {
+    while ((opt = getopt(argc, argv, "acd:f:i:lmno:pqt:vyz")) != -1) {
         switch (opt) {
         case 'a':
             command = CMD_APPLY;
