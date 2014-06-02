@@ -29,17 +29,15 @@ features:
 
   8. Firmware archive digital signature creation and verification (Not implemented yet)
 
+# Building
 
-## Creating a firmware update
+You'll need [libconfuse](http://www.nongnu.org/confuse/) and
+[libarchive](http://libarchive.org/) installed to build. On Ubuntu and Debian,
+you can run:
 
+    sudo apt-get install libarchive-dev libconfuse-dev
 
-## Applying a firmware update
-
-
-# Building from source
-(TBD)
-
-Clone or download the source code and run the following:
+Once that completes, clone or download the source code and run the following:
 
     ./autogen.sh
     ./configure
