@@ -16,38 +16,38 @@ TEMPLATE = app
 
 
 SOURCES += \
-    fwup.c \
-    sha2.c \
-    fatfs.c \
-    fatfs/src/ff.c \
-    mbr.c \
-    cfgfile.c \
-    util.c \
-    mmc.c \
-    fwup_create.c \
-    functions.c \
-    fwup_apply.c \
-    fwup_list.c \
-    fwup_metadata.c \
-    fwfile.c
+    src/fwup.c \
+    3rdparty/sha2.c \
+    src/fatfs.c \
+    3rdparty/fatfs/src/ff.c \
+    src/mbr.c \
+    src/cfgfile.c \
+    src/util.c \
+    src/mmc.c \
+    src/fwup_create.c \
+    src/functions.c \
+    src/fwup_apply.c \
+    src/fwup_list.c \
+    src/fwup_metadata.c \
+    src/fwfile.c
 
 LIBS += -lconfuse -larchive
 
 HEADERS += \
-    sha2.h \
-    fatfs.h \
-    fatfs/src/ff.h \
-    fatfs/src/ffconf.h \
-    mbr.h \
-    cfgfile.h \
-    util.h \
-    mmc.h \
-    fwup_create.h \
-    functions.h \
-    fwup_apply.h \
-    fwup_list.h \
-    fwup_metadata.h \
-    fwfile.h
+    src/sha2.h \
+    3rdparty/src/fatfs.h \
+    3rdparty/fatfs/src/ff.h \
+    3rdparty/fatfs/src/ffconf.h \
+    src/mbr.h \
+    src/cfgfile.h \
+    src/util.h \
+    src/mmc.h \
+    src/fwup_create.h \
+    src/functions.h \
+    src/fwup_apply.h \
+    src/fwup_list.h \
+    src/fwup_metadata.h \
+    src/fwfile.h
 
 OTHER_FILES += \
     fwupdate.conf \

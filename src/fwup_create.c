@@ -17,7 +17,7 @@
 #include "fwup_create.h"
 #include "cfgfile.h"
 #include "util.h"
-#include "sha2.h"
+#include "3rdparty/sha2.h"
 #include "fwfile.h"
 
 #include <stdlib.h>
