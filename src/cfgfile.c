@@ -84,18 +84,33 @@ static int cb_on_resource_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
     return cb_func(FUN_CONTEXT_FILE, cfg, opt, argc, argv);
 }
 
-static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
-    /* at least one parameter is required */
     if(argc != 2) {
         cfg_error(cfg, "Too few parameters for the '%s' function",
                   opt->name);
         return -1;
     }
 
-    // Update the environment. (Overwrite since it is easy for the
-    // user to specifya non-overwriting version by supplying a default)
+    // Overwrite the environment.
     if (setenv(argv[0], argv[1], 1) < 0) {
+        cfg_error(cfg, "setenv failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    // Non-overwriting version of define
+    if(argc != 2) {
+        cfg_error(cfg, "Too few parameters for the '%s' function",
+                  opt->name);
+        return -1;
+    }
+
+    if (setenv(argv[0], argv[1], 0) < 0) {
         cfg_error(cfg, "setenv failed");
         return -1;
     }
@@ -136,68 +151,6 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     if (mbr_verify_cfg(sec) < 0)
         cfg_error(cfg, last_error());
 
-    return 0;
-}
-
-
-static int cb_validate_on_init(cfg_t *cfg, cfg_opt_t *opt)
-{
-    (void) cfg;
-    (void) opt;
-#if 0
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-
-    int i;
-    for(i = 0; i < cfg_opt_size(opt); i++)
-    {
-        sec = cfg_opt_getnsec(opt, i);
-        cfg_indent(fp, indent);
-        if(is_set(CFGF_TITLE, opt->flags))
-            fprintf(fp, "%s \"%s\" {\n", opt->name, cfg_title(sec));
-        else
-            fprintf(fp, "%s {\n", opt->name);
-        cfg_print_indent(sec, fp, indent + 1);
-        cfg_indent(fp, indent);
-        fprintf(fp, "}\n");
-    }
-
-    int i;
-    for (i = 0; i < cfg_opt_size(opt); i++) {
-        cfg_t *subsec = cfg_opt_getnsec()
-        fprintf(stderr, "%s\n", opt->name);
-        int j;
-        for (j = 0; opt->subopts[j].name; j++) {
-            fprintf(stderr, "  %s\n", opt->subopts[j].name);
-        }
-    }
-#endif
-
-#if 0
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-    if(!sec)
-    {
-        cfg_error(cfg, "section is NULL!?");
-        return -1;
-    }
-
-
-    int i;
-    for (i = 0; sec->opts[i].name; i++) {
-        cfg_opt_t *funcall = &sec->opts[i];
-        if (funcall->type == CFGT_FUNC) {
-            int argc;
-            char **argv;
-            if (lookup_function(funcall, &argc, &argv) < 0) {
-                cfg_error(cfg, "What? %s", funcall->name);
-                return -1;
-            }
-            if (fun_validate(argc, argv) < 0) {
-                cfg_error(cfg, last_error());
-                return -1;
-            }
-        }
-    }
-#endif
     return 0;
 }
 
@@ -262,14 +215,17 @@ cfg_opt_t opts[] = {
     CFG_STR("meta-description", 0, CFGF_NONE),
     CFG_STR("meta-version", 0, CFGF_NONE),
     CFG_STR("meta-author", 0, CFGF_NONE),
+    CFG_STR("meta-platform", 0, CFGF_NONE),
+    CFG_STR("meta-architecture", 0, CFGF_NONE),
     CFG_STR("meta-creation-date", 0, CFGF_NONE),
 
     CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
     CFG_FUNC("define", cb_define),
+    CFG_FUNC("define!", cb_define_bang),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-    //CFG_FUNC("include", &cfg_include),
+    CFG_FUNC("include", &cfg_include),
     CFG_END()
 };
 
@@ -278,11 +234,12 @@ int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
 {
     *cfg = cfg_init(opts, 0);
 
-    /* set a validating callback function for sections */
+    // set a validating callback function for sections
     cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
 
-    cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
+    // Not erasing this, since I always forget the pipe syntax
+    //cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
 
     if (cfg_parse_buf(*cfg, buffer) != 0)
         ERR_RETURN("Error parsing configuration file");
@@ -294,13 +251,18 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
 {
     toplevel_cfg = cfg_init(opts, 0);
 
-    /* set a validating callback function for sections */
+    // set a validating callback function for sections
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
-    cfg_set_validate_func(toplevel_cfg, "task|on-init", cb_validate_on_init);
-    if (cfg_parse(toplevel_cfg, filename) != 0)
+    //cfg_set_validate_func(toplevel_cfg, "task|on-init", cb_validate_on_init);
+    switch (cfg_parse(toplevel_cfg, filename)) {
+    case CFG_SUCCESS:
+        break;
+    case CFG_FILE_ERROR:
+        ERR_RETURN("Error opening configuration file");
+    case CFG_PARSE_ERROR:
         ERR_RETURN("Error parsing configuration file");
-
+    }
     *cfg = toplevel_cfg;
     return 0;
 }

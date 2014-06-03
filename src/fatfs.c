@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Globals since that's how the FatFS code like to work.
+// Globals since that's how the FatFS code likes to work.
 static FILE *fatfp_ = NULL;
 static size_t fatfp_offset_ = 0;
 static int block_count_ = 0;

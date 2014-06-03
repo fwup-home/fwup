@@ -237,7 +237,6 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 {
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
-    fctx.output_fd = STDOUT_FILENO;
     fctx.fatfs_ptr = fatfs_ptr_callback;
     fctx.subarchive_ptr = subarchive_ptr_callback;
 
@@ -245,11 +244,9 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     memset(&private_data, 0, sizeof(private_data));
     fctx.cookie = &private_data;
 
-    if (output_filename) {
-        fctx.output_fd = open(output_filename, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
-        if (fctx.output_fd < 0)
-            ERR_RETURN("Cannot open output");
-    }
+    fctx.output_fd = open(output_filename, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
+    if (fctx.output_fd < 0)
+        ERR_RETURN("Cannot open output");
 
     struct archive *a = archive_read_new();
     private_data.a = a;

@@ -97,14 +97,14 @@ It is possible to provide default values for environment variables using the `:-
     key = ${ANY_ENVIRONMENT_VARIABLE:-adefault}
 
 Inside configuration files, it can be useful to define constants that are used throughout
-the file. All constants are stored as environment variables and overwrite environment
-variables with the same name.
+the file. All constants are stored as environment variables. By default, definitions do
+not overwrite environment variables with the same name:
 
     define(MY_CONSTANT, 5)
 
-To define a constant that does not override the environment, do the following:
+To define a constant that does overrides the environment, use `define!`:
 
-    define(MY_CONSTANT, ${MY_CONSTANT:-5})
+    define!(MY_CONSTANT, "Can't override this")
 
 
 ## Global scope
@@ -118,6 +118,8 @@ meta-product         | product name
 meta-description     | Description of product or firmware update
 meta-version         | Firmware update version
 meta-author          | Author or company behind the update
+meta-platform        | Platform that this update runs on (e.g., rpi or bbb)
+meta-architecture    | Platform architectures (e.g., arm)
 meta-creation-date   | Timestamp when the update was created (automatically added)
 
 After setting the above options, it is necessary to create scopes for other options. The

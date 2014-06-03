@@ -47,4 +47,5 @@ HEADERS += \
 
 OTHER_FILES += \
     fwupdate.conf \
-    README.md
+    README.md \
+    TODO.md

@@ -32,6 +32,8 @@ static void list_metadata(cfg_t *cfg)
     list_one(cfg, "meta-description");
     list_one(cfg, "meta-version");
     list_one(cfg, "meta-author");
+    list_one(cfg, "meta-platform");
+    list_one(cfg, "meta-architecture");
     list_one(cfg, "meta-creation-date");
 }
 
