@@ -30,16 +30,33 @@
 
 #include "functions.h"
 #include "fatfs.h"
+#include "mbr.h"
 
-static bool task_is_applicable(cfg_t *task)
+static bool task_is_applicable(cfg_t *task, int output_fd)
 {
-    // TODO - check that the parameters set on the task are applicable to the current setup.
-    (void) task;
+    int part1_offset = cfg_getint(task, "require-partition1-offset");
+    if (part1_offset >= 0) {
+        // Try to read the MBR. This won't work if the output
+        // isn't seekable, but that's ok, since this constraint would
+        // fail anyway.
+        uint8_t buffer[512];
+        ssize_t amount_read = pread(output_fd, buffer, 512, 0);
+        if (amount_read != 512)
+            return false;
 
+        struct mbr_partition partitions[4];
+        if (mbr_decode(buffer, partitions) < 0)
+            return false;
+
+        if (partitions[1].block_offset != part1_offset)
+            return false;
+    }
+
+    // all constraints pass, therefore, it's ok.
     return true;
 }
 
-static cfg_t *find_task(cfg_t *cfg, const char *task_prefix)
+static cfg_t *find_task(cfg_t *cfg, int output_fd, const char *task_prefix)
 {
     size_t task_len = strlen(task_prefix);
     cfg_t *task;
@@ -49,7 +66,7 @@ static cfg_t *find_task(cfg_t *cfg, const char *task_prefix)
         const char *name = cfg_title(task);
         if (strlen(name) >= task_len &&
                 memcmp(task_prefix, name, task_len) == 0 &&
-                task_is_applicable(task))
+                task_is_applicable(task, output_fd))
             return task;
     }
     return 0;
@@ -255,7 +272,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (set_time_from_cfg(fctx.cfg) < 0)
         return -1;
 
-    fctx.task = find_task(fctx.cfg, task_prefix);
+    fctx.task = find_task(fctx.cfg, fctx.output_fd, task_prefix);
     if (fctx.task == 0)
         ERR_RETURN("Couldn't find applicable task");
 

@@ -248,7 +248,7 @@ static cfg_opt_t task_on_resource_opts[] = {
     CFG_END()
 };
 static cfg_opt_t task_opts[] = {
-    CFG_INT("require-partition1-offset", 0, CFGF_NONE),
+    CFG_INT("require-partition1-offset", -1, CFGF_NONE),
     CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
     CFG_SEC("on-init", task_on_init_opts, CFGF_NONE),
