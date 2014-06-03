@@ -37,7 +37,7 @@ static int compute_file_metadata(cfg_t *cfg)
 
         FILE *fp = fopen(path, "rb");
         if (!fp)
-            ERR_RETURN("can't open file-resource");
+            ERR_RETURN("can't open file-resource '%s'", path);
 
         SHA256_CTX ctx256;
         char buffer[1024];

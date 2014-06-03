@@ -22,11 +22,11 @@ struct tm;
 int timestamp_to_tm(const char *timestamp, struct tm *tmp);
 const char *get_creation_timestamp();
 void set_now_time();
-void set_last_error(const char *msg);
+void set_last_error(const char *fmt, ...);
 const char *last_error();
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
-#define ERR_RETURN(MSG) do { set_last_error(MSG); return -1; } while (0)
+#define ERR_RETURN(MSG, ...) do { set_last_error(MSG, ## __VA_ARGS__); return -1; } while (0)
 
 #endif // UTIL_H

@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#define _GNU_SOURCE // for vasprintf
 #include "util.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 char *strptime(const char *s, const char *format, struct tm *tm);
 
-static const char *last_error_message = NULL;
+static char *last_error_message = NULL;
 static char time_string[200] = {0};
 
 static const char *timestamp_format = "%Y-%m-%dT%H:%M:%SZ";
@@ -62,12 +63,23 @@ void set_now_time()
  * @brief Our errno!
  * @param msg
  */
-void set_last_error(const char *msg)
+void set_last_error(const char *fmt, ...)
 {
-    last_error_message = msg;
+    va_list ap;
+    va_start(ap, fmt);
+
+    if (last_error_message)
+        free(last_error_message);
+
+    // In the completely unlikely case that vasprintf fails, clear
+    // the error message pointer
+    if (vasprintf(&last_error_message, fmt, ap) < 0)
+        last_error_message = NULL;
+
+    va_end(ap);
 }
 
 const char *last_error()
 {
-    return last_error_message;
+    return last_error_message ? last_error_message : "none";
 }
