@@ -30,6 +30,7 @@
 #include "config.h"
 
 // Global options
+bool fwup_verbose = false;
 static bool numeric_progress = false;
 static bool quiet = false;
 
@@ -54,7 +55,7 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     fprintf(stderr, "  -q   Quiet\n");
     fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
-    fprintf(stderr, "  -v   Print version and exit\n");
+    fprintf(stderr, "  -v   Verbose\n");
     fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
     fprintf(stderr, "  -z   Print the memory card that would be automatically detected and exit\n");
     fprintf(stderr, "\n");
@@ -128,8 +129,7 @@ int main(int argc, char **argv)
             task = optarg;
             break;
         case 'v':
-            print_version();
-            exit(EXIT_SUCCESS);
+            fwup_verbose = true;
             break;
         case 'y':
             accept_found_device = true;

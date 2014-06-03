@@ -253,7 +253,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     archive_read_support_format_zip(a);
     int rc = archive_read_open_filename(a, fw_filename, 16384);
     if (rc != ARCHIVE_OK)
-        ERR_RETURN("Cannot open archive");
+        ERR_RETURN("Cannot open archive: %s", fw_filename);
 
     struct archive_entry *ae;
     rc = archive_read_next_header(a, &ae);
@@ -261,7 +261,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
         ERR_RETURN("Error reading archive");
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_RETURN("Expecting meta.conf to be first file");
+        ERR_RETURN("Expecting meta.conf to be first file in %s", fw_filename);
 
     if (cfgfile_parse_fw_ae(a, ae, &fctx.cfg) < 0)
         return -1;
@@ -271,7 +271,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 
     fctx.task = find_task(fctx.cfg, fctx.output_fd, task_prefix);
     if (fctx.task == 0)
-        ERR_RETURN("Couldn't find applicable task");
+        ERR_RETURN("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
     fctx.type = FUN_CONTEXT_INIT;
     if (run_event(&fctx, fctx.task, "on-init", NULL) < 0)

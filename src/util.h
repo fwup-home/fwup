@@ -17,6 +17,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <stdbool.h>
+#include <stdio.h>
+
 struct tm;
 
 int timestamp_to_tm(const char *timestamp, struct tm *tmp);
@@ -24,9 +27,11 @@ const char *get_creation_timestamp();
 void set_now_time();
 void set_last_error(const char *fmt, ...);
 const char *last_error();
+extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
 #define ERR_RETURN(MSG, ...) do { set_last_error(MSG, ## __VA_ARGS__); return -1; } while (0)
+#define INFO(MSG, ...) do { if (fwup_verbose) fprintf(stderr, MSG, ## __VA_ARGS__); } while (0)
 
 #endif // UTIL_H

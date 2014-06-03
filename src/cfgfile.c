@@ -92,6 +92,8 @@ static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **arg
         return -1;
     }
 
+    INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
+
     // Overwrite the environment.
     if (setenv(argv[0], argv[1], 1) < 0) {
         cfg_error(cfg, "setenv failed");
@@ -110,11 +112,16 @@ static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
         return -1;
     }
 
-    if (setenv(argv[0], argv[1], 0) < 0) {
-        cfg_error(cfg, "setenv failed");
-        return -1;
-    }
+    if (!getenv(argv[0])) {
+        INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
 
+        if (setenv(argv[0], argv[1], 0) < 0) {
+            cfg_error(cfg, "setenv failed");
+            return -1;
+        }
+    } else {
+        INFO("Not defining '%s'. Already set to '%s'\n", argv[0], getenv(argv[0]));
+    }
     return 0;
 }
 
@@ -229,26 +236,18 @@ cfg_opt_t opts[] = {
     CFG_END()
 };
 
-
-int cfgfile_parse_buffer(const char *buffer, cfg_t **cfg)
-{
-    *cfg = cfg_init(opts, 0);
-
-    // set a validating callback function for sections
-    cfg_set_validate_func(*cfg, "file-resource", cb_validate_file_resource);
-    cfg_set_validate_func(*cfg, "mbr", cb_validate_mbr);
-
-    // Not erasing this, since I always forget the pipe syntax
-    //cfg_set_validate_func(*cfg, "task|on-init", cb_validate_on_init);
-
-    if (cfg_parse_buf(*cfg, buffer) != 0)
-        ERR_RETURN("Error parsing configuration file");
-
-    return 0;
-}
-
 int cfgfile_parse_file(const char *filename, cfg_t **cfg)
 {
+    if (fwup_verbose) {
+        extern char **environ;
+        int e = 0;
+
+        INFO("Config environment:\n");
+        while (environ[e] != NULL) {
+            INFO(" %s\n", environ[e]);
+            e++;
+        }
+    }
     toplevel_cfg = cfg_init(opts, 0);
 
     // set a validating callback function for sections
@@ -286,7 +285,10 @@ int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg
     }
     meta_conf[total_size] = 0;
 
-    if (cfgfile_parse_buffer(meta_conf, cfg) < 0) {
+    // Parse the configuration, but do minimal validity checking of configuration
+    // since many things are only used on the creation of the firmware update.
+    *cfg = cfg_init(opts, 0);
+    if (cfg_parse_buf(*cfg, meta_conf) != 0) {
         free(meta_conf);
         ERR_RETURN("Unexpected error parsing meta.conf");
     }
@@ -301,15 +303,15 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
     archive_read_support_format_zip(a);
     int rc = archive_read_open_filename(a, filename, 16384);
     if (rc != ARCHIVE_OK)
-        ERR_RETURN("Cannot open archive");
+        ERR_RETURN("Cannot open archive '%s'", filename);
 
     struct archive_entry *ae;
     rc = archive_read_next_header(a, &ae);
     if (rc != ARCHIVE_OK)
-        ERR_RETURN("Error reading archive");
+        ERR_RETURN("Error reading archive '%s'", filename);
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_RETURN("Expecting meta.conf to be first file");
+        ERR_RETURN("Expecting meta.conf to be first file in %s", filename);
 
     if (cfgfile_parse_fw_ae(a, ae, cfg) < 0)
         return -1;

@@ -59,7 +59,7 @@ Usage: fwup [options]
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -q   Quiet
   -t <task> Task to apply within the firmware update package
-  -v   Print version and exit
+  -v   Verbose
   -y   Accept automatically found memory card when applying a firmware update
 
 Examples:
