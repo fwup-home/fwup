@@ -162,6 +162,7 @@ mbr mbr-a {
                 block-offset = ${BOOT_PART_OFFSET}
                 block-count = ${BOOT_PART_COUNT}
                 type = 0x1 # FAT12
+                boot = true
         }
         partition 1 {
                 block-offset = ${ROOTFS_A_PART_OFFSET}

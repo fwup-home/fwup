@@ -189,6 +189,7 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
         partitions[partition_ix].partition_type = cfg_getint(partition, "type");
         partitions[partition_ix].block_offset = cfg_getint(partition, "block-offset");
         partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
+        partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
 
         if (partitions[partition_ix].partition_type < 0 ||
                 partitions[partition_ix].block_offset < 0 ||

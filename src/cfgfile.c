@@ -171,6 +171,7 @@ static cfg_opt_t mbr_partition_opts[] = {
     CFG_INT("block-offset", -1, CFGF_NONE),
     CFG_INT("block-count", -1, CFGF_NONE),
     CFG_INT("type", -1, CFGF_NONE),
+    CFG_BOOL("boot", cfg_false, CFGF_NONE),
     CFG_END()
 };
 static cfg_opt_t mbr_opts[] = {
