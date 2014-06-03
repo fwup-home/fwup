@@ -43,7 +43,9 @@ HEADERS += \
     src/fwup_apply.h \
     src/fwup_list.h \
     src/fwup_metadata.h \
-    src/fwfile.h
+    src/fwfile.h \
+    3rdparty/fatfs/src/integer.h \
+    3rdparty/fatfs/src/diskio.h
 
 OTHER_FILES += \
     fwupdate.conf \
