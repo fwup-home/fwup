@@ -155,6 +155,27 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
         return -1;
     }
 
+    const char *path = cfg_getstr(sec, "bootstrap-code-host-path");
+    const char *bootstrap_hex = cfg_getstr(sec, "bootstrap-code");
+    if (path && !bootstrap_hex) {
+        FILE *fp = fopen(path, "r");
+        if (!fp) {
+            cfg_error(cfg, "mbr bootstrap code path '%s' required, but can't be read", path);
+            return -1;
+        }
+
+        uint8_t bootstrap[440];
+        if (fread(bootstrap, 1, sizeof(bootstrap), fp) != sizeof(bootstrap)) {
+            cfg_error(cfg, "mbr bootstrap code in '%s' should be %d bytes", path, sizeof(bootstrap));
+            fclose(fp);
+            return -1;
+        }
+        fclose(fp);
+
+        char bootstrap_str[sizeof(bootstrap) * 2 + 1];
+        bytes_to_hex(bootstrap, bootstrap_str, sizeof(bootstrap));
+        cfg_setstr(sec, "bootstrap-code", bootstrap_str);
+    }
     if (mbr_verify_cfg(sec) < 0)
         cfg_error(cfg, last_error());
 
@@ -175,7 +196,8 @@ static cfg_opt_t mbr_partition_opts[] = {
     CFG_END()
 };
 static cfg_opt_t mbr_opts[] = {
-    CFG_STR("bootstrap-code-path", 0, CFGF_NONE),
+    CFG_STR("bootstrap-code-host-path", 0, CFGF_NONE),
+    CFG_STR("bootstrap-code", 0, CFGF_NONE),
     CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_END()
 };

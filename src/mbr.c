@@ -207,6 +207,12 @@ int mbr_verify_cfg(cfg_t *cfg)
     int found_partitions = 0;
     struct mbr_partition partitions[4];
 
+    const char *bootstrap_hex = cfg_getstr(cfg, "bootstrap-code");
+    if (bootstrap_hex) {
+        if (strlen(bootstrap_hex) != 440 * 2)
+            ERR_RETURN("bootstrap-code should be exactly 440 bytes");
+
+    }
     if (mbr_cfg_to_partitions(cfg, partitions, &found_partitions) < 0)
         return -1;
 
@@ -224,7 +230,13 @@ int mbr_create_cfg(cfg_t *cfg, uint8_t output[512])
     if (mbr_cfg_to_partitions(cfg, partitions, NULL) < 0)
         return -1;
 
-    // TODO: support bootstrap
+    uint8_t bootstrap[440];
+    memset(bootstrap, 0, sizeof(bootstrap));
 
-    return mbr_create(partitions, NULL, output);
+    const char *bootstrap_hex = cfg_getstr(cfg, "bootstrap-code");
+    if (bootstrap_hex &&
+        (hex_to_bytes(bootstrap_hex, bootstrap, sizeof(bootstrap)) < 0))
+        return -1;
+
+    return mbr_create(partitions, bootstrap, output);
 }

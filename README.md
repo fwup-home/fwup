@@ -156,7 +156,7 @@ and sizes are given in 512 byte blocks. Here's a potential mbr definition:
 
 ```
 mbr mbr-a {
-        bootstrap-code-path = "path/to/bootstrap-data"
+        bootstrap-code-host-path = "path/to/bootstrap-data" # should be 440 bytes
 
         partition 0 {
                 block-offset = ${BOOT_PART_OFFSET}

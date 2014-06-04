@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 
 struct tm;
 
@@ -27,6 +28,10 @@ const char *get_creation_timestamp();
 void set_now_time();
 void set_last_error(const char *fmt, ...);
 const char *last_error();
+
+int hex_to_bytes(const char *str, uint8_t *bytes, size_t maxbytes);
+int bytes_to_hex(const uint8_t *bytes, char *str, size_t byte_count);
+
 extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
