@@ -84,7 +84,14 @@ int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count)
     block_count_ = block_count;
 
     MAYBE_MOUNT(fatfp, fatfp_offset);
-    CHECK(f_mkfs("", 1, 0));
+
+    // The third parameter is the cluster size. We set it low so
+    // that we have enough clusters to easily bump the cluster count
+    // above the FAT32 threshold. The minimum number of clusters to
+    // get FAT32 is 65526. This is important for the Raspberry Pi since
+    // it only boots off FAT32 partitions and we don't want a huge
+    // boot partition.
+    CHECK(f_mkfs("", 1, 512));
 
     return 0;
 }
