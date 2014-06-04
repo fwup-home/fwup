@@ -198,7 +198,7 @@ int fat_mkfs_run(struct fun_context *fctx)
 {
     FILE *fatfp;
     size_t offset;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), true, &fatfp, &offset) < 0)
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &offset) < 0)
         return -1;
 
     return fatfs_mkfs(fatfp, offset, strtoul(fctx->argv[2], NULL, 0));
@@ -220,7 +220,7 @@ int fat_write_run(struct fun_context *fctx)
 {
     FILE *fatfp;
     size_t fatfp_offset;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
     // enforce truncation semantics if the file exists
@@ -256,7 +256,7 @@ int fat_mv_run(struct fun_context *fctx)
 {
     FILE *fatfp;
     size_t fatfp_offset;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
     // TODO: Ignore the error code here??
@@ -279,7 +279,7 @@ int fat_rm_run(struct fun_context *fctx)
 {
     FILE *fatfp;
     size_t fatfp_offset;
-    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), false, &fatfp, &fatfp_offset) < 0)
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
     // TODO: Ignore the error code here??

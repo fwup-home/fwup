@@ -97,8 +97,6 @@ struct fwup_data
     FILE *fatfp;
     int fatfp_base_offset;
     int64_t current_fatfs_block_offset;
-    char *fatfs_buffer;
-    size_t fatfs_size;
 
     struct archive *subarchive;
     char *subarchive_path;
@@ -119,29 +117,18 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 }
 
-static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, bool going_to_call_mkfs, FILE **fatfp, size_t *fatfp_offset)
+static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FILE **fatfp, size_t *fatfp_offset)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
-    // Check if this is the first time or if block offset changed or
-    // if we're going to call mkfs and nuke everything anyway.
-    if (!p->fatfp || block_offset != p->current_fatfs_block_offset || going_to_call_mkfs) {
+    // Check if this is the first time or if block offset changed
+    if (!p->fatfp || block_offset != p->current_fatfs_block_offset) {
 
         // If the FATFS is being used, then flush it to disk
         if (p->fatfp) {
             fatfs_closefs();
             fclose(p->fatfp);
             p->fatfp = NULL;
-
-            // Check if we're doing the delayed big write of the finished FATFS product
-            if (p->fatfs_buffer) {
-                ssize_t rc = pwrite(fctx->output_fd, p->fatfs_buffer, p->fatfs_size, p->current_fatfs_block_offset * 512);
-                free(p->fatfs_buffer);
-                p->fatfs_buffer = NULL;
-
-                if (rc != (ssize_t) p->fatfs_size)
-                    ERR_RETURN("Error writing FATFS");
-            }
         }
 
         // Handle the case where a negative block offset is used to flush
@@ -149,24 +136,15 @@ static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, bo
         if (block_offset >= 0) {
             p->current_fatfs_block_offset = block_offset;
 
-            if (going_to_call_mkfs) {
-                // If we're going to call mkfs, don't bother reading anything
-                p->fatfp = open_memstream(&p->fatfs_buffer, &p->fatfs_size);
-                if (!p->fatfp)
-                    ERR_RETURN("Error creating buffer for FATFS");
+            // Open the destination
+            int newfd = dup(fctx->output_fd);
+            if (newfd < 0)
+                ERR_RETURN("Can't dup the output file handle");
+            p->fatfp = fdopen(newfd, "r+");
+            if (!p->fatfp)
+                ERR_RETURN("Error fdopen-ing output");
 
-                p->fatfp_base_offset = 0;
-            } else {
-                // Open the destination
-                int newfd = dup(fctx->output_fd);
-                if (newfd < 0)
-                    ERR_RETURN("Can't dup the output file handle");
-                p->fatfp = fdopen(newfd, "r+");
-                if (!p->fatfp)
-                    ERR_RETURN("Error fdopen-ing output");
-
-                p->fatfp_base_offset = block_offset * 512;
-            }
+            p->fatfp_base_offset = block_offset * 512;
         }
     }
 
@@ -296,7 +274,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
         return -1;
 
     // Flush the FATFS code in case it was used.
-    if (fatfs_ptr_callback(&fctx, -1, false, NULL, NULL) < 0)
+    if (fatfs_ptr_callback(&fctx, -1, NULL, NULL) < 0)
         return -1;
 
     // Flush an subarchive that's being built.
