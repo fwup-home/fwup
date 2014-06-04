@@ -25,7 +25,8 @@ SOURCES += \
     src/fwup_apply.c \
     src/fwup_list.c \
     src/fwup_metadata.c \
-    src/fwfile.c
+    src/fwfile.c \
+    3rdparty/fatfs/src/option/unicode.c
 
 LIBS += -lconfuse -larchive
 

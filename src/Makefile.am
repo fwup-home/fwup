@@ -28,4 +28,7 @@ fwup_SOURCES=cfgfile.c \
 	../3rdparty/fatfs/src/integer.h \
 	../3rdparty/fatfs/src/ff.c \
 	../3rdparty/fatfs/src/ff.h \
-	../3rdparty/fatfs/src/ffconf.h
+	../3rdparty/fatfs/src/ffconf.h \
+	../3rdparty/fatfs/src/option/unicode.c
+
+EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c
