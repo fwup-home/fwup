@@ -3970,7 +3970,9 @@ FRESULT f_forward (
 /* Create File System on the Drive                                       */
 /*-----------------------------------------------------------------------*/
 #define N_ROOTDIR	512		/* Number of root directory entries for FAT12/16 */
-#define N_FATS		1		/* Number of FAT copies (1 or 2) */
+
+// IMPORTANT: TI AM335x requires 2 FAT copies to find MLO
+#define N_FATS		2		/* Number of FAT copies (1 or 2) */
 
 
 FRESULT f_mkfs (
