@@ -204,8 +204,7 @@ static int set_time_from_cfg(cfg_t *cfg)
         ERR_RETURN("Firmware missing meta-creation-date");
 
     struct tm tmp;
-    if (timestamp_to_tm(timestr, &tmp) < 0)
-        return -1;
+    OK_OR_RETURN(timestamp_to_tm(timestr, &tmp));
 
     fatfs_set_time(&tmp);
     return 0;
@@ -213,75 +212,68 @@ static int set_time_from_cfg(cfg_t *cfg)
 
 int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename)
 {
+    int rc = 0;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.fatfs_ptr = fatfs_ptr_callback;
     fctx.subarchive_ptr = subarchive_ptr_callback;
 
-    struct fwup_data private_data;
-    memset(&private_data, 0, sizeof(private_data));
-    fctx.cookie = &private_data;
+    struct fwup_data pd;
+    memset(&pd, 0, sizeof(pd));
+    fctx.cookie = &pd;
+    pd.a = archive_read_new();
 
     fctx.output_fd = open(output_filename, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
     if (fctx.output_fd < 0)
-        ERR_RETURN("Cannot open output");
+        ERR_CLEANUP_MSG("Cannot open output");
 
-    struct archive *a = archive_read_new();
-    private_data.a = a;
-    archive_read_support_format_zip(a);
-    int rc = archive_read_open_filename(a, fw_filename, 16384);
-    if (rc != ARCHIVE_OK)
-        ERR_RETURN("Cannot open archive: %s", fw_filename);
+    archive_read_support_format_zip(pd.a);
+    int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
+    if (arc != ARCHIVE_OK)
+        ERR_CLEANUP_MSG("Cannot open archive: %s", fw_filename);
 
     struct archive_entry *ae;
-    rc = archive_read_next_header(a, &ae);
-    if (rc != ARCHIVE_OK)
-        ERR_RETURN("Error reading archive");
+    arc = archive_read_next_header(pd.a, &ae);
+    if (arc != ARCHIVE_OK)
+        ERR_CLEANUP_MSG("Error reading archive");
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_RETURN("Expecting meta.conf to be first file in %s", fw_filename);
+        ERR_CLEANUP_MSG("Expecting meta.conf to be first file in %s", fw_filename);
 
-    if (cfgfile_parse_fw_ae(a, ae, &fctx.cfg) < 0)
-        return -1;
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg));
 
-    if (set_time_from_cfg(fctx.cfg) < 0)
-        return -1;
+    OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
 
     fctx.task = find_task(fctx.cfg, fctx.output_fd, task_prefix);
     if (fctx.task == 0)
-        ERR_RETURN("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
+        ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
     fctx.type = FUN_CONTEXT_INIT;
-    if (run_event(&fctx, fctx.task, "on-init", NULL) < 0)
-        return -1;
+    OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-init", NULL));
 
     fctx.type = FUN_CONTEXT_FILE;
     fctx.read = read_callback;
-    while (archive_read_next_header(a, &ae) == ARCHIVE_OK) {
+    while (archive_read_next_header(pd.a, &ae) == ARCHIVE_OK) {
         const char *filename = archive_entry_pathname(ae);
         if (memcmp(filename, "data/", 5) != 0)
             continue;
 
         const char *resource_name = &filename[5];
-        if (run_event(&fctx, fctx.task, "on-resource", resource_name) < 0)
-            return -1;
+        OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-resource", resource_name));
     }
 
-    archive_read_free(a);
-
     fctx.type = FUN_CONTEXT_FINISH;
-    if (run_event(&fctx, fctx.task, "on-finish", NULL) < 0)
-        return -1;
+    OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-finish", NULL));
 
     // Flush the FATFS code in case it was used.
-    if (fatfs_ptr_callback(&fctx, -1, NULL, NULL) < 0)
-        return -1;
+    OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL, NULL));
 
-    // Flush an subarchive that's being built.
-    if (subarchive_ptr_callback(&fctx, "", NULL, NULL) < 0)
-        return -1;
+    // Flush a subarchive that's being built.
+    OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, "", NULL, NULL));
 
+cleanup:
+    archive_read_free(pd.a);
     close(fctx.output_fd);
 
-    return 0;
+    return rc;
 }

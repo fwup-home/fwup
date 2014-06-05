@@ -32,3 +32,5 @@ fwup_SOURCES=cfgfile.c \
 	../3rdparty/fatfs/src/option/unicode.c
 
 EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c
+
+fwup_CFLAGS = -Wall

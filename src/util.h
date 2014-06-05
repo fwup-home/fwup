@@ -36,7 +36,15 @@ extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
+#define ERR_CLEANUP() do { rc = -1; goto cleanup; } while (0)
+#define ERR_CLEANUP_MSG(MSG, ...) do { set_last_error(MSG, ## __VA_ARGS__); rc = -1; goto cleanup; } while (0)
+
+#define OK_OR_CLEANUP(WORK) do { if ((WORK) < 0) ERR_CLEANUP(); } while (0)
+
 #define ERR_RETURN(MSG, ...) do { set_last_error(MSG, ## __VA_ARGS__); return -1; } while (0)
+#define OK_OR_RETURN(WORK) do { if ((WORK) < 0) return -1; } while (0)
+#define OK_OR_RETURN_MSG(WORK, MSG, ...) do { if ((WORK) < 0) ERR_RETURN(MSG, ## __VA_ARGS__); } while (0)
+
 #define INFO(MSG, ...) do { if (fwup_verbose) fprintf(stderr, MSG, ## __VA_ARGS__); } while (0)
 
 #endif // UTIL_H

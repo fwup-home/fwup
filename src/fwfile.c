@@ -49,15 +49,21 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a)
 
 int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const char *local_path)
 {
+    int rc = 0;
+
+    size_t copy_buffer_len = 64 * 1024;
+    char *copy_buffer = (char *) malloc(copy_buffer_len);
+    struct archive_entry *entry = 0;
+
     FILE *fp = fopen(local_path, "rb");
     if (!fp)
-        ERR_RETURN("can't open local file");
+        ERR_CLEANUP_MSG("can't open local file");
 
     fseek(fp, 0, SEEK_END);
     size_t total_len = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    struct archive_entry *entry = archive_entry_new();
+    entry = archive_entry_new();
 
     char destpath[256];
     sprintf(destpath, "data/%s", name_in_archive);
@@ -67,27 +73,28 @@ int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const 
     archive_entry_set_perm(entry, 0644);
     archive_write_header(a, entry);
 
-    size_t buffer_len = 64 * 1024;
-    char *buffer = (char *) malloc(buffer_len);
-
-    size_t len = fread(buffer, 1, buffer_len, fp);
+    size_t len = fread(copy_buffer, 1, copy_buffer_len, fp);
     size_t total_read = len;
     while (len > 0) {
-        ssize_t written = archive_write_data(a, buffer, len);
+        ssize_t written = archive_write_data(a, copy_buffer, len);
         if (written != (ssize_t) len) {
-            free(buffer);
-            ERR_RETURN("error writing to archive");
+            free(copy_buffer);
+            ERR_CLEANUP_MSG("error writing to archive");
         }
 
-        len = fread(buffer, 1, buffer_len, fp);
+        len = fread(copy_buffer, 1, copy_buffer_len, fp);
         total_read += len;
     }
-    free(buffer);
     if (total_read != total_len)
-        ERR_RETURN("read an unexpected amount of data");
+        ERR_CLEANUP_MSG("read an unexpected amount of data");
 
+cleanup:
     archive_entry_free(entry);
+    if (fp)
+        fclose(fp);
 
-    return 0;
+    free(copy_buffer);
+
+    return rc;
 }
 

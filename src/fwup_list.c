@@ -27,10 +27,13 @@ static int strsort(const void *a, const void *b)
     return strcmp(*(const char **) a, *(const char **) b);
 }
 
-static void list_tasks(cfg_t *cfg)
+static int list_tasks(cfg_t *cfg)
 {
     size_t i;
-    cfg_opt_t *opt = cfg_getopt(cfg, "update");
+    cfg_opt_t *opt = cfg_getopt(cfg, "task");
+    if (!opt)
+        ERR_RETURN("Firmware file missing task section");
+
     const char *tasks[opt->nvalues];
     for (i = 0; i < opt->nvalues; i++) {
         cfg_t *sec = cfg_opt_getnsec(opt, i);
@@ -40,16 +43,21 @@ static void list_tasks(cfg_t *cfg)
 
     for (i = 0; i < opt->nvalues; i++)
         printf("%s\n", tasks[i]);
+
+    return 0;
 }
 
 int fwup_list(const char *fw_filename)
 {
-    cfg_t *cfg;
-    if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg) < 0)
-        return -1;
+    cfg_t *cfg = NULL;
+    int rc = 0;
 
-    list_tasks(cfg);
+    OK_OR_CLEANUP(cfgfile_parse_fw_meta_conf(fw_filename, &cfg));
 
-    cfgfile_free(cfg);
-    return 0;
+    OK_OR_CLEANUP(list_tasks(cfg));
+
+cleanup:
+    if (cfg)
+        cfgfile_free(cfg);
+    return rc;
 }

@@ -272,39 +272,48 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
             e++;
         }
     }
+
+    int rc = 0;
     toplevel_cfg = cfg_init(opts, 0);
 
     // set a validating callback function for sections
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
-    //cfg_set_validate_func(toplevel_cfg, "task|on-init", cb_validate_on_init);
     switch (cfg_parse(toplevel_cfg, filename)) {
     case CFG_SUCCESS:
         break;
     case CFG_FILE_ERROR:
-        ERR_RETURN("Error opening configuration file");
+        ERR_CLEANUP_MSG("Error opening configuration file '%s'", filename);
+    default:
     case CFG_PARSE_ERROR:
-        ERR_RETURN("Error parsing configuration file");
+        ERR_CLEANUP_MSG("Error parsing configuration file '%s'", filename);
     }
     *cfg = toplevel_cfg;
     return 0;
+
+cleanup:
+    cfg_free(toplevel_cfg);
+    return rc;
 }
 
 int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg)
 {
+    int rc = 0;
+    char *meta_conf = NULL;
+
     if (!archive_entry_size_is_set(ae))
-        ERR_RETURN("Expecting meta.conf size to be set");
+        ERR_CLEANUP_MSG("Expecting meta.conf size to be set");
 
     ssize_t total_size = archive_entry_size(ae);
     if (total_size < 10 || total_size > 50000)
-        ERR_RETURN("Unexpected meta.conf size");
+        ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
 
-    char *meta_conf = (char *) malloc(total_size + 1);
+    meta_conf = (char *) malloc(total_size + 1);
     ssize_t size_left = total_size;
     while (size_left > 0) {
       ssize_t len = archive_read_data(a, &meta_conf[total_size - size_left], size_left);
       if (len <= 0)
-          ERR_RETURN("Error reading all of meta.conf");
+          ERR_CLEANUP_MSG("Error reading all of meta.conf");
       size_left -= len;
     }
     meta_conf[total_size] = 0;
@@ -312,35 +321,39 @@ int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg
     // Parse the configuration, but do minimal validity checking of configuration
     // since many things are only used on the creation of the firmware update.
     *cfg = cfg_init(opts, 0);
-    if (cfg_parse_buf(*cfg, meta_conf) != 0) {
-        free(meta_conf);
-        ERR_RETURN("Unexpected error parsing meta.conf");
-    }
-    free(meta_conf);
+    if (cfg_parse_buf(*cfg, meta_conf) != 0)
+        ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
-    return 0;
+cleanup:
+    if (meta_conf)
+        free(meta_conf);
+
+    return rc;
 }
 
 int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
 {
+    int rc = 0;
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
-    int rc = archive_read_open_filename(a, filename, 16384);
+    rc = archive_read_open_filename(a, filename, 16384);
     if (rc != ARCHIVE_OK)
-        ERR_RETURN("Cannot open archive '%s'", filename);
+        ERR_CLEANUP_MSG("Cannot open archive '%s'", filename);
 
     struct archive_entry *ae;
     rc = archive_read_next_header(a, &ae);
     if (rc != ARCHIVE_OK)
-        ERR_RETURN("Error reading archive '%s'", filename);
+        ERR_CLEANUP_MSG("Error reading archive '%s'", filename);
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_RETURN("Expecting meta.conf to be first file in %s", filename);
+        ERR_CLEANUP_MSG("Expecting meta.conf to be first file in %s", filename);
 
-    if (cfgfile_parse_fw_ae(a, ae, cfg) < 0)
-        return -1;
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, cfg));
 
-    return 0;
+cleanup:
+    archive_read_free(a);
+
+    return rc;
 }
 
 void cfgfile_free(cfg_t *cfg)
