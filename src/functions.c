@@ -29,6 +29,8 @@
 
 static int raw_write_validate(struct fun_context *fctx);
 static int raw_write_run(struct fun_context *fctx);
+static int fat_attrib_validate(struct fun_context *fctx);
+static int fat_attrib_run(struct fun_context *fctx);
 static int fat_mkfs_validate(struct fun_context *fctx);
 static int fat_mkfs_run(struct fun_context *fctx);
 static int fat_write_validate(struct fun_context *fctx);
@@ -52,6 +54,7 @@ struct fun_info {
 
 static struct fun_info fun_table[] = {
     {"raw_write", raw_write_validate, raw_write_run },
+    {"fat_attrib", fat_attrib_validate, fat_attrib_run },
     {"fat_mkfs", fat_mkfs_validate, fat_mkfs_run },
     {"fat_write", fat_write_validate, fat_write_run },
     {"fat_mv", fat_mv_validate, fat_mv_run },
@@ -202,6 +205,42 @@ int fat_mkfs_run(struct fun_context *fctx)
         return -1;
 
     return fatfs_mkfs(fatfp, offset, strtoul(fctx->argv[2], NULL, 0));
+}
+
+int fat_attrib_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("fat_attrib requires a block offset, filename, and attributes (SHR)");
+
+    CHECK_ARG_UINT(fctx->argv[1], "fat_mkfs requires a non-negative integer block offset");
+
+    const char *attrib = fctx->argv[3];
+    while (*attrib) {
+        switch (*attrib) {
+        case 'S':
+        case 's':
+        case 'H':
+        case 'h':
+        case 'R':
+        case 'r':
+            break;
+
+        default:
+            ERR_RETURN("fat_attrib only supports R, H, and S attributes");
+        }
+        attrib++;
+    }
+    return 0;
+}
+
+int fat_attrib_run(struct fun_context *fctx)
+{
+    FILE *fatfp;
+    size_t offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &offset) < 0)
+        return -1;
+
+    return fatfs_attrib(fatfp, offset, fctx->argv[2], fctx->argv[3]);
 }
 
 int fat_write_validate(struct fun_context *fctx)

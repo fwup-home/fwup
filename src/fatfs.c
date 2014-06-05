@@ -152,6 +152,39 @@ int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char
     return 0;
 }
 
+/**
+ * @brief fatfs_attrib set the attribs on a file
+ * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
+ * @param filename an existing file
+ * @param attrib a string with the attributes. i.e., "RHS"
+ * @return 0 on success
+ */
+int fatfs_attrib(FILE *fatfp, size_t fatfp_offset, const char *filename, const char *attrib)
+{
+    MAYBE_MOUNT(fatfp, fatfp_offset);
+
+    BYTE mode = 0;
+    while (*attrib) {
+        switch (*attrib++) {
+        case 'S':
+        case 's':
+            mode |= AM_SYS;
+            break;
+        case 'H':
+        case 'h':
+            mode |= AM_HID;
+            break;
+        case 'R':
+        case 'r':
+            mode |= AM_RDO;
+            break;
+        }
+    }
+    CHECK(f_chmod(filename, mode, AM_RDO | AM_HID | AM_SYS));
+    return 0;
+}
+
 int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset,const char *filename, int offset, const char *buffer, size_t size)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);

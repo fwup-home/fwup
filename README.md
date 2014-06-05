@@ -231,6 +231,7 @@ raw_write(block_offset)               | Write the resource to the specified bloc
 mbr_write(mbr)                        | Write the specified mbr to the target
 fat_mkfs(block_offset, block_count)   | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)     | Write the resource to the FAT file system at the specified block offset
+fat_attrib(block_offset, filename, attrib) | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
 fat_mv(block_offset, oldname, newname) | Rename the specified file on a FAT file system
 fat_rm(block_offset, filename)        | Delete the specified file
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)

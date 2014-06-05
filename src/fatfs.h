@@ -27,6 +27,7 @@ struct tm;
 int fatfs_set_time(struct tm *tmp);
 
 int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count);
+int fatfs_attrib(FILE *fatfp, size_t fatfp_offset, const char *filename, const char *attrib);
 int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir);
 int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name);
 int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename);

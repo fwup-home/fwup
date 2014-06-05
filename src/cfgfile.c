@@ -206,6 +206,7 @@ static cfg_opt_t mbr_opts[] = {
     CFG_STR_LIST("funlist", 0, CFGF_NONE), \
     CFG_FUNC("raw_write", CB), \
     CFG_FUNC("fat_mkfs", CB), \
+    CFG_FUNC("fat_attrib", CB), \
     CFG_FUNC("fat_write", CB), \
     CFG_FUNC("fat_mv", CB), \
     CFG_FUNC("fat_rm", CB), \
