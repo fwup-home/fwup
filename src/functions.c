@@ -164,6 +164,10 @@ int raw_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
 
+    // Just in case we're raw writing to the FAT partition, make sure
+    // that we flush any cached data.
+    fctx->fatfs_ptr(fctx, -1, NULL, NULL);
+
     int dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
 
     for (;;) {
