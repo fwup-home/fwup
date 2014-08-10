@@ -77,15 +77,17 @@ static int lba_to_chs(uint32_t lba, uint8_t *output)
 
 static int create_partition(const struct mbr_partition *partition, uint8_t *output)
 {
-    output[0] = partition->boot_flag ? 0x80 : 0x00;
+    // Clear out the partition entry
+    memset(output, 0, 16);
 
-    if (lba_to_chs(partition->block_offset, &output[1]) < 0)
-        return -1;
-
-    output[4] = partition->partition_type;
-
-    // Fill in the rest if this entry is actually used.
+    // Only fill in the entry if it is actually used.
     if (partition->partition_type != 0) {
+        output[0] = partition->boot_flag ? 0x80 : 0x00;
+
+        if (lba_to_chs(partition->block_offset, &output[1]) < 0)
+            return -1;
+
+        output[4] = partition->partition_type;
         if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
             return -1;
 
