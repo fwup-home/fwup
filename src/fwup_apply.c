@@ -223,9 +223,10 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     fctx.cookie = &pd;
     pd.a = archive_read_new();
 
-    fctx.output_fd = open(output_filename, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
+    fctx.output_fd = open(output_filename, O_RDWR | O_CREAT, 0644);
     if (fctx.output_fd < 0)
         ERR_CLEANUP_MSG("Cannot open output");
+    fcntl(fctx.output_fd, F_SETFD, FD_CLOEXEC);
 
     archive_read_support_format_zip(pd.a);
     int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
