@@ -1,4 +1,4 @@
-AC_INIT([fwup], [0.0.1], [fhunleth@troodon-software.com])
+AC_INIT([fwup], [0.0.6], [fhunleth@troodon-software.com])
 AC_CONFIG_SRCDIR([src/fwup_metadata.c])
 AC_CONFIG_HEADERS([config.h])
 
