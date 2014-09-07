@@ -313,7 +313,9 @@ int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg
     while (size_left > 0) {
       ssize_t len = archive_read_data(a, &meta_conf[total_size - size_left], size_left);
       if (len <= 0)
-          ERR_CLEANUP_MSG("Error reading all of meta.conf");
+          ERR_CLEANUP_MSG("Error reading meta.conf from archive. Error was %d.\n"
+                          "Check for file corruption or libarchive built without zlib support",
+                          len);
       size_left -= len;
     }
     meta_conf[total_size] = 0;
