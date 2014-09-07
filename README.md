@@ -1,13 +1,12 @@
 # Overview
 [![Build Status](https://travis-ci.org/fhunleth/fwup.png)](https://travis-ci.org/fhunleth/fwup)
 
-The `fwup` utility is a configurable image-based firmware update utility
-for embedded Linux-based systems. It has two modes of operation. The first
-mode creates compressed archives containing
-root file system images, bootloaders, and other image material. These can be
-distributed via websites, email or update servers. The second mode applies
-the firmware images in a robust and repeatable way. The utility has the following
-features:
+The `fwup` utility is a configurable image-based firmware update utility for
+embedded Linux-based systems. It has two modes of operation. The first mode
+creates compressed archives containing root file system images, bootloaders, and
+other image material. These can be distributed via websites, email or update
+servers. The second mode applies the firmware images in a robust and repeatable
+way. The utility has the following features:
 
   1. Uses standard ZIP archives to make debugging and transmission simple.
 
@@ -28,6 +27,11 @@ features:
   overwrites.
 
   8. Firmware archive digital signature creation and verification (Not implemented yet)
+
+# Examples!
+
+See https://github.com/fhunleth/bbb-buildroot-fwup for firmware update examples
+for the BeagleBone Black.
 
 # Building
 
