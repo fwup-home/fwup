@@ -1,5 +1,5 @@
 # Overview
-[![Build Status](https://travis-ci.org/fhunleth/fwup.png)](https://travis-ci.org/fhunleth/fwup)
+[![Build Status](https://travis-ci.org/fhunleth/fwup.png)](https://travis-ci.org/fhunleth/fwup) [![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
 
 The `fwup` utility is a configurable image-based firmware update utility for
 embedded Linux-based systems. It has two modes of operation. The first mode

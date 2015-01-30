@@ -1,12 +1,28 @@
 language: c
 
 compiler:
-    - clang
     - gcc
+      #    - clang
+
+env:
+      global:
+             # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+             #   via the "travis encrypt" command using the project repo's public key
+             - secure: "Q6OAiurgQl7/iZy7JfaPbUCWFe30ES35uO5eGg/0ty/fKMGAov3Bp+8oQqpmxmi6+E316cDMW3WIY9h8j79kaF4IbQNU6YcHft7Am7iFhw1Ocql1aknqqbdA/Hx9R95JUX2ZSBCTnw03GKv9JNEUuY2cV5RaJr1x+N5SfdAc3Jo="
 
 before_install:
      - sudo apt-get update -qq
      - sudo apt-get install -qq libconfuse-dev libarchive-dev
+
+addons:
+      coverity_scan:
+             project:
+                name: "fhunleth/fwup"
+                description: "Replacement for /sbin/init that launches an Erlang/OTP Release"
+             notification_email: fhunleth@troodon-software.com
+             build_command_prepend: "./autogen.sh && ./configure"
+             build_command: "make"
+             branch_pattern: coverity_scan
 
 script:
     - ./autogen.sh
