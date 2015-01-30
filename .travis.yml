@@ -18,7 +18,7 @@ addons:
       coverity_scan:
              project:
                 name: "fhunleth/fwup"
-                description: "Replacement for /sbin/init that launches an Erlang/OTP Release"
+                description: "Configurable embedded Linux firmware update creator and runner"
              notification_email: fhunleth@troodon-software.com
              build_command_prepend: "./autogen.sh && ./configure"
              build_command: "make"
