@@ -61,7 +61,7 @@ static cfg_t *find_task(cfg_t *cfg, int output_fd, const char *task_prefix)
     size_t task_len = strlen(task_prefix);
     cfg_t *task;
 
-    int i;    
+    int i;
     for (i = 0; (task = cfg_getnsec(cfg, "task", i)) != NULL; i++) {
         const char *name = cfg_title(task);
         if (strlen(name) >= task_len &&
@@ -226,7 +226,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     fctx.output_fd = open(output_filename, O_RDWR | O_CREAT, 0644);
     if (fctx.output_fd < 0)
         ERR_CLEANUP_MSG("Cannot open output");
-    fcntl(fctx.output_fd, F_SETFD, FD_CLOEXEC);
+    (void) fcntl(fctx.output_fd, F_SETFD, FD_CLOEXEC);
 
     archive_read_support_format_zip(pd.a);
     int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
@@ -274,7 +274,8 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 
 cleanup:
     archive_read_free(pd.a);
-    close(fctx.output_fd);
+    if (fctx.output_fd >= 0)
+        close(fctx.output_fd);
 
     return rc;
 }

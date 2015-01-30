@@ -40,6 +40,7 @@ static int compute_file_metadata(cfg_t *cfg)
             ERR_RETURN("can't open file-resource '%s'", path);
 
         SHA256_CTX ctx256;
+        SHA256_Init(&ctx256);
         char buffer[1024];
         size_t len = fread(buffer, 1, sizeof(buffer), fp);
         size_t total = 0;
@@ -50,6 +51,7 @@ static int compute_file_metadata(cfg_t *cfg)
         }
         char digest[SHA256_DIGEST_STRING_LENGTH];
         SHA256_End(&ctx256, digest);
+        fclose(fp);
 
         cfg_setstr(sec, "sha256", digest);
         cfg_setint(sec, "length", total);

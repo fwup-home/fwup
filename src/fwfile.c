@@ -77,10 +77,8 @@ int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const 
     size_t total_read = len;
     while (len > 0) {
         ssize_t written = archive_write_data(a, copy_buffer, len);
-        if (written != (ssize_t) len) {
-            free(copy_buffer);
+        if (written != (ssize_t) len)
             ERR_CLEANUP_MSG("error writing to archive");
-        }
 
         len = fread(copy_buffer, 1, copy_buffer_len, fp);
         total_read += len;
