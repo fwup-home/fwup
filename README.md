@@ -241,11 +241,48 @@ fat_rm(block_offset, filename)        | Delete the specified file
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
 
+# FAQ
 
-# License
+## Where can I find example configurations?
 
-This utility contains source code with various licenses. The bulk of the code is licensed with the Apache 2.0 license
-which can be found in the `LICENSE` file.
+The [Nerves](https://github.com/nerves-project/nerves-sdk) has examples for
+the Beaglebone Black, Raspberry Pi, and a couple x86 platforms. See the
+`board` subdirectory in the source tree.
+
+## How do I include a file in the archive that isn't used by fwup?
+
+The scenario is that you need to store some metadata or some other information
+that is useful to another program. For example, you'd like to include some
+documentation or other notes inside the firmware update archive that the
+destination device can pull out and present on a UI. To do this, just add
+`file-resource` blocks for each file. These blocks don't need to be referenced
+by an `on-resource` block.
+
+## How do I include the firmware version in the archive?
+
+If you are using git, you can invoke `fwup` as follows:
+
+    GITDESCRIBE=`git describe` fwup -c -f myupdate.conf -o out.fw
+
+Then in `myupdate.conf` add the line:
+
+    meta-version = "${GITDESCRIBE}"
+
+On the target device, you can retrieve the version by using `-m`. For example:
+
+    $ fwup -m -i out.fw
+    meta-product = "Awesome product"
+    meta-description = "A description"
+    meta-version = "v0.0.1"
+    meta-author = "Me"
+    meta-platform = "bbb"
+    meta-architecture = "arm"
+    meta-creation-date = "2014-09-07T19:50:57Z"
+
+# Licenses
+
+This utility contains source code with various licenses. The bulk of the code is
+licensed with the Apache 2.0 license which can be found in the `LICENSE` file.
 
 The SHA-2 code comes from Aaron D. Gifford (http://www.aarongifford.com/) and has the following license:
 
