@@ -181,6 +181,10 @@ int main(int argc, char **argv)
                     errx(EXIT_FAILURE, "aborted");
             }
         }
+
+        // unmount everything using the device to avoid corrupting partitions
+        mmc_umount_all(mmc_device);
+
         if (fwup_apply(input_firmware, task, mmc_device) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 

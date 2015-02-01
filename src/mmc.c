@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <unistd.h>
 
 #define ONE_KiB  (1024ULL)
@@ -115,3 +116,119 @@ char *mmc_find_device()
         exit(EXIT_FAILURE);
     }
 }
+
+static char *unescape_string(const char *input)
+{
+    char *result = (char *) malloc(strlen(input) + 1);
+    char *p = result;
+    while (*input) {
+        if (*input != '\\') {
+            *p = *input;
+            p++;
+            input++;
+        } else {
+            input++;
+            switch (*input) {
+            case '\"':
+            case '\\':
+            default:
+                *p = *input++;
+                break;
+            case 'a':
+                *p = '\a'; input++;
+                break;
+            case 'b':
+                *p = '\b'; input++;
+                break;
+            case 'f':
+                *p = '\f'; input++;
+                break;
+            case 'n':
+                *p = '\n'; input++;
+                break;
+            case 'r':
+                *p = '\r'; input++;
+                break;
+            case 't':
+                *p = '\t'; input++;
+                break;
+            case 'v':
+                *p = '\v'; input++;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7': // octal
+            {
+                int digits = (input[1] && input[1] >= '0' && input[1] <= '7' ? 1 : 0)
+                             + (input[1] && input[2] && input[2] >= '0' && input[2] <= '7' ? 1 : 0);
+                int result = *input++ - '0';
+                while (digits--)
+                    result = result * 8 + *input++ - '0';
+                *p = (char) result;
+                break;
+            }
+            }
+            p++;
+        }
+    }
+    *p = 0;
+    return result;
+}
+
+void mmc_umount_all(const char *mmc_device)
+{
+    FILE *fp = fopen("/proc/mounts", "r");
+    if (!fp)
+        err(EXIT_FAILURE, "/proc/mounts");
+
+    char *todo[64] = {0};
+    int todo_ix = 0;
+    int i;
+
+    char line[512] = {0};
+    while (!feof(fp) &&
+            fgets(line, sizeof(line), fp)) {
+        char devname[64];
+        char mountpoint[256];
+        if (sscanf(line, "%63s %255s", devname, mountpoint) != 2)
+            continue;
+
+        if (strstr(devname, mmc_device) == devname) {
+            // mmc_device is a prefix of this device, i.e. mmc_device is /dev/sdc
+            // and /dev/sdc1 is mounted.
+
+            if (todo_ix == NUM_ELEMENTS(todo))
+                errx(EXIT_FAILURE, "Device mounted too many times");
+
+            // strings from /proc/mounts are escaped, so unescape them
+            todo[todo_ix++] = unescape_string(mountpoint);
+        }
+    }
+    fclose(fp);
+
+    int mtab_exists = (access("/etc/mtab", F_OK) != -1);
+    for (i = 0; i < todo_ix; i++) {
+        if (mtab_exists) {
+            // If /etc/mtab, then call umount(8) so that
+            // gets updated correctly.
+            char cmdline[384];
+            sprintf(cmdline, "/bin/umount %s", todo[i]);
+            int rc = system(cmdline);
+            if (rc != 0)
+                err(EXIT_FAILURE, "%s", cmdline);
+        } else {
+            // No /etc/mtab, so call the kernel directly.
+            if (umount(todo[i]) < 0)
+                err(EXIT_FAILURE, "umount %s", todo[i]);
+        }
+    }
+
+    for (i = 0; i < todo_ix; i++)
+        free(todo[i]);
+}
+
