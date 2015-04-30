@@ -60,16 +60,17 @@ const char *fatfs_error_to_string(FRESULT err)
     }
 }
 
-static FRESULT fatfs_error(FRESULT rc)
+static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc)
 {
-    if (rc != FR_OK)
-        set_last_error(fatfs_error_to_string(rc));
+    if (rc != FR_OK) {
+        set_last_error("%s(%s): %s", context, filename ? filename : "", fatfs_error_to_string(rc));
+    }
 
     return rc;
 }
 
-#define CHECK(CMD) do { if (fatfs_error(CMD) != FR_OK) return -1; } while (0)
-#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = OFFSET; CHECK(f_mount(&fs_, "", 0)); } } while (0)
+#define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
+#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
@@ -91,7 +92,7 @@ int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count)
     // get FAT32 is 65526. This is important for the Raspberry Pi since
     // it only boots off FAT32 partitions and we don't want a huge
     // boot partition.
-    CHECK(f_mkfs("", 1, 512));
+    CHECK("fat_mkfs", NULL, f_mkfs("", 1, 512));
 
     return 0;
 }
@@ -118,7 +119,7 @@ int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
-    CHECK(f_mkdir(dir));
+    CHECK("fat_mkdir", dir, f_mkdir(dir));
     return 0;
 }
 
@@ -133,7 +134,7 @@ int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
-    CHECK(f_unlink(filename));
+    CHECK("fat_rm", filename, f_unlink(filename));
     return 0;
 }
 /**
@@ -148,7 +149,7 @@ int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
-    CHECK(f_rename(from_name, to_name));
+    CHECK("fat_mv", from_name, f_rename(from_name, to_name));
     return 0;
 }
 
@@ -181,7 +182,7 @@ int fatfs_attrib(FILE *fatfp, size_t fatfp_offset, const char *filename, const c
             break;
         }
     }
-    CHECK(f_chmod(filename, mode, AM_RDO | AM_HID | AM_SYS));
+    CHECK("fat_attrib", filename, f_chmod(filename, mode, AM_RDO | AM_HID | AM_SYS));
     return 0;
 }
 
@@ -194,16 +195,16 @@ int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset,const char *filename, int offs
         close_open_files();
 
     if (!current_file_) {
-        CHECK(f_open(&fil_, filename, FA_CREATE_NEW | FA_WRITE));
+        CHECK("fat_write can't open file", filename, f_open(&fil_, filename, FA_CREATE_NEW | FA_WRITE));
 
         // Assuming it opens ok, cache the filename for future writes.
         current_file_ = strdup(filename);
     }
 
-    CHECK(f_lseek(&fil_, offset));
+    CHECK("fat_write can't seek in file", filename, f_lseek(&fil_, offset));
 
     UINT bw;
-    CHECK(f_write(&fil_, buffer, size, &bw));
+    CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
     if (size != bw)
         ERR_RETURN("Error writing file to FAT");
 
