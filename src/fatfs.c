@@ -124,6 +124,21 @@ int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir)
 }
 
 /**
+ * @brief fatfs_setlabel Set the volume label
+ * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
+ * @param label the name of the filesystem
+ * @return 0 on success
+ */
+int fatfs_setlabel(FILE *fatfp, size_t fatfp_offset, const char *label)
+{
+    MAYBE_MOUNT(fatfp, fatfp_offset);
+    close_open_files();
+    CHECK("fat_setlabel", label, f_setlabel(label));
+    return 0;
+}
+
+/**
  * @brief fatfs_rm Delete a file
  * @param fatfp the raw file system data
  * @param fatfp_offset the offset within fatfp for where to start
@@ -137,6 +152,7 @@ int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename)
     CHECK("fat_rm", filename, f_unlink(filename));
     return 0;
 }
+
 /**
  * @brief fatfs_mv rename a file
  * @param fatfp the raw file system data
