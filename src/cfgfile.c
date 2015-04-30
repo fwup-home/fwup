@@ -210,6 +210,7 @@ static cfg_opt_t mbr_opts[] = {
     CFG_FUNC("fat_write", CB), \
     CFG_FUNC("fat_mv", CB), \
     CFG_FUNC("fat_rm", CB), \
+    CFG_FUNC("fat_mkdir", CB), \
     CFG_FUNC("fw_create", CB), \
     CFG_FUNC("fw_add_local_file", CB), \
     CFG_FUNC("mbr_write", CB)

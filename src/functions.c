@@ -39,6 +39,8 @@ static int fat_mv_validate(struct fun_context *fctx);
 static int fat_mv_run(struct fun_context *fctx);
 static int fat_rm_validate(struct fun_context *fctx);
 static int fat_rm_run(struct fun_context *fctx);
+static int fat_mkdir_validate(struct fun_context *fctx);
+static int fat_mkdir_run(struct fun_context *fctx);
 static int fw_create_validate(struct fun_context *fctx);
 static int fw_create_run(struct fun_context *fctx);
 static int fw_add_local_file_validate(struct fun_context *fctx);
@@ -59,6 +61,7 @@ static struct fun_info fun_table[] = {
     {"fat_write", fat_write_validate, fat_write_run },
     {"fat_mv", fat_mv_validate, fat_mv_run },
     {"fat_rm", fat_rm_validate, fat_rm_run },
+    {"fat_mkdir", fat_mkdir_validate, fat_mkdir_run },
     {"fw_create", fw_create_validate, fw_create_run },
     {"fw_add_local_file", fw_add_local_file_validate, fw_add_local_file_run },
     {"mbr_write", mbr_write_validate, mbr_write_run }
@@ -327,6 +330,28 @@ int fat_rm_run(struct fun_context *fctx)
 
     // TODO: Ignore the error code here??
     fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
+
+    return 0;
+}
+
+int fat_mkdir_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("fat_mkdir requires a block offset and directory name");
+
+    CHECK_ARG_UINT(fctx->argv[1], "fat_mkdir requires a non-negative integer block offset");
+
+    return 0;
+}
+int fat_mkdir_run(struct fun_context *fctx)
+{
+    FILE *fatfp;
+    size_t fatfp_offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
+        return -1;
+
+    // TODO: Ignore the error code here??
+    fatfs_mkdir(fatfp, fatfp_offset, fctx->argv[2]);
 
     return 0;
 }
