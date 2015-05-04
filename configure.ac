@@ -28,6 +28,6 @@ AC_CHECK_FUNCS([memset setenv strdup strtoul])
 AC_CHECK_LIB([confuse], [cfg_init], [], [ AC_MSG_ERROR([Could not find libconfuse]) ])
 AC_CHECK_LIB([archive], [archive_read_new], [], [ AC_MSG_ERROR([Could not find libarchive]) ])
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 
 AC_OUTPUT

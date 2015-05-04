@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Test the creation and application of a trivial firmware file
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+require-fwup-version="0.0"
+file-resource "TEST" {
+  length=1024
+  sha256="5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2"
+}
+task "complete" {
+  require-partition1-offset=-1
+  verify-on-the-fly=false
+  require-unmounted-destination=false
+  on-init {
+    funlist = {}
+  }
+  on-finish {
+    funlist = {}
+  }
+  on-error {
+    funlist = {}
+  }
+  on-resource "TEST" {
+    # verify-on-the-fly=""
+    funlist = {"2", "raw_write", "0"}
+  }
+}
+EOF
+
+$FWUP -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+diff $WORK/1K.bin $UNZIPDIR/data/TEST
+
+# Check that applying the firmware does the expected thing
+$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+diff $IMGFILE $WORK/1K.bin
+

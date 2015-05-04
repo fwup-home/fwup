@@ -17,3 +17,8 @@ install-sh
 missing
 .dirstamp
 fwup.pro.user
+compile
+test-driver
+*.log
+*.trs
+tests/work
