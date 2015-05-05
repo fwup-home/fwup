@@ -273,7 +273,7 @@ fat_attrib(block_offset, filename, attrib) | Modify a file's attributes. attrib 
 fat_mv(block_offset, oldname, newname) | Rename the specified file on a FAT file system
 fat_rm(block_offset, filename)        | Delete the specified file
 fat_mkdir(block_offset, filename)     | Create a directory on a FAT file system
-fat_setlabel(block_offset, filename)  | Set the volume label on a FAT file system
+fat_setlabel(block_offset, label)     | Set the volume label on a FAT file system
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
 

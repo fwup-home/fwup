@@ -97,9 +97,6 @@ int fwup_create(const char *configfile, const char *output_firmware)
     cfg_t *cfg = NULL;
     int rc = 0;
 
-    // Set the NOW environment variable for use by the config script.
-    set_now_time();
-
     // Parse configuration
     OK_OR_CLEANUP(cfgfile_parse_file(configfile, &cfg));
 

@@ -34,14 +34,26 @@ const char *get_creation_timestamp()
     // Ensure that if the creation timestamp is queried more than
     // once that the same string gets returned.
     if (*time_string == '\0') {
+        char *now = getenv("NOW");
+        if (now != NULL) {
+            // The user specified NOW, so check that it's parsable.
+            struct tm tmp;
+            if (strptime(now, timestamp_format, &tmp) != NULL) {
+                strcpy(time_string, now);
+                return time_string;
+            }
+
+            INFO("NOW environment variable set, but not in YYYY-MM-DDTHH:MM:SSZ format so ignoring");
+        }
         time_t t = time(NULL);
-        struct tm *tmp = gmtime(&t);
-        if (tmp == NULL) {
+        struct tm *tm_now = gmtime(&t);
+        if (tm_now == NULL) {
             perror("gmtime");
             exit(1);
         }
 
-        strftime(time_string, sizeof(time_string), timestamp_format, tmp);
+        strftime(time_string, sizeof(time_string), timestamp_format, tm_now);
+        setenv("NOW", time_string, 1);
     }
 
     return time_string;
@@ -53,11 +65,6 @@ int timestamp_to_tm(const char *timestamp, struct tm *tmp)
         ERR_RETURN("error parsing timestamp");
     else
         return 0;
-}
-
-void set_now_time()
-{
-    setenv("NOW", get_creation_timestamp(), 1);
 }
 
 /**
