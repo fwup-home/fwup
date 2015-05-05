@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#
+# Test the creation and application of a trivial firmware file
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+meta-product = "product name"
+meta-description = "product description"
+meta-version = "some version"
+meta-platform = "a platform"
+meta-architecture = "an architecture"
+meta-author = "someone"
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+meta-product="product name"
+meta-description="product description"
+meta-version="some version"
+meta-author="someone"
+meta-platform="a platform"
+meta-architecture="an architecture"
+require-fwup-version="0.0"
+EOF
+
+$FWUP -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf

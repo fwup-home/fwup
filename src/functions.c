@@ -267,8 +267,18 @@ int fat_write_validate(struct fun_context *fctx)
 }
 int fat_write_run(struct fun_context *fctx)
 {
+    if (!fctx->on_event)
+        return -1;
+
+    cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
+    if (!resource)
+        ERR_RETURN("fat_write can't find matching file-resource");
+    size_t expected_length = cfg_getint(resource, "length");
+    char *expected_sha256 = cfg_getstr(resource, "sha256");
+
     FILE *fatfp;
     size_t fatfp_offset;
+    size_t len_written = 0;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -289,7 +299,17 @@ int fat_write_run(struct fun_context *fctx)
 
         if (fatfs_pwrite(fatfp, fatfp_offset, fctx->argv[2], (int) offset, buffer, len) < 0)
             return -1;
+
+        len_written += len;
     }
+
+    if (len_written != expected_length) {
+        if (len_written == 0)
+            ERR_RETURN("fat_write didn't write anything. Was it called twice in one on-resource?");
+        else
+            ERR_RETURN("fat_write didn't write the expected amount");
+    }
+
     return 0;
 }
 

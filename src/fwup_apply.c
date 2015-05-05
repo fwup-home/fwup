@@ -75,19 +75,21 @@ static cfg_t *find_task(cfg_t *cfg, int output_fd, const char *task_prefix)
 
 static int run_event(struct fun_context *fctx, cfg_t *task, const char *event_type, const char *event_parameter)
 {
-    cfg_t *on_event;
     if (event_parameter)
-        on_event = cfg_gettsec(task, event_type, event_parameter);
+        fctx->on_event = cfg_gettsec(task, event_type, event_parameter);
     else
-        on_event = cfg_getsec(task, event_type);
+        fctx->on_event = cfg_getsec(task, event_type);
 
-    if (on_event) {
-        cfg_opt_t *funlist = cfg_getopt(on_event, "funlist");
+    if (fctx->on_event) {
+        cfg_opt_t *funlist = cfg_getopt(fctx->on_event, "funlist");
         if (funlist) {
-            if (fun_run_funlist(fctx, funlist) < 0)
+            if (fun_run_funlist(fctx, funlist) < 0) {
+                fctx->on_event = NULL;
                 return -1;
+            }
         }
     }
+    fctx->on_event = NULL;
     return 0;
 }
 

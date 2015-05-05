@@ -31,15 +31,22 @@ way. The utility has the following features:
 # Examples!
 
 See https://github.com/fhunleth/bbb-buildroot-fwup for firmware update examples
-for the BeagleBone Black.
+for the BeagleBone Black and Raspberry Pi.
 
 # Building
+
+IMPORTANT: libconfuse is broke in many distributions. A patch to fix it (the
+environment variable substitution handling) has been integrated into the
+upstream package, but it has not propogated through to the distributions. This
+is partially due to libconfuse not being actively supported.
 
 You'll need [libconfuse](http://www.nongnu.org/confuse/) and
 [libarchive](http://libarchive.org/) installed to build. On Ubuntu and Debian,
 you can run:
 
-    sudo apt-get install libarchive-dev libconfuse-dev
+    sudo apt-get install libarchive-dev
+
+Download libconfuse as source and build and install it.
 
 Once that completes, clone or download the source code and run the following:
 
@@ -47,6 +54,21 @@ Once that completes, clone or download the source code and run the following:
     ./configure
     make
     make install
+
+# Regression tests
+
+The firmware update code is one of the parts of an embedded system where bugs
+can be frustratingly difficult or impossible to fix in the field. This project
+contains unit tests to reduce the risk. This doesn't remove all of the risk, and
+your project's fwup configuration file can certainly be buggy (e.g., bad flash
+offsets, etc.) so it is still important to test your firmware updates before
+deploying them.
+
+To run the unit tests, build the project as above and run:
+
+    make check
+
+If the unit tests don't pass, please submit a bug report.
 
 # Invoking
 
@@ -146,6 +168,18 @@ of the archive. A typical `file-resource` section looks like this:
 ```
 file-resource zImage {
         host-path = "output/images/zImage"
+}
+```
+
+Resources are usually stored in the `data` directory of the firmware archive.
+This is transparent for most users. If you need to make the `.fw` file
+interoperate with other software, it is sometimes useful to embed a file into
+the archive at another location. This can be done by specifying an absolute path
+resource as follows:
+
+```
+file-resource "/my_custom_metadata" {
+        host-path = "path/to/my_custom_metadata_file"
 }
 ```
 

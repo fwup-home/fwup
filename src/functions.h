@@ -47,6 +47,9 @@ struct fun_context {
     // Task configuration
     cfg_t *task;
 
+    // When processing events (on-init, on-resource, on-finish, etc.) this is that configuration
+    cfg_t *on_event;
+
     // If the context supplies data, this function gets it. If read returns 0,
     // no more data is available. If <0, then there's an error.
     int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset);
