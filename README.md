@@ -64,7 +64,12 @@ your project's fwup configuration file can certainly be buggy (e.g., bad flash
 offsets, etc.) so it is still important to test your firmware updates before
 deploying them.
 
-To run the unit tests, build the project as above and run:
+To run the unit tests, you'll need the mtools package. This isn't used by
+`fwup`, but it's needed to verify that FAT file system operations work.
+
+    sudo apt-get install mtools
+
+Then build the project as above and run:
 
     make check
 

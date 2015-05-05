@@ -16,6 +16,9 @@
 
 #include "functions.h"
 #include "util.h"
+#include "fatfs.h"
+#include "mbr.h"
+#include "fwfile.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -23,9 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "fatfs.h"
-#include "mbr.h"
-#include "fwfile.h"
+#include "3rdparty/sha2.h"
 
 static int raw_write_validate(struct fun_context *fctx);
 static int raw_write_run(struct fun_context *fctx);
@@ -169,13 +170,25 @@ int raw_write_validate(struct fun_context *fctx)
 int raw_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
+    assert(fctx->on_event);
+
+    cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
+    if (!resource)
+        ERR_RETURN("raw_write can't find matching file-resource");
+    size_t expected_length = cfg_getint(resource, "length");
+    char *expected_sha256 = cfg_getstr(resource, "sha256");
+    if (strlen(expected_sha256) != SHA256_DIGEST_STRING_LENGTH - 1)
+        ERR_RETURN("raw_write detected sha256 with the wrong length");
 
     // Just in case we're raw writing to the FAT partition, make sure
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL, NULL);
 
     int dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
+    size_t len_written = 0;
 
+    SHA256_CTX ctx256;
+    SHA256_Init(&ctx256);
     for (;;) {
         int64_t offset;
         size_t len;
@@ -188,10 +201,26 @@ int raw_write_run(struct fun_context *fctx)
         if (len == 0)
             break;
 
+        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
+
         ssize_t written = pwrite(fctx->output_fd, buffer, len, dest_offset + offset);
         if (written != (ssize_t) len)
             ERR_RETURN("unexpected error writing to destination");
+
+        len_written += len;
     }
+
+    if (len_written != expected_length) {
+        if (len_written == 0)
+            ERR_RETURN("raw_write didn't write anything. Was it called twice in one on-resource?");
+        else
+            ERR_RETURN("raw_write didn't write the expected amount");
+    }
+
+    char digest[SHA256_DIGEST_STRING_LENGTH];
+    SHA256_End(&ctx256, digest);
+    if (memcmp(digest, expected_sha256, SHA256_DIGEST_STRING_LENGTH) != 0)
+        ERR_RETURN("raw_write detected SHA256 mismatch");
 
     return 0;
 }
@@ -267,14 +296,15 @@ int fat_write_validate(struct fun_context *fctx)
 }
 int fat_write_run(struct fun_context *fctx)
 {
-    if (!fctx->on_event)
-        return -1;
+    assert(fctx->on_event);
 
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("fat_write can't find matching file-resource");
     size_t expected_length = cfg_getint(resource, "length");
     char *expected_sha256 = cfg_getstr(resource, "sha256");
+    if (strlen(expected_sha256) != SHA256_DIGEST_STRING_LENGTH - 1)
+        ERR_RETURN("fat_write detected sha256 with the wrong length");
 
     FILE *fatfp;
     size_t fatfp_offset;
@@ -285,6 +315,8 @@ int fat_write_run(struct fun_context *fctx)
     // enforce truncation semantics if the file exists
     fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
 
+    SHA256_CTX ctx256;
+    SHA256_Init(&ctx256);
     for (;;) {
         int64_t offset;
         size_t len;
@@ -296,6 +328,8 @@ int fat_write_run(struct fun_context *fctx)
         // Check if done.
         if (len == 0)
             break;
+
+        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
 
         if (fatfs_pwrite(fatfp, fatfp_offset, fctx->argv[2], (int) offset, buffer, len) < 0)
             return -1;
@@ -309,6 +343,11 @@ int fat_write_run(struct fun_context *fctx)
         else
             ERR_RETURN("fat_write didn't write the expected amount");
     }
+
+    char digest[SHA256_DIGEST_STRING_LENGTH];
+    SHA256_End(&ctx256, digest);
+    if (memcmp(digest, expected_sha256, SHA256_DIGEST_STRING_LENGTH) != 0)
+        ERR_RETURN("fat_write detected SHA256 mismatch");
 
     return 0;
 }

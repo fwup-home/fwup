@@ -11,7 +11,9 @@ TESTS = 001_simple_fw.test \
 	011_fat_setlabel.test \
 	012_fat_write.test \
 	013_fat_mv.test \
-	014_fat_rm.test
+	014_fat_rm.test \
+	015_fat_bad_sha2.test \
+	016_raw_bad_sha2.test
 
 EXTRA_DIST = $(TESTS) common.sh
 

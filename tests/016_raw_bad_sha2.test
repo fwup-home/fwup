@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test the SHA-256 check when write raw bytes.
+#
+
+. ./common.sh
+
+# 1KB of all ones and an "impostor" file of one different byte
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+cp $WORK/1K.bin $WORK/1Kzero.bin
+dd if=/dev/zero of=$WORK/1Kzero.bin bs=1 count=1 conv=notrunc 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource 1K.bin {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+        on-resource 1K.bin {
+                raw_write(0)
+        }
+}
+EOF
+
+# Create the firmware file
+$FWUP -c -f $CONFIG -o $FWFILE
+
+# Now be sneaking and replace the data file with a same-sized imposter
+unzip -q $FWFILE -d $UNZIPDIR
+cp $WORK/1Kzero.bin $UNZIPDIR/data/1K.bin
+cd $UNZIPDIR
+zip -q $WORK/imposter.fw meta.conf data/1K.bin
+cd -
+echo Expecting SHA256 mismatch...
+if $FWUP -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+    echo "This should have failed"
+    exit 1
+fi
