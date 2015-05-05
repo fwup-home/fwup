@@ -10,18 +10,34 @@
 cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
 
 cat >$CONFIG <<EOF
-file-resource subdir/TEST {
+file-resource subdir/onesubdir {
 	host-path = "${WORK}/1K.bin"
+}
+file-resource /rootfile {
+	host-path = "${WORK}/1K.bin"
+}
+file-resource subdir1/subdir2/twosubdir {
+        host-path = "${WORK}/1K.bin"
 }
 
 task complete {
-	on-resource subdir/TEST { raw_write(0) }
+        on-resource subdir/onesubdir { raw_write(0) }
+        on-resource /rootfile { raw_write(4) }
+        on-resource subdir1/subdir2/twosubdir { raw_write(8) }
 }
 EOF
 
 cat >$EXPECTED_META_CONF <<EOF
 require-fwup-version="0.0"
-file-resource "subdir/TEST" {
+file-resource "subdir/onesubdir" {
+  length=1024
+  sha256="5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2"
+}
+file-resource "/rootfile" {
+  length=1024
+  sha256="5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2"
+}
+file-resource "subdir1/subdir2/twosubdir" {
   length=1024
   sha256="5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2"
 }
@@ -38,9 +54,17 @@ task "complete" {
   on-error {
     funlist = {}
   }
-  on-resource "subdir/TEST" {
+  on-resource "subdir/onesubdir" {
     # verify-on-the-fly=""
     funlist = {"2", "raw_write", "0"}
+  }
+  on-resource "/rootfile" {
+    # verify-on-the-fly=""
+    funlist = {"2", "raw_write", "4"}
+  }
+  on-resource "subdir1/subdir2/twosubdir" {
+    # verify-on-the-fly=""
+    funlist = {"2", "raw_write", "8"}
   }
 }
 EOF
@@ -49,9 +73,13 @@ $FWUP -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $WORK/1K.bin $UNZIPDIR/data/subdir/TEST
+diff $WORK/1K.bin $UNZIPDIR/data/subdir/onesubdir
+diff $WORK/1K.bin $UNZIPDIR/rootfile
+diff $WORK/1K.bin $UNZIPDIR/data/subdir1/subdir2/twosubdir
 
 # Check that applying the firmware does the expected thing
 $FWUP -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $WORK/1K.bin
-
+dd if=$WORK/1K.bin seek=0 of=$WORK/expected.bin
+dd if=$WORK/1K.bin seek=4 of=$WORK/expected.bin
+dd if=$WORK/1K.bin seek=8 of=$WORK/expected.bin
+diff $IMGFILE $WORK/expected.bin

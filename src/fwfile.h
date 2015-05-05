@@ -20,7 +20,9 @@
 #include <confuse.h>
 #include <archive.h>
 
+#define FWFILE_MAX_ARCHIVE_PATH     512
+
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a);
-int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const char *local_path);
+int fwfile_add_local_file(struct archive *a, const char *resource_name, const char *local_path);
 
 #endif // FWFILE_H

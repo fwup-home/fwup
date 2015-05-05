@@ -18,6 +18,7 @@
 #include "util.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <archive_entry.h>
 
 static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
@@ -47,7 +48,7 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a)
     return 0;
 }
 
-int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const char *local_path)
+int fwfile_add_local_file(struct archive *a, const char *resource_name, const char *local_path)
 {
     int rc = 0;
 
@@ -65,9 +66,35 @@ int fwfile_add_local_file(struct archive *a, const char *name_in_archive, const 
 
     entry = archive_entry_new();
 
-    char destpath[256];
-    sprintf(destpath, "data/%s", name_in_archive);
-    archive_entry_set_pathname(entry, destpath);
+    // Convert the resource name to an archive path (most resources should be in the data directory)
+    char archive_path[FWFILE_MAX_ARCHIVE_PATH];
+    size_t resource_name_len = strlen(resource_name);
+    if (resource_name_len + 6 > sizeof(archive_path))
+        ERR_CLEANUP_MSG("resource name is too long");
+    if (resource_name_len == '\0')
+        ERR_CLEANUP_MSG("resource name can't be empty");
+    if (resource_name[resource_name_len - 1] == '/')
+        ERR_CLEANUP_MSG("resource name can't end in a '/'");
+
+    if (resource_name[0] == '/') {
+        if (resource_name[1] == '\0')
+            ERR_CLEANUP_MSG("resource name can't be the root directory");
+
+        // This seems like it's just asking for trouble, so error out.
+        if (strcmp(resource_name, "/meta.conf") == 0)
+            ERR_CLEANUP_MSG("resources can't be named /meta.conf");
+
+        // Absolute paths are not intended to be commonly used and ones
+        // in /data won't work when applying the updates, so error out.
+        if (memcmp(resource_name, "/data/", 6) == 0 ||
+            strcmp(resource_name, "/data") == 0)
+            ERR_CLEANUP_MSG("use a normal resource name rather than specifying /data");
+
+        strcpy(archive_path, &resource_name[1]);
+    } else {
+        sprintf(archive_path, "data/%s", resource_name);
+    }
+    archive_entry_set_pathname(entry, archive_path);
     archive_entry_set_size(entry, total_len);
     archive_entry_set_filetype(entry, AE_IFREG);
     archive_entry_set_perm(entry, 0644);

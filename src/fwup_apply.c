@@ -31,6 +31,7 @@
 #include "functions.h"
 #include "fatfs.h"
 #include "mbr.h"
+#include "fwfile.h"
 
 static bool task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -210,6 +211,26 @@ static int set_time_from_cfg(cfg_t *cfg)
     return 0;
 }
 
+static int archive_filename_to_resource(const char *name, char *result, size_t maxlength)
+{
+    // Check that there's enough room to copy the string
+    if (maxlength < strlen(name) + 2)
+        ERR_RETURN("Bad path found in archive");
+
+    // As a matter of convention, everything useful in the archive is stored
+    // in the data directory. There are a couple scenarios where it's useful
+    // to stuff a file in the root directory of the archive for compatibility
+    // with other programs. Those are specified as absolute paths.
+    if (memcmp(name, "data/", 5) == 0) {
+        strcpy(result, &name[5]);
+    } else {
+        result[0] = '/';
+        strcpy(&result[1], name);
+    }
+
+    return 0;
+}
+
 int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename)
 {
     int rc = 0;
@@ -256,10 +277,9 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     fctx.read = read_callback;
     while (archive_read_next_header(pd.a, &ae) == ARCHIVE_OK) {
         const char *filename = archive_entry_pathname(ae);
-        if (memcmp(filename, "data/", 5) != 0)
-            continue;
+        char resource_name[FWFILE_MAX_ARCHIVE_PATH];
 
-        const char *resource_name = &filename[5];
+        OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
         OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-resource", resource_name));
     }
 

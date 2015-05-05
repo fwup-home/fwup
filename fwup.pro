@@ -52,3 +52,9 @@ OTHER_FILES += \
     fwupdate.conf \
     README.md \
     TODO.md
+
+DISTFILES += \
+    tests/001_simple_fw.test \
+    tests/002_resource_subdir.test \
+    tests/003_write_offset.test \
+    tests/common.sh

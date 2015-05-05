@@ -16,5 +16,3 @@
 7. Implement require-fwup-version, but this should be done after #1 so that it's more useful.
 
 8. Implement progress
-
-9. Umount filesystems like mmccopy
