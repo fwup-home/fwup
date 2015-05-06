@@ -1,0 +1,83 @@
+#!/bin/sh
+
+#
+# Test copying files on a FAT file system.
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1K.bin {
+	host-path = "${WORK}/1K.bin"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "1.bin")
+        }
+        on-finish {
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "2.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "3.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "3.bin", "4.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "4.bin", "5.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "5.bin", "6.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "7.bin")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP -c -f $CONFIG -o $FWFILE
+$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 4685-9148
+Directory for ::/
+
+1        bin      1024 2015-04-05  18:10
+2        bin      1024 2015-04-05  18:10
+3        bin      1024 2015-04-05  18:10
+4        bin      1024 2015-04-05  18:10
+5        bin      1024 2015-04-05  18:10
+6        bin      1024 2015-04-05  18:10
+7        bin      1024 2015-04-05  18:10
+        7 files               7 168 bytes
+                         38 903 296 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+for i in 1 2 3 4 5 6 7; do
+    mcopy -n -i $WORK/fwup.img@@32256 ::/${i}.bin $WORK/actual.1K.bin
+    diff $WORK/1K.bin $WORK/actual.1K.bin
+done

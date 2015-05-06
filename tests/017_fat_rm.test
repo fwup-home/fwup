@@ -32,16 +32,16 @@ task complete {
         }
         on-resource 1K.bin {
                 fat_write(\${BOOT_PART_OFFSET}, "1.bin")
-                fat_write(\${BOOT_PART_OFFSET}, "2.bin")
-#                fat_write(\${BOOT_PART_OFFSET}, "3.bin")
-#                fat_write(\${BOOT_PART_OFFSET}, "4.bin")
-#                fat_write(\${BOOT_PART_OFFSET}, "5.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "2.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "3.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "4.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "5.bin")
         }
         on-finish {
-             #   fat_rm(\${BOOT_PART_OFFSET}, "1.bin")
-             #   fat_rm(\${BOOT_PART_OFFSET}, "2.bin")
-             #   fat_rm(\${BOOT_PART_OFFSET}, "3.bin")
-             #   fat_rm(\${BOOT_PART_OFFSET}, "4.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "1.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "2.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "3.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "4.bin")
         }
 }
 EOF

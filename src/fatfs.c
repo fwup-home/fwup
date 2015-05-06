@@ -170,6 +170,42 @@ int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char
 }
 
 /**
+ * @brief fatfs_cp copy a file
+ * @param fatfp the raw file system data
+ * @param fatfp_offset the offset within fatfp for where to start
+ * @param from_name original filename
+ * @param to_name the name of the copy filename
+ * @return 0 on success
+ */
+int fatfs_cp(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name)
+{
+    MAYBE_MOUNT(fatfp, fatfp_offset);
+    close_open_files();
+
+    FIL fromfil;
+    FIL tofil;
+    CHECK("fatfs_cp can't open file", from_name, f_open(&fromfil, from_name, FA_READ));
+    CHECK("fatfs_cp can't open file", to_name, f_open(&tofil, to_name, FA_CREATE_NEW | FA_WRITE));
+
+    for (;;) {
+        char buffer[4096];
+        UINT bw, br;
+
+        CHECK("fatfs_cp can't read", from_name, f_read(&fromfil, buffer, sizeof(buffer), &br));
+        if (br == 0)
+            break;
+
+        CHECK("fatfs_cp can't write", to_name, f_write(&tofil, buffer, br, &bw));
+        if (br != bw)
+            ERR_RETURN("Error copying file to FAT");
+
+    }
+    f_close(&fromfil);
+    f_close(&tofil);
+    return 0;
+}
+
+/**
  * @brief fatfs_attrib set the attribs on a file
  * @param fatfp the raw file system data
  * @param fatfp_offset the offset within fatfp for where to start
@@ -343,3 +379,4 @@ DWORD get_fattime()
 {
     return fattime_;
 }
+

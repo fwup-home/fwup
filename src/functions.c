@@ -40,6 +40,8 @@ static int fat_mv_validate(struct fun_context *fctx);
 static int fat_mv_run(struct fun_context *fctx);
 static int fat_rm_validate(struct fun_context *fctx);
 static int fat_rm_run(struct fun_context *fctx);
+static int fat_cp_validate(struct fun_context *fctx);
+static int fat_cp_run(struct fun_context *fctx);
 static int fat_mkdir_validate(struct fun_context *fctx);
 static int fat_mkdir_run(struct fun_context *fctx);
 static int fat_setlabel_validate(struct fun_context *fctx);
@@ -64,6 +66,7 @@ static struct fun_info fun_table[] = {
     {"fat_write", fat_write_validate, fat_write_run },
     {"fat_mv", fat_mv_validate, fat_mv_run },
     {"fat_rm", fat_rm_validate, fat_rm_run },
+    {"fat_cp", fat_cp_validate, fat_cp_run },
     {"fat_mkdir", fat_mkdir_validate, fat_mkdir_run },
     {"fat_setlabel", fat_setlabel_validate, fat_setlabel_run },
     {"fw_create", fw_create_validate, fw_create_run },
@@ -391,6 +394,28 @@ int fat_rm_run(struct fun_context *fctx)
 
     // TODO: Ignore the error code here??
     fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
+
+    return 0;
+}
+
+int fat_cp_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("fat_cp requires a block offset, from filename, and to filename");
+
+    CHECK_ARG_UINT(fctx->argv[1], "fat_cp requires a non-negative integer block offset");
+
+    return 0;
+}
+int fat_cp_run(struct fun_context *fctx)
+{
+    FILE *fatfp;
+    size_t fatfp_offset;
+    if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
+        return -1;
+
+    // TODO: Ignore the error code here??
+    fatfs_cp(fatfp, fatfp_offset, fctx->argv[2], fctx->argv[3]);
 
     return 0;
 }

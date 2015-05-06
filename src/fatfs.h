@@ -33,6 +33,7 @@ int fatfs_setlabel(FILE *fatfp, size_t fatfp_offset, const char *label);
 int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name);
 int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename);
 int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset, const char *filename, int offset, const char *buffer, size_t size);
+int fatfs_cp(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name);
 int fatfs_closefs();
 
 #endif // FATFS_H
