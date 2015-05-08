@@ -73,7 +73,7 @@ static cfg_t *find_task(cfg_t *cfg, int output_fd, const char *task_prefix)
     return 0;
 }
 
-static int run_event(struct fun_context *fctx, cfg_t *task, const char *event_type, const char *event_parameter)
+static int apply_event(struct fun_context *fctx, cfg_t *task, const char *event_type, const char *event_parameter, int (*fun)(struct fun_context *fctx))
 {
     if (event_parameter)
         fctx->on_event = cfg_gettsec(task, event_type, event_parameter);
@@ -83,7 +83,7 @@ static int run_event(struct fun_context *fctx, cfg_t *task, const char *event_ty
     if (fctx->on_event) {
         cfg_opt_t *funlist = cfg_getopt(fctx->on_event, "funlist");
         if (funlist) {
-            if (fun_run_funlist(fctx, funlist) < 0) {
+            if (fun_apply_funlist(fctx, funlist, fun) < 0) {
                 fctx->on_event = NULL;
                 return -1;
             }
@@ -233,13 +233,74 @@ static int archive_filename_to_resource(const char *name, char *result, size_t m
     return 0;
 }
 
-int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename)
+static void fwup_apply_report_progress(struct fun_context *fctx, int progress_units)
+{
+    if (fctx->progress_mode == FWUP_APPLY_NO_PROGRESS)
+        return;
+
+    fctx->current_progress_units += progress_units;
+    int percent;
+    if (fctx->total_progress_units > 0)
+        percent = (100 * fctx->current_progress_units + 50) / fctx->total_progress_units;
+    else
+        percent = 0;
+
+    // Don't report 100% until the very, very end just in case something takes
+    // longer than expected in the code after all progress units have been reported.
+    if (percent > 99)
+        percent = 99;
+
+    if (percent == fctx->last_progress_reported)
+        return;
+
+    fctx->last_progress_reported = percent;
+
+    switch (fctx->progress_mode) {
+    case FWUP_APPLY_NUMERIC_PROGRESS:
+        printf("%d\n", percent);
+        break;
+
+    case FWUP_APPLY_NORMAL_PROGRESS:
+        printf("\r%3d%%", percent);
+        fflush(stdout);
+        break;
+
+    case FWUP_APPLY_NO_PROGRESS:
+    default:
+        break;
+    }
+}
+
+static void fwup_apply_report_final_progress(struct fun_context *fctx)
+{
+    switch (fctx->progress_mode) {
+    case FWUP_APPLY_NUMERIC_PROGRESS:
+        printf("100\n");
+        break;
+
+    case FWUP_APPLY_NORMAL_PROGRESS:
+        printf("\r100%%\n");
+        break;
+
+    case FWUP_APPLY_NO_PROGRESS:
+    default:
+        break;
+    }
+}
+
+int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename, enum fwup_apply_progress progress)
 {
     int rc = 0;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.fatfs_ptr = fatfs_ptr_callback;
     fctx.subarchive_ptr = subarchive_ptr_callback;
+    fctx.progress_mode = progress;
+    fctx.report_progress = fwup_apply_report_progress;
+    fctx.last_progress_reported = -1;
+
+    // Report 0 progress before doing anything
+    fwup_apply_report_progress(&fctx, 0);
 
     struct fwup_data pd;
     memset(&pd, 0, sizeof(pd));
@@ -272,27 +333,58 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (fctx.task == 0)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
-    fctx.type = FUN_CONTEXT_INIT;
-    OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-init", NULL));
+    // Compute the total progress units if we're going to display it
+    if (progress != FWUP_APPLY_NO_PROGRESS) {
+        fctx.type = FUN_CONTEXT_INIT;
+        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_compute_progress));
 
-    fctx.type = FUN_CONTEXT_FILE;
-    fctx.read = read_callback;
-    while (archive_read_next_header(pd.a, &ae) == ARCHIVE_OK) {
-        const char *filename = archive_entry_pathname(ae);
-        char resource_name[FWFILE_MAX_ARCHIVE_PATH];
+        fctx.type = FUN_CONTEXT_FILE;
 
-        OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
-        OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-resource", resource_name));
+        cfg_t *sec;
+        int i = 0;
+        while ((sec = cfg_getnsec(fctx.task, "on-resource", i++)) != NULL) {
+            cfg_t *resource = cfg_gettsec(fctx.cfg, "file-resource", sec->title);
+            if (!resource) {
+                // This really shouldn't happen, but failing to calculate
+                // progress for a missing file-resource seems harsh.
+                INFO("Can't find file-resource for %s", sec->title);
+                continue;
+            }
+
+            OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", sec->title, fun_compute_progress));
+        }
+
+        fctx.type = FUN_CONTEXT_FINISH;
+        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_compute_progress));
     }
 
-    fctx.type = FUN_CONTEXT_FINISH;
-    OK_OR_CLEANUP(run_event(&fctx, fctx.task, "on-finish", NULL));
+    // Run
+    {
+        fctx.type = FUN_CONTEXT_INIT;
+        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_run));
+
+        fctx.type = FUN_CONTEXT_FILE;
+        fctx.read = read_callback;
+        while (archive_read_next_header(pd.a, &ae) == ARCHIVE_OK) {
+            const char *filename = archive_entry_pathname(ae);
+            char resource_name[FWFILE_MAX_ARCHIVE_PATH];
+
+            OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
+            OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", resource_name, fun_run));
+        }
+
+        fctx.type = FUN_CONTEXT_FINISH;
+        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_run));
+    }
 
     // Flush the FATFS code in case it was used.
     OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL, NULL));
 
     // Flush a subarchive that's being built.
     OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, "", NULL, NULL));
+
+    // Report 100% to the user.
+    fwup_apply_report_final_progress(&fctx);
 
 cleanup:
     archive_read_free(pd.a);

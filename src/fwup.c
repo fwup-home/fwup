@@ -184,8 +184,7 @@ int main(int argc, char **argv)
 
         // unmount everything using the device to avoid corrupting partitions
         mmc_umount_all(mmc_device);
-
-        if (fwup_apply(input_firmware, task, mmc_device) < 0)
+        if (fwup_apply(input_firmware, task, mmc_device, quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;

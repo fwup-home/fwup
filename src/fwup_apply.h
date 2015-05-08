@@ -17,6 +17,8 @@
 #ifndef FWUP_APPLY_H
 #define FWUP_APPLY_H
 
-int fwup_apply(const char *fw_filename, const char *task, const char *output_filename);
+#include "functions.h"
+
+int fwup_apply(const char *fw_filename, const char *task, const char *output_filename, enum fwup_apply_progress progress);
 
 #endif // FWUP_APPLY_H

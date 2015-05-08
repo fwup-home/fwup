@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#
+# Test out quiet operation on a firmware write
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${WORK}/1K.bin"
+}
+file-resource 2.bin {
+	host-path = "${WORK}/1K.bin"
+}
+file-resource 3.bin {
+	host-path = "${WORK}/1K.bin"
+}
+file-resource 4.bin {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource 1.bin { raw_write(0) }
+	on-resource 2.bin { raw_write(0) }
+	on-resource 3.bin { raw_write(0) }
+	on-resource 4.bin { raw_write(0) }
+}
+EOF
+
+$FWUP -c -f $CONFIG -o $FWFILE
+
+$FWUP -q -a -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+
+# No output if there's quiet
+cat >$WORK/expected_output.txt <<EOF
+EOF
+diff $WORK/expected_output.txt $WORK/actual_output.txt
+

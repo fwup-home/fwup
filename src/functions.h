@@ -29,6 +29,15 @@ enum fun_context_type {
     FUN_CONTEXT_FILE
 };
 
+/**
+ * @brief How to report progress to the user
+ */
+enum fwup_apply_progress {
+    FWUP_APPLY_NO_PROGRESS,
+    FWUP_APPLY_NUMERIC_PROGRESS,
+    FWUP_APPLY_NORMAL_PROGRESS
+};
+
 #define FUN_MAX_ARGS  (10)
 struct fun_private;
 struct archive;
@@ -50,6 +59,19 @@ struct fun_context {
     // When processing events (on-init, on-resource, on-finish, etc.) this is that configuration
     cfg_t *on_event;
 
+    // This is set based on command line parameters
+    enum fwup_apply_progress progress_mode;
+
+    // If we're showing progress when applying, this is the number of progress_units that
+    // should be 100%.
+    int total_progress_units;
+
+    // This counts up as we make progress.
+    int current_progress_units;
+
+    // The most recent progress reported is cached to avoid unnecessary context switching/IO
+    int last_progress_reported;
+
     // If the context supplies data, this function gets it. If read returns 0,
     // no more data is available. If <0, then there's an error.
     int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset);
@@ -70,8 +92,8 @@ struct fun_context {
 };
 
 int fun_validate(struct fun_context *fctx);
+int fun_compute_progress(struct fun_context *fctx);
 int fun_run(struct fun_context *fctx);
-int fun_run_funlist(struct fun_context *fctx, cfg_opt_t *funlist);
-int fun_calc_progress_units(struct fun_context *fctx, int *progress_units);
+int fun_apply_funlist(struct fun_context *fctx, cfg_opt_t *funlist, int (*fun)(struct fun_context *fctx));
 
 #endif // FUNCTIONS_H
