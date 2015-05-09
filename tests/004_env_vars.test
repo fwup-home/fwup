@@ -1,7 +1,11 @@
 #!/bin/sh
 
 #
-# Test the creation and application of a trivial firmware file
+# Test environment variables embedded in strings in the config files
+#
+# If this fails, you're using an old version of libconfuse. This is sadly
+# very common. See the readme, but the basic fix is to go to the libconfuse
+# GitHub and build it yourself.
 #
 
 . ./common.sh
