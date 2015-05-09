@@ -30,4 +30,4 @@ EOF
 $FWUP -c -f $CONFIG -o $FWFILE
 $FWUP -i $FWFILE -m | grep -v "meta-creation-date" > $ACTUAL_OUTPUT
 
-diff $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

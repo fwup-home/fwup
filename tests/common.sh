@@ -38,8 +38,8 @@ check_meta_conf() {
     # Trim the results of known lines that vary between runs
     cat $UNZIPDIR/meta.conf | \
         grep -v "^#" | \
-        grep -v "^meta-creation-date=" | \
-        grep -v "host-path=" \
+        grep -v "^meta-creation-date" | \
+        grep -v "host-path" \
         > $TRIMMED_META_CONF
-    diff $EXPECTED_META_CONF $TRIMMED_META_CONF
+    diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }
