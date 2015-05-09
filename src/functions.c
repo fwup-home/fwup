@@ -69,7 +69,9 @@ static struct fun_info fun_table[] = {
     FUN_INFO(mbr_write),
 };
 
-#define CHECK_ARG_UINT(ARG, MSG) do { errno=0; strtoul(ARG, NULL, 0); if (errno != 0) ERR_RETURN(MSG); } while (0)
+// This checks that the argument can be converted to a uint. It is
+// non-trivial to suppress compiler warnings.
+#define CHECK_ARG_UINT(ARG, MSG) do { errno=0; int _ = strtoul(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
 
 static struct fun_info *lookup(int argc, const char **argv)
 {
