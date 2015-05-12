@@ -587,7 +587,7 @@ int fw_create_run(struct fun_context *fctx)
     if (!created)
         ERR_RETURN("fw_create called on archive that was already open");
 
-    if (fwfile_add_meta_conf(fctx->cfg, a) < 0)
+    if (fwfile_add_meta_conf(fctx->cfg, a, NULL) < 0)
         return -1;
 
     fctx->report_progress(fctx, 1);

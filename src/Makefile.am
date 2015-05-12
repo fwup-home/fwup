@@ -8,6 +8,7 @@ fwup_SOURCES=cfgfile.c \
 	fwup_create.c \
 	fwup_list.c \
 	fwup_metadata.c \
+	fwup_genkeys.c \
 	mbr.c \
 	mmc.c \
 	util.c \
@@ -19,6 +20,7 @@ fwup_SOURCES=cfgfile.c \
 	fwup_create.h \
 	fwup_list.h \
 	fwup_metadata.h \
+	fwup_genkeys.h \
 	mbr.h \
 	mmc.h \
 	util.h \

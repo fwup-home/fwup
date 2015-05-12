@@ -20,6 +20,7 @@
 #include <string.h>
 #include <err.h>
 #include <getopt.h>
+#include <sodium.h>
 
 #include "mmc.h"
 #include "util.h"
@@ -27,6 +28,7 @@
 #include "fwup_create.h"
 #include "fwup_list.h"
 #include "fwup_metadata.h"
+#include "fwup_genkeys.h"
 #include "config.h"
 
 // Global options
@@ -48,12 +50,14 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -c   Create the firmware update\n");
     fprintf(stderr, "  -d <Device file for the memory card>\n");
     fprintf(stderr, "  -f <fwupdate.conf> Specify the firmware update configuration file\n");
+    fprintf(stderr, "  -g Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
     fprintf(stderr, "  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
     fprintf(stderr, "  -l   List the available tasks in a firmware update\n");
     fprintf(stderr, "  -m   Print metadata in the firmware update\n");
     fprintf(stderr, "  -n   Report numeric progress\n");
     fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     fprintf(stderr, "  -q   Quiet\n");
+    fprintf(stderr, "  -s <keyfile> A private key file for signing firmware updates\n");
     fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
     fprintf(stderr, "  -v   Verbose\n");
     fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
@@ -75,6 +79,7 @@ static void print_usage(const char *argv0)
 #define CMD_CREATE  2
 #define CMD_LIST    3
 #define CMD_METADATA 4
+#define CMD_GENERATE_KEYS 5
 
 int main(int argc, char **argv)
 {
@@ -86,6 +91,8 @@ int main(int argc, char **argv)
     const char *output_firmware = NULL;
     const char *task = NULL;
     bool accept_found_device = false;
+    unsigned char *signing_key = NULL;
+    unsigned char *public_key = NULL;
 
     if (argc == 1) {
         print_usage(argv[0]);
@@ -93,7 +100,7 @@ int main(int argc, char **argv)
     }
 
     int opt;
-    while ((opt = getopt(argc, argv, "acd:f:i:lmno:pqt:vyz")) != -1) {
+    while ((opt = getopt(argc, argv, "acd:f:gi:lmno:p:qs:t:vyz")) != -1) {
         switch (opt) {
         case 'a':
             command = CMD_APPLY;
@@ -107,6 +114,9 @@ int main(int argc, char **argv)
         case 'f':
             configfile = optarg;
             break;
+        case 'g':
+            command = CMD_GENERATE_KEYS;
+            break;
         case 'i':
             input_firmware = optarg;
             break;
@@ -119,12 +129,30 @@ int main(int argc, char **argv)
         case 'o':
             output_firmware = optarg;
             break;
+        case 'p':
+        {
+            FILE *fp = fopen(optarg, "rb");
+            public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
+            if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
+                err(EXIT_FAILURE, "Error reading public key from file '%s'", optarg);
+            fclose(fp);
+            break;
+        }
         case 'n':
             numeric_progress = true;
             break;
         case 'q':
             quiet = true;
             break;
+        case 's':
+        {
+            FILE *fp = fopen(optarg, "rb");
+            signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
+            if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
+                err(EXIT_FAILURE, "Error reading signing key from file '%s'", optarg);
+            fclose(fp);
+            break;
+        }
         case 't':
             task = optarg;
             break;
@@ -184,25 +212,35 @@ int main(int argc, char **argv)
 
         // unmount everything using the device to avoid corrupting partitions
         mmc_umount_all(mmc_device);
-        if (fwup_apply(input_firmware, task, mmc_device, quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS) < 0)
+        if (fwup_apply(input_firmware,
+                       task,
+                       mmc_device,
+                       quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS,
+                       public_key) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_CREATE:
-        if (fwup_create(configfile, output_firmware) < 0)
+        if (fwup_create(configfile, output_firmware, signing_key) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_LIST:
-        if (fwup_list(input_firmware) < 0)
+        if (fwup_list(input_firmware, public_key) < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_METADATA:
-        if (fwup_metadata(input_firmware) < 0)
+        if (fwup_metadata(input_firmware, public_key) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
+        break;
+
+    case CMD_GENERATE_KEYS:
+        if (fwup_genkeys() < 0)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;

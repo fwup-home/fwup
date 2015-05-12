@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sodium.h>
 
 #include "functions.h"
 #include "fatfs.h"
@@ -288,9 +289,10 @@ static void fwup_apply_report_final_progress(struct fun_context *fctx)
     }
 }
 
-int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename, enum fwup_apply_progress progress)
+int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename, enum fwup_apply_progress progress, const unsigned char *public_key)
 {
     int rc = 0;
+    unsigned char *meta_conf_signature = NULL;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.fatfs_ptr = fatfs_ptr_callback;
@@ -322,10 +324,24 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     if (arc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Error reading archive");
 
-    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_CLEANUP_MSG("Expecting meta.conf to be first file in %s", fw_filename);
+    if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
+        ssize_t total_size = archive_entry_size(ae);
+        if (total_size != crypto_sign_BYTES)
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg));
+        meta_conf_signature = (unsigned char *) malloc(total_size);
+        if (archive_read_all_data(pd.a, (char *) meta_conf_signature, total_size) < 0)
+            ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
+                            "Check for file corruption or libarchive built without zlib support");
+
+        arc = archive_read_next_header(pd.a, &ae);
+        if (arc != ARCHIVE_OK)
+            ERR_CLEANUP_MSG("Expecting more than meta.conf.ed25519 in archive");
+    }
+    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
+        ERR_CLEANUP_MSG("Expecting meta.conf to be at the beginning of %s", fw_filename);
+
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, public_key));
 
     OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
 
@@ -390,6 +406,8 @@ cleanup:
     archive_read_free(pd.a);
     if (fctx.output_fd >= 0)
         close(fctx.output_fd);
+    if (meta_conf_signature)
+        free(meta_conf_signature);
 
     return rc;
 }

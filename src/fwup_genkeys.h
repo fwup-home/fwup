@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-#ifndef CFGFILE_H
-#define CFGFILE_H
+#ifndef FWUP_GENKEYS_H
+#define FWUP_GENKEYS_H
 
-#include <confuse.h>
+int fwup_genkeys();
 
-struct archive;
-struct archive_entry;
-
-int archive_read_all_data(struct archive *a, char *buffer, ssize_t total_size);
-
-int cfgfile_parse_file(const char *filename, cfg_t **cfg);
-int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg, unsigned char *meta_conf_signature, const unsigned char *public_key);
-int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned char *public_key);
-void cfgfile_free(cfg_t *cfg);
-
-#endif // CFGFILE_H
+#endif // FWUP_LIST_H

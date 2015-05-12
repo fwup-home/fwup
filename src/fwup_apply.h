@@ -19,6 +19,6 @@
 
 #include "functions.h"
 
-int fwup_apply(const char *fw_filename, const char *task, const char *output_filename, enum fwup_apply_progress progress);
+int fwup_apply(const char *fw_filename, const char *task, const char *output_filename, enum fwup_apply_progress progress, const unsigned char *public_key);
 
 #endif // FWUP_APPLY_H

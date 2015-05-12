@@ -23,6 +23,7 @@
 #include <string.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <sodium.h>
 
 // Global variable for passing the top level cfg pointer through libconfuse
 // This is needed for validating some of the function calls.
@@ -300,7 +301,31 @@ cleanup:
     return rc;
 }
 
-int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg)
+/**
+ * Helper function for reading all data in a file in the archive
+ *
+ * @param a the archive
+ * @param buffer where to put the data
+ * @param total_size how much to read
+ * @return 0 on success
+ */
+int archive_read_all_data(struct archive *a, char *buffer, ssize_t total_size)
+{
+    ssize_t size_left = total_size;
+    while (size_left > 0) {
+        ssize_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
+        if (len <= 0)
+            return -1;
+        size_left -= len;
+    }
+    return 0;
+}
+
+int cfgfile_parse_fw_ae(struct archive *a,
+                        struct archive_entry *ae,
+                        cfg_t **cfg,
+                        unsigned char *meta_conf_signature,
+                        const unsigned char *public_key)
 {
     int rc = 0;
     char *meta_conf = NULL;
@@ -313,16 +338,21 @@ int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg
         ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
 
     meta_conf = (char *) malloc(total_size + 1);
-    ssize_t size_left = total_size;
-    while (size_left > 0) {
-      ssize_t len = archive_read_data(a, &meta_conf[total_size - size_left], size_left);
-      if (len <= 0)
-          ERR_CLEANUP_MSG("Error reading meta.conf from archive. Error was %d.\n"
-                          "Check for file corruption or libarchive built without zlib support",
-                          len);
-      size_left -= len;
-    }
+    if (archive_read_all_data(a, meta_conf, total_size) < 0)
+        ERR_CLEANUP_MSG("Error reading meta.conf from archive.\n"
+                        "Check for file corruption or libarchive built without zlib support");
     meta_conf[total_size] = 0;
+
+    // Check the signature on meta.conf if it has been signed
+    if (public_key) {
+        if (!meta_conf_signature)
+            ERR_CLEANUP_MSG("Expecting signed firmware archive.");
+
+        if (crypto_sign_verify_detached(meta_conf_signature, (unsigned char *) meta_conf, total_size, public_key) != 0)
+            ERR_CLEANUP_MSG("Firmware archive's meta.conf fails digital signature verification.");
+    } else if (meta_conf_signature) {
+        INFO("Firmware archive is signed, but signature verification is off.");
+    }
 
     // Parse the configuration, but do minimal validity checking of configuration
     // since many things are only used on the creation of the firmware update.
@@ -337,9 +367,10 @@ cleanup:
     return rc;
 }
 
-int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
+int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned char *public_key)
 {
     int rc = 0;
+    unsigned char *meta_conf_signature = NULL;
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
     rc = archive_read_open_filename(a, filename, 16384);
@@ -351,13 +382,29 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg)
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Error reading archive '%s'", filename);
 
-    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
-        ERR_CLEANUP_MSG("Expecting meta.conf to be first file in %s", filename);
+    if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
+        ssize_t total_size = archive_entry_size(ae);
+        if (total_size != crypto_sign_BYTES)
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, cfg));
+        meta_conf_signature = (unsigned char *) malloc(total_size);
+        if (archive_read_all_data(a, (char *) meta_conf_signature, total_size) < 0)
+            ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
+                            "Check for file corruption or libarchive built without zlib support");
+
+        rc = archive_read_next_header(a, &ae);
+        if (rc != ARCHIVE_OK)
+            ERR_CLEANUP_MSG("Expecting more than meta.conf.ed25519 in archive");
+    }
+    if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
+        ERR_CLEANUP_MSG("Expecting meta.conf to be at beginning of %s", filename);
+
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, cfg, meta_conf_signature, public_key));
 
 cleanup:
     archive_read_free(a);
+    if (meta_conf_signature)
+        free(meta_conf_signature);
 
     return rc;
 }

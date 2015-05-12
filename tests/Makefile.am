@@ -17,7 +17,12 @@ TESTS = 001_simple_fw.test \
 	017_fat_rm.test \
 	018_numeric_progress.test \
 	019_quiet_progress.test \
-	020_normal_progress.test
+	020_normal_progress.test \
+	021_create_keys.test \
+	022_signed_fw.test \
+	023_missing_sig.test \
+	024_metadata_sig.test \
+	025_bad_sig.test
 
 EXTRA_DIST = $(TESTS) common.sh
 

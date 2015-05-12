@@ -17,6 +17,6 @@
 #ifndef FWUP_METADATA_H
 #define FWUP_METADATA_H
 
-int fwup_metadata(const char *fw_filename);
+int fwup_metadata(const char *fw_filename, const unsigned char *public_key);
 
 #endif // FWUP_METADATA_H

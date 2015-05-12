@@ -37,10 +37,16 @@ static void list_metadata(cfg_t *cfg)
     list_one(cfg, "meta-creation-date");
 }
 
-int fwup_metadata(const char *fw_filename)
+/**
+ * @brief Dump the metadata in a firmware update file
+ * @param fw_filename the firmware update filename
+ * @param public_key an option public key if checking signatures
+ * @return 0 if successful
+ */
+int fwup_metadata(const char *fw_filename, const unsigned char *public_key)
 {
     cfg_t *cfg;
-    if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg) < 0)
+    if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_key) < 0)
         return -1;
 
     list_metadata(cfg);

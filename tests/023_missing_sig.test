@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# Test that installing a firmware that's missing a signature fails
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create new keys
+$FWUP -g
+
+# DON'T sign the firmware
+$FWUP -c -f $CONFIG -o $FWFILE
+
+# Check that applying the firmware breaks
+echo Expected error...
+if $FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "Expecting an unsigned firmware install to fail."
+    exit 1
+fi
+

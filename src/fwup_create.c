@@ -76,7 +76,7 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
     return 0;
 }
 
-static int create_archive(cfg_t *cfg, const char *filename)
+static int create_archive(cfg_t *cfg, const char *filename, const unsigned char *signing_key)
 {
     int rc = 0;
     struct archive *a = archive_write_new();
@@ -84,7 +84,7 @@ static int create_archive(cfg_t *cfg, const char *filename)
     if (archive_write_open_filename(a, filename) != ARCHIVE_OK)
         ERR_CLEANUP_MSG("error creating archive");
 
-    OK_OR_CLEANUP(fwfile_add_meta_conf(cfg, a));
+    OK_OR_CLEANUP(fwfile_add_meta_conf(cfg, a, signing_key));
 
     OK_OR_CLEANUP(add_file_resources(cfg, a));
 
@@ -95,7 +95,7 @@ cleanup:
     return rc;
 }
 
-int fwup_create(const char *configfile, const char *output_firmware)
+int fwup_create(const char *configfile, const char *output_firmware, const unsigned char *signing_key)
 {
     cfg_t *cfg = NULL;
     int rc = 0;
@@ -110,7 +110,7 @@ int fwup_create(const char *configfile, const char *output_firmware)
     OK_OR_CLEANUP(compute_file_metadata(cfg));
 
     // Create the archive
-    OK_OR_CLEANUP(create_archive(cfg, output_firmware));
+    OK_OR_CLEANUP(create_archive(cfg, output_firmware, signing_key));
 
 cleanup:
     if (cfg)

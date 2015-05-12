@@ -47,12 +47,18 @@ static int list_tasks(cfg_t *cfg)
     return 0;
 }
 
-int fwup_list(const char *fw_filename)
+/**
+ * @brief List out tasks in a firmware update file
+ * @param fw_filename the firmware update filename
+ * @param public_key an option public key if checking signatures
+ * @return 0 if successful
+ */
+int fwup_list(const char *fw_filename, const unsigned char *public_key)
 {
     cfg_t *cfg = NULL;
     int rc = 0;
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_meta_conf(fw_filename, &cfg));
+    OK_OR_CLEANUP(cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_key));
 
     OK_OR_CLEANUP(list_tasks(cfg));
 

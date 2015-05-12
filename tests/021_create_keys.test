@@ -1,0 +1,21 @@
+#!/bin/sh
+
+#
+# Test out progress reporting on a firmware write
+#
+
+. ./common.sh
+
+rm -f fwup-key.pub fwup-key.priv
+$FWUP -g
+
+if [ `wc -c fwup-key.pub | cut -f 1 -d ' '` -ne 32 ]; then
+    echo "fwup-key.pub isn't 32 bytes"
+    exit 1
+fi
+if [ `wc -c fwup-key.priv | cut -f 1 -d ' '` -ne 64 ]; then
+    echo "fwup-key.priv isn't 64 bytes"
+    exit 1
+fi
+
+

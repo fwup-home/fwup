@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test that signing checks work when inspecting metadata
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+meta-product = "product name"
+meta-description = "product description"
+meta-version = "some version"
+meta-platform = "a platform"
+meta-architecture = "an architecture"
+meta-author = "someone"
+EOF
+
+cat >$EXPECTED_OUTPUT <<EOF
+meta-product="product name"
+meta-description="product description"
+meta-version="some version"
+meta-author="someone"
+meta-platform="a platform"
+meta-architecture="an architecture"
+EOF
+
+$FWUP -g
+$FWUP -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+
+# No signing check should still pass
+$FWUP -i $FWFILE -m | grep -v "meta-creation-date" > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Signing check should pass
+$FWUP -p fwup-key.pub -i $FWFILE -m | grep -v "meta-creation-date" > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

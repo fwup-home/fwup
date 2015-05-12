@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <archive_entry.h>
+#include <sodium.h>
 
 static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
 {
@@ -28,14 +29,33 @@ static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
     fclose(fp);
 }
 
-int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a)
+int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
 {
     char *configtxt;
     size_t configtxt_len;
+    struct archive_entry *entry;
 
     cfg_to_string(cfg, &configtxt, &configtxt_len);
 
-    struct archive_entry *entry = archive_entry_new();
+    // If the user passed in a signing key, sign the meta.conf.
+    if (signing_key) {
+        unsigned char signature[crypto_sign_BYTES];
+        crypto_sign_detached(signature, NULL,
+                             (unsigned char *) configtxt, configtxt_len,
+                             signing_key);
+
+        entry = archive_entry_new();
+        archive_entry_set_pathname(entry, "meta.conf.ed25519");
+        archive_entry_set_size(entry, sizeof(signature));
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0644);
+        archive_write_header(a, entry);
+        archive_write_data(a, signature, sizeof(signature));
+        archive_entry_free(entry);
+    }
+
+    // Add meta.conf
+    entry = archive_entry_new();
     archive_entry_set_pathname(entry, "meta.conf");
     archive_entry_set_size(entry, configtxt_len);
     archive_entry_set_filetype(entry, AE_IFREG);

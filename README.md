@@ -26,7 +26,7 @@ way. The utility has the following features:
   user before writing anything by default to avoid accidental
   overwrites.
 
-  8. Firmware archive digital signature creation and verification (Not implemented yet)
+  8. Firmware archive digital signature creation and verification
 
 # Examples!
 
@@ -44,7 +44,7 @@ You'll need [libconfuse](http://www.nongnu.org/confuse/) and
 [libarchive](http://libarchive.org/) installed to build. On Ubuntu and Debian,
 you can run:
 
-    sudo apt-get install libarchive-dev
+    sudo apt-get install libarchive-dev libsodium-dev
 
 Download libconfuse as source and build and install it.
 
@@ -83,15 +83,18 @@ Usage: fwup [options]
   -c   Create the firmware update
   -d <Device file for the memory card>
   -f <fwupdate.conf> Specify the firmware update configuration file
+  -g Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
   -l   List the available tasks in a firmware update
   -m   Print metadata in the firmware update
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -q   Quiet
-  -t <task> Task to apply within the firmware update package
+  -s <keyfile> A private key file for signing firmware updates
+  -t <task> Task to apply within the firmware update
   -v   Verbose
   -y   Accept automatically found memory card when applying a firmware update
+  -z   Print the memory card that would be automatically detected and exit
 
 Examples:
 
@@ -281,6 +284,31 @@ fat_mkdir(block_offset, filename)     | Create a directory on a FAT file system
 fat_setlabel(block_offset, label)     | Set the volume label on a FAT file system
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
+
+# Firmware authentication
+
+Firmware archives can be authenticated using a simple public/private key scheme. To
+get started, create a public/private key pair by invoking `fwup -g`. The algorithm
+used is [Ed25519](http://ed25519.cr.yp.to/). This generates two file: `fwup-key.pub`
+and `fwup-key.priv`. It is critical to keep the signing key, `fwup-key.priv` secret.
+
+To sign an archive, pass `-s fwup-key.priv` to fwup when creating the firmware.
+
+To verify that an archive has been signed, pass `-p fwup-key.pub` on the command line
+to any of the commands that read the archive. E.g., `-a`, `-l` or `-m`.
+
+It is important to understand how verification works so that the security of the
+archive isn't compromised. Firmware updates are apply in one pass to avoid needing
+a lot of memory or disk space. The consequence of this is that verification is
+done on the fly. The main metadata for the archive is always verified before any
+operations occur. Cryptographic hashs (using the BLAKE2b-256 algorithm) of each
+file contained in the archive is stored in the metadata. The hash for each file
+is computed on the fly, so a compromised file may not be detected until it has
+been written to Flash. Since this is obviously bad, the strategy for creating
+firmware updates is to write them to an unused location first and then switch
+over at the last possible minute. This is desirable to do anyway, since this strategy
+also provides some protection against the user disconnecting power midway through
+the firmware update.
 
 # FAQ
 
