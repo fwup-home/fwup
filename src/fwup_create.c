@@ -17,13 +17,13 @@
 #include "fwup_create.h"
 #include "cfgfile.h"
 #include "util.h"
-#include "3rdparty/sha2.h"
 #include "fwfile.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <sodium.h>
 
 static int compute_file_metadata(cfg_t *cfg)
 {
@@ -39,21 +39,24 @@ static int compute_file_metadata(cfg_t *cfg)
         if (!fp)
             ERR_RETURN("can't open file-resource '%s'", path);
 
-        SHA256_CTX ctx256;
-        SHA256_Init(&ctx256);
+        crypto_generichash_state hash_state;
+        crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
         char buffer[1024];
         size_t len = fread(buffer, 1, sizeof(buffer), fp);
         size_t total = 0;
         while (len > 0) {
-            SHA256_Update(&ctx256, (unsigned char*) buffer, len);
+            crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
             total += len;
             len = fread(buffer, 1, sizeof(buffer), fp);
         }
-        char digest[SHA256_DIGEST_STRING_LENGTH];
-        SHA256_End(&ctx256, digest);
         fclose(fp);
 
-        cfg_setstr(sec, "sha256", digest);
+        unsigned char hash[crypto_generichash_BYTES];
+        crypto_generichash_final(&hash_state, hash, sizeof(hash));
+        char hash_str[sizeof(hash) * 2 + 1];
+        bytes_to_hex(hash, hash_str, sizeof(hash));
+
+        cfg_setstr(sec, "blake2b-256", hash_str);
         cfg_setint(sec, "length", total);
     }
 

@@ -22,8 +22,6 @@ fwup_SOURCES=cfgfile.c \
 	mbr.h \
 	mmc.h \
 	util.h \
-	../3rdparty/sha2.c \
-	../3rdparty/sha2.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \
 	../3rdparty/fatfs/src/ff.c \

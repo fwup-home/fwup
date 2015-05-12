@@ -185,7 +185,8 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
 static cfg_opt_t file_resource_opts[] = {
     CFG_STR("host-path", 0, CFGF_NONE),
     CFG_INT("length", 0, CFGF_NONE),
-    CFG_STR("sha256", 0, CFGF_NONE),
+    CFG_STR("blake2b-256", 0, CFGF_NONE),
+    CFG_STR("sha256", 0, CFGF_NONE), // Old hash for files - use blake2b-256 now
     CFG_END()
 };
 static cfg_opt_t mbr_partition_opts[] = {

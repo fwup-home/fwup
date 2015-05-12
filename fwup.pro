@@ -13,7 +13,6 @@ TEMPLATE = app
 
 SOURCES += \
     src/fwup.c \
-    3rdparty/sha2.c \
     src/fatfs.c \
     3rdparty/fatfs/src/ff.c \
     src/mbr.c \
@@ -28,7 +27,7 @@ SOURCES += \
     src/fwfile.c \
     3rdparty/fatfs/src/option/unicode.c
 
-LIBS += -lconfuse -larchive
+LIBS += -lconfuse -larchive -lsodium
 
 HEADERS += \
     src/sha2.h \

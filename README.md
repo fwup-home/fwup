@@ -166,7 +166,7 @@ task                 | Defines a firmware update task (referenced using -t from 
 
 A `file-resource` specifies a file on the host that should be included in the archive. Each
 `file-resource` should be given a unique name so that it can be referred to by other parts of
-the update configuration. The `fwup` will automatically record the length and SHA-256 of the
+the update configuration. The `fwup` will automatically record the length and BLAKE2b-256 hash of the
 file in the archive. These fields are used internally to compute progress and verify the contents
 of the archive. A typical `file-resource` section looks like this:
 
@@ -324,37 +324,6 @@ On the target device, you can retrieve the version by using `-m`. For example:
 
 This utility contains source code with various licenses. The bulk of the code is
 licensed with the Apache 2.0 license which can be found in the `LICENSE` file.
-
-The SHA-2 code comes from Aaron D. Gifford (http://www.aarongifford.com/) and has the following license:
-
-```
-Copyright (c) 2000-2001, Aaron D. Gifford
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of the copyright holder nor the names of contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTOR(S) BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-```
 
 The FAT filesystem code (FatFs) comes from http://elm-chan.org/fsw/ff/00index_e.html
 and has the following license.

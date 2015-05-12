@@ -36,7 +36,8 @@ meta-product="${TEST_ENV_VAR}"
 require-fwup-version="0.0"
 file-resource "${TEST_ENV_VAR}" {
   length=1024
-  sha256="5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2"
+  blake2b-256="4e175e00a248a235bfb03b15b8bed5a1729a8febc24cf00c6caca1765b301d14"
+  # sha256=""
 }
 task "complete" {
   require-partition1-offset=-1

@@ -26,7 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "3rdparty/sha2.h"
+#include <sodium.h>
 
 #define DECLARE_FUN(FUN) \
     static int FUN ## _validate(struct fun_context *fctx); \
@@ -214,9 +214,9 @@ int raw_write_run(struct fun_context *fctx)
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
     size_t expected_length = cfg_getint(resource, "length");
-    char *expected_sha256 = cfg_getstr(resource, "sha256");
-    if (strlen(expected_sha256) != SHA256_DIGEST_STRING_LENGTH - 1)
-        ERR_RETURN("raw_write detected sha256 with the wrong length");
+    char *expected_hash = cfg_getstr(resource, "blake2b-256");
+    if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
+        ERR_RETURN("raw_write detected blake2b hash with the wrong length");
 
     // Just in case we're raw writing to the FAT partition, make sure
     // that we flush any cached data.
@@ -225,8 +225,8 @@ int raw_write_run(struct fun_context *fctx)
     int dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
     size_t len_written = 0;
 
-    SHA256_CTX ctx256;
-    SHA256_Init(&ctx256);
+    crypto_generichash_state hash_state;
+    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
         int64_t offset;
         size_t len;
@@ -239,7 +239,7 @@ int raw_write_run(struct fun_context *fctx)
         if (len == 0)
             break;
 
-        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
+        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
 
         ssize_t written = pwrite(fctx->output_fd, buffer, len, dest_offset + offset);
         if (written != (ssize_t) len)
@@ -256,10 +256,12 @@ int raw_write_run(struct fun_context *fctx)
             ERR_RETURN("raw_write didn't write the expected amount");
     }
 
-    char digest[SHA256_DIGEST_STRING_LENGTH];
-    SHA256_End(&ctx256, digest);
-    if (memcmp(digest, expected_sha256, SHA256_DIGEST_STRING_LENGTH) != 0)
-        ERR_RETURN("raw_write detected SHA256 mismatch");
+    unsigned char hash[crypto_generichash_BYTES];
+    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+    char hash_str[sizeof(hash) * 2 + 1];
+    bytes_to_hex(hash, hash_str, sizeof(hash));
+    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+        ERR_RETURN("raw_write detected blake2b digest mismatch");
 
     return 0;
 }
@@ -372,9 +374,9 @@ int fat_write_run(struct fun_context *fctx)
     if (!resource)
         ERR_RETURN("fat_write can't find matching file-resource");
     size_t expected_length = cfg_getint(resource, "length");
-    char *expected_sha256 = cfg_getstr(resource, "sha256");
-    if (strlen(expected_sha256) != SHA256_DIGEST_STRING_LENGTH - 1)
-        ERR_RETURN("fat_write detected sha256 with the wrong length");
+    char *expected_hash = cfg_getstr(resource, "blake2b-256");
+    if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
+        ERR_RETURN("fat_write detected blake2b hash with the wrong length");
 
     FILE *fatfp;
     size_t fatfp_offset;
@@ -385,8 +387,8 @@ int fat_write_run(struct fun_context *fctx)
     // enforce truncation semantics if the file exists
     fatfs_rm(fatfp, fatfp_offset, fctx->argv[2]);
 
-    SHA256_CTX ctx256;
-    SHA256_Init(&ctx256);
+    crypto_generichash_state hash_state;
+    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
         int64_t offset;
         size_t len;
@@ -399,7 +401,7 @@ int fat_write_run(struct fun_context *fctx)
         if (len == 0)
             break;
 
-        SHA256_Update(&ctx256, (unsigned char*) buffer, len);
+        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
 
         if (fatfs_pwrite(fatfp, fatfp_offset, fctx->argv[2], (int) offset, buffer, len) < 0)
             return -1;
@@ -415,10 +417,12 @@ int fat_write_run(struct fun_context *fctx)
             ERR_RETURN("fat_write didn't write the expected amount");
     }
 
-    char digest[SHA256_DIGEST_STRING_LENGTH];
-    SHA256_End(&ctx256, digest);
-    if (memcmp(digest, expected_sha256, SHA256_DIGEST_STRING_LENGTH) != 0)
-        ERR_RETURN("fat_write detected SHA256 mismatch");
+    unsigned char hash[crypto_generichash_BYTES];
+    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+    char hash_str[sizeof(hash) * 2 + 1];
+    bytes_to_hex(hash, hash_str, sizeof(hash));
+    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+        ERR_RETURN("fat_write detected blake2b hash mismatch");
 
     return 0;
 }
