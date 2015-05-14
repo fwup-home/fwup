@@ -28,7 +28,7 @@
 /**
  * @brief Sign a firmware update file
  * @param input_filename the firmware update filename
- * @param input_filename the firmware update filename
+ * @param output_filename where to store the signed firmware update
  * @param signing_key the signing key
  * @return 0 if successful
  */

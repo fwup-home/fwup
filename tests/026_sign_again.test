@@ -30,3 +30,6 @@ $FWUP -S -s fwup-key.priv -i $FWFILE -o $FWFILE
 
 # Check that applying the firmware with checking signatures works
 $FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that verification works
+$FWUP -V -p fwup-key.pub -i $FWFILE

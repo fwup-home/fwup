@@ -214,26 +214,6 @@ static int set_time_from_cfg(cfg_t *cfg)
     return 0;
 }
 
-static int archive_filename_to_resource(const char *name, char *result, size_t maxlength)
-{
-    // Check that there's enough room to copy the string
-    if (maxlength < strlen(name) + 2)
-        ERR_RETURN("Bad path found in archive");
-
-    // As a matter of convention, everything useful in the archive is stored
-    // in the data directory. There are a couple scenarios where it's useful
-    // to stuff a file in the root directory of the archive for compatibility
-    // with other programs. Those are specified as absolute paths.
-    if (memcmp(name, "data/", 5) == 0) {
-        strcpy(result, &name[5]);
-    } else {
-        result[0] = '/';
-        strcpy(&result[1], name);
-    }
-
-    return 0;
-}
-
 static void fwup_apply_report_progress(struct fun_context *fctx, int progress_units)
 {
     if (fctx->progress_mode == FWUP_APPLY_NO_PROGRESS)

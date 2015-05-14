@@ -1,0 +1,51 @@
+#!/bin/sh
+
+#
+# Test that creating a FAT filesystem produces the exact same image
+# even when the time changes.
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1K.bin {
+	host-path = "${WORK}/1K.bin"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "1K.bin")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP -c -f $CONFIG -o $FWFILE
+
+$FWUP -a -d ${IMGFILE}.1 -i $FWFILE -t complete
+sleep 1
+
+# This should be bit identical even though it is done later.
+# By default, FAT stores timestamps. fwup is supposed to insure
+# that they are identical between runs.
+$FWUP -a -d ${IMGFILE}.2 -i $FWFILE -t complete
+
+diff ${IMGFILE}.1 ${IMGFILE}.2

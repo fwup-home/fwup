@@ -28,10 +28,33 @@ way. The utility has the following features:
 
   8. Firmware archive digital signature creation and verification
 
+  9. Permissive license (Apache 2.0 License - see end of doc)
+
+This utility is based off of firmware update utilities I've written for
+various projects. It has already received a lot of use with the open source
+Nerves Project and other embedded projects. I tend to lock the version of the
+firmware update utility once embedded devices using it start leaving the lab
+so that I don't brick them with an upgrade. Once this project hits 1.0 I will
+avoid making backward incompatible changes. (I have actually only made a couple.)
+I do encourage you to use this utility, but please take care in upgrading
+`fwup` and test that your new `fwup.conf` files still work on devices with old
+versions of `fwup`. This seems like standard practice, but since bricking
+devices in the field is so painful, please take care.
+
 # Examples!
 
-See https://github.com/fhunleth/bbb-buildroot-fwup for firmware update examples
-for the BeagleBone Black and Raspberry Pi.
+See [bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for firmware update examples
+for the BeagleBone Black and Raspberry Pi. The [Nerves Project](https://github.com/nerves-project/nerves-sdk)
+has some similar examples. The regression tests can also be helpful.
+
+My real world use of `fwup` involves writing
+the new firmware to place on the Flash that's not in current use and then
+'flipping' over to it at the very end. The examples tend to reflect that.
+`fwup` can also be used to overwrite the
+an installation in place assuming you're using an initramfs, but that doesn't
+give protection against someone pulling power at a bad time. Also, `fwup`'s one pass
+over the archive feature means that firmware validation is mostly done on the fly,
+so you'll want to verify the archive first (see the `-V` option).
 
 # Building
 
@@ -91,8 +114,10 @@ Usage: fwup [options]
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -q   Quiet
   -s <keyfile> A private key file for signing firmware updates
+  -S Sign an existing firmware file (specify -i and -o)
   -t <task> Task to apply within the firmware update
   -v   Verbose
+  -V Verify an existing firmware file (specify -i)
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit
 
@@ -105,6 +130,12 @@ Create a firmware update archive:
 Apply the firmware update to /dev/sdc and specify the 'upgrade' task:
 
   $ fwup -a -d /dev/sdc -i myfirmware.fw -t upgrade
+
+Generate a public/private key pair and sign a firmware archive:
+
+  $ fwup -g
+  (Store fwup-key.priv is a safe place. Store fwup-key.pub on the target)
+  $ fwup -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw
 
 ```
 
@@ -292,7 +323,8 @@ get started, create a public/private key pair by invoking `fwup -g`. The algorit
 used is [Ed25519](http://ed25519.cr.yp.to/). This generates two file: `fwup-key.pub`
 and `fwup-key.priv`. It is critical to keep the signing key, `fwup-key.priv` secret.
 
-To sign an archive, pass `-s fwup-key.priv` to fwup when creating the firmware.
+To sign an archive, pass `-s fwup-key.priv` to fwup when creating the firmware. The
+other option is to sign the firmware archive after creation with `--sign` or `-S`.
 
 To verify that an archive has been signed, pass `-p fwup-key.pub` on the command line
 to any of the commands that read the archive. E.g., `-a`, `-l` or `-m`.
@@ -301,7 +333,7 @@ It is important to understand how verification works so that the security of the
 archive isn't compromised. Firmware updates are apply in one pass to avoid needing
 a lot of memory or disk space. The consequence of this is that verification is
 done on the fly. The main metadata for the archive is always verified before any
-operations occur. Cryptographic hashs (using the BLAKE2b-256 algorithm) of each
+operations occur. Cryptographic hashs (using the [BLAKE2b-256](https://blake2.net/) algorithm) of each
 file contained in the archive is stored in the metadata. The hash for each file
 is computed on the fly, so a compromised file may not be detected until it has
 been written to Flash. Since this is obviously bad, the strategy for creating

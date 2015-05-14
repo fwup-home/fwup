@@ -30,6 +30,7 @@
 #include "fwup_metadata.h"
 #include "fwup_genkeys.h"
 #include "fwup_sign.h"
+#include "fwup_verify.h"
 #include "config.h"
 
 // Global options
@@ -62,6 +63,7 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -S Sign an existing firmware file (specify -i and -o)\n");
     fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
     fprintf(stderr, "  -v   Verbose\n");
+    fprintf(stderr, "  -V Verify an existing firmware file (specify -i)\n");
     fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
     fprintf(stderr, "  -z   Print the memory card that would be automatically detected and exit\n");
     fprintf(stderr, "\n");
@@ -74,6 +76,12 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "Apply the firmware update to /dev/sdc and specify the 'upgrade' task:\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  $ %s -a -d /dev/sdc -i myfirmware.fw -t upgrade\n", argv0);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Generate a public/private key pair and sign a firmware archive:\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  $ %s -g\n", argv0);
+    fprintf(stderr, "  (Store fwup-key.priv is a safe place. Store fwup-key.pub on the target)\n");
+    fprintf(stderr, "  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", argv0);
 }
 
 #define CMD_NONE    0
@@ -83,6 +91,7 @@ static void print_usage(const char *argv0)
 #define CMD_METADATA 4
 #define CMD_GENERATE_KEYS 5
 #define CMD_SIGN    6
+#define CMD_VERIFY  7
 
 int main(int argc, char **argv)
 {
@@ -109,10 +118,11 @@ int main(int argc, char **argv)
         {"list",    no_argument,    0, 'l'},
         {"metadata", no_argument,   0, 'm'},
         {"sign", no_argument,       0, 'S'},
+        {"verify", no_argument,     0, 'V'},
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:f:gi:lmno:p:qSs:t:vyz", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:f:gi:lmno:p:qSs:t:Vvyz", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a':
             command = CMD_APPLY;
@@ -174,6 +184,9 @@ int main(int argc, char **argv)
         case 'v':
             fwup_verbose = true;
             break;
+        case 'V':
+            command = CMD_VERIFY;
+            break;
         case 'y':
             accept_found_device = true;
             break;
@@ -203,7 +216,7 @@ int main(int argc, char **argv)
 
     switch (command) {
     case CMD_NONE:
-        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, or -z");
+        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, -S, -V, or -z");
         break;
 
     case CMD_APPLY:
@@ -266,6 +279,11 @@ int main(int argc, char **argv)
 
         break;
 
+    case CMD_VERIFY:
+        if (fwup_verify(input_firmware, public_key) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
+        break;
     }
 
     return 0;

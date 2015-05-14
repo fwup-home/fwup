@@ -23,7 +23,8 @@ TESTS = 001_simple_fw.test \
 	023_missing_sig.test \
 	024_metadata_sig.test \
 	025_bad_sig.test \
-	026_sign_again.test
+	026_sign_again.test \
+	027_fat_timestamp.test
 
 EXTRA_DIST = $(TESTS) common.sh
 

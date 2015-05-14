@@ -30,8 +30,26 @@ $FWUP -s fwup-key.priv -c -f $CONFIG -o $FWFILE
 $FWUP -g
 
 # Check that applying the firmware with checking signatures fails
-echo "Expecting a failure"
+echo Expecting a failure from apply...
 if $FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
     echo A bad signature should have been detected
     exit 1
 fi
+echo Expecting error from verify...
+if $FWUP -V -p fwup-key.pub -i $FWFILE; then
+    echo A bad signature should have been detected
+    exit 1
+fi
+
+echo Expecting error from list...
+if $FWUP -l -p fwup-key.pub -i $FWFILE; then
+    echo A bad signature should have been detected
+    exit 1
+fi
+
+echo Expecting error from metadata...
+if $FWUP -m -p fwup-key.pub -i $FWFILE; then
+    echo A bad signature should have been detected
+    exit 1
+fi
+
