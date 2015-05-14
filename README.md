@@ -71,7 +71,7 @@ you can run:
 
 Download libconfuse as source and build and install it.
 
-Once that completes, clone or download the source code and run the following:
+Once that completes, clone or download the `fwup` source code and run the following:
 
     ./autogen.sh
     ./configure
