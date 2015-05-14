@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#
+# Test that signing firmware after it was made does the right thing
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=10K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create new keys
+$FWUP -g
+
+# Create the firmware
+$FWUP -c -f $CONFIG -o $FWFILE
+
+# Sign the firmware in place
+$FWUP -S -s fwup-key.priv -i $FWFILE -o $FWFILE
+
+# Check that applying the firmware with checking signatures works
+$FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete

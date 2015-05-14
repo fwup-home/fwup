@@ -29,6 +29,7 @@
 #include "fwup_list.h"
 #include "fwup_metadata.h"
 #include "fwup_genkeys.h"
+#include "fwup_sign.h"
 #include "config.h"
 
 // Global options
@@ -58,6 +59,7 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     fprintf(stderr, "  -q   Quiet\n");
     fprintf(stderr, "  -s <keyfile> A private key file for signing firmware updates\n");
+    fprintf(stderr, "  -S Sign an existing firmware file (specify -i and -o)\n");
     fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
     fprintf(stderr, "  -v   Verbose\n");
     fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
@@ -80,6 +82,7 @@ static void print_usage(const char *argv0)
 #define CMD_LIST    3
 #define CMD_METADATA 4
 #define CMD_GENERATE_KEYS 5
+#define CMD_SIGN    6
 
 int main(int argc, char **argv)
 {
@@ -99,8 +102,17 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    static struct option long_options[] = {
+        {"apply",   no_argument,    0, 'a'},
+        {"create",  no_argument,    0, 'c'},
+        {"gen-keys", no_argument,   0, 'g'},
+        {"list",    no_argument,    0, 'l'},
+        {"metadata", no_argument,   0, 'm'},
+        {"sign", no_argument,       0, 'S'},
+    };
+
     int opt;
-    while ((opt = getopt(argc, argv, "acd:f:gi:lmno:p:qs:t:vyz")) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:f:gi:lmno:p:qSs:t:vyz", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a':
             command = CMD_APPLY;
@@ -143,6 +155,9 @@ int main(int argc, char **argv)
             break;
         case 'q':
             quiet = true;
+            break;
+        case 'S':
+            command = CMD_SIGN;
             break;
         case 's':
         {
@@ -244,6 +259,13 @@ int main(int argc, char **argv)
             errx(EXIT_FAILURE, "%s", last_error());
 
         break;
+
+    case CMD_SIGN:
+        if (fwup_sign(input_firmware, output_firmware, signing_key) < 0)
+            errx(EXIT_FAILURE, "%s", last_error());
+
+        break;
+
     }
 
     return 0;

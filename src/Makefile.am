@@ -7,6 +7,7 @@ fwup_SOURCES=cfgfile.c \
 	fwup.c \
 	fwup_create.c \
 	fwup_list.c \
+	fwup_sign.c \
 	fwup_metadata.c \
 	fwup_genkeys.c \
 	mbr.c \

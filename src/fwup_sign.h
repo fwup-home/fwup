@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-#ifndef FWFILE_H
-#define FWFILE_H
+#ifndef FWUP_SIGN_H
+#define FWUP_SIGN_H
 
-#include <confuse.h>
-#include <archive.h>
+int fwup_sign(const char *fw_filename, const char *output_filename, const unsigned char *public_key);
 
-#define FWFILE_MAX_ARCHIVE_PATH     512
-
-int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key);
-int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
-                             struct archive *a, const unsigned char *signing_key);
-int fwfile_add_local_file(struct archive *a, const char *resource_name, const char *local_path);
-
-#endif // FWFILE_H
+#endif // FWUP_SIGN_H

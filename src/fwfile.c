@@ -33,9 +33,19 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *sig
 {
     char *configtxt;
     size_t configtxt_len;
-    struct archive_entry *entry;
 
     cfg_to_string(cfg, &configtxt, &configtxt_len);
+
+    int rc = fwfile_add_meta_conf_str(configtxt, configtxt_len, a, signing_key);
+
+    free(configtxt);
+    return rc;
+}
+
+int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
+                             struct archive *a, const unsigned char *signing_key)
+{
+    struct archive_entry *entry;
 
     // If the user passed in a signing key, sign the meta.conf.
     if (signing_key) {
@@ -64,7 +74,6 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *sig
     archive_write_data(a, configtxt, configtxt_len);
     archive_entry_free(entry);
 
-    free(configtxt);
     return 0;
 }
 

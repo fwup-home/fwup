@@ -26,7 +26,8 @@ SOURCES += \
     src/fwup_metadata.c \
     src/fwfile.c \
     3rdparty/fatfs/src/option/unicode.c \
-    src/fwup_genkeys.c
+    src/fwup_genkeys.c \
+    src/fwup_sign.c
 
 LIBS += -lconfuse -larchive -lsodium
 
@@ -47,7 +48,8 @@ HEADERS += \
     src/fwfile.h \
     3rdparty/fatfs/src/integer.h \
     3rdparty/fatfs/src/diskio.h \
-    src/fwup_genkeys.h
+    src/fwup_genkeys.h \
+    src/fwup_sign.h
 
 OTHER_FILES += \
     fwupdate.conf \
