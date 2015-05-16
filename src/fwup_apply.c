@@ -222,7 +222,7 @@ static void fwup_apply_report_progress(struct fun_context *fctx, int progress_un
     fctx->current_progress_units += progress_units;
     int percent;
     if (fctx->total_progress_units > 0)
-        percent = (100 * fctx->current_progress_units + 50) / fctx->total_progress_units;
+        percent = (int) ((100.0 * fctx->current_progress_units + 50.0) / fctx->total_progress_units);
     else
         percent = 0;
 
