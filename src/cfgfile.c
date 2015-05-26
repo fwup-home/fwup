@@ -197,10 +197,25 @@ static cfg_opt_t mbr_partition_opts[] = {
     CFG_BOOL("boot", cfg_false, CFGF_NONE),
     CFG_END()
 };
+static cfg_opt_t mbr_osii_opts[] = {
+    CFG_INT("os-major", 0, CFGF_NONE),
+    CFG_INT("os-minor", 0, CFGF_NONE),
+    CFG_INT("start-block-offset", 0, CFGF_NONE),
+    CFG_INT("ddr-load-address", 0, CFGF_NONE),
+    CFG_INT("entry-point", 0, CFGF_NONE),
+    CFG_INT("image-size-blocks", 0, CFGF_NONE),
+    CFG_INT("attribute", 0xf, CFGF_NONE),
+    CFG_END()
+};
 static cfg_opt_t mbr_opts[] = {
     CFG_STR("bootstrap-code-host-path", 0, CFGF_NONE),
     CFG_STR("bootstrap-code", 0, CFGF_NONE),
+    CFG_BOOL("include-osip", cfg_false, CFGF_NONE),
+    CFG_INT("osip-major", 1, CFGF_NONE),
+    CFG_INT("osip-minor", 0, CFGF_NONE),
+    CFG_INT("osip-num-pointers", 1, CFGF_NONE),
     CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_SEC("osii", mbr_osii_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_END()
 };
 

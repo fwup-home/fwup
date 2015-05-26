@@ -259,6 +259,38 @@ mbr mbr-a {
 }
 ```
 
+If you're using an Intel Edison or similar platform, `fwup` supports generation of the OSIP
+header in the MBR. This header provides information for where to load the bootloader (e.g.., U-Boot)
+in memory. The `include-osip` option controls whether the header is generated. The OSIP and
+image record (OSII) option names map directly to the header fields with the exception that
+length, checksum and image count fields are automatically calculated. The following is an
+example that shows all of the options:
+
+```
+mbr mbr-a {
+    include-osip = true
+    osip-major = 1
+    osip-minor = 0
+    osip-num-pointers = 1
+
+    osii 0 {
+        os-major = 0
+        os-minor = 0
+        start-block-offset = ${UBOOT_OFFSET}
+        ddr-load-address = 0x01100000
+        entry-point = 0x01101000
+        image-size-blocks = 0x0000c000
+        attribute = 0x0f
+    }
+
+    partition 0 {
+        block-offset = ${ROOTFS_A_PART_OFFSET}
+        block-count = ${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+}
+```
+
 ## task
 
 The `task` section specifies a firmware update task. These sections are the main part of the

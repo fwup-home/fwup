@@ -86,4 +86,5 @@ DISTFILES += \
     tests/025_bad_sig.test \
     tests/026_sign_again.test \
     tests/Makefile.am \
-    tests/004_env_vars.test
+    tests/004_env_vars.test \
+    tests/028_osip.test
