@@ -119,6 +119,7 @@ int main(int argc, char **argv)
         {"metadata", no_argument,   0, 'm'},
         {"sign", no_argument,       0, 'S'},
         {"verify", no_argument,     0, 'V'},
+        {0,        0,               0, 0 }
     };
 
     int opt;
