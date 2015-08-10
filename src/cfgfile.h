@@ -22,7 +22,7 @@
 struct archive;
 struct archive_entry;
 
-int archive_read_all_data(struct archive *a, char *buffer, ssize_t total_size);
+int archive_read_all_data(struct archive *a, char *buffer, off_t total_size);
 
 int cfgfile_parse_file(const char *filename, cfg_t **cfg);
 int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg, unsigned char *meta_conf_signature, const unsigned char *public_key);

@@ -324,11 +324,11 @@ cleanup:
  * @param total_size how much to read
  * @return 0 on success
  */
-int archive_read_all_data(struct archive *a, char *buffer, ssize_t total_size)
+int archive_read_all_data(struct archive *a, char *buffer, off_t total_size)
 {
-    ssize_t size_left = total_size;
+    off_t size_left = total_size;
     while (size_left > 0) {
-        ssize_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
+        off_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
         if (len <= 0)
             return -1;
         size_left -= len;
@@ -348,7 +348,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
     if (!archive_entry_size_is_set(ae))
         ERR_CLEANUP_MSG("Expecting meta.conf size to be set");
 
-    ssize_t total_size = archive_entry_size(ae);
+    off_t total_size = archive_entry_size(ae);
     if (total_size < 10 || total_size > 50000)
         ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
 
@@ -398,7 +398,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned
         ERR_CLEANUP_MSG("Error reading archive '%s'", filename);
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
-        ssize_t total_size = archive_entry_size(ae);
+        off_t total_size = archive_entry_size(ae);
         if (total_size != crypto_sign_BYTES)
             ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 

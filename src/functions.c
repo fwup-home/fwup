@@ -198,7 +198,7 @@ int raw_write_compute_progress(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    size_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getint(resource, "length");
 
     // Count each byte as a progress unit
     fctx->total_progress_units += expected_length;
@@ -213,7 +213,7 @@ int raw_write_run(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    size_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("raw_write detected blake2b hash with the wrong length");
@@ -223,12 +223,12 @@ int raw_write_run(struct fun_context *fctx)
     fctx->fatfs_ptr(fctx, -1, NULL, NULL);
 
     int dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
-    size_t len_written = 0;
+    off_t len_written = 0;
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
-        int64_t offset;
+        off_t offset;
         size_t len;
         const void *buffer;
 
@@ -284,7 +284,7 @@ int fat_mkfs_compute_progress(struct fun_context *fctx)
 int fat_mkfs_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t offset;
+    off_t offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &offset) < 0)
         return -1;
 
@@ -328,7 +328,7 @@ int fat_attrib_compute_progress(struct fun_context *fctx)
 int fat_attrib_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t offset;
+    off_t offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &offset) < 0)
         return -1;
 
@@ -359,7 +359,7 @@ int fat_write_compute_progress(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    size_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getint(resource, "length");
 
     // Count each byte as a progress unit
     fctx->total_progress_units += expected_length;
@@ -373,14 +373,14 @@ int fat_write_run(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("fat_write can't find matching file-resource");
-    size_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("fat_write detected blake2b hash with the wrong length");
 
     FILE *fatfp;
-    size_t fatfp_offset;
-    size_t len_written = 0;
+    off_t fatfp_offset;
+    off_t len_written = 0;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -390,8 +390,8 @@ int fat_write_run(struct fun_context *fctx)
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
-        int64_t offset;
-        size_t len;
+        off_t offset;
+        off_t len;
         const void *buffer;
 
         if (fctx->read(fctx, &buffer, &len, &offset) < 0)
@@ -443,7 +443,7 @@ int fat_mv_compute_progress(struct fun_context *fctx)
 int fat_mv_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t fatfp_offset;
+    off_t fatfp_offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -471,7 +471,7 @@ int fat_rm_compute_progress(struct fun_context *fctx)
 int fat_rm_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t fatfp_offset;
+    off_t fatfp_offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -499,7 +499,7 @@ int fat_cp_compute_progress(struct fun_context *fctx)
 int fat_cp_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t fatfp_offset;
+    off_t fatfp_offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -527,7 +527,7 @@ int fat_mkdir_compute_progress(struct fun_context *fctx)
 int fat_mkdir_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t fatfp_offset;
+    off_t fatfp_offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 
@@ -555,7 +555,7 @@ int fat_setlabel_compute_progress(struct fun_context *fctx)
 int fat_setlabel_run(struct fun_context *fctx)
 {
     FILE *fatfp;
-    size_t fatfp_offset;
+    off_t fatfp_offset;
     if (fctx->fatfs_ptr(fctx, strtoul(fctx->argv[1], NULL, 0), &fatfp, &fatfp_offset) < 0)
         return -1;
 

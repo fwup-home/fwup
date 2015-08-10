@@ -74,13 +74,13 @@ struct fun_context {
 
     // If the context supplies data, this function gets it. If read returns 0,
     // no more data is available. If <0, then there's an error.
-    int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset);
+    int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset);
 
     // Callback for reporting progress
     void (*report_progress)(struct fun_context *fctx, int progress_units);
 
     // Callback for getting a file handle for use with the fatfs code.
-    int (*fatfs_ptr)(struct fun_context *fctx, int64_t block_offset, FILE **fatfp, size_t *fatfp_offset);
+    int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, FILE **fatfp, off_t *fatfp_offset);
 
     // Callback for creating a subarchive
     int (*subarchive_ptr)(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created);

@@ -32,7 +32,7 @@
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
 
-void mmc_pretty_size(size_t amount, char *out)
+void mmc_pretty_size(off_t amount, char *out)
 {
     if (amount >= ONE_GiB)
         sprintf(out, "%.2f GiB", ((double) amount) / ONE_GiB);
@@ -44,7 +44,7 @@ void mmc_pretty_size(size_t amount, char *out)
         sprintf(out, "%d bytes", (int) amount);
 }
 
-size_t mmc_device_size(const char *devpath)
+off_t mmc_device_size(const char *devpath)
 {
     int fd = open(devpath, O_RDONLY);
     if (fd < 0)
@@ -59,7 +59,7 @@ size_t mmc_device_size(const char *devpath)
 static bool is_mmc_device(const char *devpath)
 {
     // Check 1: Path exists and can read length
-    size_t len = mmc_device_size(devpath);
+    off_t len = mmc_device_size(devpath);
     if (len == 0)
         return false;
 
@@ -231,4 +231,3 @@ void mmc_umount_all(const char *mmc_device)
     for (i = 0; i < todo_ix; i++)
         free(todo[i]);
 }
-

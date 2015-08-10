@@ -22,7 +22,7 @@
 #include <archive_entry.h>
 #include <sodium.h>
 
-static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
+static void cfg_to_string(cfg_t *cfg, char **output, off_t *len)
 {
     FILE *fp = open_memstream(output, len);
     cfg_print(cfg, fp);
@@ -32,7 +32,7 @@ static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
 {
     char *configtxt;
-    size_t configtxt_len;
+    off_t configtxt_len;
 
     cfg_to_string(cfg, &configtxt, &configtxt_len);
 
@@ -81,7 +81,7 @@ int fwfile_add_local_file(struct archive *a, const char *resource_name, const ch
 {
     int rc = 0;
 
-    size_t copy_buffer_len = 64 * 1024;
+    off_t copy_buffer_len = 64 * 1024;
     char *copy_buffer = (char *) malloc(copy_buffer_len);
     struct archive_entry *entry = 0;
 
@@ -89,9 +89,9 @@ int fwfile_add_local_file(struct archive *a, const char *resource_name, const ch
     if (!fp)
         ERR_CLEANUP_MSG("can't open local file");
 
-    fseek(fp, 0, SEEK_END);
-    size_t total_len = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    fseeko(fp, 0, SEEK_END);
+    off_t total_len = ftello(fp);
+    fseeko(fp, 0, SEEK_SET);
 
     entry = archive_entry_new();
 
@@ -129,11 +129,11 @@ int fwfile_add_local_file(struct archive *a, const char *resource_name, const ch
     archive_entry_set_perm(entry, 0644);
     archive_write_header(a, entry);
 
-    size_t len = fread(copy_buffer, 1, copy_buffer_len, fp);
-    size_t total_read = len;
+    size_t len = fread(copy_buffer, 1, (size_t)copy_buffer_len, fp);
+    off_t total_read = (off_t)len;
     while (len > 0) {
-        ssize_t written = archive_write_data(a, copy_buffer, len);
-        if (written != (ssize_t) len)
+        off_t written = archive_write_data(a, copy_buffer, len);
+        if (written != (off_t) len)
             ERR_CLEANUP_MSG("error writing to archive");
 
         len = fread(copy_buffer, 1, copy_buffer_len, fp);
@@ -151,4 +151,3 @@ cleanup:
 
     return rc;
 }
-

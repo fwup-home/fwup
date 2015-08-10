@@ -18,9 +18,10 @@
 #define MMC_H
 
 #include <stddef.h>
+#include <stdio.h>
 
-void mmc_pretty_size(size_t amount, char *out);
-size_t mmc_device_size(const char *devpath);
+void mmc_pretty_size(off_t amount, char *out);
+off_t mmc_device_size(const char *devpath);
 char *mmc_find_device();
 void mmc_umount_all(const char *mmc_path);
 

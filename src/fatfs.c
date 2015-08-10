@@ -26,7 +26,7 @@
 
 // Globals since that's how the FatFS code likes to work.
 static FILE *fatfp_ = NULL;
-static size_t fatfp_offset_ = 0;
+static off64_t fatfp_offset_ = 0;
 static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
@@ -79,7 +79,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
  * @param block_count how many 512 blocks
  * @return 0 on success
  */
-int fatfs_mkfs(FILE *fatfp, size_t fatfp_offset, int block_count)
+int fatfs_mkfs(FILE *fatfp, off64_t fatfp_offset, int block_count)
 {
     // The block count is only used for f_mkfs according to the docs.
     block_count_ = block_count;
@@ -115,7 +115,7 @@ static void close_open_files()
  * @param dir the name of the directory
  * @return 0 on success
  */
-int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir)
+int fatfs_mkdir(FILE *fatfp, off64_t fatfp_offset, const char *dir)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
@@ -130,7 +130,7 @@ int fatfs_mkdir(FILE *fatfp, size_t fatfp_offset, const char *dir)
  * @param label the name of the filesystem
  * @return 0 on success
  */
-int fatfs_setlabel(FILE *fatfp, size_t fatfp_offset, const char *label)
+int fatfs_setlabel(FILE *fatfp, off64_t fatfp_offset, const char *label)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
@@ -145,7 +145,7 @@ int fatfs_setlabel(FILE *fatfp, size_t fatfp_offset, const char *label)
  * @param filename the name of the file
  * @return 0 on success
  */
-int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename)
+int fatfs_rm(FILE *fatfp, off64_t fatfp_offset, const char *filename)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
@@ -161,7 +161,7 @@ int fatfs_rm(FILE *fatfp, size_t fatfp_offset, const char *filename)
  * @param to_name new filename
  * @return 0 on success
  */
-int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name)
+int fatfs_mv(FILE *fatfp, off64_t fatfp_offset, const char *from_name, const char *to_name)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
@@ -177,7 +177,7 @@ int fatfs_mv(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char
  * @param to_name the name of the copy filename
  * @return 0 on success
  */
-int fatfs_cp(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char *to_name)
+int fatfs_cp(FILE *fatfp, off64_t fatfp_offset, const char *from_name, const char *to_name)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
     close_open_files();
@@ -213,7 +213,7 @@ int fatfs_cp(FILE *fatfp, size_t fatfp_offset, const char *from_name, const char
  * @param attrib a string with the attributes. i.e., "RHS"
  * @return 0 on success
  */
-int fatfs_attrib(FILE *fatfp, size_t fatfp_offset, const char *filename, const char *attrib)
+int fatfs_attrib(FILE *fatfp, off64_t fatfp_offset, const char *filename, const char *attrib)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
 
@@ -238,7 +238,7 @@ int fatfs_attrib(FILE *fatfp, size_t fatfp_offset, const char *filename, const c
     return 0;
 }
 
-int fatfs_pwrite(FILE *fatfp, size_t fatfp_offset,const char *filename, int offset, const char *buffer, size_t size)
+int fatfs_pwrite(FILE *fatfp, off64_t fatfp_offset,const char *filename, int offset, const char *buffer, off64_t size)
 {
     MAYBE_MOUNT(fatfp, fatfp_offset);
 
@@ -292,7 +292,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    size_t byte_offset = fatfp_offset_ + sector * 512;
+    off64_t byte_offset = fatfp_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
     if (fseek(fatfp_, byte_offset, SEEK_SET) < 0)
@@ -302,7 +302,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
     if (amount_read < 0)
         amount_read = 0;
 
-    if ((size_t) amount_read != byte_count)
+    if ((off64_t) amount_read != byte_count)
         memset(&buff[amount_read], 0, byte_count - amount_read);
 
     return 0;
@@ -316,7 +316,7 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    size_t byte_offset = fatfp_offset_ + sector * 512;
+    off64_t byte_offset = fatfp_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
     if (fseek(fatfp_, byte_offset, SEEK_SET) < 0)
@@ -379,4 +379,3 @@ DWORD get_fattime()
 {
     return fattime_;
 }
-

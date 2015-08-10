@@ -99,14 +99,14 @@ struct fwup_data
     struct archive *a;
 
     FILE *fatfp;
-    int fatfp_base_offset;
-    int64_t current_fatfs_block_offset;
+    off_t fatfp_base_offset;
+    off_t current_fatfs_block_offset;
 
     struct archive *subarchive;
     char *subarchive_path;
 };
 
-static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, int64_t *offset)
+static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
     int rc = archive_read_data_block(p->a, buffer, len, offset);
@@ -121,7 +121,7 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 }
 
-static int fatfs_ptr_callback(struct fun_context *fctx, int64_t block_offset, FILE **fatfp, size_t *fatfp_offset)
+static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, FILE **fatfp, off_t *fatfp_offset)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
