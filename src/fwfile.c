@@ -22,7 +22,7 @@
 #include <archive_entry.h>
 #include <sodium.h>
 
-static void cfg_to_string(cfg_t *cfg, char **output, off_t *len)
+static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
 {
     FILE *fp = open_memstream(output, len);
     cfg_print(cfg, fp);
@@ -32,7 +32,7 @@ static void cfg_to_string(cfg_t *cfg, char **output, off_t *len)
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
 {
     char *configtxt;
-    off_t configtxt_len;
+    size_t configtxt_len;
 
     cfg_to_string(cfg, &configtxt, &configtxt_len);
 

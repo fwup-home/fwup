@@ -37,4 +37,4 @@ fwup_SOURCES=cfgfile.c \
 
 EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c
 
-fwup_CFLAGS = -Wall
+fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64

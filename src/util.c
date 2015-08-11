@@ -198,5 +198,3 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 
     return 0;
 }
-
-

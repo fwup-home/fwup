@@ -109,7 +109,12 @@ struct fwup_data
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
-    int rc = archive_read_data_block(p->a, buffer, len, offset);
+
+    // there is a possibility that `offset` is a 32 bit integer, so we want to cast in an attempt to avoid problems
+    int64_t offset64 = (int64_t)*offset;
+    int rc = archive_read_data_block(p->a, buffer, len, &offset64);
+    *offset = (off_t)offset64;
+
     if (rc == ARCHIVE_EOF) {
         *len = 0;
         *buffer = NULL;

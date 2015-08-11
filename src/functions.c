@@ -222,7 +222,7 @@ int raw_write_run(struct fun_context *fctx)
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL, NULL);
 
-    int dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
+    off_t dest_offset = strtoul(fctx->argv[1], NULL, 0) * 512;
     off_t len_written = 0;
 
     crypto_generichash_state hash_state;
@@ -391,7 +391,7 @@ int fat_write_run(struct fun_context *fctx)
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
         off_t offset;
-        off_t len;
+        size_t len;
         const void *buffer;
 
         if (fctx->read(fctx, &buffer, &len, &offset) < 0)
@@ -652,7 +652,7 @@ int mbr_write_run(struct fun_context *fctx)
 
     ssize_t written = pwrite(fctx->output_fd, buffer, 512, 0);
     if (written != 512)
-        ERR_RETURN("unexpected error writing to destination");
+        ERR_RETURN("unexpected error writing mbr to destination");
 
     fctx->report_progress(fctx, 1);
     return 0;
