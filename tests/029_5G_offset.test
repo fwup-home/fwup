@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#
+# Test writing to a 5 GB offset. This test shouldn't require
+# 5 GB of disk space to run, since the file should be sparce.
+# This tests whether basic large file support is enabled
+# internally.
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource subdir/TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource subdir/TEST { raw_write(10485760) }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$WORK/1K.bin bs=1K seek=5M of=$WORK/check.bin 2>/dev/null
+diff $WORK/check.bin $IMGFILE

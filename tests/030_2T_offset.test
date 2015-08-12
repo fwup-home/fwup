@@ -1,0 +1,33 @@
+#!/bin/sh
+
+#
+# Test writing to a 2 TB offset to check that >4G numbers can be
+# used as offsets. This test shouldn't require
+# 2 TB of disk space to run, since the file should be sparce.
+#
+
+. ./common.sh
+
+# 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource subdir/TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource subdir/TEST { raw_write(4300000000) }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$WORK/1K.bin bs=1K seek=2150000000 of=$WORK/check.bin 2>/dev/null
+
+# diffing the files takes too long, so skip to the end
+# where the interesting stuff is
+cmp $WORK/check.bin $IMGFILE 2200000000000 2200000000000

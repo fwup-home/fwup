@@ -25,7 +25,11 @@ TESTS = 001_simple_fw.test \
 	025_bad_sig.test \
 	026_sign_again.test \
         027_fat_timestamp.test \
-        028_osip.test
+        028_osip.test \
+	029_5G_offset.test \
+	030_2T_offset.test \
+	031_fat_mkfs_5G.test \
+	032_fat_2T_offset.test
 
 EXTRA_DIST = $(TESTS) common.sh
 
