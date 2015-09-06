@@ -23,6 +23,6 @@
 void mmc_pretty_size(off_t amount, char *out);
 off_t mmc_device_size(const char *devpath);
 char *mmc_find_device();
-void mmc_umount_all(const char *mmc_path);
+void mmc_attempt_umount_all(const char *mmc_path);
 
 #endif // MMC_H

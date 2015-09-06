@@ -180,7 +180,7 @@ static char *unescape_string(const char *input)
     return result;
 }
 
-void mmc_umount_all(const char *mmc_device)
+void mmc_attempt_umount_all(const char *mmc_device)
 {
     FILE *fp = fopen("/proc/mounts", "r");
     if (!fp)
@@ -220,11 +220,11 @@ void mmc_umount_all(const char *mmc_device)
             sprintf(cmdline, "/bin/umount %s", todo[i]);
             int rc = system(cmdline);
             if (rc != 0)
-                err(EXIT_FAILURE, "%s", cmdline);
+                warnx("%s", cmdline); // don't exit if unmount unsuccessful
         } else {
             // No /etc/mtab, so call the kernel directly.
             if (umount(todo[i]) < 0)
-                err(EXIT_FAILURE, "umount %s", todo[i]);
+                warnx("umount %s", todo[i]); // don't exit if unmount unsuccessful
         }
     }
 
