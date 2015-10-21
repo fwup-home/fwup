@@ -26,7 +26,7 @@ way. The utility has the following features:
   user before writing anything by default to avoid accidental
   overwrites.
 
-  8. Firmware archive digital signature creation and verification
+  8. Firmware archive digital signature creation and verification (BETA!!)
 
   9. Permissive license (Apache 2.0 License - see end of doc)
 
@@ -58,25 +58,33 @@ so you'll want to verify the archive first (see the `-V` option).
 
 # Building
 
-IMPORTANT: libconfuse is broke in many distributions. A patch to fix it (the
-environment variable substitution handling) has been integrated into the
-upstream package, but it has not propogated through to the distributions. This
-is partially due to libconfuse not being actively supported.
+First, download and install [libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
+Currently, nearly all package managers supply older versions, so it is almost
+guaranteed that you will need to manually install this. If you use an old
+version, the unit tests will fail due to environment variable substitution not
+working. (You'll understand if you skip this step.)
 
-You'll need [libconfuse](http://www.nongnu.org/confuse/) and
-[libarchive](http://libarchive.org/) installed to build. On Ubuntu and Debian,
-you can run:
+Next, install [libarchive](http://libarchive.org) and [libsodium](http://doc.libsodium.org/).
+On Debian-based systems, run:
 
     sudo apt-get install libarchive-dev libsodium-dev
 
-Download libconfuse as source and build and install it.
+On OSX, run:
+
+    brew install libarchive libsodium
 
 Once that completes, clone or download the `fwup` source code and run the following:
 
     ./autogen.sh
+
+    # On Linux
     ./configure
+
+    # On OSX
+    CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure
+
     make
-    make install
+    sudo make install
 
 # Regression tests
 
@@ -91,6 +99,10 @@ To run the unit tests, you'll need the mtools package. This isn't used by
 `fwup`, but it's needed to verify that FAT file system operations work.
 
     sudo apt-get install mtools
+
+On OSX, you'll need mtools and a few other packages to run the unit tests:
+
+    brew install coreutils mtools gnu-sed
 
 Then build the project as above and run:
 
@@ -418,7 +430,7 @@ This utility contains source code with various licenses. The bulk of the code is
 licensed with the Apache 2.0 license which can be found in the `LICENSE` file.
 
 The FAT filesystem code (FatFs) comes from http://elm-chan.org/fsw/ff/00index_e.html
-and has the following license.
+and has the following license:
 
 ```
 FatFs module is a generic FAT file system module for small embedded systems.
@@ -432,3 +444,7 @@ developments under license policy of following terms.
   personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
 * Redistributions of source code must retain the above copyright notice.
 ```
+
+On systems without the function open_memstream(), code from
+http://piumarta.com/software/memstream/ is included. It is distributed under
+the MIT license

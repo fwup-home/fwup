@@ -28,6 +28,11 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
+#if __APPLE__
+#include <sys/ioctl.h>
+#include <sys/disk.h>
+#endif
+
 #define ONE_KiB  (1024ULL)
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
@@ -50,10 +55,25 @@ off_t mmc_device_size(const char *devpath)
     if (fd < 0)
         return 0;
 
-    off_t len = lseek(fd, 0, SEEK_END);
+    off_t len = 0;
+
+    // Platform-specific ways of determining the size of MMC cards
+#ifdef __APPLE__
+    uint64_t sectors;
+    if (ioctl(fd, DKIOCGETBLOCKCOUNT, &sectors) == 0)
+        len = sectors * 512;
+#endif
+
+    // Fallback method of determining the size - works with regular files too.
+    if (len == 0) {
+        struct stat st;
+        if (fstat(fd, &st) == 0)
+            len = st.st_size;
+    }
+
     close(fd);
 
-    return len < 0 ? 0 : len;
+    return len;
 }
 
 static bool is_mmc_device(const char *devpath)
@@ -77,12 +97,13 @@ char *mmc_find_device()
 {
     char *possible[64] = {0};
     size_t possible_ix = 0;
-    char c;
     size_t i;
 
+#if __linux
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
     // NOTE: Don't scan /dev/sda, since I don't think this is ever right
     // for any use case.
+    char c;
     for (c = 'b'; c != 'z'; c++) {
         char devpath[64];
         sprintf(devpath, "/dev/sd%c", c);
@@ -99,6 +120,16 @@ char *mmc_find_device()
         if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
             possible[possible_ix++] = strdup(devpath);
     }
+#elif __APPLE__
+    // Scan /dev/diskN devices (skip disk0, since it should never be written)
+    for (i = 1; i < 16; i++) {
+        char devpath[64];
+        sprintf(devpath, "/dev/disk%d", (int) i);
+
+        if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
+            possible[possible_ix++] = strdup(devpath);
+    }
+#endif
 
     if (possible_ix == 1) {
         // Success.
@@ -117,6 +148,7 @@ char *mmc_find_device()
     }
 }
 
+#if __linux
 static char *unescape_string(const char *input)
 {
     char *result = (char *) malloc(strlen(input) + 1);
@@ -179,9 +211,11 @@ static char *unescape_string(const char *input)
     *p = 0;
     return result;
 }
+#endif
 
 void mmc_attempt_umount_all(const char *mmc_device)
 {
+#if __linux
     FILE *fp = fopen("/proc/mounts", "r");
     if (!fp)
         err(EXIT_FAILURE, "/proc/mounts");
@@ -223,11 +257,35 @@ void mmc_attempt_umount_all(const char *mmc_device)
                 warnx("%s", cmdline); // don't exit if unmount unsuccessful
         } else {
             // No /etc/mtab, so call the kernel directly.
+#if HAS_UMOUNT
             if (umount(todo[i]) < 0)
                 warnx("umount %s", todo[i]); // don't exit if unmount unsuccessful
+#else
+            warnx("umount %s: not supported", todo[i]);
+#endif
         }
     }
 
     for (i = 0; i < todo_ix; i++)
         free(todo[i]);
+#elif __APPLE__
+    // Try to unmount all of the partitions of /dev/diskN
+    for (int i = 1; i < 16; i++) {
+        char devpath[64];
+        sprintf(devpath, "%ss%d", mmc_device, i);
+
+        struct stat st;
+        int rc = stat(devpath, &st);
+        if (rc == 0 && st.st_mode & S_IFBLK) {
+            char cmdline[256];
+
+            // Try to unmount. Don't report an error, since a filesystem may not
+            // be mounted, and we currently don't detect that.
+            sprintf(cmdline, "/usr/sbin/diskutil quiet unmount %s", devpath);
+            system(cmdline);
+        }
+    }
+#else
+#error Missing unmount implementation for this platform
+#endif
 }

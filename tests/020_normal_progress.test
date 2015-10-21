@@ -7,7 +7,7 @@
 . ./common.sh
 
 # 1KB of all ones
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null
 
 cat >$CONFIG <<EOF
 file-resource 1.bin {
@@ -33,9 +33,8 @@ EOF
 
 $FWUP -c -f $CONFIG -o $FWFILE
 
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete | sed 's/\r/./g' > $WORK/actual_output.txt
+$FWUP -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' > $WORK/actual_output.txt
 
-# No output if there's quiet
 cat >$WORK/expected_output.txt <<EOF
 .  0%. 25%. 50%. 75%. 99%.100%
 EOF

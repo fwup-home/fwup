@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "config.h"
 #include "fwfile.h"
 #include "util.h"
 
@@ -21,6 +22,10 @@
 #include <string.h>
 #include <archive_entry.h>
 #include <sodium.h>
+
+#ifndef HAS_OPEN_MEMSTREAM
+#include "3rdparty/memstream.h"
+#endif
 
 static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
 {

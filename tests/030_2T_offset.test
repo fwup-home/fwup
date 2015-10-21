@@ -8,8 +8,13 @@
 
 . ./common.sh
 
+# No sparse file support on OSX, so skip
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    exit 0
+fi
+
 # 1KB of all ones
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1K count=1 2>/dev/null
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {
@@ -26,7 +31,7 @@ $FWUP -c -f $CONFIG -o $FWFILE
 $FWUP -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
-dd if=$WORK/1K.bin bs=1K seek=2150000000 of=$WORK/check.bin 2>/dev/null
+dd if=$WORK/1K.bin bs=1024 seek=2150000000 of=$WORK/check.bin 2>/dev/null
 
 # diffing the files takes too long, so skip to the end
 # where the interesting stuff is

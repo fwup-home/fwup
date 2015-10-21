@@ -3,7 +3,21 @@
 # Common unit test commands
 set -e
 
-TESTS_DIR=$(dirname $(readlink -f $0))
+export LC_ALL=C
+
+# Linux command line tools that may be different on other OSes
+READLINK=readlink
+SED=sed
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    [ -e /usr/local/bin/greadlink ] || ( echo "Please run 'brew install coreutils'"; exit 1 )
+    [ -e /usr/local/bin/gsed ] || ( echo "Please run 'brew install gnu-sed'"; exit 1 )
+
+    READLINK=/usr/local/bin/greadlink
+    SED=/usr/local/bin/gsed
+fi
+
+TESTS_DIR=$(dirname $($READLINK -f $0))
 
 WORK=$TESTS_DIR/work
 FWUP=$TESTS_DIR/../src/fwup

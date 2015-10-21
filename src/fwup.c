@@ -239,8 +239,13 @@ int main(int argc, char **argv)
             }
         }
 
-        // attempt to unmount everything using the device to avoid corrupting partitions
-        mmc_attempt_umount_all(mmc_device);
+        // Check if the mmc_device is really a special device. If
+        // we're just creating an image file, then don't try to unmount
+        // everything using it.
+        if (!will_be_regular_file(mmc_device)) {
+            // attempt to unmount everything using the device to avoid corrupting partitions
+            mmc_attempt_umount_all(mmc_device);
+        }
 
         if (fwup_apply(input_firmware,
                        task,
