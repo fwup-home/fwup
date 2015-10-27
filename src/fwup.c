@@ -45,6 +45,12 @@ static void print_version()
 
 static void print_usage(const char *argv0)
 {
+#if __APPLE__
+    const char *example_sd = "/dev/disk2";
+#else
+    const char *example_sd = "/dev/sdc";
+#endif
+
     print_version();
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage: %s [options]\n", argv0);
@@ -73,9 +79,9 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "\n");
     fprintf(stderr, "  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", argv0);
     fprintf(stderr, "\n");
-    fprintf(stderr, "Apply the firmware update to /dev/sdc and specify the 'upgrade' task:\n");
+    fprintf(stderr, "Apply the firmware update to %s and specify the 'upgrade' task:\n", example_sd);
     fprintf(stderr, "\n");
-    fprintf(stderr, "  $ %s -a -d /dev/sdc -i myfirmware.fw -t upgrade\n", argv0);
+    fprintf(stderr, "  $ %s -a -d %s -i myfirmware.fw -t upgrade\n", argv0, example_sd);
     fprintf(stderr, "\n");
     fprintf(stderr, "Generate a public/private key pair and sign a firmware archive:\n");
     fprintf(stderr, "\n");
