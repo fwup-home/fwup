@@ -58,13 +58,28 @@ so you'll want to verify the archive first (see the `-V` option).
 
 # Building
 
-First, download and install [libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
+### libconfuse
+
+Download and install [libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
 Currently, nearly all package managers supply older versions, so it is almost
 guaranteed that you will need to manually install this. If you use an old
 version, the unit tests will fail due to environment variable substitution not
 working. (You'll understand if you skip this step.)
 
-Next, install [libarchive](http://libarchive.org) and [libsodium](http://doc.libsodium.org/).
+On OSX, run:
+
+    brew install gettext
+
+Then pull the source and unzip it. for example:
+
+    wget https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.zip
+    unzip confuse-2.8.zip && cd confuse-2.8
+    PATH=/usr/local/opt/gettext/bin:$PATH ./configure
+    make && make install
+
+
+### libsodium and libarchive
+Install [libarchive](http://libarchive.org) and [libsodium](http://doc.libsodium.org/).
 On Debian-based systems, run:
 
     sudo apt-get install libarchive-dev libsodium-dev
@@ -72,6 +87,8 @@ On Debian-based systems, run:
 On OSX, run:
 
     brew install libarchive libsodium
+
+### fwup
 
 Once that completes, clone or download the `fwup` source code and run the following:
 
