@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#
+# Test failure scenarios in the config file
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${WORK}/missing.bin"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+echo "Expecting error from fwup..."
+if $FWUP -c -f $CONFIG -o $FWFILE; then
+    echo "This should have failed"
+    exit 1
+fi

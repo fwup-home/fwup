@@ -33,7 +33,7 @@ static int compute_file_metadata(cfg_t *cfg)
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *path = cfg_getstr(sec, "host-path");
         if (!path)
-            ERR_RETURN("host-path must be set for file-report");
+            ERR_RETURN("host-path must be set for file-resource");
 
         FILE *fp = fopen(path, "rb");
         if (!fp)
@@ -70,6 +70,9 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
 
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *hostpath = cfg_getstr(sec, "host-path");
+        if (!hostpath)
+            ERR_RETURN("specify a host-path");
+
         OK_OR_RETURN(fwfile_add_local_file(a, cfg_title(sec), hostpath));
     }
 

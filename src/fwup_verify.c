@@ -39,6 +39,8 @@ static int check_resource(cfg_t *cfg, const char *file_resource_name, struct arc
         ERR_RETURN("Length mismatch for %s", file_resource_name);
 
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
+    if (!expected_hash)
+        ERR_RETURN("Missing blake2b hash for %s", file_resource_name);
     if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("Detected blake2b hash with the wrong length for %s", file_resource_name);
 

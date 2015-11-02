@@ -215,7 +215,7 @@ int raw_write_run(struct fun_context *fctx)
         ERR_RETURN("raw_write can't find matching file-resource");
     off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
+    if (expected_hash && strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("raw_write detected blake2b hash with the wrong length");
 
     // Just in case we're raw writing to the FAT partition, make sure
@@ -256,12 +256,15 @@ int raw_write_run(struct fun_context *fctx)
             ERR_RETURN("raw_write didn't write the expected amount");
     }
 
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
-    char hash_str[sizeof(hash) * 2 + 1];
-    bytes_to_hex(hash, hash_str, sizeof(hash));
-    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_RETURN("raw_write detected blake2b digest mismatch");
+    // Verify hash if present.
+    if (expected_hash) {
+        unsigned char hash[crypto_generichash_BYTES];
+        crypto_generichash_final(&hash_state, hash, sizeof(hash));
+        char hash_str[sizeof(hash) * 2 + 1];
+        bytes_to_hex(hash, hash_str, sizeof(hash));
+        if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+            ERR_RETURN("raw_write detected blake2b digest mismatch");
+    }
 
     return 0;
 }
@@ -375,7 +378,7 @@ int fat_write_run(struct fun_context *fctx)
         ERR_RETURN("fat_write can't find matching file-resource");
     off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (strlen(expected_hash) != crypto_generichash_BYTES * 2)
+    if (expected_hash && strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("fat_write detected blake2b hash with the wrong length");
 
     FILE *fatfp;
@@ -417,12 +420,15 @@ int fat_write_run(struct fun_context *fctx)
             ERR_RETURN("fat_write didn't write the expected amount");
     }
 
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
-    char hash_str[sizeof(hash) * 2 + 1];
-    bytes_to_hex(hash, hash_str, sizeof(hash));
-    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_RETURN("fat_write detected blake2b hash mismatch");
+    // If no hash, then skip check.
+    if (expected_hash) {
+        unsigned char hash[crypto_generichash_BYTES];
+        crypto_generichash_final(&hash_state, hash, sizeof(hash));
+        char hash_str[sizeof(hash) * 2 + 1];
+        bytes_to_hex(hash, hash_str, sizeof(hash));
+        if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+            ERR_RETURN("fat_write detected blake2b hash mismatch");
+    }
 
     return 0;
 }

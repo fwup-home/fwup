@@ -138,7 +138,7 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
     }
     const char *path = cfg_getstr(sec, "host-path");
     if (!path) {
-        cfg_error(cfg, "host-path must be set for file-report '%s'", cfg_title(sec));
+        cfg_error(cfg, "host-path must be set for file-resource '%s'", cfg_title(sec));
         return -1;
     }
 

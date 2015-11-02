@@ -29,7 +29,10 @@ TESTS = 001_simple_fw.test \
 	029_5G_offset.test \
 	030_2T_offset.test \
 	031_fat_mkfs_5G.test \
-	032_fat_2T_offset.test
+	032_fat_2T_offset.test \
+	033_bad_host_path.test \
+	034_missing_host_path.test
+
 
 EXTRA_DIST = $(TESTS) common.sh
 
