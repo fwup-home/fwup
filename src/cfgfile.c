@@ -269,6 +269,7 @@ cfg_opt_t opts[] = {
     CFG_STR("meta-platform", 0, CFGF_NONE),
     CFG_STR("meta-architecture", 0, CFGF_NONE),
     CFG_STR("meta-creation-date", 0, CFGF_NONE),
+    CFG_STR("meta-fwup-version", 0, CFGF_NONE),
 
     CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
     CFG_FUNC("define", cb_define),

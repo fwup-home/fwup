@@ -57,6 +57,7 @@ check_meta_conf() {
     cat $UNZIPDIR/meta.conf | \
         grep -v "^#" | \
         grep -v "^meta-creation-date" | \
+        grep -v "^meta-fwup-version" | \
         grep -v "host-path" \
         > $TRIMMED_META_CONF
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF

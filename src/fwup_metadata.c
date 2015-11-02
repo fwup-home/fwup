@@ -35,6 +35,7 @@ static void list_metadata(cfg_t *cfg)
     list_one(cfg, "meta-platform");
     list_one(cfg, "meta-architecture");
     list_one(cfg, "meta-creation-date");
+    list_one(cfg, "meta-fwup-version");
 }
 
 /**

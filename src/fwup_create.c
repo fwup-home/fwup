@@ -18,6 +18,7 @@
 #include "cfgfile.h"
 #include "util.h"
 #include "fwfile.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -106,8 +107,9 @@ int fwup_create(const char *configfile, const char *output_firmware, const unsig
     // Parse configuration
     OK_OR_CLEANUP(cfgfile_parse_file(configfile, &cfg));
 
-    // Force the creation date to be set
+    // Automatically add fwup metadata
     cfg_setstr(cfg, "meta-creation-date", get_creation_timestamp());
+    cfg_setstr(cfg, "meta-fwup-version", PACKAGE_VERSION);
 
     // Compute all metadata
     OK_OR_CLEANUP(compute_file_metadata(cfg));
