@@ -9,13 +9,17 @@ export LC_ALL=C
 READLINK=readlink
 SED=sed
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    [ -e /usr/local/bin/greadlink ] || ( echo "Please run 'brew install coreutils'"; exit 1 )
-    [ -e /usr/local/bin/gsed ] || ( echo "Please run 'brew install gnu-sed'"; exit 1 )
+case "$OSTYPE" in
+    darwin*)
+        [ -e /usr/local/bin/greadlink ] || ( echo "Please run 'brew install coreutils'"; exit 1 )
+        [ -e /usr/local/bin/gsed ] || ( echo "Please run 'brew install gnu-sed'"; exit 1 )
 
-    READLINK=/usr/local/bin/greadlink
-    SED=/usr/local/bin/gsed
-fi
+        READLINK=/usr/local/bin/greadlink
+        SED=/usr/local/bin/gsed
+        ;;
+    *)
+        ;;
+esac
 
 TESTS_DIR=$(dirname $($READLINK -f $0))
 
