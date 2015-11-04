@@ -10,9 +10,6 @@
 
 . ./common.sh
 
-# 1KB of all ones
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null
-
 export TEST_ENV_VAR=1K.bin
 
 cat >$CONFIG <<EOF

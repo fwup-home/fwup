@@ -87,4 +87,11 @@ DISTFILES += \
     tests/026_sign_again.test \
     tests/Makefile.am \
     tests/004_env_vars.test \
-    tests/028_osip.test
+    tests/028_osip.test \
+    tests/027_fat_timestamp.test \
+    tests/029_5G_offset.test \
+    tests/030_2T_offset.test \
+    tests/031_fat_mkfs_5G.test \
+    tests/032_fat_2T_offset.test \
+    tests/033_bad_host_path.test \
+    tests/034_missing_host_path.test

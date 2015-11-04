@@ -6,9 +6,6 @@
 
 . ./common.sh
 
-# 1KB of all ones
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=10240 count=1 2>/dev/null
-
 cat >$CONFIG <<EOF
 file-resource TEST {
 	host-path = "${WORK}/1K.bin"

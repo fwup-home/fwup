@@ -62,3 +62,8 @@ check_meta_conf() {
         > $TRIMMED_META_CONF
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }
+
+# Create test input files
+
+# 1K.bin: 1KB of all ones
+cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null

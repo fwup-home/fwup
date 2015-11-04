@@ -6,8 +6,7 @@
 
 . ./common.sh
 
-# 1KB of all ones and an "impostor" file of one different byte
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null
+# Create an "impostor" file of one different byte from the 1K.bin one
 cp $WORK/1K.bin $WORK/1Kzero.bin
 dd if=/dev/zero of=$WORK/1Kzero.bin bs=1 count=1 conv=notrunc 2>/dev/null
 
