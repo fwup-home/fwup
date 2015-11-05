@@ -64,11 +64,15 @@ off_t mmc_device_size(const char *devpath)
         len = sectors * 512;
 #endif
 
-    // Fallback method of determining the size - works with regular files too.
+    // Common method of determining the size
     if (len == 0) {
-        struct stat st;
-        if (fstat(fd, &st) == 0)
-            len = st.st_size;
+        // fstat will not return the mmc size on Linux, so use lseek
+        // instead.
+        len = lseek(fd, 0, SEEK_END);
+
+        // Treat errors and 0-length device sizes the same
+        if (len < 0)
+            len = 0;
     }
 
     close(fd);
