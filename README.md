@@ -60,23 +60,17 @@ so you'll want to verify the archive first (see the `-V` option).
 
 ### libconfuse
 
-Download and install [libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
-Currently, nearly all package managers supply older versions, so it is almost
-guaranteed that you will need to manually install this. If you use an old
+`fwup` requires libconfuse version 2.8. If you're running OSX, you're in luck. The
+latest version of libconfuse is in Homebrew:
+
+    brew install confuse
+
+If you're on another platform, you almost certainly still have an older version
+(at least as of November 5th, 2015). Therefore, download and install
+[libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
+If you use an old
 version, the unit tests will fail due to environment variable substitution not
 working. (You'll understand if you skip this step.)
-
-On OSX, run:
-
-    brew install gettext
-
-Then pull the source and unzip it. for example:
-
-    wget https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.zip
-    unzip confuse-2.8.zip && cd confuse-2.8
-    PATH=/usr/local/opt/gettext/bin:$PATH ./configure
-    make && make install
-
 
 ### libsodium and libarchive
 Install [libarchive](http://libarchive.org) and [libsodium](http://doc.libsodium.org/).
