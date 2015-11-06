@@ -17,16 +17,16 @@ task complete {
 EOF
 
 # Create new keys
-$FWUP -g
+$FWUP_CREATE -g
 
 # Create the firmware
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Sign the firmware in place
-$FWUP -S -s fwup-key.priv -i $FWFILE -o $FWFILE
+$FWUP_CREATE -S -s fwup-key.priv -i $FWFILE -o $FWFILE
 
 # Check that applying the firmware with checking signatures works
-$FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verification works
-$FWUP -V -p fwup-key.pub -i $FWFILE
+$FWUP_APPLY -V -p fwup-key.pub -i $FWFILE

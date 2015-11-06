@@ -44,22 +44,22 @@ task "complete" {
 EOF
 
 # Create new keys
-$FWUP -g
+$FWUP_CREATE -g
 
 # Sign the firmware
-$FWUP -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
 
 # Check that applying the firmware without checking signatures works
-$FWUP -q -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verifying the firmware without checking signatures works
-$FWUP -V -i $FWFILE
+$FWUP_APPLY -V -i $FWFILE
 
 # Check that applying the firmware with checking signatures works
-$FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verifying the firmware with checking signatures works
-$FWUP -V -p fwup-key.pub -i $FWFILE
+$FWUP_APPLY -V -p fwup-key.pub -i $FWFILE

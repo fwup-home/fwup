@@ -17,35 +17,35 @@ task complete {
 EOF
 
 # Create new keys
-$FWUP -g
+$FWUP_CREATE -g
 
 # Sign the firmware
-$FWUP -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # Create new keys and try to use them instead of the first ones
 # It should be insanely unlikely that we'll generate the same keys twice
-$FWUP -g
+$FWUP_CREATE -g
 
 # Check that applying the firmware with checking signatures fails
 echo Expecting a failure from apply...
-if $FWUP -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
+if $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
     echo A bad signature should have been detected
     exit 1
 fi
 echo Expecting error from verify...
-if $FWUP -V -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -V -p fwup-key.pub -i $FWFILE; then
     echo A bad signature should have been detected
     exit 1
 fi
 
 echo Expecting error from list...
-if $FWUP -l -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -l -p fwup-key.pub -i $FWFILE; then
     echo A bad signature should have been detected
     exit 1
 fi
 
 echo Expecting error from metadata...
-if $FWUP -m -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -m -p fwup-key.pub -i $FWFILE; then
     echo A bad signature should have been detected
     exit 1
 fi

@@ -35,14 +35,14 @@ task complete {
 EOF
 
 # Create the firmware file, then "burn it"
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-$FWUP -a -d ${IMGFILE}.1 -i $FWFILE -t complete
+$FWUP_APPLY -a -d ${IMGFILE}.1 -i $FWFILE -t complete
 sleep 1
 
 # This should be bit identical even though it is done later.
 # By default, FAT stores timestamps. fwup is supposed to insure
 # that they are identical between runs.
-$FWUP -a -d ${IMGFILE}.2 -i $FWFILE -t complete
+$FWUP_APPLY -a -d ${IMGFILE}.2 -i $FWFILE -t complete
 
 diff ${IMGFILE}.1 ${IMGFILE}.2

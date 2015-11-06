@@ -25,8 +25,8 @@ task complete {
 EOF
 
 # Create the firmware file, then "burn it"
-$FWUP -c -f $CONFIG -o $FWFILE
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
 dd if=$WORK/1K.bin bs=1024 seek=5242880 of=$WORK/check.bin 2>/dev/null

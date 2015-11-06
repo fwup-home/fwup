@@ -27,7 +27,7 @@ meta-platform="a platform"
 meta-architecture="an architecture"
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
-$FWUP -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

@@ -43,13 +43,13 @@ task "complete" {
 }
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
 diff $WORK/1K.bin $UNZIPDIR/data/TEST
 
 # Check that applying the firmware does the expected thing
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 diff $IMGFILE $WORK/1K.bin
 

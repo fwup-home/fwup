@@ -85,8 +85,8 @@ xxd -r - $WORK/expected.img <<EOF
 EOF
 
 # Create the firmware file, then "burn it"
-$FWUP -c -f $CONFIG -o $FWFILE
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
 diff $WORK/expected.img $IMGFILE

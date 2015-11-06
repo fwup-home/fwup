@@ -46,8 +46,8 @@ EOF
 # on meta-creation-timestamp. This only needs to be done
 # at the create stage since burning is always supposed to
 # be bit for bit identical.
-NOW="2015-05-05T18:10:16Z" $FWUP -c -f $CONFIG -o $FWFILE
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 EXPECTED_OUTPUT=$WORK/expected.out
 ACTUAL_OUTPUT=$WORK/actual.out

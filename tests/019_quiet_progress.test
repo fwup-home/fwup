@@ -28,9 +28,9 @@ task complete {
 }
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-$FWUP -q -a -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+$FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
 
 # No output if there's quiet
 cat >$WORK/expected_output.txt <<EOF

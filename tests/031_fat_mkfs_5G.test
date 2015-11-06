@@ -33,8 +33,8 @@ task complete {
 EOF
 
 # Create the firmware file, then "burn it"
-$FWUP -c -f $CONFIG -o $FWFILE
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # MTOOLS_SKIP_CHECK=1 can normally be used, but since this is
 # the most fundamental of FAT checks, we're trying to leave it off.

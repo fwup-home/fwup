@@ -25,7 +25,7 @@ meta-architecture="an architecture"
 require-fwup-version="0.0"
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf

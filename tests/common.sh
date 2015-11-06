@@ -23,11 +23,18 @@ esac
 
 TESTS_DIR=$(dirname $($READLINK -f $0))
 
+# Default to testing the fwup built in the src directory,
+# but it is possible to define the version of fwup used for
+# the create and apply steps separately.
+FWUP_DEFAULT=$TESTS_DIR/../src/fwup
+if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
+if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
+
 WORK=$TESTS_DIR/work
-FWUP=$TESTS_DIR/../src/fwup
 RESULTS=$WORK/results
 
-[ -e $FWUP ] || ( echo "Build $FWUP first"; exit 1 )
+[ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
+[ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
 
 CONFIG=$WORK/fwup.conf
 FWFILE=$WORK/fwup.fw

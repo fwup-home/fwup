@@ -38,7 +38,7 @@ task complete {
 EOF
 
 # Create the firmware file
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Now be sneaking and replace the data file with a same-sized imposter
 unzip -q $FWFILE -d $UNZIPDIR
@@ -47,7 +47,7 @@ cd $UNZIPDIR
 zip -q $WORK/imposter.fw meta.conf data/1K.bin
 cd -
 echo Expecting Blake2b mismatch during apply...
-if $FWUP -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
     echo "This should have failed"
     exit 1
 fi

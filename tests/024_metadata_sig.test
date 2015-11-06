@@ -27,13 +27,13 @@ meta-platform="a platform"
 meta-architecture="an architecture"
 EOF
 
-$FWUP -g
-$FWUP -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -g
+$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # No signing check should still pass
-$FWUP -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Signing check should pass
-$FWUP -p fwup-key.pub -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -p fwup-key.pub -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

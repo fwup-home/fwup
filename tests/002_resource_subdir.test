@@ -69,7 +69,7 @@ task "complete" {
 }
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
@@ -78,7 +78,7 @@ diff $WORK/1K.bin $UNZIPDIR/rootfile
 diff $WORK/1K.bin $UNZIPDIR/data/subdir1/subdir2/twosubdir
 
 # Check that applying the firmware does the expected thing
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 dd if=$WORK/1K.bin seek=0 of=$WORK/expected.bin
 dd if=$WORK/1K.bin seek=4 of=$WORK/expected.bin
 dd if=$WORK/1K.bin seek=8 of=$WORK/expected.bin

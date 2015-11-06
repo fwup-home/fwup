@@ -28,9 +28,9 @@ task complete {
 }
 EOF
 
-$FWUP -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-$FWUP -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' > $WORK/actual_output.txt
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' > $WORK/actual_output.txt
 
 cat >$WORK/expected_output.txt <<EOF
 .  0%. 25%. 50%. 75%. 99%.100%
