@@ -101,14 +101,13 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
         ERR_CLEANUP_MSG("Error reading archive");
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
-        ssize_t total_size = archive_entry_size(ae);
-        if (total_size != crypto_sign_BYTES)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
-
-        meta_conf_signature = (unsigned char *) malloc(total_size);
-        if (archive_read_all_data(a, (char *) meta_conf_signature, total_size) < 0)
+        off_t total_size;
+        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
+
+        if (total_size != crypto_sign_BYTES)
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
         rc = archive_read_next_header(a, &ae);
         if (rc != ARCHIVE_OK)

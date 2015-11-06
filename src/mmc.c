@@ -33,7 +33,7 @@
 #include <sys/disk.h>
 #endif
 
-#define ONE_KiB  (1024ULL)
+#define ONE_KiB  (1024LL)
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
 

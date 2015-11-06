@@ -1,0 +1,29 @@
+#!/bin/sh
+
+#
+# Test streaming a firmware update through fwup.
+# This simulates the case where there's no local storage to hold
+# the firmware update while it is being applied.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource subdir/TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource subdir/TEST { raw_write(1) }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Pipe the contents of the firmware file through fwup
+cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$WORK/1K.bin seek=1 of=$WORK/check.bin 2>/dev/null
+diff $WORK/check.bin $IMGFILE

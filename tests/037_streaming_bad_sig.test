@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#
+# Test that applying firmware with the wrong public key fails when
+# done the streaming way
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${WORK}/1K.bin"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create new keys
+$FWUP_CREATE -g
+
+# Sign the firmware
+$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+
+# Create new keys and try to use them instead of the first ones
+# It should be insanely unlikely that we'll generate the same keys twice
+$FWUP_CREATE -g
+
+# Check that applying the firmware with checking signatures fails
+echo Expecting a failure from apply...
+if cat $FWFILE | $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -t complete; then
+    echo A bad signature should have been detected
+    exit 1
+fi

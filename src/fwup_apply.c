@@ -302,22 +302,21 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     archive_read_support_format_zip(pd.a);
     int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
     if (arc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Cannot open archive: %s", fw_filename);
+        ERR_CLEANUP_MSG("Cannot open archive (%s): %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
 
     struct archive_entry *ae;
     arc = archive_read_next_header(pd.a, &ae);
     if (arc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Error reading archive");
+        ERR_CLEANUP_MSG("Error reading archive (%s): %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
-        ssize_t total_size = archive_entry_size(ae);
-        if (total_size != crypto_sign_BYTES)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
-
-        meta_conf_signature = (unsigned char *) malloc(total_size);
-        if (archive_read_all_data(pd.a, (char *) meta_conf_signature, total_size) < 0)
+        ssize_t total_size;
+        if (archive_read_all_data(pd.a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
+
+        if (total_size != crypto_sign_BYTES)
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
         arc = archive_read_next_header(pd.a, &ae);
         if (arc != ARCHIVE_OK)

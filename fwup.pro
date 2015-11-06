@@ -94,4 +94,7 @@ DISTFILES += \
     tests/031_fat_mkfs_5G.test \
     tests/032_fat_2T_offset.test \
     tests/033_bad_host_path.test \
-    tests/034_missing_host_path.test
+    tests/034_missing_host_path.test \
+    tests/035_streaming.test \
+    tests/036_streaming_signed_fw.test \
+    tests/037_streaming_bad_sig.test

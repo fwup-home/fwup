@@ -257,8 +257,11 @@ int main(int argc, char **argv)
                        task,
                        mmc_device,
                        quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS,
-                       public_key) < 0)
+                       public_key) < 0) {
+            if (!quiet)
+                fprintf(stderr, "\n");
             errx(EXIT_FAILURE, "%s", last_error());
+        }
 
         break;
 

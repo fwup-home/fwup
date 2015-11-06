@@ -302,7 +302,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
     if (amount_read < 0)
         amount_read = 0;
 
-    if ((off_t) amount_read != byte_count)
+    if ((size_t) amount_read != byte_count)
         memset(&buff[amount_read], 0, byte_count - amount_read);
 
     return 0;

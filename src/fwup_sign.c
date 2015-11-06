@@ -69,12 +69,12 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
             if (configtxt)
                 ERR_CLEANUP_MSG("Invalid firmware. More than one meta.conf found");
 
-            ssize_t configtxt_len = archive_entry_size(in_ae);
-            if (configtxt_len < 10 || configtxt_len > 50000)
-                ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", configtxt_len);
-            configtxt = (char *) malloc(configtxt_len);
-            if (archive_read_all_data(in, (char *) configtxt, configtxt_len) < 0)
+            ssize_t configtxt_len;
+            if (archive_read_all_data(in, in_ae, &configtxt, 50000, &configtxt_len) < 0)
                 ERR_CLEANUP_MSG("Error reading meta.conf from archive.");
+
+            if (configtxt_len < 10 || configtxt_len >= 50000)
+                ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", configtxt_len);
 
             OK_OR_CLEANUP(fwfile_add_meta_conf_str(configtxt, configtxt_len, out, signing_key));
         } else {

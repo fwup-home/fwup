@@ -321,19 +321,39 @@ cleanup:
  * Helper function for reading all data in a file in the archive
  *
  * @param a the archive
- * @param buffer where to put the data
- * @param total_size how much to read
+ * @param ae the archive entry so that we can figure out the size if in seeking mode
+ * @param buffer where to save the malloc'd buffer pointer
+ * @param max_size read no more than this. If more exists, the rest isn't read.
+ * @param size_read how much was actually read
  * @return 0 on success
  */
-int archive_read_all_data(struct archive *a, char *buffer, off_t total_size)
+int archive_read_all_data(struct archive *a, struct archive_entry *ae, char **buffer, off_t max_size, off_t *size_read)
 {
-    off_t size_left = total_size;
-    while (size_left > 0) {
-        off_t len = archive_read_data(a, &buffer[total_size - size_left], size_left);
-        if (len <= 0)
+    if (archive_entry_size_is_set(ae)) {
+        // Reading off disk case - we know the size a priori
+        off_t total_size = archive_entry_size(ae);
+        if (total_size < 0)
             return -1;
+
+        // Only read up to max_size or as much as we have.
+        if (total_size < max_size)
+            max_size = total_size;
+    }
+
+    char *buf = (char *) malloc(max_size + 1);
+
+    off_t size_left = max_size;
+    while (size_left > 0) {
+        off_t len = archive_read_data(a, &buf[max_size - size_left], size_left);
+        if (len <= 0)
+            break;
         size_left -= len;
     }
+
+    *size_read = max_size - size_left;
+    buf[*size_read] = 0; // NULL terminate for convenience
+    *buffer = buf;
+
     return 0;
 }
 
@@ -345,19 +365,13 @@ int cfgfile_parse_fw_ae(struct archive *a,
 {
     int rc = 0;
     char *meta_conf = NULL;
-
-    if (!archive_entry_size_is_set(ae))
-        ERR_CLEANUP_MSG("Expecting meta.conf size to be set");
-
-    off_t total_size = archive_entry_size(ae);
-    if (total_size < 10 || total_size > 50000)
-        ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
-
-    meta_conf = (char *) malloc(total_size + 1);
-    if (archive_read_all_data(a, meta_conf, total_size) < 0)
+    off_t max_meta_conf_size = 50000;
+    off_t total_size;
+    if (archive_read_all_data(a, ae, &meta_conf, max_meta_conf_size, &total_size) < 0)
         ERR_CLEANUP_MSG("Error reading meta.conf from archive.\n"
                         "Check for file corruption or libarchive built without zlib support");
-    meta_conf[total_size] = 0;
+    if (total_size < 10 || total_size >= max_meta_conf_size)
+        ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
 
     // Check the signature on meta.conf if it has been signed
     if (public_key) {
@@ -399,14 +413,13 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned
         ERR_CLEANUP_MSG("Error reading archive '%s'", filename);
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
-        off_t total_size = archive_entry_size(ae);
-        if (total_size != crypto_sign_BYTES)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
-
-        meta_conf_signature = (unsigned char *) malloc(total_size);
-        if (archive_read_all_data(a, (char *) meta_conf_signature, total_size) < 0)
+        off_t total_size;
+        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
+
+        if (total_size != crypto_sign_BYTES)
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
         rc = archive_read_next_header(a, &ae);
         if (rc != ARCHIVE_OK)
