@@ -86,7 +86,7 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "Generate a public/private key pair and sign a firmware archive:\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  $ %s -g\n", argv0);
-    fprintf(stderr, "  (Store fwup-key.priv is a safe place. Store fwup-key.pub on the target)\n");
+    fprintf(stderr, "  (Store fwup-key.priv in a safe place. Store fwup-key.pub on the target)\n");
     fprintf(stderr, "  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", argv0);
 }
 
