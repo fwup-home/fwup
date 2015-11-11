@@ -147,7 +147,7 @@ char *mmc_find_device()
         fprintf(stderr, "Too many possible memory cards found: \n");
         for (i = 0; i < possible_ix; i++)
             fprintf(stderr, "  %s\n", possible[i]);
-        fprintf(stderr, "Pick one and specify it explicitly on the commandline.\n");
+        fprintf(stderr, "Pick one and specify it explicitly with the -d option.\n");
         exit(EXIT_FAILURE);
     }
 }
