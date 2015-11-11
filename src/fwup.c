@@ -46,7 +46,7 @@ static void print_version()
 static void print_usage(const char *argv0)
 {
 #if __APPLE__
-    const char *example_sd = "/dev/disk2";
+    const char *example_sd = "/dev/rdisk2";
 #else
     const char *example_sd = "/dev/sdc";
 #endif

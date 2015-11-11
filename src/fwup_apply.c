@@ -21,6 +21,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include <confuse.h>
+#include <errno.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -296,7 +297,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
 
     fctx.output_fd = open(output_filename, O_RDWR | O_CREAT, 0644);
     if (fctx.output_fd < 0)
-        ERR_CLEANUP_MSG("Cannot open output");
+        ERR_CLEANUP_MSG("Cannot open output (%s): %s", output_filename, strerror(errno));
     (void) fcntl(fctx.output_fd, F_SETFD, FD_CLOEXEC);
 
     archive_read_support_format_zip(pd.a);

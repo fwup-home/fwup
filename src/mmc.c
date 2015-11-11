@@ -60,8 +60,10 @@ off_t mmc_device_size(const char *devpath)
     // Platform-specific ways of determining the size of MMC cards
 #ifdef __APPLE__
     uint64_t sectors;
-    if (ioctl(fd, DKIOCGETBLOCKCOUNT, &sectors) == 0)
-        len = sectors * 512;
+    uint32_t block_size;
+    if (ioctl(fd, DKIOCGETBLOCKCOUNT, &sectors) == 0 &&
+        ioctl(fd, DKIOCGETBLOCKSIZE, &block_size) == 0)
+        len = sectors * block_size;
 #endif
 
     // Common method of determining the size
@@ -91,8 +93,20 @@ static bool is_mmc_device(const char *devpath)
     if (len > (32 * ONE_GiB))
         return false;
 
-    // Certainly there are more checks that we can do
-    // to avoid false memory card detects...
+    // Platform-specific checks
+#ifdef __APPLE__
+    int fd = open(devpath, O_RDONLY);
+    if (fd < 0)
+        return false;
+
+    dk_firmware_path_t fwpath;
+    if (ioctl(fd, DKIOCGETFIRMWAREPATH, &fwpath) != 0) {
+        // If no firmware behind the device, then it's not a real MMC device
+        close(fd);
+        return false;
+    }
+    close(fd);
+#endif
 
     return true;
 }
@@ -125,10 +139,10 @@ char *mmc_find_device()
             possible[possible_ix++] = strdup(devpath);
     }
 #elif __APPLE__
-    // Scan /dev/diskN devices (skip disk0, since it should never be written)
+    // Scan /dev/rdiskN devices (skip rdisk0, since it should never be written)
     for (i = 1; i < 16; i++) {
         char devpath[64];
-        sprintf(devpath, "/dev/disk%d", (int) i);
+        sprintf(devpath, "/dev/rdisk%d", (int) i);
 
         if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
             possible[possible_ix++] = strdup(devpath);
@@ -273,11 +287,10 @@ void mmc_attempt_umount_all(const char *mmc_device)
     for (i = 0; i < todo_ix; i++)
         free(todo[i]);
 #elif __APPLE__
-    // Try to unmount all of the partitions of /dev/diskN
+    // Try to unmount all of the partitions of /dev/rdiskN
     for (int i = 1; i < 16; i++) {
         char devpath[64];
-        sprintf(devpath, "%ss%d", mmc_device, i);
-
+        sprintf(devpath, "/dev/disk%ss%d", &mmc_device[10], i);
         struct stat st;
         int rc = stat(devpath, &st);
         if (rc == 0 && st.st_mode & S_IFBLK) {
