@@ -69,7 +69,7 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
             if (configtxt)
                 ERR_CLEANUP_MSG("Invalid firmware. More than one meta.conf found");
 
-            ssize_t configtxt_len;
+            off_t configtxt_len;
             if (archive_read_all_data(in, in_ae, &configtxt, 50000, &configtxt_len) < 0)
                 ERR_CLEANUP_MSG("Error reading meta.conf from archive.");
 

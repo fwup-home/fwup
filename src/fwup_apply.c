@@ -310,7 +310,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
         ERR_CLEANUP_MSG("Error reading archive (%s): %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
-        ssize_t total_size;
+        off_t total_size;
         if (archive_read_all_data(pd.a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
