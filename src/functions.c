@@ -19,6 +19,7 @@
 #include "fatfs.h"
 #include "mbr.h"
 #include "fwfile.h"
+#include "aligned_writer.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -225,6 +226,9 @@ int raw_write_run(struct fun_context *fctx)
     off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * 512;
     off_t len_written = 0;
 
+    struct aligned_writer writer;
+    OK_OR_RETURN(aligned_writer_init(&writer, fctx->output_fd, 17)); // 17=128 KB blocks
+
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     for (;;) {
@@ -241,19 +245,24 @@ int raw_write_run(struct fun_context *fctx)
 
         crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
 
-        ssize_t written = pwrite(fctx->output_fd, buffer, len, dest_offset + offset);
-        if (written != (ssize_t) len)
-            ERR_RETURN("unexpected error writing to destination");
+        ssize_t written = aligned_writer_pwrite(&writer, buffer, len, dest_offset + offset);
+        if (written < 0)
+            ERR_RETURN("raw_write couldn't write %d bytes to offset %lld", len, dest_offset + offset);
 
-        len_written += len;
+        len_written += written;
         fctx->report_progress(fctx, len);
     }
+
+    ssize_t lastwritten = aligned_writer_free(&writer);
+    if (lastwritten < 0)
+        ERR_RETURN("raw_write couldn't write final bytes");
+    len_written += lastwritten;
 
     if (len_written != expected_length) {
         if (len_written == 0)
             ERR_RETURN("raw_write didn't write anything. Was it called twice in one on-resource?");
         else
-            ERR_RETURN("raw_write didn't write the expected amount");
+            ERR_RETURN("raw_write wrote %lld bytes, but should have written %lld", len_written, expected_length);
     }
 
     // Verify hash if present.

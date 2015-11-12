@@ -70,7 +70,8 @@ check_meta_conf() {
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }
 
-# Create test input files
+# Copy test input files
 
-# 1K.bin: 1KB of all ones
-cat /dev/zero | tr '\0' '\377' | dd of=$WORK/1K.bin bs=1024 count=1 2>/dev/null
+# 1K.bin, 1K-corrupt.bin, 150K.bin
+# Each of these has a known set of non-repeating bytes.
+cp $TESTS_DIR/*.bin $WORK

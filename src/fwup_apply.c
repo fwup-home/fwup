@@ -110,8 +110,8 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
-    // there is a possibility that `offset` is a 32 bit integer, so we want to cast in an attempt to avoid problems
-    int64_t offset64 = (int64_t)*offset;
+    // off_t could be 32-bits so offset can't be passed directly to archive_read_data_block
+    int64_t offset64 = 0;
     int rc = archive_read_data_block(p->a, buffer, len, &offset64);
     *offset = (off_t)offset64;
 

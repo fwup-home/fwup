@@ -32,7 +32,7 @@ meta-product="$TESTFILE"
 require-fwup-version="0.0"
 file-resource "$TESTFILE" {
   length=1024
-  blake2b-256="4e175e00a248a235bfb03b15b8bed5a1729a8febc24cf00c6caca1765b301d14"
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
   # sha256=""
 }
 task "complete" {
