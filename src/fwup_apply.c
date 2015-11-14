@@ -154,6 +154,10 @@ static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, FILE
             if (!p->fatfp)
                 ERR_RETURN("Error fdopen-ing output");
 
+            // Since we're using buffered IO for the FAT FS support, make
+            // sure that it has a decent sized buffer.
+            setvbuf(p->fatfp, NULL, _IOFBF, 128 * 1024);
+
             p->fatfp_base_offset = block_offset * 512;
         }
     }

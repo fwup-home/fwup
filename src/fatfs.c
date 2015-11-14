@@ -26,6 +26,7 @@
 
 // Globals since that's how the FatFS code likes to work.
 static FILE *fatfp_ = NULL;
+static off_t fatfp_partition_offset_ = 0;
 static off_t fatfp_offset_ = 0;
 static int block_count_ = 0;
 static char *current_file_ = NULL;
@@ -70,7 +71,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
 }
 
 #define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
-#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
+#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = 0; fatfp_partition_offset_ = OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
@@ -292,15 +293,16 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    off_t byte_offset = fatfp_offset_ + sector * 512;
+    off_t byte_offset = fatfp_partition_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
-    if (fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
+    if (fatfp_offset_ != byte_offset && fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
         return RES_ERROR;
 
     ssize_t amount_read = fread(buff, 1, byte_count, fatfp_);
     if (amount_read < 0)
         amount_read = 0;
+    fatfp_offset_ = byte_offset + amount_read;
 
     if ((size_t) amount_read != byte_count)
         memset(&buff[amount_read], 0, byte_count - amount_read);
@@ -316,16 +318,19 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
     if (pdrv != 0 || !fatfp_)
         return RES_PARERR;
 
-    off_t byte_offset = fatfp_offset_ + sector * 512;
+    off_t byte_offset = fatfp_partition_offset_ + sector * 512;
     size_t byte_count = count * 512;
 
-    if (fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
+    // Avoid seeks, since they seem to flush buffers on OSX and slow things down
+    // substantially. FAT FS performance seems slowest when writing big files and
+    // seeks are uncommon in those.
+    if (fatfp_offset_ != byte_offset && fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
         return RES_ERROR;
 
     size_t amount_written = fwrite(buff, 1, byte_count, fatfp_);
     if (amount_written != byte_count)
         return RES_ERROR;
-
+    fatfp_offset_ = byte_offset + amount_written;
     return 0;
 }
 

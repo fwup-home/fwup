@@ -287,21 +287,28 @@ void mmc_attempt_umount_all(const char *mmc_device)
     for (i = 0; i < todo_ix; i++)
         free(todo[i]);
 #elif __APPLE__
-    // Try to unmount all of the partitions of /dev/rdiskN
-    for (int i = 1; i < 16; i++) {
-        char devpath[64];
-        sprintf(devpath, "/dev/disk%ss%d", &mmc_device[10], i);
-        struct stat st;
-        int rc = stat(devpath, &st);
-        if (rc == 0 && st.st_mode & S_IFBLK) {
-            char cmdline[256];
+    // Try to unmount all of the partitions of specified disk. This is
+    // the safe thing to do to avoid stepping on any other programs working
+    // on the media.
+    char cmdline[256];
 
-            // Try to unmount. Don't report an error, since a filesystem may not
-            // be mounted, and we currently don't detect that.
-            sprintf(cmdline, "/usr/sbin/diskutil quiet unmount %s", devpath);
-            system(cmdline);
-        }
-    }
+    // Try to unmount. Don't report an error. If it's really bad, the open
+    // will fail.
+    sprintf(cmdline, "/usr/sbin/diskutil quiet unmountDisk %s", mmc_device);
+    system(cmdline);
+#else
+#error Missing unmount implementation for this platform
+#endif
+}
+
+void mmc_eject(const char *mmc_device)
+{
+#if __linux
+    // Linux doesn't complain if you don't eject
+#elif __APPLE__
+    char cmdline[256];
+    sprintf(cmdline, "/usr/sbin/diskutil quiet eject %s", mmc_device);
+    system(cmdline);
 #else
 #error Missing unmount implementation for this platform
 #endif

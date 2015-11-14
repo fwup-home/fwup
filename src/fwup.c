@@ -248,8 +248,13 @@ int main(int argc, char **argv)
         // Check if the mmc_device is really a special device. If
         // we're just creating an image file, then don't try to unmount
         // everything using it.
-        if (!will_be_regular_file(mmc_device)) {
-            // attempt to unmount everything using the device to avoid corrupting partitions
+        bool is_regular_file = will_be_regular_file(mmc_device);
+        if (!is_regular_file) {
+            // Attempt to unmount everything using the device to avoid corrupting partitions.
+            // For partial updates, this just unmounts everything that can be unmounted. Errors
+            // are ignored, which is an hacky way of making this do what's necessary automatically.
+            // NOTE: It is possible in the future to scan the config file and just unmount partitions
+            //       that overlap what will be written.
             mmc_attempt_umount_all(mmc_device);
         }
 
@@ -261,6 +266,12 @@ int main(int argc, char **argv)
             if (!quiet)
                 fprintf(stderr, "\n");
             errx(EXIT_FAILURE, "%s", last_error());
+        }
+
+        if (!is_regular_file) {
+            // On OSX, at least, the system complains bitterly if you don't eject the device when done.
+            // This just does whatever is needed so that the device can be removed.
+            mmc_eject(mmc_device);
         }
 
         break;
