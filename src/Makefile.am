@@ -1,6 +1,7 @@
 bin_PROGRAMS=fwup
 fwup_SOURCES=cfgfile.c \
 	fatfs.c \
+	fat_cache.c \
 	functions.c \
 	fwfile.c \
 	fwup_apply.c \
@@ -18,6 +19,7 @@ fwup_SOURCES=cfgfile.c \
 	cfgfile.h \
 	fatfs.h \
 	functions.h \
+	fat_cache.h \
 	fwfile.h \
 	fwup_apply.h \
 	fwup_create.h \

@@ -41,6 +41,7 @@ enum fwup_apply_progress {
 #define FUN_MAX_ARGS  (10)
 struct fun_private;
 struct archive;
+struct fat_cache;
 
 struct fun_context {
     // Context of where the function is called
@@ -79,8 +80,8 @@ struct fun_context {
     // Callback for reporting progress
     void (*report_progress)(struct fun_context *fctx, int progress_units);
 
-    // Callback for getting a file handle for use with the fatfs code.
-    int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, FILE **fatfp, off_t *fatfp_offset);
+    // Callback for getting a fat_cache handle for use with the fatfs code.
+    int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc);
 
     // Callback for creating a subarchive
     int (*subarchive_ptr)(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created);

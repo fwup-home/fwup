@@ -99,8 +99,8 @@ struct fwup_data
 {
     struct archive *a;
 
-    FILE *fatfp;
-    off_t fatfp_base_offset;
+    bool using_fat_cache;
+    struct fat_cache fc;
     off_t current_fatfs_block_offset;
 
     struct archive *subarchive;
@@ -114,7 +114,7 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     // off_t could be 32-bits so offset can't be passed directly to archive_read_data_block
     int64_t offset64 = 0;
     int rc = archive_read_data_block(p->a, buffer, len, &offset64);
-    *offset = (off_t)offset64;
+    *offset = (off_t) offset64;
 
     if (rc == ARCHIVE_EOF) {
         *len = 0;
@@ -127,45 +127,34 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 }
 
-static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, FILE **fatfp, off_t *fatfp_offset)
+static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc)
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
     // Check if this is the first time or if block offset changed
-    if (!p->fatfp || block_offset != p->current_fatfs_block_offset) {
+    if (!p->using_fat_cache || block_offset != p->current_fatfs_block_offset) {
 
         // If the FATFS is being used, then flush it to disk
-        if (p->fatfp) {
+        if (p->using_fat_cache) {
             fatfs_closefs();
-            fclose(p->fatfp);
-            p->fatfp = NULL;
+            fat_cache_free(&p->fc);
+            p->using_fat_cache = false;
         }
 
         // Handle the case where a negative block offset is used to flush
         // everything to disk, but not perform an operation.
         if (block_offset >= 0) {
+            // TODO: Make cache size configurable
+            if (fat_cache_init(&p->fc, fctx->output_fd, block_offset * 512, 12 * 1024 *1024) < 0)
+                return -1;
+
+            p->using_fat_cache = true;
             p->current_fatfs_block_offset = block_offset;
-
-            // Open the destination
-            int newfd = dup(fctx->output_fd);
-            if (newfd < 0)
-                ERR_RETURN("Can't dup the output file handle");
-            p->fatfp = fdopen(newfd, "r+");
-            if (!p->fatfp)
-                ERR_RETURN("Error fdopen-ing output");
-
-            // Since we're using buffered IO for the FAT FS support, make
-            // sure that it has a decent sized buffer.
-            setvbuf(p->fatfp, NULL, _IOFBF, 128 * 1024);
-
-            p->fatfp_base_offset = block_offset * 512;
         }
     }
 
-    if (fatfp)
-        *fatfp = p->fatfp;
-    if (fatfp_offset)
-        *fatfp_offset = p->fatfp_base_offset;
+    if (fc)
+        *fc = &p->fc;
 
     return 0;
 }
@@ -383,7 +372,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     }
 
     // Flush the FATFS code in case it was used.
-    OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL, NULL));
+    OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL));
 
     // Flush a subarchive that's being built.
     OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, "", NULL, NULL));

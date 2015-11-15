@@ -17,7 +17,7 @@
 #ifndef FATFS_H
 #define FATFS_H
 
-#include <stdio.h>
+#include "fat_cache.h"
 
 /*
  * API wrappers to make the FatFS library easier to use.
@@ -26,14 +26,14 @@
 struct tm;
 int fatfs_set_time(struct tm *tmp);
 
-int fatfs_mkfs(FILE *fatfp, off_t fatfp_offset, int block_count);
-int fatfs_attrib(FILE *fatfp, off_t fatfp_offset, const char *filename, const char *attrib);
-int fatfs_mkdir(FILE *fatfp, off_t fatfp_offset, const char *dir);
-int fatfs_setlabel(FILE *fatfp, off_t fatfp_offset, const char *label);
-int fatfs_mv(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char *to_name);
-int fatfs_rm(FILE *fatfp, off_t fatfp_offset, const char *filename);
-int fatfs_pwrite(FILE *fatfp, off_t fatfp_offset, const char *filename, int offset, const char *buffer, off_t size);
-int fatfs_cp(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char *to_name);
-int fatfs_closefs();
+int fatfs_mkfs(struct fat_cache *fc, int block_count);
+int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib);
+int fatfs_mkdir(struct fat_cache *fc, const char *dir);
+int fatfs_setlabel(struct fat_cache *fc, const char *label);
+int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name);
+int fatfs_rm(struct fat_cache *fc, const char *filename);
+int fatfs_pwrite(struct fat_cache *fc, const char *filename, int offset, const char *buffer, off_t size);
+int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name);
+void fatfs_closefs();
 
 #endif // FATFS_H

@@ -29,13 +29,12 @@ SOURCES += \
     src/fwup_genkeys.c \
     src/fwup_sign.c \
     src/fwup_verify.c \
-    src/aligned_writer.c
+    src/block_writer.c \
+    src/fat_cache.c
 
 LIBS += -lconfuse -larchive -lsodium
 
 HEADERS += \
-    src/sha2.h \
-    3rdparty/src/fatfs.h \
     3rdparty/fatfs/src/ff.h \
     3rdparty/fatfs/src/ffconf.h \
     src/mbr.h \
@@ -53,7 +52,8 @@ HEADERS += \
     src/fwup_genkeys.h \
     src/fwup_sign.h \
     src/fwup_verify.h \
-    src/aligned_writer.h
+    src/block_writer.h \
+    src/fat_cache.h
 
 OTHER_FILES += \
     fwupdate.conf \

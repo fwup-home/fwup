@@ -19,15 +19,15 @@
 #include "3rdparty/fatfs/src/diskio.h"		/* FatFs lower layer API */
 #include "3rdparty/fatfs/src/ff.h"
 #include "util.h"
+#include "fat_cache.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 // Globals since that's how the FatFS code likes to work.
-static FILE *fatfp_ = NULL;
-static off_t fatfp_partition_offset_ = 0;
-static off_t fatfp_offset_ = 0;
+static struct fat_cache *fc_ = NULL;
 static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
@@ -71,7 +71,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
 }
 
 #define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
-#define MAYBE_MOUNT(FATFP, OFFSET) do { if (fatfp_ != FATFP) { fatfp_ = FATFP; fatfp_offset_ = 0; fatfp_partition_offset_ = OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
+#define MAYBE_MOUNT(FATCACHE) do { if (fc_ != FATCACHE) { fc_ = FATCACHE; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
@@ -80,12 +80,16 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
  * @param block_count how many 512 blocks
  * @return 0 on success
  */
-int fatfs_mkfs(FILE *fatfp, off_t fatfp_offset, int block_count)
+int fatfs_mkfs(struct fat_cache *fc, int block_count)
 {
-    // The block count is only used for f_mkfs according to the docs.
+    // The block count is only used for f_mkfs according to the docs. Store
+    // it here for the call to f_mkfs since there's no way to pass it through.
     block_count_ = block_count;
 
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
+
+    // Since we're going to format, clear out the cache
+    fat_cache_format(fc_);
 
     // The third parameter is the cluster size. We set it low so
     // that we have enough clusters to easily bump the cluster count
@@ -93,6 +97,11 @@ int fatfs_mkfs(FILE *fatfp, off_t fatfp_offset, int block_count)
     // get FAT32 is 65526. This is important for the Raspberry Pi since
     // it only boots off FAT32 partitions and we don't want a huge
     // boot partition.
+    //
+    // NOTE2: FAT file system usage with fwup generally has been for the small
+    // boot partitions on platforms and not huge partitions. If this
+    // changes, it would be good to make this configurable so that massive
+    // partitions could be made.
     CHECK("fat_mkfs", NULL, f_mkfs("", 1, 512));
 
     return 0;
@@ -116,9 +125,9 @@ static void close_open_files()
  * @param dir the name of the directory
  * @return 0 on success
  */
-int fatfs_mkdir(FILE *fatfp, off_t fatfp_offset, const char *dir)
+int fatfs_mkdir(struct fat_cache *fc, const char *dir)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
     close_open_files();
     CHECK("fat_mkdir", dir, f_mkdir(dir));
     return 0;
@@ -131,9 +140,9 @@ int fatfs_mkdir(FILE *fatfp, off_t fatfp_offset, const char *dir)
  * @param label the name of the filesystem
  * @return 0 on success
  */
-int fatfs_setlabel(FILE *fatfp, off_t fatfp_offset, const char *label)
+int fatfs_setlabel(struct fat_cache *fc, const char *label)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
     close_open_files();
     CHECK("fat_setlabel", label, f_setlabel(label));
     return 0;
@@ -146,9 +155,9 @@ int fatfs_setlabel(FILE *fatfp, off_t fatfp_offset, const char *label)
  * @param filename the name of the file
  * @return 0 on success
  */
-int fatfs_rm(FILE *fatfp, off_t fatfp_offset, const char *filename)
+int fatfs_rm(struct fat_cache *fc, const char *filename)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
     close_open_files();
     CHECK("fat_rm", filename, f_unlink(filename));
     return 0;
@@ -162,9 +171,9 @@ int fatfs_rm(FILE *fatfp, off_t fatfp_offset, const char *filename)
  * @param to_name new filename
  * @return 0 on success
  */
-int fatfs_mv(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char *to_name)
+int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
     close_open_files();
     CHECK("fat_mv", from_name, f_rename(from_name, to_name));
     return 0;
@@ -178,9 +187,9 @@ int fatfs_mv(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char 
  * @param to_name the name of the copy filename
  * @return 0 on success
  */
-int fatfs_cp(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char *to_name)
+int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
     close_open_files();
 
     FIL fromfil;
@@ -214,9 +223,9 @@ int fatfs_cp(FILE *fatfp, off_t fatfp_offset, const char *from_name, const char 
  * @param attrib a string with the attributes. i.e., "RHS"
  * @return 0 on success
  */
-int fatfs_attrib(FILE *fatfp, off_t fatfp_offset, const char *filename, const char *attrib)
+int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
 
     BYTE mode = 0;
     while (*attrib) {
@@ -239,9 +248,9 @@ int fatfs_attrib(FILE *fatfp, off_t fatfp_offset, const char *filename, const ch
     return 0;
 }
 
-int fatfs_pwrite(FILE *fatfp, off_t fatfp_offset,const char *filename, int offset, const char *buffer, off_t size)
+int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const char *buffer, off_t size)
 {
-    MAYBE_MOUNT(fatfp, fatfp_offset);
+    MAYBE_MOUNT(fc);
 
     // Check if this is the same file as a previous pwrite call
     if (current_file_ && strcmp(current_file_, filename) != 0)
@@ -264,14 +273,15 @@ int fatfs_pwrite(FILE *fatfp, off_t fatfp_offset,const char *filename, int offse
     return 0;
 }
 
-int fatfs_closefs()
+void fatfs_closefs()
 {
-    close_open_files();
+    if (fc_) {
+        close_open_files();
 
-    // This unmounts. Don't check error.
-    f_mount(NULL, "", 0);
-    fatfp_ = NULL;
-    return 0;
+        // This unmounts. Don't check error.
+        f_mount(NULL, "", 0);
+        fc_ = NULL;
+    }
 }
 
 // Implementation of callbacks
@@ -282,7 +292,7 @@ DSTATUS disk_initialize(BYTE pdrv)				/* Physical drive nmuber (0..) */
 
 DSTATUS disk_status(BYTE pdrv)		/* Physical drive nmuber (0..) */
 {
-    return pdrv == 0 && fatfp_ ? 0 : STA_NOINIT;
+    return (pdrv == 0 && fc_) ? 0 : STA_NOINIT;
 }
 
 DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
@@ -290,24 +300,13 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
                   DWORD sector,	/* Sector address (LBA) */
                   UINT count)		/* Number of sectors to read (1..128) */
 {
-    if (pdrv != 0 || !fatfp_)
+    if (pdrv != 0 || fc_ == NULL)
         return RES_PARERR;
 
-    off_t byte_offset = fatfp_partition_offset_ + sector * 512;
-    size_t byte_count = count * 512;
-
-    if (fatfp_offset_ != byte_offset && fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
+    if (fat_cache_read(fc_, sector, count, (char *) buff) < 0)
         return RES_ERROR;
-
-    ssize_t amount_read = fread(buff, 1, byte_count, fatfp_);
-    if (amount_read < 0)
-        amount_read = 0;
-    fatfp_offset_ = byte_offset + amount_read;
-
-    if ((size_t) amount_read != byte_count)
-        memset(&buff[amount_read], 0, byte_count - amount_read);
-
-    return 0;
+    else
+        return 0;
 }
 
 DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
@@ -315,30 +314,20 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
                    DWORD sector,		/* Sector address (LBA) */
                    UINT count)			/* Number of sectors to write (1..128) */
 {
-    if (pdrv != 0 || !fatfp_)
+    if (pdrv != 0 || fc_ == NULL)
         return RES_PARERR;
 
-    off_t byte_offset = fatfp_partition_offset_ + sector * 512;
-    size_t byte_count = count * 512;
-
-    // Avoid seeks, since they seem to flush buffers on OSX and slow things down
-    // substantially. FAT FS performance seems slowest when writing big files and
-    // seeks are uncommon in those.
-    if (fatfp_offset_ != byte_offset && fseeko(fatfp_, byte_offset, SEEK_SET) < 0)
+    if (fat_cache_write(fc_, sector, count, (const char *) buff) < 0)
         return RES_ERROR;
-
-    size_t amount_written = fwrite(buff, 1, byte_count, fatfp_);
-    if (amount_written != byte_count)
-        return RES_ERROR;
-    fatfp_offset_ = byte_offset + amount_written;
-    return 0;
+    else
+        return 0;
 }
 
 DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive nmuber (0..) */
                    BYTE cmd,		/* Control code */
                    void *buff)		/* Buffer to send/receive control data */
 {
-    if (pdrv != 0 || !fatfp_)
+    if (pdrv != 0 || !fc_)
         return RES_PARERR;
 
     switch (cmd) {
