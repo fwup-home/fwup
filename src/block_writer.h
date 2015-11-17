@@ -25,18 +25,20 @@
  * possible. This significantly improves throughput on systems
  * that do not buffer writes.
  */
-struct aligned_writer {
+struct block_writer {
     int fd;
+    size_t buffer_size;
+
     size_t block_size;
     off_t block_size_mask;
 
     char *buffer;
-    off_t buffer_offset;
-    size_t buffer_count;
+    off_t write_offset;
+    size_t buffer_index;
 };
 
-int aligned_writer_init(struct aligned_writer *aw, int fd, int log2_block_size);
-ssize_t aligned_writer_pwrite(struct aligned_writer *aw, const void *buf, size_t count, off_t offset);
-ssize_t aligned_writer_free(struct aligned_writer *aw);
+int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2_block_size);
+ssize_t block_writer_pwrite(struct block_writer *aw, const void *buf, size_t count, off_t offset);
+ssize_t block_writer_free(struct block_writer *aw);
 
 #endif // ALIGNED_WRITER_H

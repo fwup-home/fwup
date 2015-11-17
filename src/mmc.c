@@ -305,6 +305,7 @@ void mmc_eject(const char *mmc_device)
 {
 #if __linux
     // Linux doesn't complain if you don't eject
+    (void) mmc_device;
 #elif __APPLE__
     char cmdline[256];
     sprintf(cmdline, "/usr/sbin/diskutil quiet eject %s", mmc_device);

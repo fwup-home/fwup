@@ -28,7 +28,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
-dd if=$WORK/150K.bin bs=1024 seek=2150000000 of=$WORK/check.bin 2>/dev/null
+dd if=$WORK/150K.bin seek=4300000000 of=$WORK/check.bin conv=sync 2>/dev/null
 
 # diffing the files takes too long, so skip to the end
 # where the interesting stuff is

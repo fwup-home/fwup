@@ -11,7 +11,7 @@ fwup_SOURCES=cfgfile.c \
 	fwup_verify.c \
 	fwup_metadata.c \
 	fwup_genkeys.c \
-	aligned_writer.c \
+	block_writer.c \
 	mbr.c \
 	mmc.c \
 	util.c \
@@ -26,7 +26,7 @@ fwup_SOURCES=cfgfile.c \
 	fwup_genkeys.h \
 	fwup_sign.h \
 	fwup_verify.h \
-	aligned_writer.h \
+	block_writer.h \
 	mbr.h \
 	mmc.h \
 	util.h \
