@@ -436,6 +436,18 @@ On the target device, you can retrieve the version by using `-m`. For example:
     meta-architecture = "arm"
     meta-creation-date = "2014-09-07T19:50:57Z"
 
+## How do I get the best performance?
+
+In general, `fwup` is written to write to Flash memory in large blocks so that
+the update can occur quickly. Obviously, reducing the amount that needs to get
+written always helps. Beyond that, most optimizations are platform dependent.
+Linux caches writes so aggressively that writes to Flash memory are nearly as
+fast as possible. OSX, on the other hand, does very little caching, so doing
+things like only working with one FAT filesystem at a time can help. In this
+case, `fwup` only caches writes to one FAT filesystem at a time, so mixing them
+will flush caches. OSX also is very slow to unmount disks, so keep in mind that
+performance can only be so fast on some systems.
+
 # Licenses
 
 This utility contains source code with various licenses. The bulk of the code is
