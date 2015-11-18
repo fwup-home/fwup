@@ -34,6 +34,7 @@
 #include "fatfs.h"
 #include "mbr.h"
 #include "fwfile.h"
+#include "mmc.h"
 
 static bool task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -283,6 +284,19 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     // Report 0 progress before doing anything
     fwup_apply_report_progress(&fctx, 0);
 
+    // Check if the mmc_device is really a special device. If
+    // we're just creating an image file, then don't try to unmount
+    // everything using it.
+    bool is_regular_file = will_be_regular_file(output_filename);
+    if (!is_regular_file) {
+        // Attempt to unmount everything using the device to avoid corrupting partitions.
+        // For partial updates, this just unmounts everything that can be unmounted. Errors
+        // are ignored, which is an hacky way of making this do what's necessary automatically.
+        // NOTE: It is possible in the future to scan the config file and just unmount partitions
+        //       that overlap what will be written.
+        mmc_attempt_umount_all(output_filename);
+    }
+
     struct fwup_data pd;
     memset(&pd, 0, sizeof(pd));
     fctx.cookie = &pd;
@@ -377,7 +391,17 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     // Flush a subarchive that's being built.
     OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, "", NULL, NULL));
 
-    // Report 100% to the user.
+    // Close the file before we report 100% just in case that takes some time (Linux)
+    close(fctx.output_fd);
+    fctx.output_fd = -1;
+
+    if (!is_regular_file) {
+        // On OSX, at least, the system complains bitterly if you don't eject the device when done.
+        // This just does whatever is needed so that the device can be removed.
+        mmc_eject(output_filename);
+    }
+
+    // Report 100% to the user
     fwup_apply_report_final_progress(&fctx);
 
 cleanup:
