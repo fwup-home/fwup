@@ -19,7 +19,7 @@ meta-product = \${TEST_ENV_VAR}
 # Test substitution in a resource name
 file-resource "\${TEST_ENV_VAR}" {
         # Test substitution in the middle of a string
-	host-path = "${WORK}/\${TEST_ENV_VAR}"
+        host-path = "$TESTS_DIR/\${TEST_ENV_VAR}"
 }
 
 task complete {
@@ -60,8 +60,8 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $WORK/1K.bin $UNZIPDIR/data/${TEST_ENV_VAR}
+diff $TESTFILE_1K $UNZIPDIR/data/${TEST_ENV_VAR}
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $WORK/1K.bin
+diff $IMGFILE $TESTFILE_1K

@@ -8,7 +8,7 @@
 
 cat >$CONFIG <<EOF
 file-resource TEST {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 
 task complete {

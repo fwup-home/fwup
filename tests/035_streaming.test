@@ -10,7 +10,7 @@
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 
 task complete {
@@ -25,5 +25,5 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
-dd if=$WORK/1K.bin seek=1 of=$WORK/check.bin 2>/dev/null
+dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
 diff $WORK/check.bin $IMGFILE

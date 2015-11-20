@@ -11,7 +11,7 @@ define(BOOT_PART_OFFSET, 63)
 define(BOOT_PART_COUNT, 77238)
 
 file-resource 1K.bin {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 
 mbr mbr-a {
@@ -38,7 +38,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Now be sneaking and replace the data file with a same-sized imposter
 unzip -q $FWFILE -d $UNZIPDIR
-cp $WORK/1K-corrupt.bin $UNZIPDIR/data/1K.bin
+cp $TESTFILE_1K_CORRUPT $UNZIPDIR/data/1K.bin
 cd $UNZIPDIR
 zip -q $WORK/imposter.fw meta.conf data/1K.bin
 cd -

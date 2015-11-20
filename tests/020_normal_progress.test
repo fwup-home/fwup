@@ -8,16 +8,16 @@
 
 cat >$CONFIG <<EOF
 file-resource 1.bin {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 file-resource 2.bin {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 file-resource 3.bin {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 file-resource 4.bin {
-	host-path = "${WORK}/1K.bin"
+	host-path = "${TESTFILE_1K}"
 }
 
 task complete {

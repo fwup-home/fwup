@@ -74,4 +74,6 @@ check_meta_conf() {
 
 # 1K.bin, 1K-corrupt.bin, 150K.bin
 # Each of these has a known set of non-repeating bytes.
-cp $TESTS_DIR/*.bin $WORK
+TESTFILE_1K=$TESTS_DIR/1K.bin
+TESTFILE_1K_CORRUPT=$TESTS_DIR/1K-corrupt.bin
+TESTFILE_150K=$TESTS_DIR/150K.bin

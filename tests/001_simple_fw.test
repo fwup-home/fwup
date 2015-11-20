@@ -8,7 +8,7 @@
 
 cat >$CONFIG <<EOF
 file-resource TEST {
-	host-path = "${WORK}/1K.bin"
+        host-path = "${TESTFILE_1K}"
 }
 
 task complete {
@@ -47,9 +47,9 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $WORK/1K.bin $UNZIPDIR/data/TEST
+diff $TESTFILE_1K $UNZIPDIR/data/TEST
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $WORK/1K.bin
+diff $IMGFILE $TESTFILE_1K
 
