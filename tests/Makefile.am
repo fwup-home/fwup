@@ -34,7 +34,8 @@ TESTS = 001_simple_fw.test \
         034_missing_host_path.test \
         035_streaming.test \
         036_streaming_signed_fw.test \
-        037_streaming_bad_sig.test
+        037_streaming_bad_sig.test \
+        038_write_15M.test
 
 
 EXTRA_DIST = $(TESTS) common.sh

@@ -99,4 +99,5 @@ DISTFILES += \
     tests/034_missing_host_path.test \
     tests/035_streaming.test \
     tests/036_streaming_signed_fw.test \
-    tests/037_streaming_bad_sig.test
+    tests/037_streaming_bad_sig.test \
+    tests/038_write_15M.test

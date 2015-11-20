@@ -70,10 +70,22 @@ check_meta_conf() {
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }
 
-# Copy test input files
+# Test input files
 
-# 1K.bin, 1K-corrupt.bin, 150K.bin
-# Each of these has a known set of non-repeating bytes.
+# These files contain random data so that it is possible to
+# verify that fwup copied things correctly. Previously fwup
+# unit tests used files filled with 1s, and it possible for
+# a test to pass even though the data had been reordered.
+# (This never actually happened to my knowledge.)
+
 TESTFILE_1K=$TESTS_DIR/1K.bin
 TESTFILE_1K_CORRUPT=$TESTS_DIR/1K-corrupt.bin
 TESTFILE_150K=$TESTS_DIR/150K.bin
+
+# Generated test data
+TESTFILE_15M=$TESTS_DIR/15M.bin
+if [ ! -e $TESTFILE_15M ]; then
+    for i in {1..100}; do
+        cat $TESTFILE_150K >> $TESTFILE_15M
+    done
+fi

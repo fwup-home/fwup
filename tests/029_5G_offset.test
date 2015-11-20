@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Test writing to a 5 GB offset. This test shouldn't require

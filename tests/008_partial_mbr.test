@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Test writing an MBR that doesn't have all 4 entries. The missing

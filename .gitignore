@@ -25,3 +25,4 @@ tests/work
 fwup-key.priv
 fwup-key.pub
 *~
+tests/15M.bin

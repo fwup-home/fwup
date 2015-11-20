@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Test writing to a 2 TB offset to check that >4G numbers can be

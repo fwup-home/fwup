@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Test creating a 5GB FAT partition to verify that LFS is enabled
