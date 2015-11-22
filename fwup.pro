@@ -12,9 +12,10 @@ TEMPLATE = app
 
 
 SOURCES += \
+    3rdparty/fatfs/src/ff.c \
+    3rdparty/fatfs/src/option/unicode.c \
     src/fwup.c \
     src/fatfs.c \
-    3rdparty/fatfs/src/ff.c \
     src/mbr.c \
     src/cfgfile.c \
     src/util.c \
@@ -25,7 +26,6 @@ SOURCES += \
     src/fwup_list.c \
     src/fwup_metadata.c \
     src/fwfile.c \
-    3rdparty/fatfs/src/option/unicode.c \
     src/fwup_genkeys.c \
     src/fwup_sign.c \
     src/fwup_verify.c \
@@ -37,6 +37,8 @@ LIBS += -lconfuse -larchive -lsodium
 HEADERS += \
     3rdparty/fatfs/src/ff.h \
     3rdparty/fatfs/src/ffconf.h \
+    3rdparty/fatfs/src/integer.h \
+    3rdparty/fatfs/src/diskio.h \
     src/mbr.h \
     src/cfgfile.h \
     src/util.h \
@@ -47,8 +49,6 @@ HEADERS += \
     src/fwup_list.h \
     src/fwup_metadata.h \
     src/fwfile.h \
-    3rdparty/fatfs/src/integer.h \
-    3rdparty/fatfs/src/diskio.h \
     src/fwup_genkeys.h \
     src/fwup_sign.h \
     src/fwup_verify.h \
@@ -101,4 +101,5 @@ DISTFILES += \
     tests/036_streaming_signed_fw.test \
     tests/037_streaming_bad_sig.test \
     tests/038_write_15M.test \
-    tests/039_upgrade.test
+    tests/039_upgrade.test \
+    tests/040_create_mini_fw.test
