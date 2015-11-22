@@ -61,10 +61,12 @@ OTHER_FILES += \
     TODO.md
 
 DISTFILES += \
+    tests/Makefile.am \
+    tests/common.sh \
     tests/001_simple_fw.test \
     tests/002_resource_subdir.test \
     tests/003_write_offset.test \
-    tests/common.sh \
+    tests/004_env_vars.test \
     tests/005_define.test \
     tests/006_metadata.test \
     tests/007_mbr.test \
@@ -87,10 +89,8 @@ DISTFILES += \
     tests/024_metadata_sig.test \
     tests/025_bad_sig.test \
     tests/026_sign_again.test \
-    tests/Makefile.am \
-    tests/004_env_vars.test \
-    tests/028_osip.test \
     tests/027_fat_timestamp.test \
+    tests/028_osip.test \
     tests/029_5G_offset.test \
     tests/030_2T_offset.test \
     tests/031_fat_mkfs_5G.test \
@@ -100,4 +100,5 @@ DISTFILES += \
     tests/035_streaming.test \
     tests/036_streaming_signed_fw.test \
     tests/037_streaming_bad_sig.test \
-    tests/038_write_15M.test
+    tests/038_write_15M.test \
+    tests/039_upgrade.test

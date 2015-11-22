@@ -1,0 +1,134 @@
+#!/bin/bash
+
+#
+# Write a firmware image and then test upgrading it
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | p0: Boot (Simulated)        |
+# +-----------------------------+
+# | p1*: Rootfs A (Simulated)   |
+# +-----------------------------+
+# | p1*: Rootfs B (Simulated)   |
+# +-----------------------------+
+# | p2: Data (Simulated)        |
+# +-----------------------------+
+
+define(BOOT_PART_OFFSET, 256) # at offset 128K
+define(BOOT_PART_COUNT, 256)
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+define(APP_PART_OFFSET, 4096)
+define(APP_PART_COUNT, 1024)
+
+file-resource boot.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource data.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.stuff {
+        host-path = "${TESTFILE_150K}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+mbr mbr-b {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+    }
+    on-resource boot.stuff { raw_write(\${BOOT_PART_OFFSET}) }
+    on-resource data.stuff { raw_write(\${APP_PART_OFFSET}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-partition1-offset = \${ROOTFS_B_PART_OFFSET}
+    on-init { mbr_write(mbr-a) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition B
+    # is being used.
+    require-partition1-offset = \${ROOTFS_A_PART_OFFSET}
+    on-init { mbr_write(mbr-b) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+}
+
+# This task is just needed to help support the unit test
+task dump_mbr_b {
+    on-init {
+        mbr_write(mbr-b)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd calls
+# Assume that previous tests make sure that the MBR is correct and just
+# copy it over.
+dd if=$IMGFILE of=$WORK/check.bin count=1 2>/dev/null
+dd if=$TESTFILE_1K seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+diff $WORK/check.bin $IMGFILE
+
+# Now upgrade the IMGFILE file
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+$FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
+cp $WORK/check.bin $WORK/check-upgraded.bin
+dd if=$WORK/mbr_b.bin of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
+dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
+diff $WORK/check-upgraded.bin $IMGFILE
