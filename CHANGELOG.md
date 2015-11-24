@@ -1,10 +1,19 @@
 # Changelog
 
+## v0.4.2
+
+  * New features
+    * Write caching for FAT and large binaries (helps on OSX)
+
+## v0.4.1
+
+  * Bug fixes
+    * Fix streaming upgrades and add unit tests to catch regressions
+
 ## v0.4.0
 
   * New features
     * Builds and programs SDCards on OSX
-    * Write caching for FAT and large binaries (helps on OSX)
 
 ## v0.3.1
 
