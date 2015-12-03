@@ -58,10 +58,17 @@ so you'll want to verify the archive first (see the `-V` option).
 
 # Building
 
+If you're running OSX, you're in luck. You can install `fwup` via homebrew right now:
+
+    brew install https://raw.githubusercontent.com/kfatehi/homebrew/new-formula/fwup/Library/Formula/fwup.rb
+
+The above formula is [pending addition]((https://github.com/Homebrew/homebrew/pull/46484) to homebrew.
+
+If you prefer to build it yourself, read on:
+
 ### libconfuse
 
-`fwup` requires libconfuse version 2.8. If you're running OSX, you're in luck. The
-latest version of libconfuse is in Homebrew:
+`fwup` requires libconfuse version 2.8. On OSX you can get the latest version with homebrew:
 
     brew install confuse
 
