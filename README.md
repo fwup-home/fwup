@@ -60,9 +60,7 @@ so you'll want to verify the archive first (see the `-V` option).
 
 If you're running OSX, you're in luck. You can install `fwup` via homebrew right now:
 
-    brew install https://raw.githubusercontent.com/kfatehi/homebrew/new-formula/fwup/Library/Formula/fwup.rb
-
-The above formula is [pending addition]((https://github.com/Homebrew/homebrew/pull/46530) to homebrew.
+    brew install fwup
 
 If you prefer to build it yourself, read on:
 
