@@ -350,7 +350,7 @@ DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive nmuber (0..) */
         return RES_OK;
     }
     case GET_SECTOR_SIZE:
-    case CTRL_ERASE_SECTOR:
+    case CTRL_TRIM:
     default:
         return RES_PARERR;
     }

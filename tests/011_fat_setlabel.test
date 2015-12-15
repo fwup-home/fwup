@@ -45,7 +45,7 @@ cat >$EXPECTED_OUTPUT << EOF
 Directory for ::/
 
 No files
-                         38 910 464 bytes free
+                         39 219 712 bytes free
 
 EOF
 

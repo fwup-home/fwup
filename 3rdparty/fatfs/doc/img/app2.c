@@ -14,7 +14,7 @@ FRESULT empty_directory (
     FILINFO fno;
 
 #if _USE_LFN
-    fno.lfname = 0; /* Eliminate LFN output */
+    fno.lfname = 0; /* Disable LFN output */
 #endif
     fr = f_opendir(&dir, path);
     if (fr == FR_OK) {
@@ -23,7 +23,7 @@ FRESULT empty_directory (
         for (;;) {
             fr = f_readdir(&dir, &fno);
             if (fr != FR_OK || !fno.fname[0]) break;
-            if (fno.fname[0] == '.') continue;
+            if (_FS_RPATH && fno.fname[0] == '.') continue;
             j = 0;
             do
                 path[i+j] = fno.fname[j];
@@ -59,7 +59,7 @@ int main (void)
 
     if (fr) {
         printf("Function failed. (%u)\n", fr);
-        return 1;
+        return fr;
     } else {
         printf("All contents in the %s are successfully removed.\n", buff);
         return 0;

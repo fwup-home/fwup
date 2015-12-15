@@ -5,7 +5,7 @@
 #ifndef _FF_INTEGER
 #define _FF_INTEGER
 
-#ifdef _WIN32	/* FatFs development platform */
+#ifdef _WIN32	/* Development platform */
 
 #include <windows.h>
 #include <tchar.h>

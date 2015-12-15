@@ -466,7 +466,7 @@ FatFs module is a generic FAT file system module for small embedded systems.
 This is a free software that opened for education, research and commercial
 developments under license policy of following terms.
 
- Copyright (C) 2014, ChaN, all right reserved.
+ Copyright (C) 2015, ChaN, all right reserved.
 
 * The FatFs module is a free software and there is NO WARRANTY.
 * No restriction on use. You can use, modify and redistribute it for
