@@ -267,9 +267,11 @@ int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const ch
 
     UINT bw;
     CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
-    if (size != bw)
-        ERR_RETURN("Error writing file to FAT");
 
+    if (size != bw) {
+      ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+    }
+    
     return 0;
 }
 
