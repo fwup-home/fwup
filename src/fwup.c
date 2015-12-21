@@ -83,6 +83,10 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "\n");
     fprintf(stderr, "  $ %s -a -d %s -i myfirmware.fw -t upgrade\n", argv0, example_sd);
     fprintf(stderr, "\n");
+    fprintf(stderr, "Create an image file from a .fw file for use with dd(1):\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  $ %s -a -d myimage.img -i myfirmware.fw -t complete\n", argv0);
+    fprintf(stderr, "\n");
     fprintf(stderr, "Generate a public/private key pair and sign a firmware archive:\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  $ %s -g\n", argv0);
