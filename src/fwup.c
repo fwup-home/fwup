@@ -54,22 +54,23 @@ static void print_usage(const char *argv0)
     print_version();
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "  -a   Apply the firmware update\n");
-    fprintf(stderr, "  -c   Create the firmware update\n");
+    fprintf(stderr, "  -a, --apply   Apply the firmware update\n");
+    fprintf(stderr, "  -c, --create  Create the firmware update\n");
     fprintf(stderr, "  -d <Device file for the memory card>\n");
     fprintf(stderr, "  -f <fwupdate.conf> Specify the firmware update configuration file\n");
-    fprintf(stderr, "  -g Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
+    fprintf(stderr, "  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
     fprintf(stderr, "  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
-    fprintf(stderr, "  -l   List the available tasks in a firmware update\n");
-    fprintf(stderr, "  -m   Print metadata in the firmware update\n");
+    fprintf(stderr, "  -l, --list   List the available tasks in a firmware update\n");
+    fprintf(stderr, "  -m, --metadata   Print metadata in the firmware update\n");
     fprintf(stderr, "  -n   Report numeric progress\n");
     fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
-    fprintf(stderr, "  -q   Quiet\n");
+    fprintf(stderr, "  -q, --quiet   Quiet\n");
     fprintf(stderr, "  -s <keyfile> A private key file for signing firmware updates\n");
-    fprintf(stderr, "  -S Sign an existing firmware file (specify -i and -o)\n");
-    fprintf(stderr, "  -t <task> Task to apply within the firmware update\n");
-    fprintf(stderr, "  -v   Verbose\n");
-    fprintf(stderr, "  -V Verify an existing firmware file (specify -i)\n");
+    fprintf(stderr, "  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
+    fprintf(stderr, "  -t, --task <task> Task to apply within the firmware update\n");
+    fprintf(stderr, "  -v, --verbose   Verbose\n");
+    fprintf(stderr, "  -V, --verify  Verify an existing firmware file (specify -i)\n");
+    fprintf(stderr, "  --version Print out the version\n");
     fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
     fprintf(stderr, "  -z   Print the memory card that would be automatically detected and exit\n");
     fprintf(stderr, "\n");
@@ -93,6 +94,22 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  (Store fwup-key.priv in a safe place. Store fwup-key.pub on the target)\n");
     fprintf(stderr, "  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", argv0);
 }
+
+static struct option long_options[] = {
+    {"apply",   no_argument,    0, 'a'},
+    {"create",  no_argument,    0, 'c'},
+    {"gen-keys", no_argument,   0, 'g'},
+    {"list",    no_argument,    0, 'l'},
+    {"metadata", no_argument,   0, 'm'},
+    {"quiet", no_argument,      0, 'q'},
+    {"sign", no_argument,       0, 'S'},
+    {"task", required_argument, 0, 't'},
+    {"verbose", no_argument,    0, 'v'},
+    {"verify", no_argument,     0, 'V'},
+    {"version", no_argument,    0, '@'},
+    {0,        0,               0, 0 }
+};
+
 
 #define CMD_NONE    0
 #define CMD_APPLY   1
@@ -121,24 +138,13 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    static struct option long_options[] = {
-        {"apply",   no_argument,    0, 'a'},
-        {"create",  no_argument,    0, 'c'},
-        {"gen-keys", no_argument,   0, 'g'},
-        {"list",    no_argument,    0, 'l'},
-        {"metadata", no_argument,   0, 'm'},
-        {"sign", no_argument,       0, 'S'},
-        {"verify", no_argument,     0, 'V'},
-        {0,        0,               0, 0 }
-    };
-
     int opt;
     while ((opt = getopt_long(argc, argv, "acd:f:gi:lmno:p:qSs:t:Vvyz", long_options, NULL)) != -1) {
         switch (opt) {
-        case 'a':
+        case 'a': // --apply
             command = CMD_APPLY;
             break;
-        case 'c':
+        case 'c': // --create
             command = CMD_CREATE;
             break;
         case 'd':
@@ -147,16 +153,16 @@ int main(int argc, char **argv)
         case 'f':
             configfile = optarg;
             break;
-        case 'g':
+        case 'g': // --gen-keys
             command = CMD_GENERATE_KEYS;
             break;
         case 'i':
             input_firmware = optarg;
             break;
-        case 'l':
+        case 'l': // --list
             command = CMD_LIST;
             break;
-        case 'm':
+        case 'm': // --metadata
             command = CMD_METADATA;
             break;
         case 'o':
@@ -177,7 +183,7 @@ int main(int argc, char **argv)
         case 'q':
             quiet = true;
             break;
-        case 'S':
+        case 'S': // --sign
             command = CMD_SIGN;
             break;
         case 's':
@@ -189,13 +195,13 @@ int main(int argc, char **argv)
             fclose(fp);
             break;
         }
-        case 't':
+        case 't': // --task
             task = optarg;
             break;
-        case 'v':
+        case 'v': // --verbose
             fwup_verbose = true;
             break;
-        case 'V':
+        case 'V': // --verify
             command = CMD_VERIFY;
             break;
         case 'y':
@@ -204,6 +210,10 @@ int main(int argc, char **argv)
         case 'z':
             mmc_device = mmc_find_device();
             printf("%s", mmc_device);
+            exit(EXIT_SUCCESS);
+            break;
+        case '@': // --version
+            printf("%s\n", PACKAGE_VERSION);
             exit(EXIT_SUCCESS);
             break;
         default: /* '?' */
