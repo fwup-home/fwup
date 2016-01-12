@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.0
+
+  * New features
+    * Add `--version` commandline option
+    * Document and add more long options
+    * Update fatfs library to R0.11a
+
+  * Bug fixes
+    * Improve disk full error message (thanks Tony Arkles)
+
 ## v0.4.2
 
   * New features
