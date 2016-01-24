@@ -56,51 +56,81 @@ give protection against someone pulling power at a bad time. Also, `fwup`'s one 
 over the archive feature means that firmware validation is mostly done on the fly,
 so you'll want to verify the archive first (see the `-V` option).
 
-# Building
+# Installing
 
 If you're running OSX, you're in luck. You can install `fwup` via homebrew right now:
 
     brew install fwup
 
-If you prefer to build it yourself, read on:
+If you're using another platform or prefer to build it yourself, read on.
 
-### libconfuse
+# Building Dependencies
 
-`fwup` requires libconfuse version 2.8. On OSX you can get the latest version with homebrew:
+On OSX:
 
-    brew install confuse
+    brew install confuse libarchive libsodium
 
-If you're on another platform, you almost certainly still have an older version
-(at least as of November 5th, 2015). Therefore, download and install
-[libconfuse 2.8 or later](https://github.com/martinh/libconfuse/releases).
-If you use an old
-version, the unit tests will fail due to environment variable substitution not
-working. (You'll understand if you skip this step.)
+On Ubuntu:
 
-### libsodium and libarchive
-Install [libarchive](http://libarchive.org) and [libsodium](http://doc.libsodium.org/).
-On Debian-based systems, run:
-
+    # libconfuse 2.8 is required but not available in apt
+    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-2.8
+    ./configure && make && sudo make install
+    popd
+    rm -rf /tmp/confuse-2.8
+    
     sudo apt-get install libarchive-dev libsodium-dev
 
-On OSX, run:
+On CentOS 6:
 
-    brew install libarchive libsodium
+    # The version of libconfuse available in yum is too old
+    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-2.8
+    ./configure && make && sudo make install
+    popd
+    rm -rf /tmp/confuse-2.8
+    
+    # The version of libarchive available in yum is too old
+    curl -L http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz | tar -xz -C /tmp
+    pushd /tmp/libarchive-3.1.2
+    ./configure && make && sudo make install
+    popd
+    rm -rf /tmp/libarchive-3.1.2
 
-### fwup
+    # The version of libsodium available in yum is too old
+    curl -L https://download.libsodium.org/libsodium/releases/libsodium-1.0.8.tar.gz | tar -xz -C /tmp
+    pushd /tmp/libsodium-1.0.8
+    ./configure && make && sudo make install
+    popd
+    rm -rf /tmp/libsodium-1.0.8
+    
+On CentOS 7:
 
-Once that completes, clone or download the `fwup` source code and run the following:
+    # The version of libconfuse available in yum is too old
+    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-2.8
+    ./configure && make && sudo make install
+    popd
+    rm -rf /tmp/confuse-2.8
+    
+    sudo yum install libarchive-devel libsodium-devel
 
+### Building fwup
+
+On OSX:
+
+    git clone https://github.com/fhunleth/fwup.git
+    cd fwup
     ./autogen.sh
-
-    # On Linux
-    ./configure
-
-    # On OSX
     CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure
-
-    make
     sudo make install
+
+On Linux:
+
+    git clone https://github.com/fhunleth/fwup.git
+    cd fwup
+    ./autogen.sh
+    ./configure && make && sudo make install
 
 # Regression tests
 
