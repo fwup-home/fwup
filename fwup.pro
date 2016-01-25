@@ -19,7 +19,6 @@ SOURCES += \
     src/mbr.c \
     src/cfgfile.c \
     src/util.c \
-    src/mmc.c \
     src/fwup_create.c \
     src/functions.c \
     src/fwup_apply.c \
@@ -30,7 +29,17 @@ SOURCES += \
     src/fwup_sign.c \
     src/fwup_verify.c \
     src/block_writer.c \
-    src/fat_cache.c
+    src/fat_cache.c \
+    src/mmc_osx.c \
+    src/mmc_linux.c
+
+osx {
+    INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
+    LIBS += -L/usr/local/lib -L/usr/local/opt/libarchive/lib
+    SOURCES += 3rdparty/memstream.c
+
+    LIBS += -framework CoreFoundation -framework DiskArbitration
+}
 
 LIBS += -lconfuse -larchive -lsodium
 
@@ -102,4 +111,5 @@ DISTFILES += \
     tests/037_streaming_bad_sig.test \
     tests/038_write_15M.test \
     tests/039_upgrade.test \
-    tests/040_create_mini_fw.test
+    tests/040_create_mini_fw.test \
+    CHANGELOG.md

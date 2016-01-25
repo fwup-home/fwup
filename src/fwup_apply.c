@@ -34,7 +34,6 @@
 #include "fatfs.h"
 #include "mbr.h"
 #include "fwfile.h"
-#include "mmc.h"
 
 static bool task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -269,7 +268,24 @@ static void fwup_apply_report_final_progress(struct fun_context *fctx)
     }
 }
 
-int fwup_apply(const char *fw_filename, const char *task_prefix, const char *output_filename, enum fwup_apply_progress progress, const unsigned char *public_key)
+/**
+ * @brief Report zero percent progress
+ *
+ * This function's only purpose is to improve the user experience of seeing
+ * 0% progress as soon as fwup is called. See fwup.c.
+ */
+void fwup_apply_zero_progress(enum fwup_apply_progress progress)
+{
+    // Minimally initialize the fun_context so that fwup_apply_report_progress
+    // works.
+    struct fun_context fctx;
+    memset(&fctx, 0, sizeof(fctx));
+    fctx.progress_mode = progress;
+    fctx.last_progress_reported = -1;
+    fwup_apply_report_progress(&fctx, 0);
+}
+
+int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, enum fwup_apply_progress progress, const unsigned char *public_key)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
@@ -279,33 +295,16 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     fctx.subarchive_ptr = subarchive_ptr_callback;
     fctx.progress_mode = progress;
     fctx.report_progress = fwup_apply_report_progress;
-    fctx.last_progress_reported = -1;
+    fctx.last_progress_reported = 0; // fwup_apply_zero_progress is assumed to have been called.
+    fctx.output_fd = output_fd;
 
     // Report 0 progress before doing anything
     fwup_apply_report_progress(&fctx, 0);
-
-    // Check if the mmc_device is really a special device. If
-    // we're just creating an image file, then don't try to unmount
-    // everything using it.
-    bool is_regular_file = will_be_regular_file(output_filename);
-    if (!is_regular_file) {
-        // Attempt to unmount everything using the device to avoid corrupting partitions.
-        // For partial updates, this just unmounts everything that can be unmounted. Errors
-        // are ignored, which is an hacky way of making this do what's necessary automatically.
-        // NOTE: It is possible in the future to scan the config file and just unmount partitions
-        //       that overlap what will be written.
-        mmc_attempt_umount_all(output_filename);
-    }
 
     struct fwup_data pd;
     memset(&pd, 0, sizeof(pd));
     fctx.cookie = &pd;
     pd.a = archive_read_new();
-
-    fctx.output_fd = open(output_filename, O_RDWR | O_CREAT, 0644);
-    if (fctx.output_fd < 0)
-        ERR_CLEANUP_MSG("Cannot open output (%s): %s", output_filename, strerror(errno));
-    (void) fcntl(fctx.output_fd, F_SETFD, FD_CLOEXEC);
 
     archive_read_support_format_zip(pd.a);
     int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
@@ -394,12 +393,6 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, const char *out
     // Close the file before we report 100% just in case that takes some time (Linux)
     close(fctx.output_fd);
     fctx.output_fd = -1;
-
-    if (!is_regular_file) {
-        // On OSX, at least, the system complains bitterly if you don't eject the device when done.
-        // This just does whatever is needed so that the device can be removed.
-        mmc_eject(output_filename);
-    }
 
     // Report 100% to the user
     fwup_apply_report_final_progress(&fctx);

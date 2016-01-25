@@ -19,11 +19,23 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdint.h>
 
-void mmc_pretty_size(off_t amount, char *out);
-off_t mmc_device_size(const char *devpath);
-char *mmc_find_device();
-void mmc_attempt_umount_all(const char *mmc_path);
-void mmc_eject(const char *mmc_device);
+#define MMC_DEVICE_PATH_LEN 32
+
+struct mmc_device {
+    char path[MMC_DEVICE_PATH_LEN];
+    off_t size;
+};
+
+void mmc_init();
+void mmc_finalize();
+
+int mmc_scan_for_devices(struct mmc_device *devices, int max_devices);
+
+int mmc_open(const char *mmc_path);
+
+int mmc_umount_all(const char *mmc_path);
+int mmc_eject(const char *mmc_device);
 
 #endif // MMC_H

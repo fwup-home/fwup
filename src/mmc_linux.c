@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#ifdef __linux__
+
 #include "mmc.h"
 #include "util.h"
 
@@ -28,145 +30,75 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
-#if __APPLE__
-#include <sys/ioctl.h>
-#include <sys/disk.h>
-#endif
-
-#define ONE_KiB  (1024LL)
-#define ONE_MiB  (1024 * ONE_KiB)
-#define ONE_GiB  (1024 * ONE_MiB)
-
-void mmc_pretty_size(off_t amount, char *out)
-{
-    if (amount >= ONE_GiB)
-        sprintf(out, "%.2f GiB", ((double) amount) / ONE_GiB);
-    else if (amount >= ONE_MiB)
-        sprintf(out, "%.2f MiB", ((double) amount) / ONE_MiB);
-    else if (amount >= ONE_KiB)
-        sprintf(out, "%d KiB", (int) (amount / ONE_KiB));
-    else
-        sprintf(out, "%d bytes", (int) amount);
-}
-
-off_t mmc_device_size(const char *devpath)
+static off_t mmc_device_size(const char *devpath)
 {
     int fd = open(devpath, O_RDONLY);
     if (fd < 0)
         return 0;
 
-    off_t len = 0;
-
-    // Platform-specific ways of determining the size of MMC cards
-#ifdef __APPLE__
-    uint64_t sectors;
-    uint32_t block_size;
-    if (ioctl(fd, DKIOCGETBLOCKCOUNT, &sectors) == 0 &&
-        ioctl(fd, DKIOCGETBLOCKSIZE, &block_size) == 0)
-        len = sectors * block_size;
-#endif
-
-    // Common method of determining the size
-    if (len == 0) {
-        // fstat will not return the mmc size on Linux, so use lseek
-        // instead.
-        len = lseek(fd, 0, SEEK_END);
-
-        // Treat errors and 0-length device sizes the same
-        if (len < 0)
-            len = 0;
-    }
-
+    // fstat will not return the mmc size on Linux, so use lseek
+    // instead.
+    off_t len = lseek(fd, 0, SEEK_END);
     close(fd);
 
-    return len;
+    // Treat errors and 0-length device sizes the same
+    return len < 0 ? 0 : len;
 }
 
-static bool is_mmc_device(const char *devpath)
+static bool is_mmc_device(off_t device_size)
 {
     // Check 1: Path exists and can read length
-    off_t len = mmc_device_size(devpath);
-    if (len == 0)
+    if (device_size == 0)
         return false;
 
     // Check 2: Capacity larger than 32 GiB -> false
-    if (len > (32 * ONE_GiB))
+    if (device_size > (32 * ONE_GiB))
         return false;
-
-    // Platform-specific checks
-#ifdef __APPLE__
-    int fd = open(devpath, O_RDONLY);
-    if (fd < 0)
-        return false;
-
-    dk_firmware_path_t fwpath;
-    if (ioctl(fd, DKIOCGETFIRMWAREPATH, &fwpath) != 0) {
-        // If no firmware behind the device, then it's not a real MMC device
-        close(fd);
-        return false;
-    }
-    close(fd);
-#endif
 
     return true;
 }
 
-char *mmc_find_device()
+/**
+ * @brief Scan for SDCards and other removable media
+ * @param devices where to store detected devices and some metadata
+ * @param max_devices the max to return
+ * @return the number of devices found
+ */
+int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
-    char *possible[64] = {0};
-    size_t possible_ix = 0;
-    size_t i;
+    int device_count = 0;
 
-#if __linux
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
     // NOTE: Don't scan /dev/sda, since I don't think this is ever right
     // for any use case.
-    char c;
-    for (c = 'b'; c != 'z'; c++) {
+    for (char c = 'b'; c != 'z'; c++) {
         char devpath[64];
         sprintf(devpath, "/dev/sd%c", c);
 
-        if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
-            possible[possible_ix++] = strdup(devpath);
+        off_t device_size = mmc_device_size(devpath);
+        if (is_mmc_device(device_size) && device_count < max_devices) {
+            strcpy(devices[device_count].path, devpath);
+            devices[device_count].size = device_size;
+            device_count++;
+        }
     }
 
     // Scan the mmcblk devices
-    for (i = 0; i < 16; i++) {
+    for (int i = 0; i < 16; i++) {
         char devpath[64];
         sprintf(devpath, "/dev/mmcblk%d", (int) i);
 
-        if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
-            possible[possible_ix++] = strdup(devpath);
+        off_t device_size = mmc_device_size(devpath);
+        if (is_mmc_device(device_size) && device_count < max_devices) {
+            strcpy(devices[device_count].path, devpath);
+            devices[device_count].size = device_size;
+            device_count++;
+        }
     }
-#elif __APPLE__
-    // Scan /dev/rdiskN devices (skip rdisk0, since it should never be written)
-    for (i = 1; i < 16; i++) {
-        char devpath[64];
-        sprintf(devpath, "/dev/rdisk%d", (int) i);
 
-        if (is_mmc_device(devpath) && possible_ix < NUM_ELEMENTS(possible))
-            possible[possible_ix++] = strdup(devpath);
-    }
-#endif
-
-    if (possible_ix == 1) {
-        // Success.
-        return possible[0];
-    } else if (possible_ix == 0) {
-        if (getuid() != 0)
-            errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
-        else
-            errx(EXIT_FAILURE, "No memory cards found.");
-    } else {
-        fprintf(stderr, "Too many possible memory cards found: \n");
-        for (i = 0; i < possible_ix; i++)
-            fprintf(stderr, "  %s\n", possible[i]);
-        fprintf(stderr, "Pick one and specify it explicitly with the -d option.\n");
-        exit(EXIT_FAILURE);
-    }
+    return device_count;
 }
 
-#if __linux
 static char *unescape_string(const char *input)
 {
     char *result = (char *) malloc(strlen(input) + 1);
@@ -229,18 +161,16 @@ static char *unescape_string(const char *input)
     *p = 0;
     return result;
 }
-#endif
 
-void mmc_attempt_umount_all(const char *mmc_device)
+int mmc_umount_all(const char *mmc_device)
 {
-#if __linux
     FILE *fp = fopen("/proc/mounts", "r");
     if (!fp)
         err(EXIT_FAILURE, "/proc/mounts");
 
     char *todo[64] = {0};
     int todo_ix = 0;
-    int i;
+    int ultimate_rc = 0;
 
     char line[512] = {0};
     while (!feof(fp) &&
@@ -264,53 +194,61 @@ void mmc_attempt_umount_all(const char *mmc_device)
     fclose(fp);
 
     int mtab_exists = (access("/etc/mtab", F_OK) != -1);
-    for (i = 0; i < todo_ix; i++) {
+    for (int i = 0; i < todo_ix; i++) {
         if (mtab_exists) {
             // If /etc/mtab, then call umount(8) so that
             // gets updated correctly.
             char cmdline[384];
             sprintf(cmdline, "/bin/umount %s", todo[i]);
             int rc = system(cmdline);
-            if (rc != 0)
-                warnx("%s", cmdline); // don't exit if unmount unsuccessful
+            if (rc != 0) {
+                warnx("%s", cmdline);
+                ultimate_rc = -1;
+            }
         } else {
             // No /etc/mtab, so call the kernel directly.
 #if HAS_UMOUNT
-            if (umount(todo[i]) < 0)
-                warnx("umount %s", todo[i]); // don't exit if unmount unsuccessful
+            if (umount(todo[i]) < 0) {
+                warnx("umount %s", todo[i]);
+                ultimate_rc = -1;
+            }
 #else
+            // If no umount on this platform, warn, but don't
+            // return failure.
             warnx("umount %s: not supported", todo[i]);
 #endif
         }
     }
 
-    for (i = 0; i < todo_ix; i++)
+    for (int i = 0; i < todo_ix; i++)
         free(todo[i]);
-#elif __APPLE__
-    // Try to unmount all of the partitions of specified disk. This is
-    // the safe thing to do to avoid stepping on any other programs working
-    // on the media.
-    char cmdline[256];
 
-    // Try to unmount. Don't report an error. If it's really bad, the open
-    // will fail.
-    sprintf(cmdline, "/usr/sbin/diskutil quiet unmountDisk %s", mmc_device);
-    system(cmdline);
-#else
-#error Missing unmount implementation for this platform
-#endif
+    return ultimate_rc;
 }
 
-void mmc_eject(const char *mmc_device)
+int mmc_eject(const char *mmc_device)
 {
-#if __linux
     // Linux doesn't complain if you don't eject
     (void) mmc_device;
-#elif __APPLE__
-    char cmdline[256];
-    sprintf(cmdline, "/usr/sbin/diskutil quiet eject %s", mmc_device);
-    system(cmdline);
-#else
-#error Missing unmount implementation for this platform
-#endif
+    return 0;
 }
+
+/**
+ * @brief Open an SDCard/MMC device
+ * @param mmc_path the path
+ * @return a filehandle or <0 on error
+ */
+int mmc_open(const char *mmc_path)
+{
+    return open(mmc_path, O_RDWR);
+}
+
+void mmc_init()
+{
+}
+
+void mmc_finalize()
+{
+}
+
+#endif // __linux__

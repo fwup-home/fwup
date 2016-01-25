@@ -16,7 +16,8 @@ fwup_SOURCES=cfgfile.c \
 	fwup_genkeys.c \
 	block_writer.c \
 	mbr.c \
-	mmc.c \
+	mmc_linux.c \
+	mmc_osx.c \
 	util.c \
 	cfgfile.h \
 	fatfs.h \

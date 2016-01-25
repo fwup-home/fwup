@@ -35,6 +35,8 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 
 bool will_be_regular_file(const char *path);
 
+void format_pretty_size(off_t amount, char *out);
+
 extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
@@ -49,5 +51,9 @@ extern bool fwup_verbose;
 #define OK_OR_RETURN_MSG(WORK, MSG, ...) do { if ((WORK) < 0) ERR_RETURN(MSG, ## __VA_ARGS__); } while (0)
 
 #define INFO(MSG, ...) do { if (fwup_verbose) fprintf(stderr, MSG, ## __VA_ARGS__); } while (0)
+
+#define ONE_KiB  (1024LL)
+#define ONE_MiB  (1024 * ONE_KiB)
+#define ONE_GiB  (1024 * ONE_MiB)
 
 #endif // UTIL_H

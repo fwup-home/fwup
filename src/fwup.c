@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
+#include <err.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
-#include <err.h>
-#include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <sodium.h>
 
 #include "mmc.h"
@@ -57,6 +63,9 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -a, --apply   Apply the firmware update\n");
     fprintf(stderr, "  -c, --create  Create the firmware update\n");
     fprintf(stderr, "  -d <Device file for the memory card>\n");
+    fprintf(stderr, "  -D, --detect List attached SDCards or MMC devices\n");
+    fprintf(stderr, "  -E, --eject Eject removeable media after successfully writing firmware.\n");
+    fprintf(stderr, "  --no-eject Do not eject media after writing firmware\n");
     fprintf(stderr, "  -f <fwupdate.conf> Specify the firmware update configuration file\n");
     fprintf(stderr, "  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
     fprintf(stderr, "  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
@@ -64,10 +73,13 @@ static void print_usage(const char *argv0)
     fprintf(stderr, "  -m, --metadata   Print metadata in the firmware update\n");
     fprintf(stderr, "  -n   Report numeric progress\n");
     fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
+    fprintf(stderr, "  -p <keyfile> A public key file for verifying firmware updates\n");
     fprintf(stderr, "  -q, --quiet   Quiet\n");
     fprintf(stderr, "  -s <keyfile> A private key file for signing firmware updates\n");
     fprintf(stderr, "  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
     fprintf(stderr, "  -t, --task <task> Task to apply within the firmware update\n");
+    fprintf(stderr, "  -u, --unmount Unmount all partitions on device first\n");
+    fprintf(stderr, "  -U, --no-unmount Do not try to unmount partitions on device\n");
     fprintf(stderr, "  -v, --verbose   Verbose\n");
     fprintf(stderr, "  -V, --verify  Verify an existing firmware file (specify -i)\n");
     fprintf(stderr, "  --version Print out the version\n");
@@ -96,20 +108,24 @@ static void print_usage(const char *argv0)
 }
 
 static struct option long_options[] = {
-    {"apply",   no_argument,    0, 'a'},
-    {"create",  no_argument,    0, 'c'},
-    {"gen-keys", no_argument,   0, 'g'},
-    {"list",    no_argument,    0, 'l'},
-    {"metadata", no_argument,   0, 'm'},
-    {"quiet", no_argument,      0, 'q'},
-    {"sign", no_argument,       0, 'S'},
-    {"task", required_argument, 0, 't'},
-    {"verbose", no_argument,    0, 'v'},
-    {"verify", no_argument,     0, 'V'},
-    {"version", no_argument,    0, '@'},
-    {0,        0,               0, 0 }
+    {"apply",    no_argument,       0, 'a'},
+    {"create",   no_argument,       0, 'c'},
+    {"detect",   no_argument,       0, 'D'},
+    {"eject",    no_argument,       0, 'E'},
+    {"no-eject", no_argument,       0, '#'},
+    {"gen-keys", no_argument,       0, 'g'},
+    {"list",     no_argument,       0, 'l'},
+    {"metadata", no_argument,       0, 'm'},
+    {"quiet",    no_argument,       0, 'q'},
+    {"sign",     no_argument,       0, 'S'},
+    {"task",     required_argument, 0, 't'},
+    {"unmount",  no_argument,       0, 'u'},
+    {"no-unmount", no_argument,     0, 'U'},
+    {"verbose",  no_argument,       0, 'v'},
+    {"verify",   no_argument,       0, 'V'},
+    {"version",  no_argument,       0, '@'},
+    {0,          0,                 0, 0 }
 };
-
 
 #define CMD_NONE    0
 #define CMD_APPLY   1
@@ -120,26 +136,117 @@ static struct option long_options[] = {
 #define CMD_SIGN    6
 #define CMD_VERIFY  7
 
+static unsigned char *load_public_key(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    unsigned char *public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
+    if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
+        err(EXIT_FAILURE, "Error reading public key from file '%s'", path);
+    fclose(fp);
+    return public_key;
+}
+
+static unsigned char *load_signing_key(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    unsigned char *signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
+    if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
+        err(EXIT_FAILURE, "Error reading signing key from file '%s'", path);
+    fclose(fp);
+    return signing_key;
+}
+
+static void autoselect_mmc_device(struct mmc_device *device)
+{
+    struct mmc_device devices[16];
+    int found_devices = mmc_scan_for_devices(devices, NUM_ELEMENTS(devices));
+    if (found_devices == 1) {
+        *device = devices[0];
+    } else if (found_devices == 0) {
+#ifdef __linux__
+        // Linux requires root permissions to scan devices
+        if (getuid() != 0)
+            errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
+#endif
+        errx(EXIT_FAILURE, "No memory cards found. Try reinserting the card.");
+    } else {
+        fprintf(stderr, "Too many possible memory cards found: \n");
+        for (int i = 0; i < found_devices; i++) {
+            char sizestr[16];
+            format_pretty_size(devices[i].size, sizestr);
+            fprintf(stderr, "  %s (%s)\n", devices[i].path, sizestr);
+        }
+        fprintf(stderr, "Automatic selection not possible. Specify one using the -d option.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const char *input_firmware)
+{
+    struct mmc_device device;
+    autoselect_mmc_device(&device);
+    if (!accept_found_device) {
+        if (strcmp(input_firmware, "-") == 0)
+            errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", device.path);
+
+        char sizestr[16];
+        format_pretty_size(device.size, sizestr);
+        fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, device.path);
+        int response = fgetc(stdin);
+        if (response != 'y' && response != 'Y')
+            errx(EXIT_FAILURE, "aborted");
+    }
+    return strdup(device.path);
+}
+
+static void print_selected_device()
+{
+    struct mmc_device device;
+    autoselect_mmc_device(&device);
+    printf("%s\n", device.path);
+}
+
+static void print_detected_devices()
+{
+    struct mmc_device devices[16];
+    int found_devices = mmc_scan_for_devices(devices, NUM_ELEMENTS(devices));
+    for (int i = 0; i < found_devices; i++)
+        printf("%s\n", devices[i].path);
+}
+
 int main(int argc, char **argv)
 {
     const char *configfile = "fwupdate.conf";
     int command = CMD_NONE;
 
-    const char *mmc_device = NULL;
+    const char *mmc_device_path = NULL;
     const char *input_firmware = NULL;
     const char *output_firmware = NULL;
     const char *task = NULL;
     bool accept_found_device = false;
     unsigned char *signing_key = NULL;
     unsigned char *public_key = NULL;
+#if __APPLE__
+    // On hosts, the right behavior for almost all use cases is to eject
+    // so that the user can plug the SDCard into their board. Detecting
+    // that OSX is a host is easy; Linux, not so much. Luckily, Linux doesn't
+    // need an eject.
+    bool eject_on_success = true;
+#else
+    bool eject_on_success = false;
+#endif
+    bool unmount_first = true;
 
     if (argc == 1) {
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
 
+    mmc_init();
+    atexit(mmc_finalize);
+
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:f:gi:lmno:p:qSs:t:Vvyz", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:gi:lmno:p:qSs:t:VvUuyz", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -148,7 +255,14 @@ int main(int argc, char **argv)
             command = CMD_CREATE;
             break;
         case 'd':
-            mmc_device = optarg;
+            mmc_device_path = optarg;
+            break;
+        case 'D': // --detect
+            print_detected_devices();
+            exit(EXIT_SUCCESS);
+            break;
+        case 'E': // --eject
+            eject_on_success = true;
             break;
         case 'f':
             configfile = optarg;
@@ -169,14 +283,8 @@ int main(int argc, char **argv)
             output_firmware = optarg;
             break;
         case 'p':
-        {
-            FILE *fp = fopen(optarg, "rb");
-            public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
-            if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
-                err(EXIT_FAILURE, "Error reading public key from file '%s'", optarg);
-            fclose(fp);
+            public_key = load_public_key(optarg);
             break;
-        }
         case 'n':
             numeric_progress = true;
             break;
@@ -187,14 +295,8 @@ int main(int argc, char **argv)
             command = CMD_SIGN;
             break;
         case 's':
-        {
-            FILE *fp = fopen(optarg, "rb");
-            signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
-            if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
-                err(EXIT_FAILURE, "Error reading signing key from file '%s'", optarg);
-            fclose(fp);
+            signing_key = load_signing_key(optarg);
             break;
-        }
         case 't': // --task
             task = optarg;
             break;
@@ -204,17 +306,25 @@ int main(int argc, char **argv)
         case 'V': // --verify
             command = CMD_VERIFY;
             break;
+        case 'u': // --unmount
+            unmount_first = true;
+            break;
+        case 'U': // --no-unmount
+            unmount_first = false;
+            break;
         case 'y':
             accept_found_device = true;
             break;
         case 'z':
-            mmc_device = mmc_find_device();
-            printf("%s", mmc_device);
+            print_selected_device();
             exit(EXIT_SUCCESS);
             break;
         case '@': // --version
             printf("%s\n", PACKAGE_VERSION);
             exit(EXIT_SUCCESS);
+            break;
+        case '#': // --no-eject
+            eject_on_success = false;
             break;
         default: /* '?' */
             print_usage(argv[0]);
@@ -241,35 +351,62 @@ int main(int argc, char **argv)
         break;
 
     case CMD_APPLY:
+    {
         if (!task)
             errx(EXIT_FAILURE, "specify a task (-t)");
 
-        if (!mmc_device) {
-            mmc_device = mmc_find_device();
-            if (!accept_found_device) {
-                if (strcmp(input_firmware, "-") == 0)
-                    errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", mmc_device);
+        enum fwup_apply_progress progress_option = quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS;
+        fwup_apply_zero_progress(progress_option);
 
-                char sizestr[16];
-                mmc_pretty_size(mmc_device_size(mmc_device), sizestr);
-                fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, mmc_device);
-                int response = fgetc(stdin);
-                if (response != 'y' && response != 'Y')
-                    errx(EXIT_FAILURE, "aborted");
+        if (!mmc_device_path)
+            mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
+
+        // Check if the mmc_device_path is really a special device. If
+        // we're just creating an image file, then don't try to unmount
+        // everything using it.
+        bool is_regular_file = will_be_regular_file(mmc_device_path);
+        int output_fd;
+        if (is_regular_file) {
+            // This is a regular file, so open it the regular way.
+            output_fd = open(mmc_device_path, O_RDWR | O_CREAT, 0644);
+        } else {
+            // Attempt to unmount everything using the device to avoid corrupting partitions.
+            // For partial updates, this just unmounts everything that can be unmounted. Errors
+            // are ignored, which is an hacky way of making this do what's necessary automatically.
+            // NOTE: It is possible in the future to scan the config file and just unmount partitions
+            //       that overlap what will be written.
+            if (unmount_first) {
+                if (mmc_umount_all(mmc_device_path) < 0)
+                    exit(EXIT_FAILURE);
             }
+
+            // Call out to platform-specific code to obtain a filehandle
+            output_fd = mmc_open(mmc_device_path);
         }
+
+        // Make sure that the output opened successfully and don't allow the
+        // filehandle to be passed to child processes.
+        if (output_fd < 0)
+            err(EXIT_FAILURE, "Cannot open output (%s)", mmc_device_path);
+        (void) fcntl(output_fd, F_SETFD, FD_CLOEXEC);
 
         if (fwup_apply(input_firmware,
                        task,
-                       mmc_device,
-                       quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS,
+                       output_fd,
+                       progress_option,
                        public_key) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
             errx(EXIT_FAILURE, "%s", last_error());
         }
 
+        if (!is_regular_file && eject_on_success) {
+            // On OSX, at least, the system complains bitterly if you don't eject the device when done.
+            // This just does whatever is needed so that the device can be removed.
+            mmc_eject(mmc_device_path);
+        }
         break;
+    }
 
     case CMD_CREATE:
         if (fwup_create(configfile, output_firmware, signing_key) < 0)

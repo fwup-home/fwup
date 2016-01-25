@@ -214,3 +214,15 @@ bool will_be_regular_file(const char *path)
     return (rc == 0 && st.st_mode & S_IFREG) ||
            (rc < 0 && errno == ENOENT);
 }
+
+void format_pretty_size(off_t amount, char *out)
+{
+    if (amount >= ONE_GiB)
+        sprintf(out, "%.2f GiB", ((double) amount) / ONE_GiB);
+    else if (amount >= ONE_MiB)
+        sprintf(out, "%.2f MiB", ((double) amount) / ONE_MiB);
+    else if (amount >= ONE_KiB)
+        sprintf(out, "%d KiB", (int) (amount / ONE_KiB));
+    else
+        sprintf(out, "%d bytes", (int) amount);
+}

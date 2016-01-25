@@ -2,8 +2,16 @@
 
 ## v0.5.1-dev
 
+  * New features
+    * sudo is no longer needed on OSX to write to SDCards
+    * --unmount and --no-unmount commandline options to unmount (or not) all partitions on a device first
+    * --eject and --no-eject commandline options to eject devices when complete (OSX)
+    * --detect commandline option to list detected SDCards and removable media
+
   * Bug fixes
+    * Various installation fixes and clarifications in the README.md
     * Fix rpath issue with libsodium not being in a system library directory
+    * If unmounting is needed and fails, fwup fails. This is different from before. Use --no-unmount to skip this step.
 
 ## v0.5.0
 
