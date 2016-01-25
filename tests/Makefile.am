@@ -40,4 +40,4 @@ TESTS = 001_simple_fw.test \
 	040_create_mini_fw.test \
 	041_version.test
 
-EXTRA_DIST = $(TESTS) common.sh
+EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
