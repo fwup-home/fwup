@@ -1,11 +1,13 @@
 AC_INIT([fwup], [0.5.0], [fhunleth@troodon-software.com])
 AC_CONFIG_SRCDIR([src/fwup_metadata.c])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h stdlib.h string.h unistd.h archive.h confuse.h])

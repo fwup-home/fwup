@@ -1,3 +1,6 @@
 #!/bin/sh
 
-autoreconf --install || exit 1
+set -e
+
+mkdir m4 # silence autoreconf warning
+autoreconf --install

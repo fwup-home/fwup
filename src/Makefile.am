@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS=-I m4
+
 bin_PROGRAMS=fwup
 fwup_SOURCES=cfgfile.c \
 	fatfs.c \
