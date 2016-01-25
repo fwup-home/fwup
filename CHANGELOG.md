@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.1-dev
+
+  * Bug fixes
+    * Fix rpath issue with libsodium not being in a system library directory
+
 ## v0.5.0
 
   * New features
