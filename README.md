@@ -78,7 +78,7 @@ On Ubuntu:
     ./configure && make && sudo make install
     popd
     rm -rf /tmp/confuse-2.8
-    
+
     sudo apt-get install libarchive-dev libsodium-dev
 
 On CentOS 6:
@@ -89,7 +89,7 @@ On CentOS 6:
     ./configure && make && sudo make install
     popd
     rm -rf /tmp/confuse-2.8
-    
+
     # The version of libarchive available in yum is too old
     curl -L http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz | tar -xz -C /tmp
     pushd /tmp/libarchive-3.1.2
@@ -103,7 +103,7 @@ On CentOS 6:
     ./configure && make && sudo make install
     popd
     rm -rf /tmp/libsodium-1.0.8
-    
+
 On CentOS 7:
 
     # The version of libconfuse available in yum is too old
@@ -112,7 +112,7 @@ On CentOS 7:
     ./configure && make && sudo make install
     popd
     rm -rf /tmp/confuse-2.8
-    
+
     sudo yum install libarchive-devel libsodium-devel
 
 ### Building fwup
@@ -123,6 +123,7 @@ On OSX:
     cd fwup
     ./autogen.sh
     CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure
+    make
     sudo make install
 
 On Linux:
