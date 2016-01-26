@@ -12,6 +12,7 @@ SED=sed
 case "$OSTYPE" in
     darwin*)
         [ -e /usr/local/bin/greadlink ] || ( echo "Please run 'brew install coreutils'"; exit 1 )
+        [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools'"; exit 1 )
         [ -e /usr/local/bin/gsed ] || ( echo "Please run 'brew install gnu-sed'"; exit 1 )
 
         READLINK=/usr/local/bin/greadlink
