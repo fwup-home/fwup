@@ -104,6 +104,12 @@ On CentOS 6:
     popd
     rm -rf /tmp/libsodium-1.0.8
 
+    # Assuming all of the libraries were installed to /usr/local/lib
+    sudo ldconfig /usr/local/lib
+
+    # Building fwup from source requires autotools
+    sudo yum install autoconf automake libtool
+
 On CentOS 7:
 
     # The version of libconfuse available in yum is too old
