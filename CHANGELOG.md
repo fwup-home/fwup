@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2
+
+  * Bug fixes
+    * Clean up progress printout that came before SDCard confirmation
+    * Improve error message when the read-only tab of an SDCard is on
+
 ## v0.5.1
 
   * New features
