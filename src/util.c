@@ -215,6 +215,17 @@ bool will_be_regular_file(const char *path)
            (rc < 0 && errno == ENOENT);
 }
 
+/*
+ * Return true if the file exists.
+ */
+bool file_exists(const char *path)
+{
+    struct stat st;
+    int rc = stat(path, &st);
+    return rc == 0;
+}
+
+
 void format_pretty_size(off_t amount, char *out)
 {
     if (amount >= ONE_GiB)
