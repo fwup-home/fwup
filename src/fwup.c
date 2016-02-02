@@ -386,8 +386,16 @@ int main(int argc, char **argv)
 
         // Make sure that the output opened successfully and don't allow the
         // filehandle to be passed to child processes.
-        if (output_fd < 0)
-            err(EXIT_FAILURE, "Cannot open output (%s)", mmc_device_path);
+        if (output_fd < 0) {
+            fprintf(stderr, "\n");
+            if (file_exists(mmc_device_path)) {
+                errx(EXIT_FAILURE, "Cannot open '%s' for output.\nCheck file permissions or the read-only tab if this is an SD Card.",
+                     mmc_device_path);
+            } else {
+                errx(EXIT_FAILURE, "Cannot create '%s'.\nCheck the path and permissions on the containing directory.",
+                     mmc_device_path);
+            }
+        }
         (void) fcntl(output_fd, F_SETFD, FD_CLOEXEC);
 
         if (fwup_apply(input_firmware,

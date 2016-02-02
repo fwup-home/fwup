@@ -34,6 +34,7 @@ int bytes_to_hex(const uint8_t *bytes, char *str, size_t byte_count);
 int archive_filename_to_resource(const char *name, char *result, size_t maxlength);
 
 bool will_be_regular_file(const char *path);
+bool file_exists(const char *path);
 
 void format_pretty_size(off_t amount, char *out);
 
