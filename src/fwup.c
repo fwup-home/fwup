@@ -355,11 +355,11 @@ int main(int argc, char **argv)
         if (!task)
             errx(EXIT_FAILURE, "specify a task (-t)");
 
-        enum fwup_apply_progress progress_option = quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS;
-        fwup_apply_zero_progress(progress_option);
-
         if (!mmc_device_path)
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
+
+        enum fwup_apply_progress progress_option = quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS;
+        fwup_apply_zero_progress(progress_option);
 
         // Check if the mmc_device_path is really a special device. If
         // we're just creating an image file, then don't try to unmount
