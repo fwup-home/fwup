@@ -232,7 +232,7 @@ not overwrite environment variables with the same name:
 
     define(MY_CONSTANT, 5)
 
-To define a constant that does overrides the environment, use `define!`:
+To define a constant that is not affected by environment variables of the same name, use `define!`:
 
     define!(MY_CONSTANT, "Can't override this")
 
