@@ -31,3 +31,4 @@ tests/15M.bin
 /libtool
 /ltmain.sh
 /m4
+src/fwup.1

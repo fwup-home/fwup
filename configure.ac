@@ -11,6 +11,8 @@ AC_CANONICAL_HOST
 # Checks for programs
 AC_PROG_CC
 AC_PROG_LIBTOOL
+AC_PATH_PROG([HELP2MAN], help2man)
+AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 
 # Checks for header files
 AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h stdlib.h string.h unistd.h archive.h confuse.h])

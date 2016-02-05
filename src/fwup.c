@@ -44,67 +44,82 @@ bool fwup_verbose = false;
 static bool numeric_progress = false;
 static bool quiet = false;
 
-static void print_version()
-{
-    fprintf(stderr, "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
-}
-
-static void print_usage(const char *argv0)
+static void print_usage()
 {
 #if __APPLE__
     const char *example_sd = "/dev/rdisk2";
 #else
     const char *example_sd = "/dev/sdc";
 #endif
+    const char *program_name = PACKAGE_NAME;
 
-    print_version();
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "  -a, --apply   Apply the firmware update\n");
-    fprintf(stderr, "  -c, --create  Create the firmware update\n");
-    fprintf(stderr, "  -d <Device file for the memory card>\n");
-    fprintf(stderr, "  -D, --detect List attached SDCards or MMC devices\n");
-    fprintf(stderr, "  -E, --eject Eject removeable media after successfully writing firmware.\n");
-    fprintf(stderr, "  --no-eject Do not eject media after writing firmware\n");
-    fprintf(stderr, "  -f <fwupdate.conf> Specify the firmware update configuration file\n");
-    fprintf(stderr, "  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
-    fprintf(stderr, "  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
-    fprintf(stderr, "  -l, --list   List the available tasks in a firmware update\n");
-    fprintf(stderr, "  -m, --metadata   Print metadata in the firmware update\n");
-    fprintf(stderr, "  -n   Report numeric progress\n");
-    fprintf(stderr, "  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
-    fprintf(stderr, "  -p <keyfile> A public key file for verifying firmware updates\n");
-    fprintf(stderr, "  -q, --quiet   Quiet\n");
-    fprintf(stderr, "  -s <keyfile> A private key file for signing firmware updates\n");
-    fprintf(stderr, "  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
-    fprintf(stderr, "  -t, --task <task> Task to apply within the firmware update\n");
-    fprintf(stderr, "  -u, --unmount Unmount all partitions on device first\n");
-    fprintf(stderr, "  -U, --no-unmount Do not try to unmount partitions on device\n");
-    fprintf(stderr, "  -v, --verbose   Verbose\n");
-    fprintf(stderr, "  -V, --verify  Verify an existing firmware file (specify -i)\n");
-    fprintf(stderr, "  --version Print out the version\n");
-    fprintf(stderr, "  -y   Accept automatically found memory card when applying a firmware update\n");
-    fprintf(stderr, "  -z   Print the memory card that would be automatically detected and exit\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Examples:\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Create a firmware update archive:\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", argv0);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Apply the firmware update to %s and specify the 'upgrade' task:\n", example_sd);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "  $ %s -a -d %s -i myfirmware.fw -t upgrade\n", argv0, example_sd);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Create an image file from a .fw file for use with dd(1):\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "  $ %s -a -d myimage.img -i myfirmware.fw -t complete\n", argv0);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Generate a public/private key pair and sign a firmware archive:\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "  $ %s -g\n", argv0);
-    fprintf(stderr, "  (Store fwup-key.priv in a safe place. Store fwup-key.pub on the target)\n");
-    fprintf(stderr, "  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", argv0);
+    printf("%s is a self-contained utility for creating and applying firmware update files.\n", program_name);
+    printf("Firmware update (.fw) files are nothing more than zip archives containing metadata,\n");
+    printf("a limited set of instructions, and data. On an embedded device or on a host PC, fwup\n");
+    printf("is used to write nonvolatile memory (eMMC, SDCards, etc.) in such a way as to upgrade\n");
+    printf("the firmware on the device or to completely initialize it.\n");
+    printf("\n");
+    printf("Usage: %s [OPTION]...\n", program_name);
+    printf("\n");
+    printf("Options:\n");
+    printf("  -a, --apply   Apply the firmware update\n");
+    printf("  -c, --create  Create the firmware update\n");
+    printf("  -d <file> Device file for the memory card\n");
+    printf("  -D, --detect List attached SDCards or MMC devices\n");
+    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
+    printf("  --no-eject Do not eject media after writing firmware\n");
+    printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
+    printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
+    printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
+    printf("  -l, --list   List the available tasks in a firmware update\n");
+    printf("  -m, --metadata   Print metadata in the firmware update\n");
+    printf("  -n   Report numeric progress\n");
+    printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
+    printf("  -p <keyfile> A public key file for verifying firmware updates\n");
+    printf("  -q, --quiet   Quiet\n");
+    printf("  -s <keyfile> A private key file for signing firmware updates\n");
+    printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
+    printf("  -t, --task <task> Task to apply within the firmware update\n");
+    printf("  -u, --unmount Unmount all partitions on device first\n");
+    printf("  -U, --no-unmount Do not try to unmount partitions on device\n");
+    printf("  -v, --verbose   Verbose\n");
+    printf("  -V, --verify  Verify an existing firmware file (specify -i)\n");
+    printf("  --version Print out the version\n");
+    printf("  -y   Accept automatically found memory card when applying a firmware update\n");
+    printf("  -z   Print the memory card that would be automatically detected and exit\n");
+    printf("\n");
+    printf("Examples:\n");
+    printf("\n");
+    printf("Create a firmware update archive:\n");
+    printf("\n");
+    printf("  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", program_name);
+    printf("\n");
+    printf("Apply the firmware to an attached SDCard. This would normally be run on the host\n");
+    printf("where it would auto-detect an SDCard and initalize it using the 'complete' task:\n");
+    printf("\n");
+    printf("  $ %s -a -i myfirmware.fw -t complete\n", program_name);
+    printf("\n");
+    printf("Apply the firmware update to %s and specify the 'upgrade' task:\n", example_sd);
+    printf("\n");
+    printf("  $ %s -a -d %s -i myfirmware.fw -t upgrade\n", program_name, example_sd);
+    printf("\n");
+    printf("Create an image file from a .fw file for use with dd(1):\n");
+    printf("\n");
+    printf("  $ %s -a -d myimage.img -i myfirmware.fw -t complete\n", program_name);
+    printf("\n");
+    printf("Generate a public/private key pair:\n");
+    printf("\n");
+    printf("  $ %s -g\n", program_name);
+    printf("Store fwup-key.priv in a safe place and fwup-key.pub on the target. To sign\n");
+    printf("an existing archive run:\n");
+    printf("  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", program_name);
+    printf("\n");
+    printf("Also see the unit tests that come with fwup source code for more examples.\n");
+}
+
+static void print_version()
+{
+    printf("%s\n", PACKAGE_VERSION);
 }
 
 static struct option long_options[] = {
@@ -238,7 +253,7 @@ int main(int argc, char **argv)
     bool unmount_first = true;
 
     if (argc == 1) {
-        print_usage(argv[0]);
+        print_usage();
         exit(EXIT_FAILURE);
     }
 
@@ -320,14 +335,14 @@ int main(int argc, char **argv)
             exit(EXIT_SUCCESS);
             break;
         case '@': // --version
-            printf("%s\n", PACKAGE_VERSION);
+            print_version();
             exit(EXIT_SUCCESS);
             break;
         case '#': // --no-eject
             eject_on_success = false;
             break;
         default: /* '?' */
-            print_usage(argv[0]);
+            print_usage();
             exit(EXIT_FAILURE);
         }
     }

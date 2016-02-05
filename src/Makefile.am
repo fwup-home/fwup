@@ -53,3 +53,17 @@ EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c \
 
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
+
+if HAVE_HELP2MAN
+man_MANS = fwup.1
+CLEANFILES = $(man_MANS)
+EXTRA_DIST += fwup.h2m
+
+fwup.1: fwup fwup.h2m
+	$(HELP2MAN) --output=$@ --no-info --include fwup.h2m \
+	    -n "configurable embedded Linux firmware update creator and runner" \
+	    fwup
+else
+	@echo  "Warning: help2man not available, no man page created."
+endif
+
