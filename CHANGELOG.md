@@ -2,6 +2,9 @@
 
 ## v0.6.0-dev
 
+  * New features
+    * Added manpages
+
 ## v0.5.2
 
   * Bug fixes
