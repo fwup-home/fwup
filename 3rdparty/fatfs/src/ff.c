@@ -4057,7 +4057,9 @@ FRESULT f_forward (
 /* Create file system on the logical drive                               */
 /*-----------------------------------------------------------------------*/
 #define N_ROOTDIR	512		/* Number of root directory entries for FAT12/16 */
-#define N_FATS		1		/* Number of FATs (1 or 2) */
+
+// IMPORTANT: TI AM335x requires 2 FAT copies to find MLO
+#define N_FATS		2		/* Number of FAT copies (1 or 2) */
 
 
 FRESULT f_mkfs (
@@ -4240,7 +4242,11 @@ FRESULT f_mkfs (
 		ST_WORD(tbl + BPB_FATSz16, n_fat);	/* Number of sectors per FAT */
 		tbl[BS_DrvNum] = 0x80;				/* Drive number */
 		tbl[BS_BootSig] = 0x29;				/* Extended boot signature */
-		mem_cpy(tbl + BS_VolLab, "NO NAME    " "FAT     ", 19);	/* Volume label, FAT signature */
+		// u-boot requires FAT signature to be FAT12 or FAT16. Previously this was just "FAT    "
+		if (fmt == FS_FAT12)
+			mem_cpy(tbl+BS_VolLab, "NO NAME    " "FAT12   ", 19);	/* Volume label, FAT signature */
+		else
+			mem_cpy(tbl+BS_VolLab, "NO NAME    " "FAT16   ", 19);	/* Volume label, FAT signature */
 	}
 	ST_WORD(tbl + BS_55AA, 0xAA55);			/* Signature (Offset is fixed here regardless of sector size) */
 	if (disk_write(pdrv, tbl, b_vol, 1) != RES_OK)	/* Write it to the VBR sector */
