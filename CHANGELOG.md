@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.6.0-dev
+## v0.6.0
+
+  * Bug fixes
+    * Fix FAT filesystem creation for AM335x processors (Beaglebone Black)
 
   * New features
     * Added manpages
