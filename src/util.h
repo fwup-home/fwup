@@ -105,4 +105,12 @@ char* strptime(const char *buf, const char *fmt, struct tm *tm);
 // Send output to the terminal based on the framing options
 void fwup_output(const char *type, uint16_t code, const char *str);
 
+#ifndef HAVE_PREAD
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+#endif
+
+#ifndef HAVE_PWRITE
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+#endif
+
 #endif // UTIL_H
