@@ -62,7 +62,7 @@ EXTRA_DIST += fwup.h2m
 fwup.1: fwup fwup.h2m
 	$(HELP2MAN) --output=$@ --no-info --include fwup.h2m \
 	    -n "configurable embedded Linux firmware update creator and runner" \
-	    fwup
+	    ./fwup
 else
 	@echo  "Warning: help2man not available, no man page created."
 endif
