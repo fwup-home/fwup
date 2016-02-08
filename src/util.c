@@ -337,3 +337,28 @@ void fwup_output(const char *type, uint16_t code, const char *str)
     }
     fwrite(str, 1, len, stdout);
 }
+
+/*
+ * Implementations for simple functions that are missing on
+ * some operating systems (e.g. Windows).
+ */
+#ifndef HAVE_PREAD
+ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+{
+    if (lseek(fd, offset, SEEK_SET) >= 0)
+        return read(fd, buf, count);
+    else
+        return -1;
+}
+#endif
+
+#ifndef HAVE_PWRITE
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
+{
+    if (lseek(fd, offset, SEEK_SET) >= 0)
+        return write(fd, buf, count);
+    else
+        return -1;
+
+}
+#endif
