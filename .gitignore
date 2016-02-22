@@ -5,7 +5,7 @@ autom4te.cache/
 config.h
 config.log
 config.status
-fwup
+/src/fwup
 stamp-h1
 *.tar.gz
 Makefile.in
