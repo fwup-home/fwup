@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.1-dev
+
+  * New features
+    * Add bash completion
+
 ## v0.6.0
 
   * Bug fixes
