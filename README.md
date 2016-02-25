@@ -1,3 +1,5 @@
+![The fwup pup](assets/fwup-pup.png)
+
 # Overview
 [![Build Status](https://travis-ci.org/fhunleth/fwup.png)](https://travis-ci.org/fhunleth/fwup) [![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
 
