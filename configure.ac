@@ -34,7 +34,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset setenv strdup strtoul open_memstream umount])
 AM_CONDITIONAL([HAS_OPEN_MEMSTREAM], [test x$ac_vc_func_open_memstream = x"yes"])
 
-AC_CHECK_LIB([confuse], [cfg_init], [], [ AC_MSG_ERROR([Could not find libconfuse]) ])
+AC_CHECK_LIB([confuse], [cfg_searchpath], [], [ AC_MSG_ERROR([Could not find libconfuse v2.8 (you may have v2.7)]) ])
 AC_CHECK_LIB([archive], [archive_read_new], [], [ AC_MSG_ERROR([Could not find libarchive]) ])
 AC_CHECK_LIB([sodium], [crypto_generichash_init], [], [ AC_MSG_ERROR([Could not find libsodium]) ])
 
