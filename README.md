@@ -150,12 +150,11 @@ your project's fwup configuration file can certainly be buggy (e.g., bad flash
 offsets, etc.) so it is still important to test your firmware updates before
 deploying them.
 
-To run the unit tests, you'll need the mtools package. This isn't used by
-`fwup`, but it's needed to verify that FAT file system operations work.
+To run the unit tests, you'll need the mtools and unzip packages.
 
-    sudo apt-get install mtools
+    sudo apt-get install mtools unzip
 
-On OSX, you'll need mtools and a few other packages to run the unit tests:
+On OSX, run:
 
     brew install coreutils mtools gnu-sed
 

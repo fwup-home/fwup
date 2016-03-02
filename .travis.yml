@@ -31,7 +31,7 @@ env:
 before_install:
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
         sudo apt-get update -qq;
-        sudo apt-get install -qq libarchive-dev autopoint;
+        sudo apt-get install -qq libarchive-dev autopoint mtools unzip;
         wget http://download.libsodium.org/libsodium/releases/libsodium-1.0.3.tar.gz;
         tar xf libsodium-1.0.3.tar.gz;
         cd libsodium-1.0.3 && ./configure --prefix=/usr && make && sudo make install && cd ..;
