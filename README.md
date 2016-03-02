@@ -74,7 +74,7 @@ On OSX:
 
 On Ubuntu:
 
-    # libconfuse 2.8 is required but not available in apt
+    # The version of libconfuse available in apt is too old
     curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
     pushd /tmp/confuse-2.8
     ./configure && make && sudo make install
