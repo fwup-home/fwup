@@ -60,13 +60,26 @@ so you'll want to verify the archive first (see the `-V` option).
 
 # Installing
 
-If you're running OSX, you're in luck. You can install `fwup` via homebrew right now:
+The simplest way to install `fwup` is via a package manager.
+
+On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
     brew install fwup
 
+On Linux, download and install the appropriate package for your platform:
+
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup_0.6.1_amd64.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup-0.6.1-1.x86_64.rpm)
+
 If you're using another platform or prefer to build it yourself, read on.
 
-# Building Dependencies
+## Building and installing from source
+
+While `fwup` is not a particularly complicated program, it is not trivial to
+build due to a couple project dependencies. If you are not comfortable with
+building applications from source (especially on Linux), please consider the packages above.
+
+### Installing dependencies
 
 On OSX:
 
@@ -123,25 +136,37 @@ On CentOS 7:
 
     sudo yum install libarchive-devel libsodium-devel
 
-### Building fwup
+### Downloading the source code
 
-On OSX:
+Unless you're modifying `fwup`, it is recommended that you download the latest
+[source code release](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup-0.6.1.tar.gz).
+Older releases can be found on the [releases tab](https://github.com/fhunleth/fwup/releases).
+
+If cloning the source code, you should also run `autogen.sh`:
 
     git clone https://github.com/fhunleth/fwup.git
     cd fwup
     ./autogen.sh
+
+### Building
+
+On OSX:
+
+    cd fwup
+    # This assumes that libarchive, libconfuse and libsodium were installed via
+    # homebrew.
     CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure
     make
     sudo make install
 
 On Linux:
 
-    git clone https://github.com/fhunleth/fwup.git
     cd fwup
-    ./autogen.sh
-    ./configure && make && sudo make install
+    ./configure
+    make
+    sudo make install
 
-# Regression tests
+## Regression tests
 
 The firmware update code is one of the parts of an embedded system where bugs
 can be frustratingly difficult or impossible to fix in the field. This project
