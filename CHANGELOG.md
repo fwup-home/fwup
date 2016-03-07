@@ -1,9 +1,10 @@
 # Changelog
 
-## v0.6.1-dev
+## v0.6.1
 
   * New features
     * Add bash completion
+    * Prebuilt .deb and .rpm archives for Linux
 
 ## v0.6.0
 
