@@ -46,8 +46,8 @@ devices in the field is so painful, please take care.
 # Examples!
 
 See [bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for firmware update examples
-for the BeagleBone Black and Raspberry Pi. The [Nerves Project](https://github.com/nerves-project/nerves-sdk)
-has some similar examples. The regression tests can also be helpful.
+for the BeagleBone Black and Raspberry Pi. The [Nerves Project](https://github.com/nerves-project/nerves_system_br)
+has more examples and is better maintained. The regression tests can also be helpful.
 
 My real world use of `fwup` involves writing
 the new firmware to place on the Flash that's not in current use and then
