@@ -70,6 +70,7 @@ On Linux, download and install the appropriate package for your platform:
 
   * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup_0.6.1_amd64.deb)
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup-0.6.1-1.x86_64.rpm)
+  * Arch Linux users can install fwup via the AUR package `fwup-git`.
 
 If you're using another platform or prefer to build it yourself, read on.
 
