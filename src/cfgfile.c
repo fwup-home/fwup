@@ -15,8 +15,9 @@
  */
 
 #include "cfgfile.h"
-#include "mbr.h"
 #include "functions.h"
+#include "requirement.h"
+#include "mbr.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -83,6 +84,41 @@ static int cb_on_error_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **a
 static int cb_on_resource_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
     return cb_func(FUN_CONTEXT_FILE, cfg, opt, argc, argv);
+}
+
+/* requirement callback
+ */
+static int cb_task_require_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    struct req_context rctx;
+    memset(&rctx, 0, sizeof(rctx));
+    rctx.cfg = toplevel_cfg;
+    rctx.task = cfg;
+
+    // Convert to the normal argc/argv
+    rctx.argc = argc + 1;
+    if (rctx.argc > REQ_MAX_ARGS || rctx.argc < 1) {
+        cfg_error(cfg, "Too many arguments passed to '%s'", opt->name);
+        return -1;
+    }
+
+    rctx.argv[0] = opt->name;
+    memcpy(&rctx.argv[1], argv, sizeof(const char *) * argc);
+
+    if (req_validate(&rctx) < 0) {
+        cfg_error(cfg, last_error());
+        return -1;
+    }
+
+    char str_argc[5];
+    sprintf(str_argc, "%d", rctx.argc);
+
+    cfg_addlist(cfg, "reqlist", 2, str_argc, rctx.argv[0]);
+    int i;
+    for (i = 1; i < rctx.argc; i++)
+        cfg_addlist(cfg, "reqlist", 1, rctx.argv[i]);
+
+    return 0;
 }
 
 static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
@@ -253,9 +289,13 @@ static cfg_opt_t task_on_resource_opts[] = {
     CFG_END()
 };
 static cfg_opt_t task_opts[] = {
-    CFG_INT("require-partition1-offset", -1, CFGF_NONE),
+    CFG_STR_LIST("reqlist", 0, CFGF_NONE), // Internal - use functions below
+    CFG_FUNC("require-partition-offset", cb_task_require_func),
+    CFG_FUNC("require-fat-file-exists", cb_task_require_func),
+
+    CFG_INT("require-partition1-offset", -1, CFGF_NONE), // Deprecated
+    CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE), // Deprecated
     CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
-    CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE),
     CFG_SEC("on-init", task_on_init_opts, CFGF_NONE),
     CFG_SEC("on-finish", task_on_finish_opts, CFGF_NONE),
     CFG_SEC("on-error", task_on_error_opts, CFGF_NONE),

@@ -396,18 +396,12 @@ be useful if the upgrade process is different based on the version of firmware c
 on the target, the target architecture, etc. The following table lists the supported
 constraints:
 
-Constraint                    | Description
-------------------------------|------------
-require-unmounted-destination | If `true`, require that the destination be completely unmounted by the OS before upgrading
-require-partition1-offset     | Require that the block offset of partition 1 be the specified value
+Constraint                                         | Description
+---------------------------------------------------|------------
+require-partition-offset(partition, block_offset)  | Require that the block offset of a partition be the specified value
+require-fat-file-exists(block_offset, filename)    | Require that a file exists in the specified FAT filesystem
 
-*Many more constraints to be added as needed*
-
-Each task can have options to change how it is applied:
-
-Option                        | Description
-------------------------------|------------
-verify-on-the-fly             | If `true`, the files are verified as they are written to the media. This speeds up processing and reduces memory in many cases.
+*More constraints to be added as needed*
 
 The remainder of the `task` section is a list of event handlers. Event handlers are
 organized as scopes. An event handler matches during the application of a firmware update

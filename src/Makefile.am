@@ -1,7 +1,9 @@
 ACLOCAL_AMFLAGS=-I m4
 
 bin_PROGRAMS=fwup
-fwup_SOURCES=cfgfile.c \
+fwup_SOURCES=\
+	block_writer.c \
+	cfgfile.c \
 	fatfs.c \
 	fat_cache.c \
 	functions.c \
@@ -14,11 +16,12 @@ fwup_SOURCES=cfgfile.c \
 	fwup_verify.c \
 	fwup_metadata.c \
 	fwup_genkeys.c \
-	block_writer.c \
 	mbr.c \
 	mmc_linux.c \
 	mmc_osx.c \
+	requirement.c \
 	util.c \
+	block_writer.h \
 	cfgfile.h \
 	fatfs.h \
 	functions.h \
@@ -31,9 +34,9 @@ fwup_SOURCES=cfgfile.c \
 	fwup_genkeys.h \
 	fwup_sign.h \
 	fwup_verify.h \
-	block_writer.h \
 	mbr.h \
 	mmc.h \
+	requirement.h \
 	util.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \

@@ -39,7 +39,6 @@ enum fwup_apply_progress {
 };
 
 #define FUN_MAX_ARGS  (10)
-struct fun_private;
 struct archive;
 struct fat_cache;
 

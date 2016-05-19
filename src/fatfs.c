@@ -260,6 +260,24 @@ int fatfs_touch(struct fat_cache *fc, const char *filename)
     return 0;
 }
 
+/**
+ * @brief fatfs_exists check if the specified file exists
+ * @param fc the current FAT session
+ * @param filename the filename
+ * @return 0 if it exists
+ */
+int fatfs_exists(struct fat_cache *fc, const char *filename)
+{
+    MAYBE_MOUNT(fc);
+    close_open_files();
+
+    FIL fil;
+    CHECK("fatfs_exists", filename, f_open(&fil, filename, FA_OPEN_EXISTING));
+    f_close(&fil);
+
+    return 0;
+}
+
 int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const char *buffer, off_t size)
 {
     MAYBE_MOUNT(fc);

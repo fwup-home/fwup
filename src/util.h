@@ -57,4 +57,8 @@ extern bool fwup_verbose;
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
 
+// This checks that the argument can be converted to a uint. It is
+// non-trivial to suppress compiler warnings.
+#define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; unsigned long long int _ = strtoull(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
+
 #endif // UTIL_H

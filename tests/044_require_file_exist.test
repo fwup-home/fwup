@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#
+# Write a firmware image and then test upgrading it using
+# the "require-file-exist" mechanism. This is a non-MBR
+# swapping upgrade where the bootloader knows how to check
+# for the existance of a file to determine which partition
+# to use.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | p0: Boot (Simulated)        |
+# +-----------------------------+
+# | p1: Rootfs A (Simulated)    |
+# +-----------------------------+
+# | p2: Rootfs B (Simulated)    |
+# +-----------------------------+
+# | p3: Data (Simulated)        |
+# +-----------------------------+
+
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 1985)
+define(ROOTFS_A_PART_OFFSET, 2048)
+define(ROOTFS_A_PART_COUNT, 2048)
+define(ROOTFS_B_PART_OFFSET, 4096)
+define(ROOTFS_B_PART_COUNT, 2048)
+define(APP_PART_OFFSET, 6144)
+define(APP_PART_COUNT, 2048)
+
+# Filenames hypothetically used by the bootloader
+# to determine which rootfs to use
+define(BOOT_FROM_A, "bootfrom.a")
+define(BOOT_FROM_B, "bootfrom.b")
+
+file-resource rootfs.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+
+mbr the-mbr {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 3 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(the-mbr)
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_touch(\${BOOT_PART_OFFSET}, \${BOOT_FROM_A})
+        fat_mkfs(\${APP_PART_OFFSET}, \${APP_PART_COUNT})
+    }
+
+    # Don't write the rootfs on purpose for test purposes
+    #on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-fat-file-exists(\${BOOT_PART_OFFSET}, \${BOOT_FROM_B})
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+    on-finish {
+        fat_touch(\${BOOT_PART_OFFSET}, \${BOOT_FROM_A})
+        fat_rm(\${BOOT_PART_OFFSET}, \${BOOT_FROM_B})
+    }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition A
+    # is being used.
+    require-fat-file-exists(\${BOOT_PART_OFFSET}, \${BOOT_FROM_A})
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+    on-finish {
+        fat_touch(\${BOOT_PART_OFFSET}, \${BOOT_FROM_B})
+        fat_rm(\${BOOT_PART_OFFSET}, \${BOOT_FROM_A})
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Trust that the initial creation was ok, but verify that the 1K rootfs fails
+# to compare for both partitions.
+dd if=$IMGFILE skip=2048 count=2 of=$WORK/orig-first-part.bin 2>/dev/null
+if diff $TESTFILE_1K $WORK/orig-first-part.bin >/dev/null; then
+    echo "Expected 1st partition not to be written yet."
+    exit 1
+fi
+dd if=$IMGFILE skip=4096 count=2 of=$WORK/orig-second-part.bin 2>/dev/null
+if diff $TESTFILE_1K $WORK/orig-second-part.bin >/dev/null; then
+    echo "Expected 2nd partition not to be written yet."
+    exit 1
+fi
+
+# Upgrade the IMGFILE file (it should write partition B)
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+# Extract and compare the second partition
+dd if=$IMGFILE skip=4096 count=2 of=$WORK/upgrade-second-part.bin 2>/dev/null
+diff $TESTFILE_1K $WORK/upgrade-second-part.bin
+
+# Upgrade the IMGFILE file again (it should write partition A)
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+# Extract and compare the first partition
+dd if=$IMGFILE skip=2048 count=2 of=$WORK/upgrade-first-part.bin 2>/dev/null
+diff $TESTFILE_1K $WORK/upgrade-first-part.bin

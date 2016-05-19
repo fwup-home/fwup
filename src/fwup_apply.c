@@ -30,13 +30,15 @@
 #include <fcntl.h>
 #include <sodium.h>
 
+#include "requirement.h"
 #include "functions.h"
 #include "fatfs.h"
 #include "mbr.h"
 #include "fwfile.h"
 
-static bool task_is_applicable(cfg_t *task, int output_fd)
+static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 {
+    // Handle legacy require-partition1-offset=x constraint
     int part1_offset = cfg_getint(task, "require-partition1-offset");
     if (part1_offset >= 0) {
         // Try to read the MBR. This won't work if the output
@@ -59,17 +61,40 @@ static bool task_is_applicable(cfg_t *task, int output_fd)
     return true;
 }
 
-static cfg_t *find_task(cfg_t *cfg, int output_fd, const char *task_prefix)
+static bool task_is_applicable(struct fun_context *fctx, cfg_t *task)
+{
+    struct req_context rctx;
+    memset(&rctx, 0, sizeof(rctx));
+    rctx.output_fd = fctx->output_fd;
+    rctx.fctx = fctx;
+    rctx.fatfs_ptr = fctx->fatfs_ptr;
+
+    cfg_opt_t *reqlist = cfg_getopt(task, "reqlist");
+    if (reqlist) {
+        if (req_apply_reqlist(&rctx, reqlist, req_requirement_met) < 0) {
+            // Error indicates that one or more requirements weren't met or
+            // something was messed up in the requirement. Either way, the
+            // task isn't applicable.
+            return false;
+        }
+    }
+
+    // If we get here, then it's ok to apply this task.
+    return true;
+}
+
+static cfg_t *find_task(struct fun_context *fctx, const char *task_prefix)
 {
     size_t task_len = strlen(task_prefix);
     cfg_t *task;
 
     int i;
-    for (i = 0; (task = cfg_getnsec(cfg, "task", i)) != NULL; i++) {
+    for (i = 0; (task = cfg_getnsec(fctx->cfg, "task", i)) != NULL; i++) {
         const char *name = cfg_title(task);
         if (strlen(name) >= task_len &&
                 memcmp(task_prefix, name, task_len) == 0 &&
-                task_is_applicable(task, output_fd))
+                deprecated_task_is_applicable(task, fctx->output_fd) &&
+                task_is_applicable(fctx, task))
             return task;
     }
     return 0;
@@ -336,7 +361,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
 
     OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
 
-    fctx.task = find_task(fctx.cfg, fctx.output_fd, task_prefix);
+    fctx.task = find_task(&fctx, task_prefix);
     if (fctx.task == 0)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 

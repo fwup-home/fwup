@@ -42,9 +42,10 @@ file-resource "subdir1/subdir2/twosubdir" {
   # sha256=""
 }
 task "complete" {
+  reqlist = {}
   require-partition1-offset=-1
-  verify-on-the-fly=false
   require-unmounted-destination=false
+  verify-on-the-fly=false
   on-init {
     funlist = {}
   }

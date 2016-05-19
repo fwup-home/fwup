@@ -31,7 +31,8 @@ SOURCES += \
     src/block_writer.c \
     src/fat_cache.c \
     src/mmc_osx.c \
-    src/mmc_linux.c
+    src/mmc_linux.c \
+    src/requirement.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -62,7 +63,8 @@ HEADERS += \
     src/fwup_sign.h \
     src/fwup_verify.h \
     src/block_writer.h \
-    src/fat_cache.h
+    src/fat_cache.h \
+    src/requirement.h
 
 OTHER_FILES += \
     fwupdate.conf \

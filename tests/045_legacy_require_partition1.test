@@ -91,14 +91,14 @@ task complete {
 task upgrade.a {
     # This task upgrades the A partition and runs when partition B
     # is being used.
-    require-partition-offset(1, \${ROOTFS_B_PART_OFFSET})
+    require-partition1-offset = \${ROOTFS_B_PART_OFFSET}
     on-init { mbr_write(mbr-a) }
     on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
 }
 task upgrade.b {
     # This task upgrades the B partition and runs when partition B
     # is being used.
-    require-partition-offset(1, \${ROOTFS_A_PART_OFFSET})
+    require-partition1-offset = \${ROOTFS_A_PART_OFFSET}
     on-init { mbr_write(mbr-b) }
     on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
 }
