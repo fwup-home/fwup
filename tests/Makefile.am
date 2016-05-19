@@ -39,6 +39,7 @@ TESTS = 001_simple_fw.test \
 	039_upgrade.test \
 	040_create_mini_fw.test \
 	041_version.test \
-	042_fat_am335x.test
+	042_fat_am335x.test \
+	043_fat_touch.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -438,6 +438,7 @@ fat_mv(block_offset, oldname, newname) | Rename the specified file on a FAT file
 fat_rm(block_offset, filename)        | Delete the specified file
 fat_mkdir(block_offset, filename)     | Create a directory on a FAT file system
 fat_setlabel(block_offset, label)     | Set the volume label on a FAT file system
+fat_touch(block_offset, filename)     | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
 

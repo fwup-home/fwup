@@ -34,6 +34,7 @@ int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name);
 int fatfs_rm(struct fat_cache *fc, const char *filename);
 int fatfs_pwrite(struct fat_cache *fc, const char *filename, int offset, const char *buffer, off_t size);
 int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name);
+int fatfs_touch(struct fat_cache *fc, const char *filename);
 void fatfs_closefs();
 
 #endif // FATFS_H

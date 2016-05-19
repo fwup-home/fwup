@@ -43,6 +43,7 @@ DECLARE_FUN(fat_rm);
 DECLARE_FUN(fat_cp);
 DECLARE_FUN(fat_mkdir);
 DECLARE_FUN(fat_setlabel);
+DECLARE_FUN(fat_touch);
 DECLARE_FUN(fw_create);
 DECLARE_FUN(fw_add_local_file);
 DECLARE_FUN(mbr_write);
@@ -65,6 +66,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_cp),
     FUN_INFO(fat_mkdir),
     FUN_INFO(fat_setlabel),
+    FUN_INFO(fat_touch),
     FUN_INFO(fw_create),
     FUN_INFO(fw_add_local_file),
     FUN_INFO(mbr_write),
@@ -569,6 +571,32 @@ int fat_setlabel_run(struct fun_context *fctx)
     // TODO: Ignore the error code here??
     fatfs_setlabel(fc, fctx->argv[2]);
 
+    return 0;
+}
+
+int fat_touch_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("fat_touch requires a block offset and filename");
+
+    CHECK_ARG_UINT64(fctx->argv[1], "fat_touch requires a non-negative integer block offset");
+
+    return 0;
+}
+int fat_touch_compute_progress(struct fun_context *fctx)
+{
+    fctx->total_progress_units++; // Arbitarily count as 1 unit
+    return 0;
+}
+int fat_touch_run(struct fun_context *fctx)
+{
+    struct fat_cache *fc;
+    if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
+        return -1;
+
+    OK_OR_RETURN(fatfs_touch(fc, fctx->argv[2]));
+
+    fctx->report_progress(fctx, 1);
     return 0;
 }
 

@@ -120,8 +120,7 @@ static void close_open_files()
 
 /**
  * @brief fatfs_mkdir Make a directory
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param dir the name of the directory
  * @return 0 on success
  */
@@ -135,8 +134,7 @@ int fatfs_mkdir(struct fat_cache *fc, const char *dir)
 
 /**
  * @brief fatfs_setlabel Set the volume label
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param label the name of the filesystem
  * @return 0 on success
  */
@@ -150,8 +148,7 @@ int fatfs_setlabel(struct fat_cache *fc, const char *label)
 
 /**
  * @brief fatfs_rm Delete a file
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param filename the name of the file
  * @return 0 on success
  */
@@ -165,8 +162,7 @@ int fatfs_rm(struct fat_cache *fc, const char *filename)
 
 /**
  * @brief fatfs_mv rename a file
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param from_name original filename
  * @param to_name new filename
  * @return 0 on success
@@ -181,8 +177,7 @@ int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name)
 
 /**
  * @brief fatfs_cp copy a file
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param from_name original filename
  * @param to_name the name of the copy filename
  * @return 0 on success
@@ -217,8 +212,7 @@ int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name)
 
 /**
  * @brief fatfs_attrib set the attribs on a file
- * @param fatfp the raw file system data
- * @param fatfp_offset the offset within fatfp for where to start
+ * @param fc the current FAT session
  * @param filename an existing file
  * @param attrib a string with the attributes. i.e., "RHS"
  * @return 0 on success
@@ -245,6 +239,24 @@ int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib)
         }
     }
     CHECK("fat_attrib", filename, f_chmod(filename, mode, AM_RDO | AM_HID | AM_SYS));
+    return 0;
+}
+
+/**
+ * @brief fatfs_touch create an empty file if the file doesn't exist
+ * @param fc the current FAT session
+ * @param filename the file to touch
+ * @return 0 on success
+ */
+int fatfs_touch(struct fat_cache *fc, const char *filename)
+{
+    MAYBE_MOUNT(fc);
+    close_open_files();
+
+    FIL fil;
+    CHECK("fat_touch", filename, f_open(&fil, filename, FA_OPEN_ALWAYS));
+    f_close(&fil);
+
     return 0;
 }
 
