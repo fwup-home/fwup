@@ -2,6 +2,12 @@
 
 ## v0.6.2-dev
 
+  * New features
+    * Task requirement code now uses functions for checks
+    * Add fat_touch to create 0 length files on FAT filesystems
+    * Add require-fat-file-exists to check for the existance of a file when
+      determining which task to run
+
 ## v0.6.1
 
   * New features
