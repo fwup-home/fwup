@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.6.2-dev
+## v0.7.0-dev
+
+This release is backwards and forwards incompatible with v0.6.1 due to the
+addition of requirement functions.
 
   * New features
     * Task requirement code now uses functions for checks
