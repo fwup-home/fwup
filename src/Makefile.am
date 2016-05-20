@@ -4,6 +4,7 @@ bin_PROGRAMS=fwup
 fwup_SOURCES=\
 	block_writer.c \
 	cfgfile.c \
+	cfgprint.c \
 	fatfs.c \
 	fat_cache.c \
 	functions.c \

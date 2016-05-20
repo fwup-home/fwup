@@ -15,6 +15,7 @@
  */
 
 #include "config.h"
+#include "cfgprint.h"
 #include "fwfile.h"
 #include "util.h"
 
@@ -30,7 +31,7 @@
 static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
 {
     FILE *fp = open_memstream(output, len);
-    cfg_print(cfg, fp);
+    fwup_cfg_print_indent(cfg, fp, 0);
     fclose(fp);
 }
 

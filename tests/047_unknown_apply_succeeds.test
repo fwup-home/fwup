@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#
+# Test the applying a .fw with an unknown metadata field still succeeds
+#
+# This should fail if you're using libconfuse version before 3.0. That's
+# not the end of the world. You'll just be less accepting of .fw files
+# created by future fwup versions in ways that shouldn't matter. See
+# the compile warning in cfgfile.c.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+meta-product = "testing test test"
+file-resource subdir/TEST {
+        host-path = "${TESTFILE_150K}"
+}
+
+task complete {
+	on-resource subdir/TEST { raw_write(1) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Add a field to the meta.conf
+unzip_fw
+echo "meta-mynewmeta=\"something\"" >> $UNZIPDIR/meta.conf
+pushd $UNZIPDIR
+zip -q -u $FWFILE meta.conf
+popd
+
+# See that it still applies
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete

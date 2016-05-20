@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#
+# Test the creation of a .fw with an unknown field fails
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+meta-myunknownfield = "break"
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting firmware creation with an unknown field to fail!"
+    exit 1
+fi
+

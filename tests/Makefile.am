@@ -42,6 +42,8 @@ TESTS = 001_simple_fw.test \
 	042_fat_am335x.test \
 	043_fat_touch.test \
 	044_require_file_exist.test \
-	045_legacy_require_partition1.test
+	045_legacy_require_partition1.test \
+	046_unknown_create_fails.test \
+	047_unknown_apply_succeeds.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

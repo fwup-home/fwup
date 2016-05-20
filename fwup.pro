@@ -32,7 +32,8 @@ SOURCES += \
     src/fat_cache.c \
     src/mmc_osx.c \
     src/mmc_linux.c \
-    src/requirement.c
+    src/requirement.c \
+    src/cfgprint.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -64,7 +65,8 @@ HEADERS += \
     src/fwup_verify.h \
     src/block_writer.h \
     src/fat_cache.h \
-    src/requirement.h
+    src/requirement.h \
+    src/cfgprint.h
 
 OTHER_FILES += \
     fwupdate.conf \

@@ -219,11 +219,20 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     return 0;
 }
 
+// libconfuse v3.0 ignore unknown options
+#ifdef CFGF_IGNORE_UNKNOWN
+#define CFG_IGNORE_UNKNOWN \
+    CFG_STR("__unknown", 0, CFGF_NONE),
+#else
+#define CFG_IGNORE_UNKNOWN
+#endif
+
 static cfg_opt_t file_resource_opts[] = {
     CFG_STR("host-path", 0, CFGF_NONE),
     CFG_INT("length", 0, CFGF_NONE),
     CFG_STR("blake2b-256", 0, CFGF_NONE),
     CFG_STR("sha256", 0, CFGF_NONE), // Old hash for files - use blake2b-256 now
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 static cfg_opt_t mbr_partition_opts[] = {
@@ -231,6 +240,7 @@ static cfg_opt_t mbr_partition_opts[] = {
     CFG_INT("block-count", -1, CFGF_NONE),
     CFG_INT("type", -1, CFGF_NONE),
     CFG_BOOL("boot", cfg_false, CFGF_NONE),
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 static cfg_opt_t mbr_osii_opts[] = {
@@ -241,6 +251,7 @@ static cfg_opt_t mbr_osii_opts[] = {
     CFG_INT("entry-point", 0, CFGF_NONE),
     CFG_INT("image-size-blocks", 0, CFGF_NONE),
     CFG_INT("attribute", 0xf, CFGF_NONE),
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 static cfg_opt_t mbr_opts[] = {
@@ -252,6 +263,7 @@ static cfg_opt_t mbr_opts[] = {
     CFG_INT("osip-num-pointers", 1, CFGF_NONE),
     CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("osii", mbr_osii_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 
@@ -300,6 +312,7 @@ static cfg_opt_t task_opts[] = {
     CFG_SEC("on-finish", task_on_finish_opts, CFGF_NONE),
     CFG_SEC("on-error", task_on_error_opts, CFGF_NONE),
     CFG_SEC("on-resource", task_on_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 cfg_opt_t opts[] = {
@@ -319,6 +332,7 @@ cfg_opt_t opts[] = {
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_FUNC("include", &cfg_include),
+    CFG_IGNORE_UNKNOWN
     CFG_END()
 };
 
@@ -336,6 +350,10 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     }
 
     int rc = 0;
+
+    // libconfuse 3.0 note: This function is called when creating
+    // archives. If there's an unknown option, we want to throw an
+    // error. I.e., don't pass CFGF_IGNORE_UNKNOWN.
     toplevel_cfg = cfg_init(opts, 0);
 
     // set a validating callback function for sections
@@ -427,7 +445,20 @@ int cfgfile_parse_fw_ae(struct archive *a,
 
     // Parse the configuration, but do minimal validity checking of configuration
     // since many things are only used on the creation of the firmware update.
+#ifdef CFGF_IGNORE_UNKNOWN
+    // libconfuse 3.0 - ignore unknown options so that new options don't necessarily cause
+    // the firmware update to fail. For example, this allows metadata to be added to the
+    // meta.conf file in future firmware updates. Without it, the new metadata option
+    // would result in libconfuse throwing a parse error.
+    *cfg = cfg_init(opts, CFGF_IGNORE_UNKNOWN);
+#else
+#warning It is highly recommended to compile against libconfuse 3.0+.
+#warning Forward compatibility with .fw files from future fwup versions may be more limited without this.
+#warning If you are just creating .fw files, then you may ignore this warning. If not, consider
+#warning building a statically linked version of fwup if your distro does not have a newer version.
+#warning See scripts/download_deps.sh.
     *cfg = cfg_init(opts, 0);
+#endif
     if (cfg_parse_buf(*cfg, meta_conf) != 0)
         ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
