@@ -90,33 +90,33 @@ static int cb_on_resource_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
  */
 static int cb_task_require_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 {
-    struct req_context rctx;
-    memset(&rctx, 0, sizeof(rctx));
-    rctx.cfg = toplevel_cfg;
-    rctx.task = cfg;
+    struct fun_context fctx;
+    memset(&fctx, 0, sizeof(fctx));
+    fctx.cfg = toplevel_cfg;
+    fctx.task = cfg;
 
     // Convert to the normal argc/argv
-    rctx.argc = argc + 1;
-    if (rctx.argc > REQ_MAX_ARGS || rctx.argc < 1) {
+    fctx.argc = argc + 1;
+    if (fctx.argc > FUN_MAX_ARGS || fctx.argc < 1) {
         cfg_error(cfg, "Too many arguments passed to '%s'", opt->name);
         return -1;
     }
 
-    rctx.argv[0] = opt->name;
-    memcpy(&rctx.argv[1], argv, sizeof(const char *) * argc);
+    fctx.argv[0] = opt->name;
+    memcpy(&fctx.argv[1], argv, sizeof(const char *) * argc);
 
-    if (req_validate(&rctx) < 0) {
+    if (req_validate(&fctx) < 0) {
         cfg_error(cfg, last_error());
         return -1;
     }
 
     char str_argc[5];
-    sprintf(str_argc, "%d", rctx.argc);
+    sprintf(str_argc, "%d", fctx.argc);
 
-    cfg_addlist(cfg, "reqlist", 2, str_argc, rctx.argv[0]);
+    cfg_addlist(cfg, "reqlist", 2, str_argc, fctx.argv[0]);
     int i;
-    for (i = 1; i < rctx.argc; i++)
-        cfg_addlist(cfg, "reqlist", 1, rctx.argv[i]);
+    for (i = 1; i < fctx.argc; i++)
+        cfg_addlist(cfg, "reqlist", 1, fctx.argv[i]);
 
     return 0;
 }

@@ -22,34 +22,10 @@
 #include <sys/types.h>
 #include <confuse.h>
 
-#define REQ_MAX_ARGS  (10)
+#include "functions.h"
 
-struct fun_context;
-struct fat_cache;
-
-struct req_context {
-    // Function name and arguments
-    int argc;
-    const char *argv[REQ_MAX_ARGS];
-
-    // Root meta.conf configuration
-    cfg_t *cfg;
-
-    // Task configuration
-    cfg_t *task;
-
-    // Function context
-    struct fun_context *fctx;
-
-    // Callback for getting a fat_cache handle for use with the fatfs code.
-    int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc);
-
-    // Output file descriptor. <= 0 if not opened. (stdin is never ok)
-    int output_fd;
-};
-
-int req_validate(struct req_context *rctx);
-int req_requirement_met(struct req_context *rctx);
-int req_apply_reqlist(struct req_context *rctx, cfg_opt_t *reqlist, int (*req)(struct req_context *rctx));
+int req_validate(struct fun_context *fctx);
+int req_requirement_met(struct fun_context *fctx);
+int req_apply_reqlist(struct fun_context *fctx, cfg_opt_t *reqlist, int (*req)(struct fun_context *rctx));
 
 #endif // REQUIREMENT_H

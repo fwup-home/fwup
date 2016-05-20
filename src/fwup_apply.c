@@ -63,15 +63,9 @@ static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 
 static bool task_is_applicable(struct fun_context *fctx, cfg_t *task)
 {
-    struct req_context rctx;
-    memset(&rctx, 0, sizeof(rctx));
-    rctx.output_fd = fctx->output_fd;
-    rctx.fctx = fctx;
-    rctx.fatfs_ptr = fctx->fatfs_ptr;
-
     cfg_opt_t *reqlist = cfg_getopt(task, "reqlist");
     if (reqlist) {
-        if (req_apply_reqlist(&rctx, reqlist, req_requirement_met) < 0) {
+        if (req_apply_reqlist(fctx, reqlist, req_requirement_met) < 0) {
             // Error indicates that one or more requirements weren't met or
             // something was messed up in the requirement. Either way, the
             // task isn't applicable.

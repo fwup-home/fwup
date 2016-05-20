@@ -26,16 +26,16 @@
 #include <unistd.h>
 
 #define DECLARE_REQ(REQ) \
-    static int REQ ## _validate(struct req_context *rctx); \
-    static int REQ ## _requirement_met(struct req_context *rctx)
+    static int REQ ## _validate(struct fun_context *fctx); \
+    static int REQ ## _requirement_met(struct fun_context *fctx)
 
 DECLARE_REQ(require_partition_offset);
 DECLARE_REQ(require_fat_file_exists);
 
 struct req_info {
     const char *name;
-    int (*validate)(struct req_context *rctx);
-    int (*requirement_met)(struct req_context *rctx);
+    int (*validate)(struct fun_context *fctx);
+    int (*requirement_met)(struct fun_context *fctx);
 };
 
 #define REQ_INFO(NAME, REQ) {NAME, REQ ## _validate, REQ ## _requirement_met}
@@ -67,16 +67,16 @@ static struct req_info *lookup(int argc, const char **argv)
  *
  * This is called when creating the firmware file.
  *
- * @param rctx the requirement context
+ * @param fctx the function context
  * @return 0 if ok
  */
-int req_validate(struct req_context *rctx)
+int req_validate(struct fun_context *fctx)
 {
-    struct req_info *req = lookup(rctx->argc, rctx->argv);
+    struct req_info *req = lookup(fctx->argc, fctx->argv);
     if (!req)
         return -1;
 
-    return req->validate(rctx);
+    return req->validate(fctx);
 }
 
 /**
@@ -84,77 +84,77 @@ int req_validate(struct req_context *rctx)
  *
  * This is called when applying the firmware.
  *
- * @param rctx the requirement context
+ * @param fctx the function context
  * @return 0 if ok
  */
-int req_requirement_met(struct req_context *rctx)
+int req_requirement_met(struct fun_context *fctx)
 {
-    struct req_info *req = lookup(rctx->argc, rctx->argv);
+    struct req_info *req = lookup(fctx->argc, fctx->argv);
     if (!req)
         return -1;
 
-    return req->requirement_met(rctx);
+    return req->requirement_met(fctx);
 }
 
 
 /**
  * @brief Run all of the requirements in a reqlist
- * @param rctx the context to use (argc and argv will be updated in it)
+ * @param fctx the context to use (argc and argv will be updated in it)
  * @param reqlist the list
  * @param req the function to execute (currently only req_requirement_met)
  * @return 0 if ok
  */
-int req_apply_reqlist(struct req_context *rctx, cfg_opt_t *reqlist, int (*req)(struct req_context *rctx))
+int req_apply_reqlist(struct fun_context *fctx, cfg_opt_t *reqlist, int (*req)(struct fun_context *fctx))
 {
     int ix = 0;
     char *aritystr;
     while ((aritystr = cfg_opt_getnstr(reqlist, ix++)) != NULL) {
-        rctx->argc = strtoul(aritystr, NULL, 0);
-        if (rctx->argc <= 0 || rctx->argc > REQ_MAX_ARGS) {
+        fctx->argc = strtoul(aritystr, NULL, 0);
+        if (fctx->argc <= 0 || fctx->argc > FUN_MAX_ARGS) {
             set_last_error("Unexpected argc value in reqlist");
             return -1;
         }
         int i;
-        for (i = 0; i < rctx->argc; i++) {
-            rctx->argv[i] = cfg_opt_getnstr(reqlist, ix++);
-            if (rctx->argv[i] == NULL) {
+        for (i = 0; i < fctx->argc; i++) {
+            fctx->argv[i] = cfg_opt_getnstr(reqlist, ix++);
+            if (fctx->argv[i] == NULL) {
                 set_last_error("Unexpected error with reqlist");
                 return -1;
             }
         }
         // Clear out the rest of the argv entries to avoid confusion when debugging.
-        for (; i < REQ_MAX_ARGS; i++)
-            rctx->argv[i] = 0;
+        for (; i < FUN_MAX_ARGS; i++)
+            fctx->argv[i] = 0;
 
-        if (req(rctx) < 0)
+        if (req(fctx) < 0)
             return -1;
     }
     return 0;
 }
 
-int require_partition_offset_validate(struct req_context *rctx)
+int require_partition_offset_validate(struct fun_context *fctx)
 {
-    if (rctx->argc != 3)
+    if (fctx->argc != 3)
         ERR_RETURN("require-partition-offset requires a partition number and a block offset");
 
-    int partition = strtol(rctx->argv[1], NULL, 0);
+    int partition = strtol(fctx->argv[1], NULL, 0);
     if (partition < 0 || partition > 3)
         ERR_RETURN("require-partition-offset requires the partition number to be between 0, 1, 2, or 3");
 
-    CHECK_ARG_UINT64(rctx->argv[2], "require-partition-offset requires a non-negative integer block offset");
+    CHECK_ARG_UINT64(fctx->argv[2], "require-partition-offset requires a non-negative integer block offset");
 
     return 0;
 }
-int require_partition_offset_requirement_met(struct req_context *rctx)
+int require_partition_offset_requirement_met(struct fun_context *fctx)
 {
-    int partition = strtol(rctx->argv[1], NULL, 0);
-    off_t block_offset = strtoull(rctx->argv[2], NULL, 0);
+    int partition = strtol(fctx->argv[1], NULL, 0);
+    off_t block_offset = strtoull(fctx->argv[2], NULL, 0);
 
     // Try to read the MBR. This won't work if the output
     // isn't seekable, but that's ok, since this constraint would
     // fail anyway.
     uint8_t buffer[512];
-    ssize_t amount_read = pread(rctx->output_fd, buffer, 512, 0);
+    ssize_t amount_read = pread(fctx->output_fd, buffer, 512, 0);
     if (amount_read != 512)
         return -1;
 
@@ -168,25 +168,25 @@ int require_partition_offset_requirement_met(struct req_context *rctx)
         return 0;
 }
 
-int require_fat_file_exists_validate(struct req_context *rctx)
+int require_fat_file_exists_validate(struct fun_context *fctx)
 {
-    if (rctx->argc != 3)
+    if (fctx->argc != 3)
         ERR_RETURN("require-fat-file-exists requires a FAT FS block offset and a filename");
 
-    CHECK_ARG_UINT64(rctx->argv[1], "require-fat-file-exists requires a non-negative integer block offset");
+    CHECK_ARG_UINT64(fctx->argv[1], "require-fat-file-exists requires a non-negative integer block offset");
 
     return 0;
 }
-int require_fat_file_exists_requirement_met(struct req_context *rctx)
+int require_fat_file_exists_requirement_met(struct fun_context *fctx)
 {
-    if (rctx->argc != 3)
+    if (fctx->argc != 3)
         return -1;
 
     struct fat_cache *fc;
-    if (rctx->fatfs_ptr(rctx->fctx, strtoull(rctx->argv[1], NULL, 0), &fc) < 0)
+    if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    if (fatfs_exists(fc, rctx->argv[2]) < 0)
+    if (fatfs_exists(fc, fctx->argv[2]) < 0)
         return -1;
 
     // No error -> the requirement has been met.
