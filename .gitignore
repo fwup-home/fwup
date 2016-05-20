@@ -36,3 +36,5 @@ src/fwup.1
 *.deb
 /dl
 /pkg_build
+/build
+/deps
