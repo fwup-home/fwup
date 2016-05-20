@@ -51,8 +51,8 @@ static bool is_mmc_device(off_t device_size)
     if (device_size == 0)
         return false;
 
-    // Check 2: Capacity larger than 32 GiB -> false
-    if (device_size > (32 * ONE_GiB))
+    // Check 2: Capacity larger than 65 GiB -> false
+    if (device_size > (65 * ONE_GiB))
         return false;
 
     return true;
