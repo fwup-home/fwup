@@ -18,25 +18,123 @@
 #include "errno.h"
 
 #include <string.h>
+#include <stdlib.h>
 
-// This implementation is copy/pasted version of the default cfg_print from
-// libconfuse except that it leaves out attributes that we don't want
-// printed to the meta.conf in the .fw file.
+// This implementation is essentially a copy/pasted version of the default cfg_print
+// from libconfuse with the following changes:
+//
+//   1. Output is to a string rather than a file handle. This removes the
+//      need for using open_memstream(). That turned out to not be portable.
+//   2. Remove unset attributes are not added to the string
+//   3. Remove extra spaces and indentation
+//   4. Remove custom printers (we didn't used them anyway)
 
 #define is_set(f, x) (((f) & (x)) == (f))
 
-static void fwup_cfg_indent(FILE *fp, int indent)
+// Sigh.
+struct simple_string {
+    char *str;
+    char *p;
+    char *end;
+};
+
+static void simple_string_init(struct simple_string *s)
 {
-    while (indent--)
-        fprintf(fp, "  ");
+    static const size_t starting_size = 4096;
+    s->str = malloc(starting_size);
+    if (s->str) {
+        s->p = s->str;
+        s->end = s->str + starting_size;
+    } else {
+        s->p = s->end = NULL;
+    }
 }
 
-static int fwup_cfg_opt_print_indent(cfg_opt_t *opt, FILE *fp, int indent)
+static void simple_string_enlarge(struct simple_string *s)
 {
-    if (!opt || !fp) {
-        errno = EINVAL;
-        return -1;
+    size_t len = s->end - s->str;
+    size_t offset = s->p - s->str;
+    len *= 2;
+    char *new_str = realloc(s->str, len);
+    if (new_str) {
+        s->str = new_str;
+        s->p = new_str + offset;
+        s->end = new_str + len;
+    } else {
+        free(s->str);
+        s->str = s->p = s->end = NULL;
     }
+}
+
+static void ssprintf(struct simple_string *s, const char *format, ...)
+{
+    va_list ap;
+    while (s->str) {
+        va_start(ap, format);
+        int max_len = s->end - s->p;
+        int n = vsnprintf(s->p, max_len, format, ap);
+        va_end(ap);
+
+        // vsnprintf failed
+        if (n < 0)
+            return;
+
+        // Success
+        if (n < max_len) {
+            s->p += n;
+            return;
+        }
+
+        // Retry with a larger buffer
+        simple_string_enlarge(s);
+    }
+}
+
+static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s);
+
+static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct simple_string *s)
+{
+    switch (opt->type) {
+    case CFGT_INT:
+        ssprintf(s, "%ld", cfg_opt_getnint(opt, index));
+        break;
+
+    case CFGT_FLOAT:
+        ssprintf(s, "%f", cfg_opt_getnfloat(opt, index));
+
+    case CFGT_STR:
+    {
+        const char *str = cfg_opt_getnstr(opt, index);
+        ssprintf(s, "\"");
+        while (str && *str) {
+            if (*str == '"')
+                ssprintf(s, "\\\"");
+            else if (*str == '\\')
+                ssprintf(s, "\\\\");
+            else
+                ssprintf(s, "%c", *str);
+            str++;
+        }
+        ssprintf(s, "\"");
+        break;
+    }
+
+    case CFGT_BOOL:
+        ssprintf(s, "%s", cfg_opt_getnbool(opt, index) ? "true" : "false");
+        break;
+
+    case CFGT_NONE:
+    case CFGT_SEC:
+    case CFGT_FUNC:
+    case CFGT_PTR:
+        break;
+    }
+}
+
+static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
+{
+    if (!opt)
+        return;
 
     if (opt->type == CFGT_SEC) {
         cfg_t *sec;
@@ -44,74 +142,62 @@ static int fwup_cfg_opt_print_indent(cfg_opt_t *opt, FILE *fp, int indent)
 
         for (i = 0; i < cfg_opt_size(opt); i++) {
             sec = cfg_opt_getnsec(opt, i);
-            fwup_cfg_indent(fp, indent);
             if (is_set(CFGF_TITLE, opt->flags))
-                fprintf(fp, "%s \"%s\" {\n", opt->name, cfg_title(sec));
+                ssprintf(s, "%s \"%s\" {\n", opt->name, cfg_title(sec));
             else
-                fprintf(fp, "%s {\n", opt->name);
-            fwup_cfg_print_indent(sec, fp, indent + 1);
-            fwup_cfg_indent(fp, indent);
-            fprintf(fp, "}\n");
+                ssprintf(s, "%s {\n", opt->name);
+            fwup_cfg_print(sec, s);
+            ssprintf(s, "}\n");
         }
     } else if (opt->type != CFGT_FUNC && opt->type != CFGT_NONE) {
         if (is_set(CFGF_LIST, opt->flags)) {
-            fwup_cfg_indent(fp, indent);
-            fprintf(fp, "%s = {", opt->name);
+            ssprintf(s, "%s = {", opt->name);
 
             if (opt->nvalues) {
-                unsigned int i;
-
-                if (opt->pf)
-                    opt->pf(opt, 0, fp);
-                else
-                    cfg_opt_nprint_var(opt, 0, fp);
-                for (i = 1; i < opt->nvalues; i++) {
-                    fprintf(fp, ", ");
-                    if (opt->pf)
-                        opt->pf(opt, i, fp);
-                    else
-                        cfg_opt_nprint_var(opt, i, fp);
+                fwup_cfg_opt_nprint_var(opt, 0, s);
+                for (unsigned int i = 1; i < opt->nvalues; i++) {
+                    ssprintf(s, ", ");
+                    fwup_cfg_opt_nprint_var(opt, i, s);
                 }
             }
 
-            fprintf(fp, "}");
+            ssprintf(s, "}\n");
         } else {
-            if (strcmp(opt->name, "__unknown")) {
-            fwup_cfg_indent(fp, indent);
-            /* comment out the option if is not set */
+            // if not set, don't print
             if (opt->simple_value.ptr) {
                 if (opt->type == CFGT_STR && *opt->simple_value.string == 0)
-                    fprintf(fp, "# ");
+                    return;
             } else {
                 if (cfg_opt_size(opt) == 0 || (opt->type == CFGT_STR && (opt->values[0]->string == 0 ||
-                                             opt->values[0]->string[0] == 0)))
-                    fprintf(fp, "# ");
+                                                                         opt->values[0]->string[0] == 0)))
+                    return;
             }
-            fprintf(fp, "%s=", opt->name);
-            if (opt->pf)
-                opt->pf(opt, 0, fp);
-            else
-                cfg_opt_nprint_var(opt, 0, fp);
-            }
+            ssprintf(s, "%s=", opt->name);
+            fwup_cfg_opt_nprint_var(opt, 0, s);
+            ssprintf(s, "\n");
         }
-
-        if (strcmp(opt->name, "__unknown"))
-            fprintf(fp, "\n");
-    } else if (opt->pf) {
-        fwup_cfg_indent(fp, indent);
-        opt->pf(opt, 0, fp);
-        fprintf(fp, "\n");
     }
-
-    return CFG_SUCCESS;
 }
 
-int fwup_cfg_print_indent(cfg_t *cfg, FILE *fp, int indent)
+static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s)
 {
-    int i, result = CFG_SUCCESS;
+    for (int i = 0; cfg->opts[i].name && s->str; i++)
+        fwup_cfg_opt_print(&cfg->opts[i], s);
+}
 
-    for (i = 0; cfg->opts[i].name; i++)
-        result += fwup_cfg_opt_print_indent(&cfg->opts[i], fp, indent);
+/**
+ * @brief Turn the config into a string
+ * @param cfg the config
+ * @param result a pointer to the string is returned (must be freed)
+ * @return the string length
+ */
+int fwup_cfg_to_string(cfg_t *cfg, char **result)
+{
+    struct simple_string s;
+    simple_string_init(&s);
 
-    return result;
+    fwup_cfg_print(cfg, &s);
+
+    *result = s.str;
+    return s.p - s.str;
 }

@@ -3,6 +3,6 @@
 
 #include <confuse.h>
 
-int fwup_cfg_print_indent(cfg_t *cfg, FILE *fp, int indent);
+int fwup_cfg_to_string(cfg_t *cfg, char **result);
 
 #endif // CFGPRINT_H

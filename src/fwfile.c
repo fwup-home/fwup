@@ -24,23 +24,14 @@
 #include <archive_entry.h>
 #include <sodium.h>
 
-#ifndef HAS_OPEN_MEMSTREAM
-#include "3rdparty/memstream.h"
-#endif
-
-static void cfg_to_string(cfg_t *cfg, char **output, size_t *len)
-{
-    FILE *fp = open_memstream(output, len);
-    fwup_cfg_print_indent(cfg, fp, 0);
-    fclose(fp);
-}
-
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
 {
     char *configtxt;
     size_t configtxt_len;
 
-    cfg_to_string(cfg, &configtxt, &configtxt_len);
+    configtxt_len = fwup_cfg_to_string(cfg, &configtxt);
+    if (configtxt_len == 0)
+        ERR_RETURN("Could not create meta.conf contents");
 
     int rc = fwfile_add_meta_conf_str(configtxt, configtxt_len, a, signing_key);
 

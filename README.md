@@ -532,7 +532,3 @@ developments under license policy of following terms.
   personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
 * Redistributions of source code must retain the above copyright notice.
 ```
-
-On systems without the function open_memstream(), code from
-http://piumarta.com/software/memstream/ is included. It is distributed under
-the MIT license

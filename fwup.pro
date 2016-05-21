@@ -38,7 +38,7 @@ SOURCES += \
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
     LIBS += -L/usr/local/lib -L/usr/local/opt/libarchive/lib
-    SOURCES += 3rdparty/memstream.c
+    SOURCES +=
 
     LIBS += -framework CoreFoundation -framework DiskArbitration
 }

@@ -33,7 +33,6 @@ require-fwup-version="0.0"
 file-resource "$TESTFILE" {
   length=1024
   blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
-  # sha256=""
 }
 task "complete" {
   reqlist = {}
@@ -50,7 +49,6 @@ task "complete" {
     funlist = {}
   }
   on-resource "$TESTFILE" {
-    # verify-on-the-fly=""
     funlist = {"2", "raw_write", "0"}
   }
 }

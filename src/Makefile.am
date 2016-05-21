@@ -46,14 +46,7 @@ fwup_SOURCES=\
 	../3rdparty/fatfs/src/ffconf.h \
 	../3rdparty/fatfs/src/option/unicode.c
 
-if !HAS_OPEN_MEMSTREAM
-fwup_SOURCES+=../3rdparty/memstream.c \
-	../3rdparty/memstream.h
-endif
-
-EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c \
-	../3rdparty/memstream.h \
-	../3rdparty/memstream.c
+EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c
 
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
