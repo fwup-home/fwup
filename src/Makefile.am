@@ -24,6 +24,7 @@ fwup_SOURCES=\
 	util.c \
 	block_writer.h \
 	cfgfile.h \
+	cfgprint.h \
 	fatfs.h \
 	functions.h \
 	fat_cache.h \
@@ -46,8 +47,16 @@ fwup_SOURCES=\
 	../3rdparty/fatfs/src/ffconf.h \
 	../3rdparty/fatfs/src/option/unicode.c
 
-EXTRA_DIST=../3rdparty/fatfs/src/option/ccsbcs.c
-
+EXTRA_DIST= \
+	../3rdparty/fatfs/src/00history.txt \
+	../3rdparty/fatfs/src/00readme.txt \
+	../3rdparty/fatfs/src/diskio.c \
+	../3rdparty/fatfs/src/option/cc932.c \
+	../3rdparty/fatfs/src/option/cc936.c \
+	../3rdparty/fatfs/src/option/cc949.c \
+	../3rdparty/fatfs/src/option/cc950.c \
+	../3rdparty/fatfs/src/option/ccsbcs.c \
+	../3rdparty/fatfs/src/option/syscall.c
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
 
