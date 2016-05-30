@@ -2,14 +2,32 @@
 
 ## v0.7.0-dev
 
-This release is backwards and forwards incompatible with v0.6.1 due to the
-addition of requirement functions.
+This release introduces a change to specifying requirements on upgrade sections.
+Previously, the only supported option was `require-partition1-offset`.
+Requirements can now be specified using function syntax. If you have older versions of
+`fwup` in the field, using this new feature will create .fw files that won't
+apply. The change makes requirement support less of a hack. If you don't change
+to the new syntax, `fwup` will continue to create `.fw` files that are
+compatible with old versions.
 
   * New features
     * Task requirement code now uses functions for checks
     * Add fat_touch to create 0 length files on FAT filesystems
     * Add require-fat-file-exists to check for the existance of a file when
       determining which task to run
+    * libconfuse 3.0's unknown attribute support is now used to make fwup
+      more robust against changes to meta.conf contents
+    * open_memstream (or its 3rd party implementation) is no longer needed. This
+      helps portability.
+    * The meta.conf file is stripped of empty sections, lists, and attributes
+      set to their defaults. If you have an old fwup version in the field, or
+      you're using libconfuse < 3.0, it is now much harder to generate
+      incompatible fwup files assuming you don't use features newer than your
+      deployed fwup versions.
+
+  * Bug fixes
+    * Autodetection will work for SDCards up to 64 GB now
+    * Fixed off-by-month bug when creating files in FAT partitions
 
 ## v0.6.1
 
