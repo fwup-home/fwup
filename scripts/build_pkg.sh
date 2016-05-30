@@ -12,6 +12,7 @@ set -e
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR=$BASE_DIR/build
+DEPS_DIR=$BASE_DIR/deps
 DEPS_INSTALL_DIR=$DEPS_DIR/usr
 
 FWUP_INSTALL_DIR=$BUILD_DIR/fwup-installed/usr
@@ -44,7 +45,24 @@ pushd fwup
 LDFLAGS=-L$DEPS_INSTALL_DIR/lib CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$FWUP_INSTALL_DIR --enable-shared=no
 make clean
 make $MAKE_FLAGS
+
+# Verify that it was statically linked
+if ldd src/fwup | grep confuse; then
+    echo "fwup was dynamically linked to libconfuse. This should not happen.";
+    exit 1
+fi
+if ldd src/fwup | grep archive; then
+    echo "fwup was dynamically linked to libarchive. This should not happen.";
+    exit 1
+fi
+if ldd src/fwup | grep sodium; then
+    echo "fwup was dynamically linked to libsodium This should not happen.";
+    exit 1
+fi
+
+# Run the regression tests
 make check
+
 make install-strip
 make dist
 popd
