@@ -24,18 +24,11 @@ EOF
 cat >$EXPECTED_META_CONF <<EOF
 require-fwup-version="0.0"
 task "complete" {
-  reqlist = {}
   require-partition1-offset=-1
   require-unmounted-destination=false
   verify-on-the-fly=false
   on-init {
     funlist = {"2", "fw_create", "/tmp/mini.fw", "4", "fw_add_local_file", "/tmp/mini.fw", "zerobytes.bin", "/dev/null"}
-  }
-  on-finish {
-    funlist = {}
-  }
-  on-error {
-    funlist = {}
   }
 }
 EOF

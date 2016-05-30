@@ -23,19 +23,9 @@ length=1024
 blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
 }
 task "complete" {
-reqlist = {}
 require-partition1-offset=-1
 require-unmounted-destination=false
 verify-on-the-fly=false
-on-init {
-funlist = {}
-}
-on-finish {
-funlist = {}
-}
-on-error {
-funlist = {}
-}
 on-resource "TEST" {
 funlist = {"2", "raw_write", "0"}
 }

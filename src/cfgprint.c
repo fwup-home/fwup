@@ -19,15 +19,25 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 // This implementation is essentially a copy/pasted version of the default cfg_print
 // from libconfuse with the following changes:
 //
 //   1. Output is to a string rather than a file handle. This removes the
 //      need for using open_memstream(). That turned out to not be portable.
-//   2. Remove unset attributes are not added to the string
-//   3. Remove extra spaces and indentation
-//   4. Remove custom printers (we didn't used them anyway)
+//   2. Remove unset attributes and empty lists
+//   3. Remove empty sections
+//   4. Remove extra spaces and indentation
+//   5. Remove custom printers (we didn't used them anyway)
+//
+// Since fwup_cfg_to_string() is used to generate the meta.conf file in the generated
+// firmware images, it is important that it be work for the version of fwup applying
+// the update. As attributes are added to fwup, it is possible to generate firmware
+// images that will not apply with older versions of fwup. If the user doesn't use the
+// new attribute, it is not desirable to output a meta.conf that won't work in the old
+// version. Items #2 and #3 above are done to protect against this. I.e., if something
+// isn't used, it isn't outputted.
 
 #define is_set(f, x) (((f) & (x)) == (f))
 
@@ -52,8 +62,8 @@ static void simple_string_init(struct simple_string *s)
 
 static void simple_string_enlarge(struct simple_string *s)
 {
-    size_t len = s->end - s->str;
-    size_t offset = s->p - s->str;
+    ptrdiff_t len = s->end - s->str;
+    ptrdiff_t offset = s->p - s->str;
     len *= 2;
     char *new_str = realloc(s->str, len);
     if (new_str) {
@@ -137,28 +147,35 @@ static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
         return;
 
     if (opt->type == CFGT_SEC) {
-        cfg_t *sec;
-        unsigned int i;
+        for (unsigned int i = 0; i < cfg_opt_size(opt); i++) {
+            ptrdiff_t section_start_offset = s->p - s->str;
 
-        for (i = 0; i < cfg_opt_size(opt); i++) {
-            sec = cfg_opt_getnsec(opt, i);
+            cfg_t *sec = cfg_opt_getnsec(opt, i);
             if (is_set(CFGF_TITLE, opt->flags))
                 ssprintf(s, "%s \"%s\" {\n", opt->name, cfg_title(sec));
             else
                 ssprintf(s, "%s {\n", opt->name);
+
+            ptrdiff_t before_offset = s->p - s->str;
             fwup_cfg_print(sec, s);
-            ssprintf(s, "}\n");
+
+            if (s->p - s->str == before_offset) {
+                // Section was empty, so rewind output string.
+                s->p = s->str + section_start_offset;
+            } else {
+                // Non-empty section, so close out.
+                ssprintf(s, "}\n");
+            }
         }
     } else if (opt->type != CFGT_FUNC && opt->type != CFGT_NONE) {
-        if (is_set(CFGF_LIST, opt->flags)) {
+        if (is_set(CFGF_LIST, opt->flags) &&
+                opt->nvalues) {
             ssprintf(s, "%s = {", opt->name);
 
-            if (opt->nvalues) {
-                fwup_cfg_opt_nprint_var(opt, 0, s);
-                for (unsigned int i = 1; i < opt->nvalues; i++) {
-                    ssprintf(s, ", ");
-                    fwup_cfg_opt_nprint_var(opt, i, s);
-                }
+            fwup_cfg_opt_nprint_var(opt, 0, s);
+            for (unsigned int i = 1; i < opt->nvalues; i++) {
+                ssprintf(s, ", ");
+                fwup_cfg_opt_nprint_var(opt, i, s);
             }
 
             ssprintf(s, "}\n");
