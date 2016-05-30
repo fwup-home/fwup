@@ -392,7 +392,7 @@ int fatfs_set_time(struct tm *tmp)
 {
     // See the fatfs documentation for the format or believe me.
     fattime_ = ((tmp->tm_year - 80) << 25) |
-            (tmp->tm_mon << 21) |
+            ((tmp->tm_mon + 1) << 21) |
             (tmp->tm_mday << 16) |
             (tmp->tm_hour << 11) |
             (tmp->tm_min << 5) |

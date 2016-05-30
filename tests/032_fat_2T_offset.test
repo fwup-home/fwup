@@ -57,11 +57,11 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
  Volume in drive : is TESTLABL
- Volume Serial Number is 4685-9148
+ Volume Serial Number is 46A5-9148
 Directory for ::/
 
-1        bin      1024 2015-04-05  18:10
-3        bin      1024 2015-04-05  18:10
+1        bin      1024 2015-05-05  18:10
+3        bin      1024 2015-05-05  18:10
         2 files               2 048 bytes
                          38 908 416 bytes free
 

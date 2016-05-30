@@ -117,4 +117,11 @@ DISTFILES += \
     tests/039_upgrade.test \
     tests/040_create_mini_fw.test \
     CHANGELOG.md \
-    src/fwup.h2m
+    src/fwup.h2m \
+    tests/041_version.test \
+    tests/042_fat_am335x.test \
+    tests/043_fat_touch.test \
+    tests/044_require_file_exist.test \
+    tests/045_legacy_require_partition1.test \
+    tests/046_unknown_create_fails.test \
+    tests/047_unknown_apply_succeeds.test

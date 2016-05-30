@@ -40,10 +40,10 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
  Volume in drive : has no label
- Volume Serial Number is 4685-9148
+ Volume Serial Number is 46A5-9148
 Directory for ::/
 
-testfile txt         0 2015-04-05  18:10
+testfile txt         0 2015-05-05  18:10
         1 file                    0 bytes
                          38 910 464 bytes free
 
