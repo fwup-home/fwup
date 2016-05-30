@@ -20,16 +20,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // This implementation is essentially a copy/pasted version of the default cfg_print
 // from libconfuse with the following changes:
 //
 //   1. Output is to a string rather than a file handle. This removes the
 //      need for using open_memstream(). That turned out to not be portable.
-//   2. Remove unset attributes and empty lists
+//   2. Remove unset attributes, empty lists, and attribute set to their default values
 //   3. Remove empty sections
-//   4. Remove extra spaces and indentation
-//   5. Remove custom printers (we didn't used them anyway)
+//   5. Remove extra spaces and indentation
+//   6. Remove custom printers (we didn't used them anyway)
 //
 // Since fwup_cfg_to_string() is used to generate the meta.conf file in the generated
 // firmware images, it is important that it be work for the version of fwup applying
@@ -111,6 +112,7 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
 
     case CFGT_FLOAT:
         ssprintf(s, "%f", cfg_opt_getnfloat(opt, index));
+        break;
 
     case CFGT_STR:
     {
@@ -138,6 +140,31 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
     case CFGT_FUNC:
     case CFGT_PTR:
         break;
+    }
+}
+
+static bool cfg_is_default(cfg_opt_t *opt)
+{
+    switch (opt->type) {
+    case CFGT_INT:
+        return opt->def.number == opt->values[0]->number;
+
+    case CFGT_FLOAT:
+        return opt->def.fpnumber == opt->values[0]->fpnumber;
+
+    case CFGT_STR:
+        return opt->values[0]->string == NULL ||
+                (opt->def.string != NULL && strcmp(opt->def.string, opt->values[0]->string) == 0);
+
+    case CFGT_BOOL:
+        return opt->def.boolean == opt->values[0]->boolean;
+
+    case CFGT_NONE:
+    case CFGT_SEC:
+    case CFGT_FUNC:
+    case CFGT_PTR:
+    default:
+        return false;
     }
 }
 
@@ -189,6 +216,11 @@ static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
                                                                          opt->values[0]->string[0] == 0)))
                     return;
             }
+
+            // Don't print out defaults.
+            if (cfg_is_default(opt))
+                return;
+
             ssprintf(s, "%s=", opt->name);
             fwup_cfg_opt_nprint_var(opt, 0, s);
             ssprintf(s, "\n");

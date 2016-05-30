@@ -2,8 +2,7 @@
 
 1. Investigate how to get libconfuse to ignore unknown parameters. This is a big issue
    for being able to create firmware updates that are runnable with old versions of fwup.
-   UPDATE: my patch to libconfuse just got accepted. It should be in the 2.9
-   release.
+   UPDATE: This is supported now with libconfuse >= 3.0.
 2. Implement on_error handling
 3. Validate that all resources in a task are run. If not - error.
 4. Signed updates. UPDATE: A beta attempt at signing is available. I haven't

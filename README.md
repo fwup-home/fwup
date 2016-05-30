@@ -270,8 +270,8 @@ At the global scope, the following options are available:
 
 Key                  | Description
 ---------------------|------------
-require-fwup-version | Require a minimum version of fwup to apply this update
-meta-product         | product name
+require-fwup-version | Require a minimum version of fwup to apply this update (currently informational only)
+meta-product         | Product name
 meta-description     | Description of product or firmware update
 meta-version         | Firmware update version
 meta-author          | Author or company behind the update

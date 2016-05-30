@@ -22,7 +22,6 @@ meta-version="some version"
 meta-author="someone"
 meta-platform="a platform"
 meta-architecture="an architecture"
-require-fwup-version="0.0"
 EOF
 
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
