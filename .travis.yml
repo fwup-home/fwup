@@ -11,6 +11,15 @@ compiler:
     - gcc
     - clang
 
+env:
+    global:
+        # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+        #   via the "travis encrypt" command using the project repo's public key
+        - secure: "Q6OAiurgQl7/iZy7JfaPbUCWFe30ES35uO5eGg/0ty/fKMGAov3Bp+8oQqpmxmi6+E316cDMW3WIY9h8j79kaF4IbQNU6YcHft7Am7iFhw1Ocql1aknqqbdA/Hx9R95JUX2ZSBCTnw03GKv9JNEUuY2cV5RaJr1x+N5SfdAc3Jo="
+    matrix:
+        - BUILD_STATIC=true
+        - BUILD_STATIC=false
+
 matrix:
     exclude:
         - os: osx
@@ -18,32 +27,11 @@ matrix:
         - os: linux
           compiler: clang
 
-env:
-      global:
-             # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-             #   via the "travis encrypt" command using the project repo's public key
-             - secure: "Q6OAiurgQl7/iZy7JfaPbUCWFe30ES35uO5eGg/0ty/fKMGAov3Bp+8oQqpmxmi6+E316cDMW3WIY9h8j79kaF4IbQNU6YcHft7Am7iFhw1Ocql1aknqqbdA/Hx9R95JUX2ZSBCTnw03GKv9JNEUuY2cV5RaJr1x+N5SfdAc3Jo="
-
-# Install dependencies
-# libconfuse is out of date on Travis (and almost everywhere), so
-# build it from source.
-# libsodium isn't on Travis, so build that one too.
 before_install:
-    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-        sudo apt-get update -qq;
-        sudo apt-get install -qq libarchive-dev autopoint mtools unzip;
-        wget http://download.libsodium.org/libsodium/releases/libsodium-1.0.3.tar.gz;
-        tar xf libsodium-1.0.3.tar.gz;
-        cd libsodium-1.0.3 && ./configure --prefix=/usr && make && sudo make install && cd ..;
-      else
-        brew update;
-        brew install libarchive libsodium coreutils mtools gnu-sed;
-        brew install --universal gettext;
-        brew link --force gettext;
-      fi
+    - scripts/ci_install_deps.sh
 
-    - git clone --depth=50 https://github.com/martinh/libconfuse.git
-    - cd libconfuse && ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && cd ..
+script:
+    - scripts/ci_build.sh
 
 addons:
       coverity_scan:
@@ -55,14 +43,3 @@ addons:
              build_command: "make"
              branch_pattern: coverity_scan
 
-script:
-    - ./autogen.sh
-    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-        ./configure;
-      else
-        CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure;
-      fi
-
-    - make
-    - make check
-    - make dist
