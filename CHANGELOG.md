@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.7.0-dev
+## v0.7.0
 
 This release introduces a change to specifying requirements on upgrade sections.
 Previously, the only supported option was `require-partition1-offset`.
