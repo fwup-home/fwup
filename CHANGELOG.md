@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.7.1-dev
+
 ## v0.7.0
 
 This release introduces a change to specifying requirements on upgrade sections.
