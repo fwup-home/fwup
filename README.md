@@ -68,8 +68,8 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup_0.6.1_amd64.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup-0.6.1-1.x86_64.rpm)
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.7.0/fwup_0.7.0_amd64.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.7.0/fwup-0.7.0-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
 If you're using another platform or prefer to build it yourself, read on.
@@ -140,7 +140,7 @@ On CentOS 7:
 ### Downloading the source code
 
 Unless you're modifying `fwup`, it is recommended that you download the latest
-[source code release](https://github.com/fhunleth/fwup/releases/download/v0.6.1/fwup-0.6.1.tar.gz).
+[source code release](https://github.com/fhunleth/fwup/releases/download/v0.7.0/fwup-0.7.0.tar.gz).
 Older releases can be found on the [releases tab](https://github.com/fhunleth/fwup/releases).
 
 If cloning the source code, you should also run `autogen.sh`:
