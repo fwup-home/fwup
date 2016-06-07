@@ -232,6 +232,8 @@ static cfg_opt_t file_resource_opts[] = {
     CFG_INT("length", 0, CFGF_NONE),
     CFG_STR("blake2b-256", 0, CFGF_NONE),
     CFG_STR("sha256", 0, CFGF_NONE), // Old hash for files - use blake2b-256 now
+    CFG_INT("assert-size-lte", -1, CFGF_NONE),
+    CFG_INT("assert-size-gte", -1, CFGF_NONE),
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };

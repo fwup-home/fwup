@@ -74,7 +74,11 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
         if (!hostpath)
             ERR_RETURN("specify a host-path");
 
-        OK_OR_RETURN(fwfile_add_local_file(a, cfg_title(sec), hostpath));
+        struct fwfile_assertions assertions;
+        assertions.assert_lte = cfg_getint(sec, "assert-size-lte") * 512;
+        assertions.assert_gte = cfg_getint(sec, "assert-size-gte") * 512;
+
+        OK_OR_RETURN(fwfile_add_local_file(a, cfg_title(sec), hostpath, &assertions));
     }
 
     return 0;

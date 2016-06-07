@@ -124,4 +124,8 @@ DISTFILES += \
     tests/044_require_file_exist.test \
     tests/045_legacy_require_partition1.test \
     tests/046_unknown_create_fails.test \
-    tests/047_unknown_apply_succeeds.test
+    tests/047_unknown_apply_succeeds.test \
+    tests/048_assert_size_less_than_success.test \
+    tests/049_assert_size_less_than_fail.test \
+    tests/050_assert_size_greater_than_success.test \
+    tests/051_assert_size_greater_than_fail.test

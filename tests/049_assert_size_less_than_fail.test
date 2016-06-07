@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# Test assert-size-lte
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+        assert-size-lte = 1
+}
+EOF
+
+# Success if this fails
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected assert-size-lte to fail?"
+    exit 1
+fi

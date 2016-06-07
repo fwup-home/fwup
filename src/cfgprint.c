@@ -29,8 +29,9 @@
 //      need for using open_memstream(). That turned out to not be portable.
 //   2. Remove unset attributes, empty lists, and attribute set to their default values
 //   3. Remove empty sections
-//   5. Remove extra spaces and indentation
-//   6. Remove custom printers (we didn't used them anyway)
+//   4. Remove extra spaces and indentation
+//   5. Remove custom printers (we didn't used them anyway)
+//   6. Remove "assert-" attributes since they're only applied during creation
 //
 // Since fwup_cfg_to_string() is used to generate the meta.conf file in the generated
 // firmware images, it is important that it be work for the version of fwup applying
@@ -219,6 +220,10 @@ static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
 
             // Don't print out defaults.
             if (cfg_is_default(opt))
+                return;
+
+            // Don't print assertions
+            if (strncmp("assert-", opt->name, 7) == 0)
                 return;
 
             ssprintf(s, "%s=", opt->name);

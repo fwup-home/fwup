@@ -44,6 +44,10 @@ TESTS = 001_simple_fw.test \
 	044_require_file_exist.test \
 	045_legacy_require_partition1.test \
 	046_unknown_create_fails.test \
-	047_unknown_apply_succeeds.test
+	047_unknown_apply_succeeds.test \
+	048_assert_size_less_than_success.test \
+	049_assert_size_less_than_fail.test \
+	050_assert_size_greater_than_success.test \
+	051_assert_size_greater_than_fail.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

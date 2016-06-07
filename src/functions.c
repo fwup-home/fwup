@@ -647,7 +647,7 @@ int fw_add_local_file_run(struct fun_context *fctx)
     if (created)
         ERR_RETURN("call fw_create before calling fw_add_local_file");
 
-    if (fwfile_add_local_file(a, fctx->argv[2], fctx->argv[3]) < 0)
+    if (fwfile_add_local_file(a, fctx->argv[2], fctx->argv[3], NULL) < 0)
         return -1;
 
     fctx->report_progress(fctx, 1);

@@ -293,7 +293,7 @@ task                 | Defines a firmware update task (referenced using -t from 
 
 A `file-resource` specifies a file on the host that should be included in the archive. Each
 `file-resource` should be given a unique name so that it can be referred to by other parts of
-the update configuration. The `fwup` will automatically record the length and BLAKE2b-256 hash of the
+the update configuration. `fwup` will automatically record the length and BLAKE2b-256 hash of the
 file in the archive. These fields are used internally to compute progress and verify the contents
 of the archive. A typical `file-resource` section looks like this:
 
@@ -312,6 +312,33 @@ resource as follows:
 ```
 file-resource "/my_custom_metadata" {
         host-path = "path/to/my_custom_metadata_file"
+}
+```
+
+### File resource validation checks
+
+When creating archives, `fwup` can perform validation checking on file resources to catch
+simple errors. These checks can catch common errors like file resources growing too large
+to fit on the destination or files truncated due to cancelled builds.
+
+Note that these checks are not performed when applying updates, since the actual
+length (and a hash) is recorded in the archive metadata and used for verification.
+
+The following checks are supported:
+
+Check           | Description
+----------------|------------
+assert-size-lte | If the file size is not less than or equal the specified amount, report an error.
+assert-size-gte | If the file size is not greater than or equal the specified amount, report an error.
+
+Sizes are given in 512 byte blocks (like everything else in `fwup`).
+
+Here's an example:
+
+```
+file-resource rootfs.img {
+        host-path = "output/images/rootfs.squashfs"
+        assert-size-lte = ${ROOTFS_A_PART_COUNT}
 }
 ```
 

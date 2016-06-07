@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#
+# Test assert-size-gte
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+        assert-size-gte = 2
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "TEST" {
+length=1024
+blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+EOF
+
+# Success if this doesn't fail
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the metadata doesn't include the assertion
+# The assertion won't be checked after creation, and it may break
+# old versions of fwup.
+check_meta_conf
+

@@ -74,7 +74,10 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
     return 0;
 }
 
-int fwfile_add_local_file(struct archive *a, const char *resource_name, const char *local_path)
+int fwfile_add_local_file(struct archive *a,
+                          const char *resource_name,
+                          const char *local_path,
+                          const struct fwfile_assertions *assertions)
 {
     int rc = 0;
 
@@ -89,6 +92,17 @@ int fwfile_add_local_file(struct archive *a, const char *resource_name, const ch
     fseeko(fp, 0, SEEK_END);
     off_t total_len = ftello(fp);
     fseeko(fp, 0, SEEK_SET);
+
+    if (assertions) {
+        if (assertions->assert_gte >= 0 &&
+                !(total_len >= assertions->assert_gte))
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be >= %d bytes (%d blocks)",
+                            local_path, assertions->assert_gte, assertions->assert_gte / 512);
+        if (assertions->assert_lte >= 0 &&
+                !(total_len <= assertions->assert_lte))
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be <= %d bytes (%d blocks)",
+                            local_path, assertions->assert_lte, assertions->assert_lte / 512);
+    }
 
     entry = archive_entry_new();
 

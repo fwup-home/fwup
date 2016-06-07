@@ -22,9 +22,17 @@
 
 #define FWFILE_MAX_ARCHIVE_PATH     512
 
+struct fwfile_assertions {
+    off_t assert_lte; // bytes
+    off_t assert_gte; // bytes
+};
+
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key);
 int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
                              struct archive *a, const unsigned char *signing_key);
-int fwfile_add_local_file(struct archive *a, const char *resource_name, const char *local_path);
+int fwfile_add_local_file(struct archive *a,
+                          const char *resource_name,
+                          const char *local_path,
+                          const struct fwfile_assertions *assertions);
 
 #endif // FWFILE_H
