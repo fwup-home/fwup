@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <archive.h>
 #include <archive_entry.h>
 #include <sodium.h>
@@ -32,25 +33,34 @@ static int compute_file_metadata(cfg_t *cfg)
     int i = 0;
 
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
-        const char *path = cfg_getstr(sec, "host-path");
-        if (!path)
+        const char *paths = cfg_getstr(sec, "host-path");
+        if (!paths)
             ERR_RETURN("host-path must be set for file-resource");
-
-        FILE *fp = fopen(path, "rb");
-        if (!fp)
-            ERR_RETURN("can't open file-resource '%s'", path);
 
         crypto_generichash_state hash_state;
         crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
-        char buffer[1024];
-        size_t len = fread(buffer, 1, sizeof(buffer), fp);
+
         size_t total = 0;
-        while (len > 0) {
-            crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
-            total += len;
-            len = fread(buffer, 1, sizeof(buffer), fp);
+        char *paths_copy = strdup(paths);
+        for (char *path = strtok(paths_copy, ";");
+             path != NULL;
+             path = strtok(NULL, ";")) {
+            FILE *fp = fopen(path, "rb");
+            if (!fp) {
+                free(paths_copy);
+                ERR_RETURN("can't open file-resource '%s'", path);
+            }
+
+            char buffer[1024];
+            size_t len = fread(buffer, 1, sizeof(buffer), fp);
+            while (len > 0) {
+                crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
+                total += len;
+                len = fread(buffer, 1, sizeof(buffer), fp);
+            }
+            fclose(fp);
         }
-        fclose(fp);
+        free(paths_copy);
 
         unsigned char hash[crypto_generichash_BYTES];
         crypto_generichash_final(&hash_state, hash, sizeof(hash));

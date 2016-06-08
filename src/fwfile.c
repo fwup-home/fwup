@@ -74,37 +74,63 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
     return 0;
 }
 
+static int calculate_total_filesize(const char *local_paths, off_t *len)
+{
+    int rc = 0;
+    char *paths = strdup(local_paths);
+
+    *len = 0;
+    for (char *path = strtok(paths, ";");
+         path != NULL;
+         path = strtok(NULL, ";")) {
+        FILE *fp = fopen(path, "rb");
+        if (!fp)
+            ERR_CLEANUP_MSG("can't open '%s'", path);
+
+        fseeko(fp, 0, SEEK_END);
+        off_t file_len = ftello(fp);
+        fseeko(fp, 0, SEEK_SET);
+        fclose(fp);
+
+        *len += file_len;
+    }
+
+cleanup:
+    free(paths);
+    return rc;
+}
+
 int fwfile_add_local_file(struct archive *a,
                           const char *resource_name,
-                          const char *local_path,
+                          const char *local_paths,
                           const struct fwfile_assertions *assertions)
 {
     int rc = 0;
 
     off_t copy_buffer_len = 64 * 1024;
     char *copy_buffer = (char *) malloc(copy_buffer_len);
-    struct archive_entry *entry = 0;
+    struct archive_entry *entry = archive_entry_new();
+    off_t total_read = 0;
+    char *paths = strdup(local_paths);
+    FILE *fp = NULL;
 
-    FILE *fp = fopen(local_path, "rb");
-    if (!fp)
-        ERR_CLEANUP_MSG("can't open local file");
+    if (*paths == '\0')
+        ERR_CLEANUP_MSG("must specify a host-path for resource '%s'", resource_name);
 
-    fseeko(fp, 0, SEEK_END);
-    off_t total_len = ftello(fp);
-    fseeko(fp, 0, SEEK_SET);
+    off_t total_len;
+    if (calculate_total_filesize(local_paths, &total_len) < 0)
+        goto cleanup; // Error set by calculate_total_filesize()
 
     if (assertions) {
         if (assertions->assert_gte >= 0 &&
                 !(total_len >= assertions->assert_gte))
             ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be >= %d bytes (%d blocks)",
-                            local_path, assertions->assert_gte, assertions->assert_gte / 512);
+                            local_paths, assertions->assert_gte, assertions->assert_gte / 512);
         if (assertions->assert_lte >= 0 &&
                 !(total_len <= assertions->assert_lte))
             ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be <= %d bytes (%d blocks)",
-                            local_path, assertions->assert_lte, assertions->assert_lte / 512);
+                            local_paths, assertions->assert_lte, assertions->assert_lte / 512);
     }
-
-    entry = archive_entry_new();
 
     // Convert the resource name to an archive path (most resources should be in the data directory)
     char archive_path[FWFILE_MAX_ARCHIVE_PATH];
@@ -140,18 +166,27 @@ int fwfile_add_local_file(struct archive *a,
     archive_entry_set_perm(entry, 0644);
     archive_write_header(a, entry);
 
-    size_t len = fread(copy_buffer, 1, (size_t)copy_buffer_len, fp);
-    off_t total_read = (off_t)len;
-    while (len > 0) {
-        off_t written = archive_write_data(a, copy_buffer, len);
-        if (written != (off_t) len)
-            ERR_CLEANUP_MSG("error writing to archive");
+    for (char *path = strtok(paths, ";");
+         path != NULL;
+         path = strtok(NULL, ";")) {
+        fp = fopen(path, "rb");
+        if (!fp)
+            ERR_CLEANUP_MSG("can't open '%s'", path);
 
-        len = fread(copy_buffer, 1, copy_buffer_len, fp);
-        total_read += len;
+        size_t len = fread(copy_buffer, 1, (size_t) copy_buffer_len, fp);
+        off_t file_read = (off_t) len;
+        while (len > 0) {
+            off_t written = archive_write_data(a, copy_buffer, len);
+            if (written != (off_t) len)
+                ERR_CLEANUP_MSG("error writing to archive");
+
+            len = fread(copy_buffer, 1, copy_buffer_len, fp);
+            file_read += len;
+        }
+        total_read += file_read;
     }
     if (total_read != total_len)
-        ERR_CLEANUP_MSG("read an unexpected amount of data");
+        ERR_CLEANUP_MSG("read error for '%s'", paths);
 
 cleanup:
     archive_entry_free(entry);
@@ -159,6 +194,7 @@ cleanup:
         fclose(fp);
 
     free(copy_buffer);
+    free(paths);
 
     return rc;
 }

@@ -315,6 +315,23 @@ file-resource "/my_custom_metadata" {
 }
 ```
 
+### Resource concatenation
+
+Sometimes you need to concatenate multiple files together to form one `file-resource`. While
+you can sometimes do this using multiple calls to `raw_write`, that won't work if you don't
+know the file offsets a priori or the offsets don't fall on block boundaries. Another
+alternative is to concatenate files as a prep step to fwup. If that's inconvenient, `fwup`
+allows multiple paths to be specified in `host-path` that are separated by semicolons.
+They will be concatenated in the order they appear.
+
+```
+file-resource kernel_and_rootfs {
+        # Concatenate uImage and the rootfs. OpenWRT mtd splitter will
+        # separate them back out at runtime.
+        host-path = "output/images/uImage;output/images/rootfs.squashfs"
+}
+```
+
 ### File resource validation checks
 
 When creating archives, `fwup` can perform validation checking on file resources to catch

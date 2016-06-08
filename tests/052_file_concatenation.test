@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#
+# Test file concatenation
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K};${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "TEST" {
+length=2048
+blake2b-256="7049efc404edfbd339c1814c3306ba84cb59fb89580219998402f3e3719ed788"
+}
+task "complete" {
+on-resource "TEST" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+cat $TESTFILE_1K $TESTFILE_1K > $TESTFILE_1K.x2
+diff $TESTFILE_1K.x2 $UNZIPDIR/data/TEST
+
+# Check that applying the firmware does the expected thing
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+diff $IMGFILE $TESTFILE_1K.x2
+

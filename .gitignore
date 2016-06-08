@@ -37,3 +37,4 @@ src/fwup.1
 /pkg_build
 /build
 /deps
+tests/1K.bin.x2
