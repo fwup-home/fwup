@@ -63,7 +63,6 @@ check_meta_conf() {
 
     # Trim the results of known lines that vary between runs
     cat $UNZIPDIR/meta.conf | \
-        grep -v "^#" | \
         grep -v "^meta-creation-date" | \
         grep -v "^meta-fwup-version" | \
         grep -v "host-path" \
