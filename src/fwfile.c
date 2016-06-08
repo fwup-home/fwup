@@ -124,23 +124,23 @@ int fwfile_add_local_file(struct archive *a,
     if (assertions) {
         if (assertions->assert_gte >= 0 &&
                 !(total_len >= assertions->assert_gte))
-            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be >= %d bytes (%d blocks)",
-                            local_paths, assertions->assert_gte, assertions->assert_gte / 512);
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be >= %d bytes (%d blocks)",
+                            local_paths, total_len, assertions->assert_gte, assertions->assert_gte / 512);
         if (assertions->assert_lte >= 0 &&
                 !(total_len <= assertions->assert_lte))
-            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size must be <= %d bytes (%d blocks)",
-                            local_paths, assertions->assert_lte, assertions->assert_lte / 512);
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be <= %d bytes (%d blocks)",
+                            local_paths, total_len, assertions->assert_lte, assertions->assert_lte / 512);
     }
 
     // Convert the resource name to an archive path (most resources should be in the data directory)
     char archive_path[FWFILE_MAX_ARCHIVE_PATH];
     size_t resource_name_len = strlen(resource_name);
     if (resource_name_len + 6 > sizeof(archive_path))
-        ERR_CLEANUP_MSG("resource name is too long");
+        ERR_CLEANUP_MSG("resource name '%s' is too long", resource_name);
     if (resource_name_len == '\0')
         ERR_CLEANUP_MSG("resource name can't be empty");
     if (resource_name[resource_name_len - 1] == '/')
-        ERR_CLEANUP_MSG("resource name can't end in a '/'");
+        ERR_CLEANUP_MSG("resource name '%s' can't end in a '/'", resource_name);
 
     if (resource_name[0] == '/') {
         if (resource_name[1] == '\0')
