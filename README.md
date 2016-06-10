@@ -193,23 +193,32 @@ If the unit tests don't pass, please submit a bug report.
 # Invoking
 
 ```
-Usage: fwup [options]
-  -a   Apply the firmware update
-  -c   Create the firmware update
-  -d <Device file for the memory card>
+Usage: fwup [OPTION]...
+
+Options:
+  -a, --apply   Apply the firmware update
+  -c, --create  Create the firmware update
+  -d <file> Device file for the memory card
+  -D, --detect List attached SDCards or MMC devices
+  -E, --eject Eject removeable media after successfully writing firmware.
+  --no-eject Do not eject media after writing firmware
   -f <fwupdate.conf> Specify the firmware update configuration file
-  -g Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
+  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
-  -l   List the available tasks in a firmware update
-  -m   Print metadata in the firmware update
+  -l, --list   List the available tasks in a firmware update
+  -m, --metadata   Print metadata in the firmware update
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
-  -q   Quiet
+  -p <keyfile> A public key file for verifying firmware updates
+  -q, --quiet   Quiet
   -s <keyfile> A private key file for signing firmware updates
-  -S Sign an existing firmware file (specify -i and -o)
-  -t <task> Task to apply within the firmware update
-  -v   Verbose
-  -V Verify an existing firmware file (specify -i)
+  -S, --sign Sign an existing firmware file (specify -i and -o)
+  -t, --task <task> Task to apply within the firmware update
+  -u, --unmount Unmount all partitions on device first
+  -U, --no-unmount Do not try to unmount partitions on device
+  -v, --verbose   Verbose
+  -V, --verify  Verify an existing firmware file (specify -i)
+  --version Print out the version
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit
 
@@ -219,16 +228,25 @@ Create a firmware update archive:
 
   $ fwup -c -f fwupdate.conf -o myfirmware.fw
 
+Apply the firmware to an attached SDCard. This would normally be run on the host
+where it would auto-detect an SDCard and initalize it using the 'complete' task:
+
+  $ fwup -a -i myfirmware.fw -t complete
+
 Apply the firmware update to /dev/sdc and specify the 'upgrade' task:
 
   $ fwup -a -d /dev/sdc -i myfirmware.fw -t upgrade
 
-Generate a public/private key pair and sign a firmware archive:
+Create an image file from a .fw file for use with dd(1):
+
+  $ fwup -a -d myimage.img -i myfirmware.fw -t complete
+
+Generate a public/private key pair:
 
   $ fwup -g
-  (Store fwup-key.priv is a safe place. Store fwup-key.pub on the target)
+Store fwup-key.priv in a safe place and fwup-key.pub on the target. To sign
+an existing archive run:
   $ fwup -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw
-
 ```
 
 # Configuration file format
