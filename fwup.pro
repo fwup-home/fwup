@@ -134,4 +134,8 @@ DISTFILES += \
     tests/048_assert_size_less_than_success.test \
     tests/049_assert_size_less_than_fail.test \
     tests/050_assert_size_greater_than_success.test \
-    tests/051_assert_size_greater_than_fail.test
+    tests/051_assert_size_greater_than_fail.test \
+    scripts/build_pkg.sh \
+    scripts/ci_build.sh \
+    scripts/ci_install_deps.sh \
+    scripts/download_deps.sh
