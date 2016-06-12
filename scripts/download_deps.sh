@@ -10,6 +10,7 @@ DEPS_DIR=$BASE_DIR/deps
 DOWNLOAD_DIR=$DEPS_DIR/dl
 DEPS_INSTALL_DIR=$DEPS_DIR/usr
 
+ZLIB_VERSION=1.2.8
 LIBARCHIVE_VERSION=3.2.0
 LIBSODIUM_VERSION=1.0.10
 CONFUSE_VERSION=3.0
@@ -24,12 +25,24 @@ pushd $DEPS_DIR
 
 if [[ ! -e $DOWNLOAD_DIR/.downloaded ]]; then
     pushd $DOWNLOAD_DIR
+    wget http://zlib.net/zlib-$ZLIB_VERSION.tar.xz
     wget https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
     wget http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
     wget https://download.libsodium.org/libsodium/releases/libsodium-$LIBSODIUM_VERSION.tar.gz
     touch $DOWNLOAD_DIR/.downloaded
     popd
 fi
+
+if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
+    rm -fr $DEPS_DIR/zlib-*
+    tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.xz
+    pushd zlib-$ZLIB_VERSION
+    ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --static
+    make $MAKE_FLAGS
+    make install
+    popd
+fi
+
 
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libconfuse.a ]]; then
     rm -fr $DEPS_DIR/confuse-*
