@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #define MMC_DEVICE_PATH_LEN 32
 

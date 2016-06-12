@@ -17,6 +17,7 @@
 #ifndef CFGFILE_H
 #define CFGFILE_H
 
+#include <sys/types.h>
 #include <confuse.h>
 
 struct archive;
