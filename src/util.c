@@ -15,6 +15,7 @@
  */
 #define _GNU_SOURCE // for vasprintf
 #include "util.h"
+#include "simple_string.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -26,6 +27,7 @@
 #include <sys/stat.h>
 
 char *strptime(const char *s, const char *format, struct tm *tm);
+extern bool fwup_framing;
 
 static char *last_error_message = NULL;
 static char time_string[200] = {0};
@@ -236,4 +238,101 @@ void format_pretty_size(off_t amount, char *out)
         sprintf(out, "%d KiB", (int) (amount / ONE_KiB));
     else
         sprintf(out, "%d bytes", (int) amount);
+}
+
+void fwup_err(int status, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+
+    int err = errno;
+    struct simple_string s;
+    simple_string_init(&s);
+    if (fwup_framing) {
+        ssvprintf(&s, format, ap);
+    } else {
+        ssappend(&s, "fwup: ");
+        ssvprintf(&s, format, ap);
+        ssprintf(&s, ": %s\n", strerror(err));
+    }
+    fwup_output(FRAMING_TYPE_ERROR, 0, s.str);
+    free(s.str);
+    exit(status);
+
+    va_end(ap);
+}
+
+void fwup_errx(int status, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+
+    struct simple_string s;
+    simple_string_init(&s);
+    if (fwup_framing) {
+        ssvprintf(&s, format, ap);
+    } else {
+        ssappend(&s, "fwup: ");
+        ssvprintf(&s, format, ap);
+        ssappend(&s, "\n");
+    }
+    fwup_output(FRAMING_TYPE_ERROR, 0, s.str);
+    free(s.str);
+    exit(status);
+
+    va_end(ap);
+}
+
+void fwup_warn(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+
+    int err = errno;
+    struct simple_string s;
+    simple_string_init(&s);
+    if (fwup_framing) {
+        ssvprintf(&s, format, ap);
+    } else {
+        ssappend(&s, "fwup: ");
+        ssvprintf(&s, format, ap);
+        ssprintf(&s, ": %s\n", strerror(err));
+    }
+    fwup_output(FRAMING_TYPE_WARNING, 0, s.str);
+    free(s.str);
+
+    va_end(ap);
+}
+
+void fwup_warnx(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+
+    struct simple_string s;
+    simple_string_init(&s);
+    if (fwup_framing) {
+        ssvprintf(&s, format, ap);
+    } else {
+        ssappend(&s, "fwup: ");
+        ssvprintf(&s, format, ap);
+        ssappend(&s, "\n");
+    }
+    fwup_output(FRAMING_TYPE_WARNING, 0, s.str);
+    free(s.str);
+
+    va_end(ap);
+}
+
+void fwup_output(const char *type, uint16_t code, const char *str)
+{
+    size_t len = strlen(str);
+    if (fwup_framing) {
+        uint32_t be_length = htobe32(len + 4);
+        uint16_t be_code = htobe16(code);
+        fwrite(&be_length, 4, 1, stdout);
+        fwrite(type, 2, 1, stdout);
+        fwrite(&be_code, 2, 1, stdout);
+    }
+    fwrite(str, 1, len, stdout);
 }

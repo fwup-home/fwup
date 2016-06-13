@@ -35,7 +35,8 @@ enum fun_context_type {
 enum fwup_apply_progress {
     FWUP_APPLY_NO_PROGRESS,
     FWUP_APPLY_NUMERIC_PROGRESS,
-    FWUP_APPLY_NORMAL_PROGRESS
+    FWUP_APPLY_NORMAL_PROGRESS,
+    FWUP_APPLY_FRAMING_PROGRESS
 };
 
 #define FUN_MAX_ARGS  (10)

@@ -21,6 +21,7 @@
 
 #include "cfgfile.h"
 #include "util.h"
+#include "simple_string.h"
 
 static int strsort(const void *a, const void *b)
 {
@@ -41,8 +42,12 @@ static int list_tasks(cfg_t *cfg)
     }
     qsort(tasks, opt->nvalues, sizeof(const char *), strsort);
 
+    struct simple_string s;
+    simple_string_init(&s);
     for (i = 0; i < opt->nvalues; i++)
-        printf("%s\n", tasks[i]);
+        ssprintf(&s, "%s\n", tasks[i]);
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
+    free(s.str);
 
     return 0;
 }

@@ -36,10 +36,13 @@
 #include "fwup_genkeys.h"
 #include "fwup_sign.h"
 #include "fwup_verify.h"
+#include "simple_string.h"
 #include "config.h"
 
 // Global options
 bool fwup_verbose = false;
+bool fwup_framing = false;
+
 static bool numeric_progress = false;
 static bool quiet = false;
 
@@ -68,6 +71,7 @@ static void print_usage()
     printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
     printf("  --no-eject Do not eject media after writing firmware\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
+    printf("  -F, --framing Apply framing on stdin/stdout\n");
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
     printf("  -l, --list   List the available tasks in a firmware update\n");
@@ -127,6 +131,7 @@ static struct option long_options[] = {
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
     {"no-eject", no_argument,       0, '#'},
+    {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
@@ -155,7 +160,7 @@ static unsigned char *load_public_key(const char *path)
     FILE *fp = fopen(path, "rb");
     unsigned char *public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
     if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
-        err(EXIT_FAILURE, "Error reading public key from file '%s'", path);
+        fwup_err(EXIT_FAILURE, "Error reading public key from file '%s'", path);
     fclose(fp);
     return public_key;
 }
@@ -165,7 +170,7 @@ static unsigned char *load_signing_key(const char *path)
     FILE *fp = fopen(path, "rb");
     unsigned char *signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
     if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
-        err(EXIT_FAILURE, "Error reading signing key from file '%s'", path);
+        fwup_err(EXIT_FAILURE, "Error reading signing key from file '%s'", path);
     fclose(fp);
     return signing_key;
 }
@@ -180,9 +185,9 @@ static void autoselect_mmc_device(struct mmc_device *device)
 #ifdef __linux__
         // Linux requires root permissions to scan devices
         if (getuid() != 0)
-            errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
+            fwup_errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
 #endif
-        errx(EXIT_FAILURE, "No memory cards found. Try reinserting the card.");
+        fwup_errx(EXIT_FAILURE, "No memory cards found. Try reinserting the card.");
     } else {
         fprintf(stderr, "Too many possible memory cards found: \n");
         for (int i = 0; i < found_devices; i++) {
@@ -201,14 +206,14 @@ static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const c
     autoselect_mmc_device(&device);
     if (!accept_found_device) {
         if (strcmp(input_firmware, "-") == 0)
-            errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", device.path);
+            fwup_errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", device.path);
 
         char sizestr[16];
         format_pretty_size(device.size, sizestr);
         fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, device.path);
         int response = fgetc(stdin);
         if (response != 'y' && response != 'Y')
-            errx(EXIT_FAILURE, "aborted");
+            fwup_errx(EXIT_FAILURE, "aborted");
     }
     return strdup(device.path);
 }
@@ -217,15 +222,25 @@ static void print_selected_device()
 {
     struct mmc_device device;
     autoselect_mmc_device(&device);
-    printf("%s\n", device.path);
+
+    struct simple_string s;
+    simple_string_init(&s);
+    ssprintf(&s, "%s\n", device.path);
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
+    free(s.str);
 }
 
 static void print_detected_devices()
 {
     struct mmc_device devices[16];
     int found_devices = mmc_scan_for_devices(devices, NUM_ELEMENTS(devices));
+
+    struct simple_string s;
+    simple_string_init(&s);
     for (int i = 0; i < found_devices; i++)
-        printf("%s,%lld\n", devices[i].path, (long long int) devices[i].size);
+        ssprintf(&s, "%s,%lld\n", devices[i].path, (long long int) devices[i].size);
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
+    free(s.str);
 }
 
 int main(int argc, char **argv)
@@ -260,7 +275,7 @@ int main(int argc, char **argv)
     atexit(mmc_finalize);
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:DEf:gi:lmno:p:qSs:t:VvUuyz", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:Fgi:lmno:p:qSs:t:VvUuyz", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -280,6 +295,9 @@ int main(int argc, char **argv)
             break;
         case 'f':
             configfile = optarg;
+            break;
+        case 'F': // --framing
+            fwup_framing = true;
             break;
         case 'g': // --gen-keys
             command = CMD_GENERATE_KEYS;
@@ -347,10 +365,10 @@ int main(int argc, char **argv)
     }
 
     if (quiet && numeric_progress)
-        errx(EXIT_FAILURE, "pick either -n or -q, but not both");
+        fwup_errx(EXIT_FAILURE, "pick either -n or -q, but not both");
 
     if (optind < argc)
-        errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
+        fwup_errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
 
     // Normalize the firmware filenames in the case that the user wants
     // to use stdin/stdout
@@ -361,18 +379,26 @@ int main(int argc, char **argv)
 
     switch (command) {
     case CMD_NONE:
-        errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, -S, -V, or -z");
+        fwup_errx(EXIT_FAILURE, "specify one of -a, -c, -l, -m, -S, -V, or -z");
         break;
 
     case CMD_APPLY:
     {
         if (!task)
-            errx(EXIT_FAILURE, "specify a task (-t)");
+            fwup_errx(EXIT_FAILURE, "specify a task (-t)");
 
         if (!mmc_device_path)
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
 
-        enum fwup_apply_progress progress_option = quiet ? FWUP_APPLY_NO_PROGRESS : numeric_progress ? FWUP_APPLY_NUMERIC_PROGRESS : FWUP_APPLY_NORMAL_PROGRESS;
+        enum fwup_apply_progress progress_option;
+        if (quiet)
+            progress_option = FWUP_APPLY_NO_PROGRESS;
+        else if (fwup_framing)
+            progress_option = FWUP_APPLY_FRAMING_PROGRESS;
+        else if (numeric_progress)
+            progress_option = FWUP_APPLY_NUMERIC_PROGRESS;
+        else
+            progress_option = FWUP_APPLY_NORMAL_PROGRESS;
         fwup_apply_zero_progress(progress_option);
 
         // Check if the mmc_device_path is really a special device. If
@@ -403,10 +429,10 @@ int main(int argc, char **argv)
         if (output_fd < 0) {
             fprintf(stderr, "\n");
             if (file_exists(mmc_device_path)) {
-                errx(EXIT_FAILURE, "Cannot open '%s' for output.\nCheck file permissions or the read-only tab if this is an SD Card.",
+                fwup_errx(EXIT_FAILURE, "Cannot open '%s' for output.\nCheck file permissions or the read-only tab if this is an SD Card.",
                      mmc_device_path);
             } else {
-                errx(EXIT_FAILURE, "Cannot create '%s'.\nCheck the path and permissions on the containing directory.",
+                fwup_errx(EXIT_FAILURE, "Cannot create '%s'.\nCheck the path and permissions on the containing directory.",
                      mmc_device_path);
             }
         }
@@ -421,7 +447,7 @@ int main(int argc, char **argv)
                        public_key) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
         }
 
         if (!is_regular_file && eject_on_success) {
@@ -434,37 +460,37 @@ int main(int argc, char **argv)
 
     case CMD_CREATE:
         if (fwup_create(configfile, output_firmware, signing_key) < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_LIST:
         if (fwup_list(input_firmware, public_key) < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_METADATA:
         if (fwup_metadata(input_firmware, public_key) < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_GENERATE_KEYS:
         if (fwup_genkeys() < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_SIGN:
         if (fwup_sign(input_firmware, output_firmware, signing_key) < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_VERIFY:
         if (fwup_verify(input_firmware, public_key) < 0)
-            errx(EXIT_FAILURE, "%s", last_error());
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
     }

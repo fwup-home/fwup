@@ -264,6 +264,10 @@ static void fwup_apply_report_progress(struct fun_context *fctx, int progress_un
         fflush(stdout);
         break;
 
+    case FWUP_APPLY_FRAMING_PROGRESS:
+        fwup_output(FRAMING_TYPE_PROGRESS, percent, "");
+        break;
+
     case FWUP_APPLY_NO_PROGRESS:
     default:
         break;
@@ -279,6 +283,10 @@ static void fwup_apply_report_final_progress(struct fun_context *fctx)
 
     case FWUP_APPLY_NORMAL_PROGRESS:
         printf("\r100%%\n");
+        break;
+
+    case FWUP_APPLY_FRAMING_PROGRESS:
+        fwup_output(FRAMING_TYPE_PROGRESS, 100, "");
         break;
 
     case FWUP_APPLY_NO_PROGRESS:

@@ -63,19 +63,31 @@ extern bool fwup_verbose;
 // non-trivial to suppress compiler warnings.
 #define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; unsigned long long int _ = strtoull(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
 
-#ifdef HAVE_ERR_H
-#include <err.h>
+#ifdef __GNUC__
+#define FWUP_ERR_ATTRS __attribute__ ((__noreturn__, __format__ (__printf__, 2, 3)))
+#define FWUP_WARN_ATTRS __attribute__ ((__format__ (__printf__, 1, 2)))
 #else
-// If err.h doesn't exist, define substitutes.
-#define err(STATUS, MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); exit(STATUS); } while (0)
-#define errx(STATUS, MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); exit(STATUS); } while (0)
-#define warn(MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); } while (0)
-#define warnx(MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); } while (0)
+#define FWUP_ERR_ATTRS
 #endif
+
+// These are similar to functions provided by err.h, but they output in the framed
+// format when the user specifies --framing.
+void fwup_err(int status, const char *format, ...) FWUP_ERR_ATTRS;
+void fwup_errx(int status, const char *format, ...) FWUP_ERR_ATTRS;
+void fwup_warn(const char *format, ...) FWUP_WARN_ATTRS;
+void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
 
 #ifndef HAVE_STRPTIME
 // Provide a prototype for strptime if using the version in the 3rdparty directory.
 char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
+
+#define FRAMING_TYPE_SUCCESS  "OK"
+#define FRAMING_TYPE_ERROR    "ER"
+#define FRAMING_TYPE_WARNING  "WA"
+#define FRAMING_TYPE_PROGRESS "PR"
+
+// Send output to the terminal based on the framing options
+void fwup_output(const char *type, uint16_t code, const char *str);
 
 #endif // UTIL_H

@@ -203,6 +203,7 @@ Options:
   -E, --eject Eject removeable media after successfully writing firmware.
   --no-eject Do not eject media after writing firmware
   -f <fwupdate.conf> Specify the firmware update configuration file
+  -F, --framing Apply framing on stdin/stdout
   -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
   -l, --list   List the available tasks in a firmware update
@@ -512,7 +513,7 @@ To verify that an archive has been signed, pass `-p fwup-key.pub` on the command
 to any of the commands that read the archive. E.g., `-a`, `-l` or `-m`.
 
 It is important to understand how verification works so that the security of the
-archive isn't compromised. Firmware updates are apply in one pass to avoid needing
+archive isn't compromised. Firmware updates are applied in one pass to avoid needing
 a lot of memory or disk space. The consequence of this is that verification is
 done on the fly. The main metadata for the archive is always verified before any
 operations occur. Cryptographic hashs (using the [BLAKE2b-256](https://blake2.net/) algorithm) of each
@@ -524,13 +525,65 @@ over at the last possible minute. This is desirable to do anyway, since this str
 also provides some protection against the user disconnecting power midway through
 the firmware update.
 
+# Integration with applications
+
+It is expected that many users will want to integrate `fwup` with their applications.
+Many operations can be accomplished by just invoking the `fwup` executable and parsing
+the text written to `stdout`. When applying firmware progress updates are delivered
+based on commandline options:
+
+  1. Human readable - This is the default. Progress is updated from the text `0%` to `100%`.
+  2. Numeric (`-n`) - Progess is printed as `0\n` to `100\n`
+  3. Quiet (`-q`) - No progress is printed
+
+While the above works well for scripts and when errors can be seen by the operator, `fwup`
+supports a structured use of `stdin`/`stdout` as well. Specify the `--framing` option to
+any of the commands to use this option.
+
+The framing feature is influenced by the Erlang VM's port API and should be relatively
+easy to integrate with non-Erlang VM languages. The framing works around deficiencies
+in the built-in interprocess communication. For example, by enabling framing, a program
+can stream a firmware update through `fwup's` `stdin` without needing to close its
+`stdout` to signal end of file. Another feature aided by framing is knowing what text
+goes together and whether the text is part of an error message or not. Exit status is
+still an indicator of success or failure, but the controlling application doesn't
+need to wait for the program to exit to know what happened.
+
+In `--framing` mode, all communication with `fwup`
+is done in packets (rather than byte streams). A packet starts with a 4 byte length field.
+The length is a big endian (network byte order) unsigned integer. A zero-length packet
+(i.e., 4 bytes of zeros) signals end of input.
+
+Field          | Size         | Description
+---------------|--------------|-------------
+Length         | 4 bytes      | Packet length as a big endian integer
+Data           | Length bytes | Payload
+
+Input and output packets have different formats. For sending input to `fwup` (like when
+streaming a `.fw` file using stdio), the input bytes should be framed into packets
+however is most convenient. For example, if bytes are received in 4K chunks, then they
+can be sent to `fwup` in 4K packets with a zero-length packet at the end. The packets
+need not be the same size.
+
+All output packets from `fwup` have a 2 byte type field at the
+beginning of the packet:
+
+Field          | Size           | Description
+---------------|----------------|-------------
+Length         | 4 bytes        | Packet length as a big endian integer
+Type           | 2 bytes        | See below
+Data           | Length-2 bytes | Payload
+
+The following types are defined:
+
+Type           | 2 byte value | Description
+---------------|--------------|------------
+Success        | "OK"         | The command was executed successfully. The payload contains the result.
+Error          | "ER"         | A failure occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
+Warning        | "WN"         | A warning occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
+Progress       | "PR"         | The next two bytes are the progress (0-100) as a big endian integer.
+
 # FAQ
-
-## Where can I find example configurations?
-
-The [Nerves](https://github.com/nerves-project/nerves-sdk) has examples for
-the Beaglebone Black, Raspberry Pi, and a couple x86 platforms. See the
-`board` subdirectory in the source tree.
 
 ## How do I include a file in the archive that isn't used by fwup?
 

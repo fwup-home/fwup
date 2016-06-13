@@ -165,21 +165,21 @@ static int authopen_fd(char * const pathname)
 {
     int sockets[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0)
-        err(EXIT_FAILURE, "Can't create socketpair");
+        fwup_err(EXIT_FAILURE, "Can't create socketpair");
 
     pid_t pid = fork();
     if (pid == 0) {
         // child
         int devnull = open("/dev/null", O_RDWR);
         if (devnull < 0)
-            err(EXIT_FAILURE, "/dev/null");
+            fwup_err(EXIT_FAILURE, "/dev/null");
 
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
         if (dup2(devnull, STDIN_FILENO) < 0)
-            err(EXIT_FAILURE, "dup2 devnull");
+            fwup_err(EXIT_FAILURE, "dup2 devnull");
         if (dup2(sockets[1], STDOUT_FILENO) < 0)
-            err(EXIT_FAILURE, "dup2 pipe");
+            fwup_err(EXIT_FAILURE, "dup2 pipe");
         close(devnull);
 
         char permissions[16];
@@ -193,7 +193,7 @@ static int authopen_fd(char * const pathname)
         execvp(exec_argv[0], exec_argv);
 
         // Not supposed to reach here.
-        err(EXIT_FAILURE, "execvp failed");
+        fwup_err(EXIT_FAILURE, "execvp failed");
     } else {
         // parent
         close(sockets[1]); // No writes to the pipe
@@ -271,7 +271,7 @@ static void disk_op_done_cb(DADiskRef disk, DADissenterRef dissenter, void *c)
     struct disk_op_context *context = (struct disk_op_context *) c;
     if (dissenter) {
         CFStringRef what = DADissenterGetStatusString(dissenter);
-        warnx("%s failed: 0x%x (%d) %s)",
+        fwup_warnx("%s failed: 0x%x (%d) %s)",
                 context->operation,
                 DADissenterGetStatus(dissenter),
                 DADissenterGetStatus(dissenter),
@@ -295,7 +295,7 @@ int mmc_umount_all(const char *mmc_device)
 
         // Wait for a while since unmounting sometimes takes time.
         if (run_loop_for_time(10) < 0)
-            warnx("unmount timed out");
+            fwup_warnx("unmount timed out");
 
         if (context.succeeded)
             rc = 0;
@@ -314,7 +314,7 @@ int mmc_eject(const char *mmc_device)
         DADiskEject(disk, kDADiskEjectOptionDefault, disk_op_done_cb,  &context);
 
         if (run_loop_for_time(10) < 0)
-            warnx("unmount timed out");
+            fwup_warnx("unmount timed out");
 
         if (context.succeeded)
             rc = 0;

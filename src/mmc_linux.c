@@ -213,7 +213,7 @@ int mmc_umount_all(const char *mmc_device)
 {
     FILE *fp = fopen("/proc/mounts", "r");
     if (!fp)
-        err(EXIT_FAILURE, "/proc/mounts");
+        fwup_err(EXIT_FAILURE, "/proc/mounts");
 
     char *todo[64] = {0};
     int todo_ix = 0;
@@ -232,7 +232,7 @@ int mmc_umount_all(const char *mmc_device)
             // and /dev/sdc1 is mounted.
 
             if (todo_ix == NUM_ELEMENTS(todo))
-                errx(EXIT_FAILURE, "Device mounted too many times");
+                fwup_errx(EXIT_FAILURE, "Device mounted too many times");
 
             // strings from /proc/mounts are escaped, so unescape them
             todo[todo_ix++] = unescape_string(mountpoint);
@@ -249,20 +249,20 @@ int mmc_umount_all(const char *mmc_device)
             sprintf(cmdline, "/bin/umount %s", todo[i]);
             int rc = system(cmdline);
             if (rc != 0) {
-                warnx("%s", cmdline);
+                fwup_warnx("%s", cmdline);
                 ultimate_rc = -1;
             }
         } else {
             // No /etc/mtab, so call the kernel directly.
 #if HAS_UMOUNT
             if (umount(todo[i]) < 0) {
-                warnx("umount %s", todo[i]);
+                fwup_warnx("umount %s", todo[i]);
                 ultimate_rc = -1;
             }
 #else
             // If no umount on this platform, warn, but don't
             // return failure.
-            warnx("umount %s: not supported", todo[i]);
+            fwup_warnx("umount %s: not supported", todo[i]);
 #endif
         }
     }

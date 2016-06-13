@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#
+# Test out numeric progress on a firmware write
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 2.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 3.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 4.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource 1.bin { raw_write(0) }
+	on-resource 2.bin { raw_write(0) }
+	on-resource 3.bin { raw_write(0) }
+	on-resource 4.bin { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a --framing -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.bin
+
+# Create the expected by running xxd on the expected binary image
+# The -r below reverses the output.
+xxd -r - $WORK/expected_output.bin <<EOF
+00000000: 0000 0004 5052 0000 0000 0004 5052 0019  ....PR......PR..
+00000010: 0000 0004 5052 0032 0000 0004 5052 004b  ....PR.2....PR.K
+00000020: 0000 0004 5052 0063 0000 0004 5052 0064  ....PR.c....PR.d
+EOF
+diff $WORK/expected_output.bin $WORK/actual_output.bin
+
