@@ -30,7 +30,6 @@ tests/15M.bin
 /config.sub
 /libtool
 /ltmain.sh
-/m4
 src/fwup.1
 *.rpm
 *.deb
