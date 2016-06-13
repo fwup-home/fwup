@@ -2,6 +2,17 @@
 
 ## v0.7.1-dev
 
+  * New features
+    * Added assertions for verifying that inputs don't excede their expected
+      sizes. The assertions are only checked at .fw creation time.
+    * Add support for concatenating files together to create one resource. This
+      was always possible before using a preprocessing script, but is more
+      convenient now.
+
+  * Bug fixes
+    * fwup compiles against uclibc now
+    * autoreconf can be run without creating the m4 directory beforehand
+
 ## v0.7.0
 
 This release introduces a change to specifying requirements on upgrade sections.
