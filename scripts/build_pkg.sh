@@ -55,6 +55,10 @@ make clean
 make $MAKE_FLAGS
 
 # Verify that it was statically linked
+if ldd src/fwup | grep libz; then
+    echo "fwup was dynamically linked to zlib. This should not happen.";
+    exit 1
+fi
 if ldd src/fwup | grep confuse; then
     echo "fwup was dynamically linked to libconfuse. This should not happen.";
     exit 1
