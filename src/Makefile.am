@@ -21,6 +21,7 @@ fwup_SOURCES=\
 	mbr.c \
 	mmc_linux.c \
 	mmc_osx.c \
+	mmc_windows.c \
 	requirement.c \
 	simple_string.c \
 	util.c \
@@ -75,7 +76,7 @@ CLEANFILES = $(man_MANS)
 EXTRA_DIST += fwup.h2m
 
 fwup.1: fwup fwup.h2m
-	$(HELP2MAN) --output=$@ --no-info --include fwup.h2m \
+	$(HELP2MAN) --no-discard-stderr --output=$@ --no-info --include fwup.h2m \
 	    -n "configurable embedded Linux firmware update creator and runner" \
 	    ./fwup
 else
