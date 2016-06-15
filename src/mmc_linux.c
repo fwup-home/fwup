@@ -30,7 +30,45 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
-static off_t mmc_device_size(const char *devpath)
+static int readsysfs(const char *path, char *buffer, int maxlen)
+{
+    int fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return 0;
+
+    int count = read(fd, buffer, maxlen - 1);
+
+    close(fd);
+    if (count <= 0)
+        return 0;
+
+    // Trim trailing \n
+    count--;
+    buffer[count] = 0;
+    return count;
+}
+
+/**
+ * @brief Return the device size by using the sysfs
+ * @param sysfspath
+ * @return
+ */
+static off_t mmc_device_size_sysfs(const char *sysfspath)
+{
+    char sizestr[16];
+    int rc = readsysfs(sysfspath, sizestr, sizeof(sizestr));
+    if (rc <= 0)
+        return 0;
+
+    return strtoll(sizestr, NULL, 0) * 512;
+}
+
+/**
+ * @brief Return the device size by seeking to the end (requires root permissions)
+ * @param devpath device path
+ * @return >0 if it worked, 0 if it didn't
+ */
+static off_t mmc_device_size_raw(const char *devpath)
 {
     int fd = open(devpath, O_RDONLY);
     if (fd < 0)
@@ -72,10 +110,15 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     // NOTE: Don't scan /dev/sda, since I don't think this is ever right
     // for any use case.
     for (char c = 'b'; c != 'z'; c++) {
-        char devpath[64];
+        char devpath[16];
         sprintf(devpath, "/dev/sd%c", c);
 
-        off_t device_size = mmc_device_size(devpath);
+        off_t device_size = mmc_device_size_raw(devpath);
+        if (device_size == 0) {
+            char sysfspath[32];
+            sprintf(sysfspath, "/sys/block/sd%c/size", c);
+            device_size = mmc_device_size_sysfs(sysfspath);
+        }
         if (is_mmc_device(device_size) && device_count < max_devices) {
             strcpy(devices[device_count].path, devpath);
             devices[device_count].size = device_size;
@@ -85,10 +128,15 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 
     // Scan the mmcblk devices
     for (int i = 0; i < 16; i++) {
-        char devpath[64];
-        sprintf(devpath, "/dev/mmcblk%d", (int) i);
+        char devpath[16];
+        sprintf(devpath, "/dev/mmcblk%d", i);
 
-        off_t device_size = mmc_device_size(devpath);
+        off_t device_size = mmc_device_size_raw(devpath);
+        if (device_size == 0) {
+            char sysfspath[32];
+            sprintf(sysfspath, "/sys/block/mmcblk%d/size", i);
+            device_size = mmc_device_size_sysfs(sysfspath);
+        }
         if (is_mmc_device(device_size) && device_count < max_devices) {
             strcpy(devices[device_count].path, devpath);
             devices[device_count].size = device_size;
