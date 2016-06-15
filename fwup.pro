@@ -14,6 +14,7 @@ TEMPLATE = app
 SOURCES += \
     3rdparty/fatfs/src/ff.c \
     3rdparty/fatfs/src/option/unicode.c \
+    3rdparty/strptime.c \
     src/fwup.c \
     src/fatfs.c \
     src/mbr.c \
@@ -34,9 +35,9 @@ SOURCES += \
     src/mmc_linux.c \
     src/requirement.c \
     src/cfgprint.c \
-    3rdparty/strptime.c \
     src/simple_string.c \
     src/archive_open.c
+    src/mmc_windows.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
