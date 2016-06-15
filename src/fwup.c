@@ -65,7 +65,7 @@ static void print_usage()
     printf("  -a, --apply   Apply the firmware update\n");
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
-    printf("  -D, --detect List attached SDCards or MMC devices\n");
+    printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");
     printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
     printf("  --no-eject Do not eject media after writing firmware\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
@@ -226,7 +226,7 @@ static void print_detected_devices()
     struct mmc_device devices[16];
     int found_devices = mmc_scan_for_devices(devices, NUM_ELEMENTS(devices));
     for (int i = 0; i < found_devices; i++)
-        printf("%s\n", devices[i].path);
+        printf("%s,%lld\n", devices[i].path, (long long int) devices[i].size);
 }
 
 int main(int argc, char **argv)
