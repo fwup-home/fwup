@@ -21,6 +21,7 @@ fwup_SOURCES=\
 	mmc_linux.c \
 	mmc_osx.c \
 	requirement.c \
+	simple_string.c \
 	util.c \
 	block_writer.h \
 	cfgfile.h \
@@ -39,6 +40,7 @@ fwup_SOURCES=\
 	mbr.h \
 	mmc.h \
 	requirement.h \
+	simple_string.h \
 	util.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \

@@ -15,10 +15,10 @@
  */
 
 #include "cfgprint.h"
+#include "simple_string.h"
 #include "errno.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -44,65 +44,6 @@
 // isn't used, it isn't outputted.
 
 #define is_set(f, x) (((f) & (x)) == (f))
-
-// Sigh.
-struct simple_string {
-    char *str;
-    char *p;
-    char *end;
-};
-
-static void simple_string_init(struct simple_string *s)
-{
-    static const size_t starting_size = 4096;
-    s->str = malloc(starting_size);
-    if (s->str) {
-        s->p = s->str;
-        s->end = s->str + starting_size;
-    } else {
-        s->p = s->end = NULL;
-    }
-}
-
-static void simple_string_enlarge(struct simple_string *s)
-{
-    ptrdiff_t len = s->end - s->str;
-    ptrdiff_t offset = s->p - s->str;
-    len *= 2;
-    char *new_str = realloc(s->str, len);
-    if (new_str) {
-        s->str = new_str;
-        s->p = new_str + offset;
-        s->end = new_str + len;
-    } else {
-        free(s->str);
-        s->str = s->p = s->end = NULL;
-    }
-}
-
-static void ssprintf(struct simple_string *s, const char *format, ...)
-{
-    va_list ap;
-    while (s->str) {
-        va_start(ap, format);
-        int max_len = s->end - s->p;
-        int n = vsnprintf(s->p, max_len, format, ap);
-        va_end(ap);
-
-        // vsnprintf failed
-        if (n < 0)
-            return;
-
-        // Success
-        if (n < max_len) {
-            s->p += n;
-            return;
-        }
-
-        // Retry with a larger buffer
-        simple_string_enlarge(s);
-    }
-}
 
 static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s);
 
