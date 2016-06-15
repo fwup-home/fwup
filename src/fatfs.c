@@ -16,8 +16,8 @@
 
 #include "fatfs.h"
 
-#include "3rdparty/fatfs/src/diskio.h"		/* FatFs lower layer API */
-#include "3rdparty/fatfs/src/ff.h"
+#include "../3rdparty/fatfs/src/diskio.h"  /* FatFs lower layer API */
+#include "../3rdparty/fatfs/src/ff.h"
 #include "util.h"
 #include "fat_cache.h"
 
