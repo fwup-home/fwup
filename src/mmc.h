@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#define MMC_DEVICE_PATH_LEN 32
+#define MMC_DEVICE_PATH_LEN 64
 
 struct mmc_device {
     char path[MMC_DEVICE_PATH_LEN];
