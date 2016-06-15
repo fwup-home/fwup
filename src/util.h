@@ -62,4 +62,9 @@ extern bool fwup_verbose;
 // non-trivial to suppress compiler warnings.
 #define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; unsigned long long int _ = strtoull(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
 
+#ifndef HAVE_STRPTIME
+// Provide a prototype for strptime if using the version in the 3rdparty directory.
+char* strptime(const char *buf, const char *fmt, struct tm *tm);
+#endif
+
 #endif // UTIL_H

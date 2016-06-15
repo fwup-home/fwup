@@ -31,7 +31,8 @@ AC_PROG_CC_C99
 
 # Checks for library functions
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset setenv strdup strtoul umount])
+AC_CHECK_FUNCS([memset setenv strdup strtoul umount fcntl strptime])
+AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
 AC_CHECK_LIB([confuse], [cfg_searchpath], [], [ AC_MSG_ERROR([Could not find libconfuse v2.8 (you may have v2.7)]) ])
 AC_CHECK_LIB([archive], [archive_read_new], [], [ AC_MSG_ERROR([Could not find libarchive]) ])
