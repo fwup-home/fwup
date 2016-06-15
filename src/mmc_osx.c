@@ -21,7 +21,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
 
-#include <err.h>
 #include <sys/socket.h>
 #include <sys/param.h>
 

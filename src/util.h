@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include "config.h"
 
 struct tm;
 
@@ -61,6 +62,16 @@ extern bool fwup_verbose;
 // This checks that the argument can be converted to a uint. It is
 // non-trivial to suppress compiler warnings.
 #define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; unsigned long long int _ = strtoull(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
+
+#ifdef HAVE_ERR_H
+#include <err.h>
+#else
+// If err.h doesn't exist, define substitutes.
+#define err(STATUS, MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); exit(STATUS); } while (0)
+#define errx(STATUS, MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); exit(STATUS); } while (0)
+#define warn(MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); } while (0)
+#define warnx(MSG, ...) do { fprintf(stderr, "fwup: " MSG "\n", ## __VA_ARGS__); } while (0)
+#endif
 
 #ifndef HAVE_STRPTIME
 // Provide a prototype for strptime if using the version in the 3rdparty directory.
