@@ -17,6 +17,8 @@
 #ifndef SIMPLE_STRING_H
 #define SIMPLE_STRING_H
 
+#include <stdarg.h>
+
 /**
  * This is a VERY simple C string implementation to aid in what little
  * string manipulation we do in fwup.
@@ -29,5 +31,7 @@ struct simple_string {
 
 void simple_string_init(struct simple_string *s);
 void ssprintf(struct simple_string *s, const char *format, ...);
+void ssvprintf(struct simple_string *s, const char *format, va_list ap);
+void ssappend(struct simple_string *s, const char *str);
 
 #endif // SIMPLE_STRING_H

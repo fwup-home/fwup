@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 void simple_string_init(struct simple_string *s)
 {
@@ -52,11 +53,18 @@ static void simple_string_enlarge(struct simple_string *s)
 void ssprintf(struct simple_string *s, const char *format, ...)
 {
     va_list ap;
+    va_start(ap, format);
+
+    ssvprintf(s, format, ap);
+
+    va_end(ap);
+}
+
+void ssvprintf(struct simple_string *s, const char *format, va_list ap)
+{
     while (s->str) {
-        va_start(ap, format);
         int max_len = s->end - s->p;
         int n = vsnprintf(s->p, max_len, format, ap);
-        va_end(ap);
 
         // vsnprintf failed
         if (n < 0)
@@ -70,5 +78,17 @@ void ssprintf(struct simple_string *s, const char *format, ...)
 
         // Retry with a larger buffer
         simple_string_enlarge(s);
+    }
+}
+
+void ssappend(struct simple_string *s, const char *str)
+{
+    size_t len = strlen(str) + 1;
+    while (s->str && s->end - s->p < len)
+        simple_string_enlarge(s);
+
+    if (s->str) {
+        memcpy(s->p, str, len);
+        s->p += len - 1;
     }
 }
