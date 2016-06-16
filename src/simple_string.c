@@ -32,6 +32,9 @@ void simple_string_init(struct simple_string *s)
     } else {
         s->p = s->end = NULL;
     }
+
+    // NULL terminate
+    s->str[0] = '\0';
 }
 
 static void simple_string_enlarge(struct simple_string *s)
@@ -83,8 +86,8 @@ void ssvprintf(struct simple_string *s, const char *format, va_list ap)
 
 void ssappend(struct simple_string *s, const char *str)
 {
-    size_t len = strlen(str) + 1;
-    while (s->str && s->end - s->p < len)
+    int len = strlen(str) + 1;
+    while (s->str && (s->end - s->p) < len)
         simple_string_enlarge(s);
 
     if (s->str) {

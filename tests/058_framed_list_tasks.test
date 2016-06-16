@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#
+# Test that listing tasks works the framed way
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+task complete {
+}
+task task2 {
+}
+task task3 {
+}
+task task4 {
+}
+EOF
+
+cat >$EXPECTED_OUTPUT <<EOF
+complete
+task2
+task3
+task4
+EOF
+
+cat >$EXPECTED_OUTPUT.type << EOF
+OK
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -i $FWFILE --list --framing > $ACTUAL_OUTPUT
+
+# Check the textual component
+cat $ACTUAL_OUTPUT | (dd bs=1 skip=8 2>/dev/null) > $ACTUAL_OUTPUT.trimmed
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT.trimmed
+
+# Check the type
+cat $ACTUAL_OUTPUT | (dd bs=1 count=2 skip=4 2>/dev/null) > $ACTUAL_OUTPUT.type
+diff -w $EXPECTED_OUTPUT.type $ACTUAL_OUTPUT.type

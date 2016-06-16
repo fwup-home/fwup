@@ -28,7 +28,7 @@
 //   1. Output is to a string rather than a file handle. This removes the
 //      need for using open_memstream(). That turned out to not be portable.
 //   2. Remove unset attributes, empty lists, and attribute set to their default values
-//   3. Remove empty sections
+//   3. Remove empty sections except for empty "tasks" (the user may use an empty task as a no-op)
 //   4. Remove extra spaces and indentation
 //   5. Remove custom printers (we didn't used them anyway)
 //   6. Remove "assert-" attributes since they're only used during archive creation
@@ -130,11 +130,12 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
             ptrdiff_t before_offset = s->p - s->str;
             fwup_cfg_print(sec, s);
 
-            if (s->p - s->str == before_offset) {
+            if (s->p - s->str == before_offset &&
+                    strcmp(opt->name, "task") != 0) {
                 // Section was empty, so rewind output string.
                 s->p = s->str + section_start_offset;
             } else {
-                // Non-empty section, so close out.
+                // Non-empty section or a "task", so close out.
                 ssprintf(s, "}\n");
             }
         }

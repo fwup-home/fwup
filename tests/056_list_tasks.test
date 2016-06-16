@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#
+# Test that listing tasks works
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+task complete {
+}
+task task2 {
+}
+task task3 {
+}
+task task4 {
+}
+EOF
+
+cat >$EXPECTED_OUTPUT <<EOF
+complete
+task2
+task3
+task4
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -i $FWFILE --list > $ACTUAL_OUTPUT
+
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
