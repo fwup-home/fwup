@@ -8,6 +8,9 @@
     * Add support for concatenating files together to create one resource. This
       was always possible before using a preprocessing script, but is more
       convenient now.
+    * Detecting attached SDCards no longer requires superuser permissions.
+    * Listing detected SDCards (`--detect` option) prints the SDCard size as
+      well. ***This is a breaking change if you're using this in a script***
 
   * Bug fixes
     * fwup compiles against uclibc now
