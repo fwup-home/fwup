@@ -51,6 +51,7 @@ TESTS = 001_simple_fw.test \
 	051_assert_size_greater_than_fail.test \
 	052_file_concatenation.test \
 	053_framed_progress.test \
-	054_framed_metadata.test
+	054_framed_metadata.test \
+	055_metadata_partial_file.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
