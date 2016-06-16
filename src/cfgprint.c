@@ -112,7 +112,7 @@ static bool cfg_is_default(cfg_opt_t *opt)
     }
 }
 
-static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
+void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
 {
     if (!opt)
         return;
@@ -183,7 +183,7 @@ static void fwup_cfg_opt_print(cfg_opt_t *opt, struct simple_string *s)
 static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s)
 {
     for (int i = 0; cfg->opts[i].name && s->str; i++)
-        fwup_cfg_opt_print(&cfg->opts[i], s);
+        fwup_cfg_opt_to_string(&cfg->opts[i], s);
 }
 
 /**

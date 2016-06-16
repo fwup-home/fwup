@@ -19,23 +19,24 @@
 #include <stdlib.h>
 
 #include "cfgfile.h"
+#include "cfgprint.h"
 #include "util.h"
 
-static void list_one(cfg_t *cfg, const char *key)
+static void list_one(cfg_t *cfg, const char *key, struct simple_string *s)
 {
-    cfg_opt_print(cfg_getopt(cfg, key), stdout);
+    fwup_cfg_opt_to_string(cfg_getopt(cfg, key), s);
 }
 
-static void list_metadata(cfg_t *cfg)
+static void list_metadata(cfg_t *cfg, struct simple_string *s)
 {
-    list_one(cfg, "meta-product");
-    list_one(cfg, "meta-description");
-    list_one(cfg, "meta-version");
-    list_one(cfg, "meta-author");
-    list_one(cfg, "meta-platform");
-    list_one(cfg, "meta-architecture");
-    list_one(cfg, "meta-creation-date");
-    list_one(cfg, "meta-fwup-version");
+    list_one(cfg, "meta-product", s);
+    list_one(cfg, "meta-description", s);
+    list_one(cfg, "meta-version", s);
+    list_one(cfg, "meta-author", s);
+    list_one(cfg, "meta-platform", s);
+    list_one(cfg, "meta-architecture", s);
+    list_one(cfg, "meta-creation-date", s);
+    list_one(cfg, "meta-fwup-version", s);
 }
 
 /**
@@ -50,8 +51,12 @@ int fwup_metadata(const char *fw_filename, const unsigned char *public_key)
     if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_key) < 0)
         return -1;
 
-    list_metadata(cfg);
-
+    struct simple_string s;
+    simple_string_init(&s);
+    list_metadata(cfg, &s);
     cfgfile_free(cfg);
+
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
+    free(s.str);
     return 0;
 }

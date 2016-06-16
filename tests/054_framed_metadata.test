@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#
+# Test that metadata can be retrieved the framed way
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+meta-product = "product name"
+meta-description = "product description"
+meta-version = "some version"
+meta-platform = "a platform"
+meta-architecture = "an architecture"
+meta-author = "someone"
+EOF
+
+cat >$EXPECTED_OUTPUT <<EOF
+meta-product="product name"
+meta-description="product description"
+meta-version="some version"
+meta-author="someone"
+meta-platform="a platform"
+meta-architecture="an architecture"
+EOF
+
+cat >$EXPECTED_OUTPUT.type << EOF
+OK
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -i $FWFILE --metadata --framing > $ACTUAL_OUTPUT
+
+# Check the textual component
+cat $ACTUAL_OUTPUT | (dd bs=1 skip=8 2>/dev/null) | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT.trimmed
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT.trimmed
+
+# Check the type
+cat $ACTUAL_OUTPUT | (dd bs=1 count=2 skip=4 2>/dev/null) > $ACTUAL_OUTPUT.type
+diff -w $EXPECTED_OUTPUT.type $ACTUAL_OUTPUT.type
+
