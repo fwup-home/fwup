@@ -30,12 +30,14 @@ TESTS_DIR=$(dirname $($READLINK -f $0))
 FWUP_DEFAULT=$TESTS_DIR/../src/fwup
 if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
+FRAMING_HELPER=$TESTS_DIR/framing-helper
 
 WORK=$TESTS_DIR/work
 RESULTS=$WORK/results
 
 [ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
 [ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
+[ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
 
 CONFIG=$WORK/fwup.conf
 FWFILE=$WORK/fwup.fw

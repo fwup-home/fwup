@@ -1,3 +1,8 @@
+ACLOCAL_AMFLAGS=-I m4
+
+noinst_PROGRAMS=framing-helper
+framing_helper_SOURCES=framing-helper.c
+
 TESTS = 001_simple_fw.test \
 	002_resource_subdir.test \
 	003_write_offset.test \
