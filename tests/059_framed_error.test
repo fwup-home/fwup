@@ -15,6 +15,9 @@ EOF
 
 $FWUP_APPLY -i $FWFILE --list --framing > $ACTUAL_OUTPUT || true
 
+# Verify and removing framing
+cat $ACTUAL_OUTPUT | $FRAMING_HELPER -d > $ACTUAL_OUTPUT.noframing
+
 # Check the type is "ER"
-cat $ACTUAL_OUTPUT | (dd bs=1 count=2 skip=4 2>/dev/null) > $ACTUAL_OUTPUT.type
+cat $ACTUAL_OUTPUT.noframing | (dd bs=1 count=2 2>/dev/null) > $ACTUAL_OUTPUT.type
 diff -w $EXPECTED_OUTPUT.type $ACTUAL_OUTPUT.type
