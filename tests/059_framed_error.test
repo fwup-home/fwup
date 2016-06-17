@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# Check that errors are framed
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$EXPECTED_OUTPUT.type << EOF
+ER
+EOF
+
+$FWUP_APPLY -i $FWFILE --list --framing > $ACTUAL_OUTPUT || true
+
+# Check the type is "ER"
+cat $ACTUAL_OUTPUT | (dd bs=1 count=2 skip=4 2>/dev/null) > $ACTUAL_OUTPUT.type
+diff -w $EXPECTED_OUTPUT.type $ACTUAL_OUTPUT.type
