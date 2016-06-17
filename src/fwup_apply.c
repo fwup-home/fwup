@@ -35,6 +35,7 @@
 #include "fatfs.h"
 #include "mbr.h"
 #include "fwfile.h"
+#include "archive_open.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -334,7 +335,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     pd.a = archive_read_new();
 
     archive_read_support_format_zip(pd.a);
-    int arc = archive_read_open_filename(pd.a, fw_filename, 16384);
+    int arc = fwup_archive_open_filename(pd.a, fw_filename);
     if (arc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Cannot open archive (%s): %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
 

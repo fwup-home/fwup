@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#
+# Test streaming a firmware update through fwup with framing.
+# This simulates the case where there's no local storage to hold
+# the firmware update while it is being applied.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(1) }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Pipe the framed contents (in super small chunks) on the .fw file to fwup
+cat $FWFILE | $FRAMING_HELPER -n 50 -e \
+    | $FWUP_APPLY -q --framing -a -d $IMGFILE -i - -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
+diff $WORK/check.bin $IMGFILE

@@ -82,6 +82,21 @@ void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
 char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
 
+#ifdef __WIN32__
+// Assume that all windows platforms are little endian
+#define TO_BIGENDIAN16(X) _byteswap_ushort(X)
+#define FROM_BIGENDIAN16(X) _byteswap_ushort(X)
+#define TO_BIGENDIAN32(X) _byteswap_ulong(X)
+#define FROM_BIGENDIAN32(X) _byteswap_ulong(X)
+#else
+// Other platforms have htons and ntohs without pulling in another library
+#include <arpa/inet.h>
+#define TO_BIGENDIAN16(X) htons(X)
+#define FROM_BIGENDIAN16(X) ntohs(X)
+#define TO_BIGENDIAN32(X) htonl(X)
+#define FROM_BIGENDIAN32(X) ntohl(X)
+#endif
+
 #define FRAMING_TYPE_SUCCESS  "OK"
 #define FRAMING_TYPE_ERROR    "ER"
 #define FRAMING_TYPE_WARNING  "WA"

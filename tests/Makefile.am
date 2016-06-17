@@ -61,6 +61,7 @@ TESTS = 001_simple_fw.test \
 	056_list_tasks.test \
 	057_list_tasks_empty.test \
 	058_framed_list_tasks.test \
-	059_framed_error.test
+	059_framed_error.test \
+	060_framed_streaming.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -2,6 +2,7 @@ ACLOCAL_AMFLAGS=-I m4
 
 bin_PROGRAMS=fwup
 fwup_SOURCES=\
+	archive_open.c \
 	block_writer.c \
 	cfgfile.c \
 	cfgprint.c \
@@ -23,6 +24,7 @@ fwup_SOURCES=\
 	requirement.c \
 	simple_string.c \
 	util.c \
+	archive_open.h \
 	block_writer.h \
 	cfgfile.h \
 	cfgprint.h \

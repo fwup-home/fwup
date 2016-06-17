@@ -18,6 +18,7 @@
 #include "fwfile.h"
 #include "util.h"
 #include "cfgfile.h"
+#include "archive_open.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -91,7 +92,7 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
     if (!input_filename)
         ERR_CLEANUP_MSG("Specify an input firmware file");
 
-    rc = archive_read_open_filename(a, input_filename, 16384);
+    rc = fwup_archive_open_filename(a, input_filename);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Cannot open archive '%s'", input_filename);
 

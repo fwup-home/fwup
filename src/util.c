@@ -26,20 +26,6 @@
 
 #include <sys/stat.h>
 
-#ifdef __WIN32__
-// Assume that all windows platforms are little endian
-#define TO_BIGENDIAN16(X) _byteswap_ushort(X)
-#define FROM_BIGENDIAN16(X) _byteswap_ushort(X)
-#define TO_BIGENDIAN32(X) _byteswap_ulong(X)
-#define FROM_BIGENDIAN32(X) _byteswap_ulong(X)
-#else
-// Other platforms have htons and ntohs without pulling in another library
-#define TO_BIGENDIAN16(X) htons(X)
-#define FROM_BIGENDIAN16(X) ntohs(X)
-#define TO_BIGENDIAN32(X) htonl(X)
-#define FROM_BIGENDIAN32(X) ntohl(X)
-#endif
-
 char *strptime(const char *s, const char *format, struct tm *tm);
 extern bool fwup_framing;
 

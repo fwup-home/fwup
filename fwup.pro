@@ -35,7 +35,8 @@ SOURCES += \
     src/requirement.c \
     src/cfgprint.c \
     3rdparty/strptime.c \
-    src/simple_string.c
+    src/simple_string.c \
+    src/archive_open.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -69,7 +70,8 @@ HEADERS += \
     src/fat_cache.h \
     src/requirement.h \
     src/cfgprint.h \
-    src/simple_string.h
+    src/simple_string.h \
+    src/archive_open.h
 
 OTHER_FILES += \
     fwupdate.conf \

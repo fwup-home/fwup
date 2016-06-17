@@ -19,6 +19,7 @@
 #include "requirement.h"
 #include "mbr.h"
 #include "util.h"
+#include "archive_open.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -477,7 +478,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned
     unsigned char *meta_conf_signature = NULL;
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
-    rc = archive_read_open_filename(a, filename, 16384);
+    rc = fwup_archive_open_filename(a, filename);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Cannot open archive '%s'", filename);
 

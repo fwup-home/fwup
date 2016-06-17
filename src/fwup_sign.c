@@ -18,6 +18,7 @@
 #include "fwfile.h"
 #include "util.h"
 #include "cfgfile.h"
+#include "archive_open.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -54,7 +55,7 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     strcpy(temp_filename, input_filename);
     strcat(temp_filename, ".tmp");
 
-    rc = archive_read_open_filename(in, input_filename, 16384);
+    rc = fwup_archive_open_filename(in, input_filename);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Cannot open archive '%s'", input_filename);
 
