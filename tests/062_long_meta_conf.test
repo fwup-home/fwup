@@ -1,0 +1,90 @@
+#!/bin/bash
+
+#
+# Test that having a long meta.conf doesn't break anything
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource abc {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource def {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource ghi {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource abc { raw_write(0) }
+        on-resource def { raw_write(4) }
+        on-resource ghi { raw_write(8) }
+}
+EOF
+
+# Pad it substantially
+for i in {1..200}; do
+    cat >>$CONFIG << EOF
+task complete$i {
+        on-resource abc { raw_write(0) }
+        on-resource def { raw_write(4) }
+        on-resource ghi { raw_write(8) }
+}
+EOF
+done
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "abc" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+file-resource "def" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+file-resource "ghi" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "complete" {
+  on-resource "abc" {
+    funlist = {"2", "raw_write", "0"}
+  }
+  on-resource "def" {
+    funlist = {"2", "raw_write", "4"}
+  }
+  on-resource "ghi" {
+    funlist = {"2", "raw_write", "8"}
+  }
+}
+EOF
+for i in {1..200}; do
+    cat >>$EXPECTED_META_CONF << EOF
+task "complete$i" {
+  on-resource "abc" {
+    funlist = {"2", "raw_write", "0"}
+  }
+  on-resource "def" {
+    funlist = {"2", "raw_write", "4"}
+  }
+  on-resource "ghi" {
+    funlist = {"2", "raw_write", "8"}
+  }
+}
+EOF
+done
+
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+
+# Check that applying the firmware does the expected thing
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+dd if=$TESTFILE_1K seek=0 of=$WORK/expected.bin
+dd if=$TESTFILE_1K seek=4 of=$WORK/expected.bin
+dd if=$TESTFILE_1K seek=8 of=$WORK/expected.bin
+diff $IMGFILE $WORK/expected.bin

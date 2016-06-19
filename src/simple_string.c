@@ -65,23 +65,31 @@ void ssprintf(struct simple_string *s, const char *format, ...)
 
 void ssvprintf(struct simple_string *s, const char *format, va_list ap)
 {
+    va_list aq;
+    va_copy(aq, ap);
     while (s->str) {
-        int max_len = s->end - s->p;
-        int n = vsnprintf(s->p, max_len, format, ap);
-
+        int max_len = s->end - s->p - 1;
+        int n = vsnprintf(s->p, max_len, format, aq);
         // vsnprintf failed
         if (n < 0)
-            return;
+            break;
 
         // Success
         if (n < max_len) {
             s->p += n;
-            return;
+            break;
         }
+
+        // See the vsnprintf documentation that states that aq is invalid after
+        // the call. To make it valid again, make a copy of the argument list
+        // again.
+        va_end(aq);
+        va_copy(aq, ap);
 
         // Retry with a larger buffer
         simple_string_enlarge(s);
     }
+    va_end(aq);
 }
 
 void ssappend(struct simple_string *s, const char *str)
