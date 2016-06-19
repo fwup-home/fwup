@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.7.1-dev
+## v0.8.0-dev
 
   * New features
     * Added assertions for verifying that inputs don't excede their expected
@@ -8,13 +8,17 @@
     * Add support for concatenating files together to create one resource. This
       was always possible before using a preprocessing script, but is more
       convenient now.
-    * Detecting attached SDCards no longer requires superuser permissions.
+    * Add "framed" input and output when using stdin/stdout to simplify
+      integration with Erlang and possibly other languages.
+    * Detecting attached SDCards no longer requires superuser permissions on
+      Linux.
     * Listing detected SDCards (`--detect` option) prints the SDCard size as
       well. ***This is a breaking change if you're using this in a script***
 
   * Bug fixes
     * fwup compiles against uclibc now
     * autoreconf can be run without creating the m4 directory beforehand
+    * Fixed va_args bug that could cause a crash with long fwup.conf inputs
 
 ## v0.7.0
 
