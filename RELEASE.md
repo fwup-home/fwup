@@ -11,15 +11,14 @@
   5. Tag
   6. Push last commit(s) *and* tag to GitHub
   7. On a Linux machine, create the `.deb` and `.rpm` packages. Do this by
-     starting with a clean release: `git clean -fdx`. Then run `./configure` and
+     starting with a clean release: `git clean -fdx`. Then run `./autogen.sh` and
      `scripts/build_pkg.sh`
   8. Wait for the Travis builds to complete successfully. They should work since
      no code changes were made, but wait to be safe.
   9. Copy the latest CHANGELOG.md entry to the GitHub releases description.
   10. Upload the `.deb`, `.rpm`, and source tarball to the release. Check the
      links in `README.md` (from GitHub) to make sure they work.
-  11. Start the next dev cycle. Update the version in `CHANGELOG.md` and
-      `configure.ac` to the expected next version and append `-dev`.
+  11. Start the next dev cycle. Start a new section in `CHANGELOG.md` and
+      update the version in `configure.ac` to a `-dev` version.
   12. Push changes up to GitHub
-
 
