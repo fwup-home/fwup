@@ -35,6 +35,7 @@ AC_CHECK_FUNCS([memset setenv strdup strtoul umount fcntl strptime])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
 AC_CHECK_LIB([confuse], [cfg_searchpath], [], [ AC_MSG_ERROR([Could not find libconfuse v2.8 or later]) ])
+AC_CHECK_LIB([z], [deflate], [], [ AC_MSG_ERROR([Could not find zlib (required for zip support in libarchive)]) ])
 AC_CHECK_LIB([archive], [archive_read_new], [], [ AC_MSG_ERROR([Could not find libarchive]) ])
 AC_CHECK_LIB([sodium], [crypto_generichash_init], [], [ AC_MSG_ERROR([Could not find libsodium]) ])
 
