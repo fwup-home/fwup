@@ -89,22 +89,22 @@ On OSX:
 On Ubuntu:
 
     # The version of libconfuse available in apt is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-2.8
+    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-3.0
     ./configure && make && sudo make install
     popd
-    rm -rf /tmp/confuse-2.8
+    rm -rf /tmp/confuse-3.0
 
     sudo apt-get install libarchive-dev libsodium-dev
 
 On CentOS 6:
 
     # The version of libconfuse available in yum is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-2.8
+    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-3.0
     ./configure && make && sudo make install
     popd
-    rm -rf /tmp/confuse-2.8
+    rm -rf /tmp/confuse-3.0
 
     # The version of libarchive available in yum is too old
     curl -L http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz | tar -xz -C /tmp
@@ -129,11 +129,11 @@ On CentOS 6:
 On CentOS 7:
 
     # The version of libconfuse available in yum is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v2.8/confuse-2.8.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-2.8
+    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
+    pushd /tmp/confuse-3.0
     ./configure && make && sudo make install
     popd
-    rm -rf /tmp/confuse-2.8
+    rm -rf /tmp/confuse-3.0
 
     sudo yum install libarchive-devel libsodium-devel
 
