@@ -23,15 +23,12 @@ mkdir -p $DEPS_INSTALL_DIR
 
 pushd $DEPS_DIR
 
-if [[ ! -e $DOWNLOAD_DIR/.downloaded ]]; then
-    pushd $DOWNLOAD_DIR
-    wget http://zlib.net/zlib-$ZLIB_VERSION.tar.xz
-    wget https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
-    wget http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
-    wget https://download.libsodium.org/libsodium/releases/libsodium-$LIBSODIUM_VERSION.tar.gz
-    touch $DOWNLOAD_DIR/.downloaded
-    popd
-fi
+pushd $DOWNLOAD_DIR
+[[ -e zlib-$ZLIB_VERSION.tar.xz ]] || wget http://zlib.net/zlib-$ZLIB_VERSION.tar.xz
+[[ -e confuse-$CONFUSE_VERSION.tar.xz ]] || wget https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
+[[ -e libarchive-$LIBARCHIVE_VERSION.tar.gz ]] || wget http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
+[[ -e libsodium-$LIBSODIUM_VERSION.tar.gz ]] || wget https://download.libsodium.org/libsodium/releases/libsodium-$LIBSODIUM_VERSION.tar.gz
+popd
 
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
     rm -fr $DEPS_DIR/zlib-*
