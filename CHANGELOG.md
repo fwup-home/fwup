@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.8.0-dev
+## v0.8.0
 
   * New features
     * Added assertions for verifying that inputs don't excede their expected
@@ -16,9 +16,9 @@
       well. ***This is a breaking change if you're using this in a script***
 
   * Bug fixes
+    * Fixed va_args bug that could cause a crash with long fwup.conf inputs
     * fwup compiles against uclibc now
     * autoreconf can be run without creating the m4 directory beforehand
-    * Fixed va_args bug that could cause a crash with long fwup.conf inputs
 
 ## v0.7.0
 
