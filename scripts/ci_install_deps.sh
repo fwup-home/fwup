@@ -63,8 +63,7 @@ else
     brew install --universal gettext
     brew link --force gettext
     if [[ "$BUILD_STATIC" = "false" ]]; then
-        brew install libarchive libsodium
-        install_confuse
+        brew install libarchive libsodium confuse
     fi
     ls /usr/local/lib
 fi
