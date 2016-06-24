@@ -36,9 +36,9 @@
 int fwup_sign(const char *input_filename, const char *output_filename, const unsigned char *signing_key)
 {
     int rc = 0;
-    char *temp_filename = malloc(strlen(input_filename) + 5);
     char *configtxt = NULL;
     char buffer[4096];
+    char *temp_filename = NULL;
 
     struct archive *in = archive_read_new();
     archive_read_support_format_zip(in);
@@ -52,6 +52,9 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     if (!signing_key)
         ERR_CLEANUP_MSG("Specify a signing key");
 
+    temp_filename = malloc(strlen(input_filename) + 5);
+    if (!temp_filename)
+        ERR_CLEANUP_MSG("Out of memory");
     strcpy(temp_filename, input_filename);
     strcat(temp_filename, ".tmp");
 

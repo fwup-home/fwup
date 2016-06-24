@@ -184,6 +184,8 @@ int fwfile_add_local_file(struct archive *a,
             file_read += len;
         }
         total_read += file_read;
+        fclose(fp);
+        fp = NULL;
     }
     if (total_read != total_len)
         ERR_CLEANUP_MSG("read error for '%s'", paths);

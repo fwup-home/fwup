@@ -29,12 +29,12 @@ void simple_string_init(struct simple_string *s)
     if (s->str) {
         s->p = s->str;
         s->end = s->str + starting_size;
+
+        // NULL terminate
+        s->str[0] = '\0';
     } else {
         s->p = s->end = NULL;
     }
-
-    // NULL terminate
-    s->str[0] = '\0';
 }
 
 static void simple_string_enlarge(struct simple_string *s)

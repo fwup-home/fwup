@@ -70,6 +70,8 @@ static void remove_framing()
             current_frame_remaining -= amount_read;
         }
     }
+
+    free(buffer);
 }
 
 static void add_framing(size_t frame_size)

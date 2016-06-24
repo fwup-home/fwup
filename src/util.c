@@ -43,7 +43,8 @@ const char *get_creation_timestamp()
         if (now != NULL) {
             // The user specified NOW, so check that it's parsable.
             struct tm tmp;
-            if (strptime(now, timestamp_format, &tmp) != NULL) {
+            if (strptime(now, timestamp_format, &tmp) != NULL &&
+                    strlen(now) < sizeof(time_string) - 1) {
                 strcpy(time_string, now);
                 return time_string;
             }

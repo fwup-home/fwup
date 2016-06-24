@@ -28,8 +28,10 @@ static int save_key(const char *name, unsigned char *c, size_t len)
     if (!fp)
         ERR_RETURN("Couldn't create '%s'", name);
 
-    if (fwrite(c, 1, len, fp) != len)
+    if (fwrite(c, 1, len, fp) != len) {
+        fclose(fp);
         ERR_RETURN("Couldn't write to '%s'", name);
+    }
 
     fclose(fp);
     return 0;
