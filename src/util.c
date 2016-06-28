@@ -39,7 +39,7 @@ const char *get_creation_timestamp()
     // Ensure that if the creation timestamp is queried more than
     // once that the same string gets returned.
     if (*time_string == '\0') {
-        char *now = getenv("NOW");
+        const char *now = get_environment("NOW");
         if (now != NULL) {
             // The user specified NOW, so check that it's parsable.
             struct tm tmp;
@@ -59,7 +59,7 @@ const char *get_creation_timestamp()
         }
 
         strftime(time_string, sizeof(time_string), timestamp_format, tm_now);
-        setenv("NOW", time_string, 1);
+        set_environment("NOW", time_string, 1);
     }
 
     return time_string;
@@ -360,5 +360,51 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
     else
         return -1;
 
+}
+#endif
+
+#ifndef HAVE_SETENV
+struct envpair
+{
+    char *key;
+    char *value;
+    struct envpair *next;
+};
+
+static struct envpair *env = NULL;
+
+const char *get_environment(const char *key)
+{
+    for (struct envpair *pair = env; pair != NULL; pair = pair->next) {
+        if (strcmp(pair->key, key) == 0)
+            return pair->value;
+    }
+    return getenv(key);
+}
+
+int set_environment(const char *key, const char *value, int override)
+{
+    if (override) {
+        for (struct envpair *pair = env; pair != NULL; pair = pair->next) {
+            if (strcmp(pair->key, key) == 0) {
+                free(pair->value);
+                pair->value = strdup(value);
+                return 0;
+            }
+        }
+    } else {
+        if (getenv(key))
+            return 0;
+        for (struct envpair *pair = env; pair != NULL; pair = pair->next) {
+            if (strcmp(pair->key, key) == 0)
+                return 0;
+        }
+    }
+    struct envpair *pair = (struct envpair *) malloc(sizeof(struct envpair));
+    pair->key = strdup(key);
+    pair->value = strdup(value);
+    pair->next = env;
+    env = pair;
+    return 0;
 }
 #endif
