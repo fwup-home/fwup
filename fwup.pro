@@ -36,7 +36,7 @@ SOURCES += \
     src/requirement.c \
     src/cfgprint.c \
     src/simple_string.c \
-    src/archive_open.c
+    src/archive_open.c \
     src/mmc_windows.c
 
 osx {
@@ -45,6 +45,12 @@ osx {
     SOURCES +=
 
     LIBS += -framework CoreFoundation -framework DiskArbitration
+}
+
+win32 {
+    INCLUDEPATH += deps/usr/include
+    LIBS += -L../fwup/deps/usr/lib -llibconfuse.a
+    QMAKE_CFLAGS += -std=gnu99
 }
 
 LIBS += -lconfuse -larchive -lsodium
