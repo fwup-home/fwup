@@ -112,4 +112,14 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 #endif
 
+#ifdef HAVE_SETENV
+// If setenv is available, use getenv/setenv to manage variables
+#define get_environment getenv
+#define set_environment setenv
+#else
+// If setenv is not available, handle environment locally.
+const char *get_environment(const char *key);
+int set_environment(const char *key, const char *value, int override);
+#endif
+
 #endif // UTIL_H
