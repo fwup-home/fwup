@@ -1,17 +1,16 @@
-#include <err.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
-#ifdef __WIN32__
+#ifdef _WIN32
 // Assume that all windows platforms are little endian
 #define TO_BIGENDIAN32(X) _byteswap_ulong(X)
 #define FROM_BIGENDIAN32(X) _byteswap_ulong(X)
 #else
 // Other platforms have htons and ntohs without pulling in another library
+#include <arpa/inet.h>
 #define TO_BIGENDIAN32(X) htonl(X)
 #define FROM_BIGENDIAN32(X) ntohl(X)
 #endif
@@ -33,8 +32,10 @@ static void remove_framing()
 {
     static const size_t buffer_size = 4096;
     char *buffer = malloc(buffer_size);
-    if (!buffer)
-        err(EXIT_FAILURE, "malloc");
+    if (!buffer) {
+        fprintf(stderr, "malloc failed.\n");
+        exit(EXIT_FAILURE);
+    }
 
     size_t current_frame_remaining = 0;
     for (;;) {
@@ -51,9 +52,11 @@ static void remove_framing()
             break;
 
         // Check that the amount read matches the expected.
-        if (amount_read != amount_to_read)
-            errx(EXIT_FAILURE, "Expected to read %u bytes, but only got %u bytes.",
+        if (amount_read != amount_to_read) {
+            fprintf(stderr, "Expected to read %u bytes, but only got %u bytes.\n",
                  (unsigned int) amount_to_read, (unsigned int) amount_read);
+            exit(EXIT_FAILURE);
+        }
 
         if (current_frame_remaining == 0) {
             // Reading frame header
@@ -77,8 +80,10 @@ static void remove_framing()
 static void add_framing(size_t frame_size)
 {
     char *buffer = malloc(frame_size);
-    if (!buffer)
-        err(EXIT_FAILURE, "malloc");
+    if (!buffer) {
+        fprintf(stderr, "malloc failed.\n");
+        exit(EXIT_FAILURE);
+    }
 
     for (;;) {
         size_t amount_read = fread(buffer, 1, frame_size, stdin);
