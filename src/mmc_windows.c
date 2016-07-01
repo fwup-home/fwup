@@ -151,7 +151,7 @@ int mmc_umount_all(const char *mmc_device)
                                       0,
                                       NULL);
     if (volume_handle == INVALID_HANDLE_VALUE) {
-        warnx("Cannot open '%s'", mmc_device);
+        fwup_warnx("Cannot open '%s'", mmc_device);
         return -1;
     }
 
@@ -165,7 +165,7 @@ int mmc_umount_all(const char *mmc_device)
                              &bytes_returned,
                              NULL);
     if (!status) {
-        warnx("Error locking '%s'", mmc_device);
+        fwup_warnx("Error locking '%s'", mmc_device);
         CloseHandle(volume_handle);
         return -1;
     }
@@ -181,11 +181,11 @@ int mmc_umount_all(const char *mmc_device)
     if (!status) {
         DWORD error = GetLastError();
         if (error != ERROR_NOT_SUPPORTED) {
-            warnx("Error locking '%s'", mmc_device);
+            fwup_warnx("Error locking '%s'", mmc_device);
             CloseHandle(volume_handle);
             return -1;
         } else {
-            warnx("Unmounting not supported");
+            fwup_warnx("Unmounting not supported");
         }
     }
 
