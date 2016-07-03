@@ -410,6 +410,9 @@ int main(int argc, char **argv)
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT, 0644);
+#ifdef _WIN32
+            setmode(output_fd, O_BINARY);
+#endif
         } else {
             // Attempt to unmount everything using the device to avoid corrupting partitions.
             // For partial updates, this just unmounts everything that can be unmounted. Errors
