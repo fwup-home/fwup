@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "config.h"
+#include "../config.h"
 #include "cfgprint.h"
 #include "fwfile.h"
 #include "util.h"

@@ -37,7 +37,7 @@
 #include "fwup_sign.h"
 #include "fwup_verify.h"
 #include "simple_string.h"
-#include "config.h"
+#include "../config.h"
 
 // Global options
 bool fwup_verbose = false;

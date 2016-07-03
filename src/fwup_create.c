@@ -18,7 +18,7 @@
 #include "cfgfile.h"
 #include "util.h"
 #include "fwfile.h"
-#include "config.h"
+#include "../config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
