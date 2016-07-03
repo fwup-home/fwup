@@ -31,9 +31,16 @@ TESTS_DIR=$(dirname $($READLINK -f $0))
 # but it is possible to define the version of fwup used for
 # the create and apply steps separately.
 FWUP_DEFAULT=$TESTS_DIR/../src/fwup
+if [ ! -e $FWUP_DEFAULT ]; then
+    if [ -e $FWUP_DEFAULT.exe ]; then
+        EXEEXT=.exe
+        FWUP_DEFAULT=$FWUP_DEFAULT.exe
+    fi
+fi
+
 if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
-FRAMING_HELPER=$TESTS_DIR/framing-helper
+FRAMING_HELPER=$TESTS_DIR/framing-helper$EXEEXT
 
 WORK=$TESTS_DIR/work
 RESULTS=$WORK/results
