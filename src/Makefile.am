@@ -86,10 +86,10 @@ man_MANS = fwup.1
 CLEANFILES = $(man_MANS)
 EXTRA_DIST += fwup.h2m
 
-fwup.1: fwup fwup.h2m
+fwup.1: fwup$(EXEEXT) fwup.h2m
 	$(HELP2MAN) --no-discard-stderr --output=$@ --no-info --include fwup.h2m \
-	    -n "configurable embedded Linux firmware update creator and runner" \
-	    ./fwup
+	    -n "configurable embedded firmware update creator and runner" \
+	    ./fwup$(EXEEXT)
 else
 	@echo  "Warning: help2man not available, no man page created."
 endif
