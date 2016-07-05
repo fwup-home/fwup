@@ -203,7 +203,7 @@ static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive
             if (archive_write_open_filename(p->subarchive, archive_path) != ARCHIVE_OK) {
                 archive_write_free(p->subarchive);
                 p->subarchive = NULL;
-                ERR_RETURN("error creating archive");
+                ERR_RETURN("error creating archive '%s'", archive_path);
             }
 
             p->subarchive_path = strdup(archive_path);

@@ -100,7 +100,7 @@ static int create_archive(cfg_t *cfg, const char *filename, const unsigned char 
     struct archive *a = archive_write_new();
     archive_write_set_format_zip(a);
     if (archive_write_open_filename(a, filename) != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("error creating archive");
+        ERR_CLEANUP_MSG("error creating archive '%s'", filename);
 
     OK_OR_CLEANUP(fwfile_add_meta_conf(cfg, a, signing_key));
 
