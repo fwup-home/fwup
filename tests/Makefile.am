@@ -70,6 +70,7 @@ TESTS = 001_simple_fw.test \
 	065_fat_mkdir.test \
 	066_fat_attrib.test \
 	067_usage.test \
-	068_readonly_output_error.test
+	068_readonly_output_error.test \
+	069_define_bang.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

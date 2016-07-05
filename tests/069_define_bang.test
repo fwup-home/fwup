@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#
+# Test that define doesn't override the environment and that define!
+# does.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(TEST_DEFINE, "define_override")
+define!(TEST_DEFINE_BANG, "define_bang_override")
+
+# Test substitution in a field
+meta-product = "\${TEST_DEFINE},\${TEST_DEFINE_BANG}"
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+meta-product="define_orig,define_bang_override"
+EOF
+
+TEST_DEFINE=define_orig TEST_DEFINE_BANG=define_bang_orig $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
