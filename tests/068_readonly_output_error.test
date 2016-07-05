@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#
+# Test that we get an error when trying to write to a readonly file
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77261)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+        }
+}
+EOF
+
+READONLY_OUTPUT_FILE=$WORK/readonly.img
+touch $READONLY_OUTPUT_FILE
+chmod -w $READONLY_OUTPUT_FILE
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+if $FWUP_APPLY -a -d $READONLY_OUTPUT_FILE -i $FWFILE -t complete; then
+    echo "Expected error when writing to a readonly file?"
+fi
