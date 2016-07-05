@@ -1,0 +1,58 @@
+#!/bin/bash
+
+#
+# Test the fat_attrib command works
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+                fat_touch(\${BOOT_PART_OFFSET}, "system.txt")
+                fat_attrib(\${BOOT_PART_OFFSET}, "system.txt", "S")
+                fat_touch(\${BOOT_PART_OFFSET}, "hidden.txt")
+                fat_attrib(\${BOOT_PART_OFFSET}, "hidden.txt", "H")
+                fat_touch(\${BOOT_PART_OFFSET}, "readonly.txt")
+                fat_attrib(\${BOOT_PART_OFFSET}, "readonly.txt", "R")
+                fat_touch(\${BOOT_PART_OFFSET}, "shr.txt")
+                fat_attrib(\${BOOT_PART_OFFSET}, "shr.txt", "SHR")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+  A  S       ::/system.txt
+  A   H      ::/hidden.txt
+  A    R     ::/readonly.txt
+  A  SHR     ::/shr.txt
+EOF
+
+# Check that the attributes look right
+mattrib -i $WORK/fwup.img@@32256 system.txt hidden.txt readonly.txt shr.txt > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+

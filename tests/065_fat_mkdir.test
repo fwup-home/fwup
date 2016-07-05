@@ -1,0 +1,79 @@
+#!/bin/bash
+
+#
+# Test making directories on a FAT file system.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+                fat_mkdir(\${BOOT_PART_OFFSET}, "test_dir")
+                fat_mkdir(\${BOOT_PART_OFFSET}, "test_dir/test_dir2")
+                fat_mkdir(\${BOOT_PART_OFFSET}, "areallylongfilenamedir")
+                fat_mkdir(\${BOOT_PART_OFFSET}, "deleteme")
+                fat_rm(\${BOOT_PART_OFFSET}, "deleteme")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT_ROOT=$WORK/expected.root
+ACTUAL_OUTPUT_ROOT=$WORK/actual.root
+
+cat >$EXPECTED_OUTPUT_ROOT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 46A5-9148
+Directory for ::/
+
+test_dir     <DIR>     2015-05-05  18:10
+AREALL~1     <DIR>     2015-05-05  18:10  areallylongfilenamedir
+        2 files                   0 bytes
+                         38 908 928 bytes free
+
+EOF
+
+EXPECTED_OUTPUT_SUBDIR=$WORK/expected.subdir
+ACTUAL_OUTPUT_SUBDIR=$WORK/actual.subdir
+
+cat >$EXPECTED_OUTPUT_SUBDIR << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 46A5-9148
+Directory for ::/test_dir
+
+.            <DIR>     2015-05-05  18:10
+..           <DIR>     2015-05-05  18:10
+TEST_D~1     <DIR>     2015-05-05  18:10  test_dir2
+        3 files                   0 bytes
+                         38 908 928 bytes free
+
+EOF
+
+# Check that the root directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT_ROOT
+diff -w $EXPECTED_OUTPUT_ROOT $ACTUAL_OUTPUT_ROOT
+
+# Check that the subdirectory looks right
+mdir -i $WORK/fwup.img@@32256 test_dir > $ACTUAL_OUTPUT_SUBDIR
+diff -w $EXPECTED_OUTPUT_SUBDIR $ACTUAL_OUTPUT_SUBDIR
