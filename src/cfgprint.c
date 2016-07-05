@@ -171,7 +171,8 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
                 return;
 
             // Skip host-path (see note in top comment)
-            if (strcmp("host-path", opt->name) == 0)
+            if (strcmp("host-path", opt->name) == 0 ||
+                strcmp("bootstrap-code-host-path", opt->name) == 0)
                 return;
 
             ssprintf(s, "%s=", opt->name);
