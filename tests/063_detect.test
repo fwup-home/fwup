@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#
+# Test that SDCard detection doesn't crash
+#
+
+. ./common.sh
+
+# Yes, this is a weak test, but it shouldn't crash
+$FWUP_CREATE --detect
