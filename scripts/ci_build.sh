@@ -28,7 +28,7 @@ fi
 
 # Normal build
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-    ./configure;
+    ./configure --enable-gcov
 else
     CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure;
 fi

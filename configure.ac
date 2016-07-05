@@ -63,6 +63,12 @@ fi
 AC_SUBST([BASH_COMPLETION_DIR])
 AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "xno"])
 
+# Coverage tests
+AC_ARG_ENABLE(gcov,[AS_HELP_STRING([--enable-gcov], [enable coverage test])])
+AC_MSG_CHECKING([whether to enable gcov])
+AS_IF([test "x${enable_gcov}" = "xyes" ], AC_MSG_RESULT([yes]), AC_MSG_RESULT([no]))
+AM_CONDITIONAL([ENABLE_GCOV],[test "x${enable_gcov}" = "xyes"])
+
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 
 AC_OUTPUT

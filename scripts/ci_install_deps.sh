@@ -52,6 +52,7 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
         sudo apt-get install -qq libarchive-dev
         install_confuse
         install_sodium
+        pip install --user cpp-coveralls
     else
         # Need fpm when building static so that we can make the .deb and .rpm packages
         sudo apt-get install -qq rpm

@@ -1,7 +1,9 @@
 ![The fwup pup](assets/fwup-pup.png)
 
 # Overview
-[![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup) [![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
+[![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
+[![Coverage Status](https://coveralls.io/repos/github/fhunleth/fwup/badge.svg)](https://coveralls.io/github/fhunleth/fwup)
 
 The `fwup` utility is a configurable image-based firmware update utility for
 embedded Linux-based systems. It has two modes of operation. The first mode

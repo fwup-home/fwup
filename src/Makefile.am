@@ -69,6 +69,10 @@ endif
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
 
+if ENABLE_GCOV
+fwup_CFLAGS += -fprofile-arcs -ftest-coverage
+endif
+
 if HAVE_HELP2MAN
 man_MANS = fwup.1
 CLEANFILES = $(man_MANS)

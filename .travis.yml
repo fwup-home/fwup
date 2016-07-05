@@ -33,6 +33,9 @@ before_install:
 script:
     - scripts/ci_build.sh
 
+after_success:
+    - scripts/ci_after_success.sh
+
 addons:
       coverity_scan:
              project:
