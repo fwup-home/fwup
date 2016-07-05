@@ -53,10 +53,8 @@ const char *get_creation_timestamp()
         }
         time_t t = time(NULL);
         struct tm *tm_now = gmtime(&t);
-        if (tm_now == NULL) {
-            perror("gmtime");
-            exit(1);
-        }
+        if (tm_now == NULL)
+            fwup_err(EXIT_FAILURE, "gmtime");
 
         strftime(time_string, sizeof(time_string), timestamp_format, tm_now);
         setenv("NOW", time_string, 1);
