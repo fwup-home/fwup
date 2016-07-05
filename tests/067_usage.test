@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# Test that printing usage works
+#
+
+. ./common.sh
+
+ACTUAL_OUTPUT_NO_ARGS=$WORK/actual.no_args
+ACTUAL_OUTPUT_BAD_ARG=$WORK/actual.bad_arg
+ACTUAL_OUTPUT_HELP_ARG=$WORK/actual.help_arg
+
+$FWUP_CREATE > $ACTUAL_OUTPUT_NO_ARGS || true
+$FWUP_CREATE -? > $ACTUAL_OUTPUT_BAD_ARG || true
+$FWUP_CREATE --help > $ACTUAL_OUTPUT_HELP_ARG || true
+
+# Check that the word Usage appears
+grep "Usage: " $ACTUAL_OUTPUT_NO_ARGS
+grep "Usage: " $ACTUAL_OUTPUT_BAD_ARG
+grep "Usage: " $ACTUAL_OUTPUT_HELP_ARG

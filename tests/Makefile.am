@@ -68,6 +68,7 @@ TESTS = 001_simple_fw.test \
 	063_detect.test \
 	064_mbr_bootcode.test \
 	065_fat_mkdir.test \
-	066_fat_attrib.test
+	066_fat_attrib.test \
+	067_usage.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
