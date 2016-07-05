@@ -65,6 +65,7 @@ TESTS = 001_simple_fw.test \
 	060_framed_streaming.test \
 	061_framed_partial_metadata.test \
 	062_long_meta_conf.test \
-	063_detect.test
+	063_detect.test \
+	064_mbr_bootcode.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
