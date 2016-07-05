@@ -74,7 +74,6 @@ extern bool fwup_verbose;
 // format when the user specifies --framing.
 void fwup_err(int status, const char *format, ...) FWUP_ERR_ATTRS;
 void fwup_errx(int status, const char *format, ...) FWUP_ERR_ATTRS;
-void fwup_warn(const char *format, ...) FWUP_WARN_ATTRS;
 void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
 
 #ifndef HAVE_STRPTIME

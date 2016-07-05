@@ -282,27 +282,6 @@ void fwup_errx(int status, const char *format, ...)
     va_end(ap);
 }
 
-void fwup_warn(const char *format, ...)
-{
-    va_list ap;
-    va_start(ap, format);
-
-    int err = errno;
-    struct simple_string s;
-    simple_string_init(&s);
-    if (fwup_framing) {
-        ssvprintf(&s, format, ap);
-    } else {
-        ssappend(&s, "fwup: ");
-        ssvprintf(&s, format, ap);
-        ssprintf(&s, ": %s\n", strerror(err));
-    }
-    fwup_output(FRAMING_TYPE_WARNING, 0, s.str);
-    free(s.str);
-
-    va_end(ap);
-}
-
 void fwup_warnx(const char *format, ...)
 {
     va_list ap;
