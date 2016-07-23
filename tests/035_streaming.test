@@ -22,8 +22,8 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Pipe the contents of the firmware file through fwup
-cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+cat $HOST_FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
-dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+dd if=$HOST_TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
+diff $WORK/check.bin $HOST_IMGFILE

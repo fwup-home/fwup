@@ -45,4 +45,4 @@ sleep 1
 # that they are identical between runs.
 $FWUP_APPLY -a -d ${IMGFILE}.2 -i $FWFILE -t complete
 
-diff ${IMGFILE}.1 ${IMGFILE}.2
+diff ${HOST_IMGFILE}.1 ${HOST_IMGFILE}.2

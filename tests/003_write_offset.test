@@ -22,5 +22,5 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
 # (The conv=sync makes sure that the output is a multiple of 512 bytes)
-dd if=$TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+dd if=$HOST_TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
+diff $WORK/check.bin $HOST_IMGFILE

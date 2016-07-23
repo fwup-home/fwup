@@ -37,13 +37,21 @@ xxd -r - $WORK/bootstrap-data <<EOF
 000001b0: 0000 0000 0000 0000                      ........
 EOF
 
+# Adapt file paths passed to fwup on Windows
+# This assumes we're running under Wine, which maps Z:\ to Linux's /
+# Double the backslashes so they'll still be escaped in the generated config file.
+BOOTSTRAP_PATH=$WORK/bootstrap-data
+if [ -n "$EXEEXT" ]; then
+  BOOTSTRAP_PATH=Z:$(echo $BOOTSTRAP_PATH | sed 's/\//\\\\/g')
+fi
+
 cat >$CONFIG <<EOF
 # Numbers don't matter for the test so long as the MBR is right
 define(BOOT_PART_OFFSET, 63)
 define(BOOT_PART_COUNT, 77261)
 
 mbr mbr-a {
-    bootstrap-code-host-path = "$WORK/bootstrap-data"
+    bootstrap-code-host-path = "$BOOTSTRAP_PATH"
     partition 0 {
         block-offset = \${BOOT_PART_OFFSET}
         block-count = \${BOOT_PART_COUNT}
@@ -100,4 +108,4 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
-diff $WORK/expected.img $IMGFILE
+diff $WORK/expected.img $HOST_IMGFILE

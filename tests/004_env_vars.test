@@ -45,8 +45,8 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $TESTFILE_1K $UNZIPDIR/data/${TEST_ENV_VAR}
+diff $HOST_TESTFILE_1K $UNZIPDIR/data/${TEST_ENV_VAR}
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $TESTFILE_1K
+diff $HOST_IMGFILE $HOST_TESTFILE_1K

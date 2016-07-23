@@ -106,13 +106,13 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Trust that the initial creation was ok, but verify that the 1K rootfs fails
 # to compare for both partitions.
-dd if=$IMGFILE skip=2048 count=2 of=$WORK/orig-first-part.bin 2>/dev/null
-if diff $TESTFILE_1K $WORK/orig-first-part.bin >/dev/null; then
+dd if=$HOST_IMGFILE skip=2048 count=2 of=$WORK/orig-first-part.bin 2>/dev/null
+if diff $HOST_TESTFILE_1K $WORK/orig-first-part.bin >/dev/null; then
     echo "Expected 1st partition not to be written yet."
     exit 1
 fi
-dd if=$IMGFILE skip=4096 count=2 of=$WORK/orig-second-part.bin 2>/dev/null
-if diff $TESTFILE_1K $WORK/orig-second-part.bin >/dev/null; then
+dd if=$HOST_IMGFILE skip=4096 count=2 of=$WORK/orig-second-part.bin 2>/dev/null
+if diff $HOST_TESTFILE_1K $WORK/orig-second-part.bin >/dev/null; then
     echo "Expected 2nd partition not to be written yet."
     exit 1
 fi
@@ -121,12 +121,12 @@ fi
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 # Extract and compare the second partition
-dd if=$IMGFILE skip=4096 count=2 of=$WORK/upgrade-second-part.bin 2>/dev/null
-diff $TESTFILE_1K $WORK/upgrade-second-part.bin
+dd if=$HOST_IMGFILE skip=4096 count=2 of=$WORK/upgrade-second-part.bin 2>/dev/null
+diff $HOST_TESTFILE_1K $WORK/upgrade-second-part.bin
 
 # Upgrade the IMGFILE file again (it should write partition A)
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 # Extract and compare the first partition
-dd if=$IMGFILE skip=2048 count=2 of=$WORK/upgrade-first-part.bin 2>/dev/null
-diff $TESTFILE_1K $WORK/upgrade-first-part.bin
+dd if=$HOST_IMGFILE skip=2048 count=2 of=$WORK/upgrade-first-part.bin 2>/dev/null
+diff $HOST_TESTFILE_1K $WORK/upgrade-first-part.bin

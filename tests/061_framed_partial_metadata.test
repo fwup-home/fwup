@@ -39,10 +39,10 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Only keep the first 512 bytes of the whole 15MB .fw file!
-dd if=$FWFILE of=$FWFILE.truncated bs=1 count=512 2>/dev/null
+dd if=$HOST_FWFILE of=$HOST_FWFILE.truncated bs=1 count=512 2>/dev/null
 
 # Pipe the framed contents (in super small chunks) on the .fw file to fwup
-cat $FWFILE.truncated | $FRAMING_HELPER -n 50 -e \
+cat $HOST_FWFILE.truncated | $FRAMING_HELPER -n 50 -e \
 	| $FWUP_APPLY --metadata --framing > $ACTUAL_OUTPUT
 
 # Verify and removing framing

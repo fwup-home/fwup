@@ -59,7 +59,7 @@ mkdir -p $WORK
 mkdir -p $UNZIPDIR
 
 unzip_fw() {
-    unzip -q $FWFILE -d $UNZIPDIR
+    unzip -q $HOST_FWFILE -d $UNZIPDIR
 }
 
 check_meta_conf() {
@@ -97,3 +97,20 @@ if [ ! -e $TESTFILE_15M ]; then
         cat $TESTFILE_150K >> $TESTFILE_15M
     done
 fi
+
+# Adapt file paths passed to fwup on Windows
+# This assumes we're running under Wine, which maps Z:\ to Linux's /
+HOST_FWFILE=$FWFILE
+HOST_IMGFILE=$IMGFILE
+HOST_TESTFILE_1K=$TESTFILE_1K
+HOST_TESTFILE_150K=$TESTFILE_150K
+HOST_TESTFILE_15M=$TESTFILE_15M
+if [ -n "$EXEEXT" ]; then
+  FWFILE=Z:$(echo $FWFILE | sed 'y/\//\\/')
+  IMGFILE=Z:$(echo $IMGFILE | sed 'y/\//\\/')
+  # These need double-backslashes because it's used in test config files which also need escaping
+  TESTFILE_1K=Z:$(echo $TESTFILE_1K | sed 's/\//\\\\/g')
+  TESTFILE_150K=Z:$(echo $TESTFILE_150K | sed 's/\//\\\\/g')
+  TESTFILE_15M=Z:$(echo $TESTFILE_15M | sed 's/\//\\\\/g')
+fi
+
