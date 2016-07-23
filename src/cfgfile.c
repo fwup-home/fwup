@@ -133,7 +133,7 @@ static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **arg
     INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
 
     // Overwrite the environment.
-    if (set_environment(argv[0], argv[1], 1) < 0) {
+    if (set_environment(argv[0], argv[1]) < 0) {
         cfg_error(cfg, "set_environment failed");
         return -1;
     }
@@ -153,7 +153,7 @@ static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
     if (!get_environment(argv[0])) {
         INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
 
-        if (set_environment(argv[0], argv[1], 0) < 0) {
+        if (set_environment(argv[0], argv[1]) < 0) {
             cfg_error(cfg, "set_environment failed");
             return -1;
         }
