@@ -196,7 +196,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     const char *path = cfg_getstr(sec, "bootstrap-code-host-path");
     const char *bootstrap_hex = cfg_getstr(sec, "bootstrap-code");
     if (path && !bootstrap_hex) {
-        FILE *fp = fopen(path, "r");
+        FILE *fp = fopen(path, "rb");
         if (!fp) {
             cfg_error(cfg, "mbr bootstrap code path '%s' required, but can't be read", path);
             return -1;
