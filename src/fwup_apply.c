@@ -186,9 +186,12 @@ static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive
     if (created)
         *created = false;
 
-    // Check if this is the first time to get this archive or if the path
-    // has changed.
-    if (!p->subarchive || strcmp(archive_path, p->subarchive_path) != 0) {
+    // Check if the archive path has changed
+    if ((p->subarchive_path == NULL && archive_path != NULL) ||
+        (p->subarchive_path != NULL && archive_path == NULL) ||
+        (p->subarchive_path && archive_path && strcmp(archive_path, p->subarchive_path) != 0)) {
+
+        // If a subarchive is open, close it.
         if (p->subarchive) {
             archive_write_close(p->subarchive);
             archive_write_free(p->subarchive);
@@ -197,6 +200,7 @@ static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive
             p->subarchive_path = NULL;
         }
 
+        // If the caller wants to open a new subarchive, open it.
         if (archive_path) {
             p->subarchive = archive_write_new();
             archive_write_set_format_zip(p->subarchive);
@@ -210,7 +214,6 @@ static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive
             if (created)
                 *created = true;
         }
-
     }
     if (a)
         *a = p->subarchive;
@@ -416,7 +419,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL));
 
     // Flush a subarchive that's being built.
-    OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, "", NULL, NULL));
+    OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, NULL, NULL, NULL));
 
     // Close the file before we report 100% just in case that takes some time (Linux)
     close(fctx.output_fd);
