@@ -214,8 +214,10 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
         bytes_to_hex(bootstrap, bootstrap_str, sizeof(bootstrap));
         cfg_setstr(sec, "bootstrap-code", bootstrap_str);
     }
-    if (mbr_verify_cfg(sec) < 0)
+    if (mbr_verify_cfg(sec) < 0) {
         cfg_error(cfg, last_error());
+        return -1;
+    }
 
     return 0;
 }
