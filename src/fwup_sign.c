@@ -22,6 +22,7 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -111,16 +112,36 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     if (!configtxt)
         ERR_CLEANUP_MSG("Invalid firmware. No meta.conf not found");
 
-    if (rename(temp_filename, output_filename) < 0)
-        ERR_CLEANUP_MSG("Error updating '%s'", input_filename);
-    free(temp_filename);
-    temp_filename = NULL;
-
-cleanup:
+    // Close the files now that we're done reading and writing to them.
     archive_write_close(out);
     archive_write_free(out);
     archive_read_close(in);
     archive_read_free(in);
+    out = NULL;
+    in = NULL;
+
+#ifdef WIN32
+    // On Windows, the output_file must not exist or the rename fails.
+    if (unlink(output_filename) < 0 && errno != ENOENT)
+        ERR_CLEANUP_MSG("Error overwriting '%s': %s", output_filename, strerror(errno));
+#endif
+
+    // Rename our output to the original file.
+    if (rename(temp_filename, output_filename) < 0)
+        ERR_CLEANUP_MSG("Error updating '%s': %s", output_filename, strerror(errno));
+    free(temp_filename);
+    temp_filename = NULL;
+
+cleanup:
+    // Close the files if they're still open.
+    if (out) {
+        archive_write_close(out);
+        archive_write_free(out);
+    }
+    if (in) {
+        archive_read_close(in);
+        archive_read_free(in);
+    }
 
     // Only unlink the temporary file if something failed.
     if (temp_filename) {
