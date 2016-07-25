@@ -22,8 +22,14 @@ $FWUP_CREATE -g
 # Create the firmware
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
+# Sign the firmware out of place
+$FWUP_CREATE -S -s fwup-key.priv -i $FWFILE -o $FWFILE.2
+
 # Sign the firmware in place
 $FWUP_CREATE -S -s fwup-key.priv -i $FWFILE -o $FWFILE
+
+# Check that in place and out of place signing are the same
+diff $FWFILE $FWFILE.2
 
 # Check that applying the firmware with checking signatures works
 $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
