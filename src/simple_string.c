@@ -70,12 +70,12 @@ void ssvprintf(struct simple_string *s, const char *format, va_list ap)
     while (s->str) {
         int max_len = s->end - s->p - 1;
         int n = vsnprintf(s->p, max_len, format, aq);
-        // vsnprintf failed
-        if (n < 0)
-            break;
 
-        // Success
-        if (n < max_len) {
+        // Success is no truncation.
+
+        // Normally this is indicated with n == max_len, but with mingw it
+        // is indicated by n < 0.
+        if (n >= 0 && n < max_len) {
             s->p += n;
             break;
         }
