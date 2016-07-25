@@ -24,8 +24,8 @@
 struct mbr_partition {
     bool boot_flag;     // true to mark as boot partition
     int partition_type; // partition type (e.g., 0=unused, 0x83=Linux, 0x01=FAT12, 0x04=FAT16, 0x0c=FAT32, etc.
-    int block_offset;
-    int block_count;
+    uint32_t block_offset;
+    uint32_t block_count;
 };
 
 struct osii {

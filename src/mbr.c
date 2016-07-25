@@ -17,6 +17,8 @@
 #include "mbr.h"
 #include "util.h"
 
+#include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,19 +45,19 @@ int mbr_verify(const struct mbr_partition partitions[4])
         if (partitions[i].partition_type == 0)
             continue;
 
-        int ileft = partitions[i].block_offset;
-        int iright = ileft + partitions[i].block_count - 1;
+        uint32_t ileft = partitions[i].block_offset;
+        uint32_t iright = ileft + partitions[i].block_count;
         int j;
         for (j = 0; j < 4; j++) {
             if (j == i)
                 continue;
 
-            int jleft = partitions[j].block_offset;
-            int jright = jleft + partitions[j].block_count - 1;
+            uint32_t jleft = partitions[j].block_offset;
+            uint32_t jright = jleft + partitions[j].block_count;
 
-            if ((ileft >= jleft && ileft <= jright) ||
-                (iright >= jleft && iright <= jright))
-                ERR_RETURN("partitions overlap");
+            if ((ileft >= jleft && ileft < jright) ||
+                (iright > jleft && iright <= jright))
+                ERR_RETURN("partitions %d and %d overlap", i, j);
         }
     }
 
@@ -251,8 +253,24 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
             ERR_RETURN("invalid or duplicate partition number found");
         found = found | (1 << partition_ix);
 
-        partitions[partition_ix].partition_type = cfg_getint(partition, "type");
-        partitions[partition_ix].block_offset = cfg_getint(partition, "block-offset");
+        int unverified_type = cfg_getint(partition, "type");
+        if (unverified_type < 0 || unverified_type > 0xff)
+            ERR_RETURN("partition type must be between 0 and 255");
+
+        partitions[partition_ix].partition_type = unverified_type;
+
+        const char *unverified_block_offset = cfg_getstr(partition, "block-offset");
+        if (!unverified_block_offset)
+            ERR_RETURN("partition's block_offset is required");
+        unsigned long block_offset = strtoul(unverified_block_offset, 0, 0);
+
+        // strtoul returns error by returning ULONG_MAX and setting errno.
+        // Values bigger than 2^32-1 won't fit in the MBR, so report an
+        // error for those too.
+        if ((block_offset == ULONG_MAX && errno != 0) || block_offset >= UINT32_MAX)
+            ERR_RETURN("block_offset must be positive and less than 2^32 - 1: '%s'", unverified_block_offset);
+        partitions[partition_ix].block_offset = block_offset;
+
         partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
         partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
 
