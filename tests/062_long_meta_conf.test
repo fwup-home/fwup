@@ -84,7 +84,7 @@ check_meta_conf
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-dd if=$TESTFILE_1K seek=0 of=$WORK/expected.bin
-dd if=$TESTFILE_1K seek=4 of=$WORK/expected.bin
-dd if=$TESTFILE_1K seek=8 of=$WORK/expected.bin
-diff $IMGFILE $WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=0 of=$WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=4 of=$WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=8 of=$WORK/expected.bin
+diff $HOST_IMGFILE $WORK/expected.bin

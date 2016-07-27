@@ -32,6 +32,11 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 $FWUP_APPLY -a -n -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
 
+# Ignore CR characters when testing under Wine
+if [ -n "$EXEEXT" ]; then
+  sed -e "s/\r//g" -i $WORK/actual_output.txt
+fi
+
 cat >$WORK/expected_output.txt <<EOF
 0
 25

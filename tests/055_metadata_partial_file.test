@@ -36,7 +36,7 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Only keep the first 512 bytes of the whole 15MB .fw file!
-dd if=$FWFILE of=$FWFILE.truncated bs=1 count=512 2>/dev/null
+dd if=$HOST_FWFILE of=$HOST_FWFILE.truncated bs=1 count=512 2>/dev/null
 
 $FWUP_APPLY -i $FWFILE.truncated -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 

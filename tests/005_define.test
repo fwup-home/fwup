@@ -9,6 +9,14 @@
 # 1KB of all ones
 TESTFILE=1K.bin
 
+# Adapt file paths passed to fwup on Windows
+# This assumes we're running under Wine, which maps Z:\ to Linux's /
+if [ -n "$EXEEXT" ]; then
+  TEST_PATH="Z:$(echo $TESTS_DIR | sed 's/\//\\\\/g')\\\\\${TEST_DEFINE}"
+else
+  TEST_PATH="$TESTS_DIR/\${TEST_DEFINE}"
+fi
+
 cat >$CONFIG <<EOF
 define(TEST_DEFINE, "$TESTFILE")
 
@@ -18,7 +26,7 @@ meta-product = \${TEST_DEFINE}
 # Test substitution in a resource name
 file-resource "\${TEST_DEFINE}" {
         # Test substitution in the middle of a string
-        host-path = "$TESTS_DIR/\${TEST_DEFINE}"
+        host-path = "$TEST_PATH"
 }
 
 task complete {
@@ -44,8 +52,8 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $TESTFILE_1K $UNZIPDIR/data/$TESTFILE
+diff $HOST_TESTFILE_1K $UNZIPDIR/data/$TESTFILE
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $TESTFILE_1K
+diff $HOST_IMGFILE $HOST_TESTFILE_1K

@@ -12,6 +12,15 @@
 # this file.
 MINIFW=/tmp/mini.fw
 
+# Adapt file paths passed to fwup on Windows
+# This assumes we're running under Wine, which maps Z:\ to Linux's /
+# Double the backslashes so they'll still be escaped in the generated config file.
+HOST_MINIFW=$MINIFW
+if [ -n "$EXEEXT" ]; then
+  MINIFW='Z:\\tmp\\mini.fw'
+fi
+
+
 cat >$CONFIG <<EOF
 task complete {
     on-init {
@@ -34,5 +43,5 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 rm -fr $UNZIPDIR
-unzip -q $MINIFW -d $UNZIPDIR
+unzip -q $HOST_MINIFW -d $UNZIPDIR
 check_meta_conf

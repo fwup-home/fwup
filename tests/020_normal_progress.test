@@ -35,5 +35,11 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' > $WORK/actu
 cat >$WORK/expected_output.txt <<EOF
 .  0%. 25%. 50%. 75%. 99%.100%
 EOF
+
+# There's one more CR in the output under Wine due to the line-ending
+if [ -n "$EXEEXT" ]; then
+  sed -i -e 's/$/./g' $WORK/expected_output.txt
+fi
+
 diff $WORK/expected_output.txt $WORK/actual_output.txt
 

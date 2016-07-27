@@ -82,6 +82,6 @@ xxd -r - >$EXPECTED_OUTPUT <<EOF
 000001f0: 0000 0000 0000 0000 0000 0000 0000 55aa  ..............U.
 EOF
 
-dd if=$IMGFILE skip=63 count=1 2>/dev/null >$ACTUAL_OUTPUT
+dd if=$HOST_IMGFILE skip=63 count=1 2>/dev/null >$ACTUAL_OUTPUT
 diff $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 

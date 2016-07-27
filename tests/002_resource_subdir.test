@@ -54,13 +54,13 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $TESTFILE_1K $UNZIPDIR/data/subdir/onesubdir
-diff $TESTFILE_1K $UNZIPDIR/rootfile
-diff $TESTFILE_1K $UNZIPDIR/data/subdir1/subdir2/twosubdir
+diff $HOST_TESTFILE_1K $UNZIPDIR/data/subdir/onesubdir
+diff $HOST_TESTFILE_1K $UNZIPDIR/rootfile
+diff $HOST_TESTFILE_1K $UNZIPDIR/data/subdir1/subdir2/twosubdir
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-dd if=$TESTFILE_1K seek=0 of=$WORK/expected.bin
-dd if=$TESTFILE_1K seek=4 of=$WORK/expected.bin
-dd if=$TESTFILE_1K seek=8 of=$WORK/expected.bin
-diff $IMGFILE $WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=0 of=$WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=4 of=$WORK/expected.bin
+dd if=$HOST_TESTFILE_1K seek=8 of=$WORK/expected.bin
+diff $HOST_IMGFILE $WORK/expected.bin

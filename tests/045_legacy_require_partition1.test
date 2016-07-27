@@ -118,11 +118,11 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # The firmware file is equivalent to the following dd calls
 # Assume that previous tests make sure that the MBR is correct and just
 # copy it over.
-dd if=$IMGFILE of=$WORK/check.bin count=1 2>/dev/null
-dd if=$TESTFILE_1K seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-dd if=$TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+dd if=$HOST_IMGFILE of=$WORK/check.bin count=1 2>/dev/null
+dd if=$HOST_TESTFILE_1K seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$HOST_TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$HOST_TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+diff $WORK/check.bin $HOST_IMGFILE
 
 # Now upgrade the IMGFILE file
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
@@ -130,5 +130,5 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
 cp $WORK/check.bin $WORK/check-upgraded.bin
 dd if=$WORK/mbr_b.bin of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
-dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
-diff $WORK/check-upgraded.bin $IMGFILE
+dd if=$HOST_TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
+diff $WORK/check-upgraded.bin $HOST_IMGFILE

@@ -37,7 +37,7 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Now be sneaking and replace the data file with a same-sized imposter
-unzip -q $FWFILE -d $UNZIPDIR
+unzip -q $HOST_FWFILE -d $UNZIPDIR
 cp $TESTFILE_1K_CORRUPT $UNZIPDIR/data/1K.bin
 cd $UNZIPDIR
 zip -q $WORK/imposter.fw meta.conf data/1K.bin

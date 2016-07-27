@@ -89,4 +89,4 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
-diff $WORK/expected.img $IMGFILE
+diff $WORK/expected.img $HOST_IMGFILE
