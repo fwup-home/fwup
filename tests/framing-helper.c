@@ -5,6 +5,8 @@
 #include <unistd.h>
 
 #ifdef _WIN32
+#include <fcntl.h> // O_BINARY
+
 // Assume that all windows platforms are little endian
 #define TO_BIGENDIAN32(X) _byteswap_ulong(X)
 #define FROM_BIGENDIAN32(X) _byteswap_ulong(X)
@@ -117,6 +119,11 @@ int main(int argc, char *argv[])
         REMOVE_FRAMING
     } command = ADD_FRAMING;
     size_t frame_size = 4096;
+
+#ifdef _WIN32
+    setmode(STDIN_FILENO, O_BINARY);
+    setmode(STDOUT_FILENO, O_BINARY);
+#endif
 
     int opt;
     while ((opt = getopt(argc, argv, "den:v")) != -1) {
