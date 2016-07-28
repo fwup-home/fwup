@@ -20,10 +20,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
-#include <fcntl.h>
-#endif
-
 #define DEFAULT_LIBARCHIVE_BLOCK_SIZE 16384
 
 extern bool fwup_framing;
@@ -37,10 +33,6 @@ struct fwup_archive_data {
 static int framed_stdin_open(struct archive *a, void *client_data)
 {
     struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
-
-#ifdef _WIN32
-    setmode(0, O_BINARY);
-#endif
 
     ad->current_frame_remaining = 0;
     ad->is_eof = false;

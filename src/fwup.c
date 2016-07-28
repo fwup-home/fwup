@@ -365,6 +365,13 @@ int main(int argc, char **argv)
         }
     }
 
+#ifdef _WIN32
+    if (fwup_framing) {
+        setmode(STDIN_FILENO, O_BINARY);
+        setmode(STDOUT_FILENO, O_BINARY);
+    }
+#endif
+
     if (quiet && numeric_progress)
         fwup_errx(EXIT_FAILURE, "pick either -n or -q, but not both");
 
