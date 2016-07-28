@@ -9,12 +9,11 @@
 . ./common.sh
 
 cat >$CONFIG <<EOF
-file-resource subdir/TEST {
+file-resource TEST {
 	host-path = "${TESTFILE_1K}"
 }
-
 task complete {
-	on-resource subdir/TEST { raw_write(1) }
+	on-resource TEST { raw_write(1) }
 }
 EOF
 
@@ -27,3 +26,10 @@ cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 # The firmware file is equivalent to the following dd call
 dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
 diff $WORK/check.bin $IMGFILE
+
+# Try it again, but redirect the input this time
+# NOTE: This fails on Windows due to an fstat call in libarchive
+#       returning error. Amazingly pipes work on Windows.
+#rm $IMGFILE
+#$FWUP_APPLY -a -d $IMGFILE -i - -t complete < $FWFILE
+#diff $WORK/check.bin $IMGFILE
