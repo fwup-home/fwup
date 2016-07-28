@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#
+# Test that .fw files are being compressed. If this fails, the cause is
+# probably that libarchive was compiled without zlib support.
+#
+
+. ./common.sh
+
+TESTFILE_ZEROS=$WORK/zeros
+dd if=/dev/zero of=$TESTFILE_ZEROS bs=1K count=100 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_ZEROS}"
+}
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+FWFILE_SIZE=$(stat -c%s $FWFILE)
+if (( $FWFILE_SIZE > 1000 )); then
+    # When originally tested, the .fw size was 644 bytes
+    echo "Firmware size larger than expected: $FWFILE_SIZE"
+    exit 1
+fi

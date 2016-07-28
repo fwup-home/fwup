@@ -73,6 +73,7 @@ TESTS = 001_simple_fw.test \
 	068_readonly_output_error.test \
 	069_define_bang.test \
 	070_bad_mbr_offset.test \
-	071_big_mbr_offset.test
+	071_big_mbr_offset.test \
+	072_compression_works.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
