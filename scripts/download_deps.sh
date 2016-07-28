@@ -55,7 +55,7 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
     rm -fr libarchive-*
     tar xf $DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.gz
     pushd libarchive-$LIBARCHIVE_VERSION
-    ./configure --prefix=$DEPS_INSTALL_DIR --without-xml2 --without-openssl --without-nettle --without-expat --without-lzo2 --without-lzma --without-bz2lib --without-iconv --enable-shared=no
+    LDFLAGS=-L$DEPS_INSTALL_DIR/lib CFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$DEPS_INSTALL_DIR --without-xml2 --without-openssl --without-nettle --without-expat --without-lzo2 --without-lzma --without-bz2lib --without-iconv --enable-shared=no
     make $MAKE_FLAGS
     make install
     popd
