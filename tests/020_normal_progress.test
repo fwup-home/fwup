@@ -30,7 +30,11 @@ EOF
 
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' > $WORK/actual_output.txt
+# Run the command and turn the `\r`s into periods to make
+# it easy to compare with the expected output. The second
+# call to sed is to discard the final `\r` that's present
+# on Windows.
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete | $SED 's/\r/./g' | $SED 's/\.$//g' > $WORK/actual_output.txt
 
 cat >$WORK/expected_output.txt <<EOF
 .  0%. 25%. 50%. 75%. 99%.100%
