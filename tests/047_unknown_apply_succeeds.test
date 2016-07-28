@@ -13,12 +13,7 @@
 
 cat >$CONFIG <<EOF
 meta-product = "testing test test"
-file-resource subdir/TEST {
-        host-path = "${TESTFILE_150K}"
-}
-
 task complete {
-	on-resource subdir/TEST { raw_write(1) }
 }
 EOF
 
@@ -28,8 +23,8 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 unzip_fw
 echo "meta-mynewmeta=\"something\"" >> $UNZIPDIR/meta.conf
 pushd $UNZIPDIR
-zip -q -u $FWFILE meta.conf
+zip -q $FWFILE.new meta.conf
 popd
 
 # See that it still applies
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE.new -t complete
