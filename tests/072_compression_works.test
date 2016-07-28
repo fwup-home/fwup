@@ -8,7 +8,7 @@
 . ./common.sh
 
 TESTFILE_ZEROS=$WORK/zeros
-dd if=/dev/zero of=$TESTFILE_ZEROS bs=1K count=100 2>/dev/null
+dd if=/dev/zero of=$TESTFILE_ZEROS bs=1024 count=100 2>/dev/null
 
 cat >$CONFIG <<EOF
 file-resource TEST {
@@ -22,7 +22,8 @@ EOF
 # Create the firmware file
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-FWFILE_SIZE=$(stat -c%s $FWFILE)
+FWFILE_SIZE=$($STAT -c%s $FWFILE)
+
 if (( $FWFILE_SIZE > 1000 )); then
     # When originally tested, the .fw size was 644 bytes
     echo "Firmware size larger than expected: $FWFILE_SIZE"

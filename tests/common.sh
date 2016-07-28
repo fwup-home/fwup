@@ -8,15 +8,18 @@ export LC_ALL=C
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
 SED=sed
+STAT=stat
 
 case "$OSTYPE" in
     darwin*)
-        [ -e /usr/local/bin/greadlink ] || ( echo "Please run 'brew install coreutils'"; exit 1 )
-        [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools'"; exit 1 )
-        [ -e /usr/local/bin/gsed ] || ( echo "Please run 'brew install gnu-sed'"; exit 1 )
-
         READLINK=/usr/local/bin/greadlink
         SED=/usr/local/bin/gsed
+        STAT=/usr/local/bin/gstat
+
+        [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
+        [ -e $STAT ] || ( echo "Please run 'brew install coreutils' to install gstat"; exit 1 )
+        [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
+        [ -e $SED ] || ( echo "Please run 'brew install gnu-sed' to install gsed"; exit 1 )
         ;;
     *)
         ;;
