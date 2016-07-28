@@ -66,6 +66,9 @@ else
     if [[ "$BUILD_STATIC" = "false" ]]; then
         brew install libarchive libsodium confuse
     fi
-    ls /usr/local/lib
+    # Fix brew breakage in autotools
+    mkdir /usr/local/Library/ENV
+    ln -s /usr/local/Library/Homebrew/shims/super /usr/local/Library/ENV/4.3
+    ls /usr/local/Library/ENV/4.3
 fi
 
