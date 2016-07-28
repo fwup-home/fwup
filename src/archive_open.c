@@ -39,6 +39,7 @@ static int framed_stdin_open(struct archive *a, void *client_data)
 #endif
 
     ad->current_frame_remaining = 0;
+    ad->is_eof = false;
 
     archive_clear_error(a);
     return ARCHIVE_OK;
