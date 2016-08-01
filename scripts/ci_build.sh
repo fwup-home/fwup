@@ -30,7 +30,7 @@ fi
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
     ./configure --enable-gcov
 else
-    CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure;
+    PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
 fi
 make
 make check
@@ -42,7 +42,7 @@ cd fwup-*
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
     ./configure;
 else
-    CPPFLAGS="-I/usr/local/include -I/usr/local/opt/libarchive/include" LDFLAGS="-L/usr/local/lib -L/usr/local/opt/libarchive/lib" ./configure;
+    PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
 fi
 make
 make check
