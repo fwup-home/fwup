@@ -67,7 +67,14 @@ if !HAS_STRPTIME
 fwup_SOURCES+=../3rdparty/strptime.c
 endif
 
-fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
+fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
+	      $(CONFUSE_CFLAGS) \
+	      $(ARCHIVE_CFLAGS) \
+	      $(SODIUM_CFLAGS)
+
+fwup_LDADD = $(CONFUSE_LIBS) \
+	     $(ARCHIVE_LIBS) \
+	     $(SODIUM_LIBS)
 
 if ENABLE_GCOV
 fwup_CFLAGS += -fprofile-arcs -ftest-coverage

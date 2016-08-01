@@ -34,10 +34,22 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset setenv strdup strtoul umount fcntl strptime setenv pread pwrite])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
-AC_CHECK_LIB([confuse], [cfg_searchpath], [], [ AC_MSG_ERROR([Could not find libconfuse v2.8 or later]) ])
-AC_CHECK_LIB([z], [deflate], [], [ AC_MSG_ERROR([Could not find zlib (required for zip support in libarchive)]) ])
-AC_CHECK_LIB([archive], [archive_read_new], [], [ AC_MSG_ERROR([Could not find libarchive]) ])
-AC_CHECK_LIB([sodium], [crypto_generichash_init], [], [ AC_MSG_ERROR([Could not find libsodium]) ])
+AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
+AS_IF([test "x$PKG_CONFIG" = "xno"],[
+   AC_MSG_ERROR([
+      *** The pkg-config script could not be found. Make sure it is
+      *** in your path, or set the PKG_CONFIG environment variable
+      *** to the full path to pkg-config.])
+   ])
+
+PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive]))
+PKG_CHECK_MODULES([CONFUSE], [libconfuse >= 2.8], [], AC_MSG_ERROR([Requires libconfuse v2.8 or later]))
+PKG_CHECK_MODULES([SODIUM], [libsodium], [], AC_MSG_ERROR([Requires libsodium]))
+
+# libarchive must be compiled with zlib. Assume that if zlib is available,
+# then libarchive will use it. This isn't perfect, so a regression test
+# exists to verify that libarchive uses compression.
+PKG_CHECK_MODULES([ZLIB], [zlib], [], AC_MSG_ERROR([Requires libarchive to be built with zlib]))
 
 # Platform-specific additions
 AS_CASE([$host_os],
