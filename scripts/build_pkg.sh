@@ -22,9 +22,12 @@ PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
 FWUP_INSTALL_DIR=$BUILD_DIR/fwup-installed/usr
 
 MAKE_FLAGS=-j8
+LDD=ldd
 
+# Fix defaults for mac
 if [[ $(uname -s) = "Darwin" ]]; then
-    EXTRA_LDFLAGS="-L/usr/local/lib -lintl"
+    SKIP_PACKAGE=true
+    LDD="otool -L"
 fi
 
 # Initial sanity checks
@@ -55,20 +58,20 @@ make clean
 make $MAKE_FLAGS
 
 # Verify that it was statically linked
-if ldd src/fwup | grep libz; then
+if $LDD src/fwup | grep libz; then
     echo "fwup was dynamically linked to zlib. This should not happen.";
     exit 1
 fi
-if ldd src/fwup | grep confuse; then
+if $LDD src/fwup | grep confuse; then
     echo "fwup was dynamically linked to libconfuse. This should not happen.";
     exit 1
 fi
-if ldd src/fwup | grep archive; then
+if $LDD src/fwup | grep archive; then
     echo "fwup was dynamically linked to libarchive. This should not happen.";
     exit 1
 fi
-if ldd src/fwup | grep sodium; then
-    echo "fwup was dynamically linked to libsodium This should not happen.";
+if $LDD src/fwup | grep sodium; then
+    echo "fwup was dynamically linked to libsodium. This should not happen.";
     exit 1
 fi
 

@@ -60,7 +60,7 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
         --prefix=$DEPS_INSTALL_DIR --without-xml2 --without-openssl \
         --without-nettle --without-expat --without-lzo2 --without-lzma \
         --without-bz2lib --without-iconv --enable-shared=no --disable-bsdtar \
-        --disable-bsdcpio --disable-bsdcat --disable-acl --disable-xattr \
+        --disable-bsdcpio --disable-bsdcat --disable-xattr \
         --without-libiconv-prefix --without-lz4
     make $MAKE_FLAGS
     make install
