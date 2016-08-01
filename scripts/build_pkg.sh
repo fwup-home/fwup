@@ -17,6 +17,7 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR=$BASE_DIR/build
 DEPS_DIR=$BASE_DIR/deps
 DEPS_INSTALL_DIR=$DEPS_DIR/usr
+PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
 
 FWUP_INSTALL_DIR=$BUILD_DIR/fwup-installed/usr
 
@@ -49,7 +50,7 @@ pushd $BUILD_DIR
 # Build fwup (symlink now, since out-of-tree fwup build is broke)
 ln -sf $BASE_DIR $BUILD_DIR/fwup
 pushd fwup
-LDFLAGS="-L$DEPS_INSTALL_DIR/lib $EXTRA_LDFLAGS" CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$FWUP_INSTALL_DIR --enable-shared=no || cat config.log
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH LDFLAGS="-L$DEPS_INSTALL_DIR/lib $EXTRA_LDFLAGS" CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$FWUP_INSTALL_DIR --enable-shared=no || cat config.log
 cat config.log
 make clean
 make $MAKE_FLAGS
