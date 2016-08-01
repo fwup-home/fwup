@@ -42,14 +42,9 @@ AS_IF([test "x$PKG_CONFIG" = "xno"],[
       *** to the full path to pkg-config.])
    ])
 
-PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive]))
+PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive. Libarchive must be built with zlib supprot.]))
 PKG_CHECK_MODULES([CONFUSE], [libconfuse >= 2.8], [], AC_MSG_ERROR([Requires libconfuse v2.8 or later]))
 PKG_CHECK_MODULES([SODIUM], [libsodium], [], AC_MSG_ERROR([Requires libsodium]))
-
-# libarchive must be compiled with zlib. Assume that if zlib is available,
-# then libarchive will use it. This isn't perfect, so a regression test
-# exists to verify that libarchive uses compression.
-PKG_CHECK_MODULES([ZLIB], [zlib], [], AC_MSG_ERROR([Requires libarchive to be built with zlib]))
 
 # Platform-specific additions
 AS_CASE([$host_os],
