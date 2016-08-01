@@ -50,8 +50,7 @@ pushd $BUILD_DIR
 # Build fwup (symlink now, since out-of-tree fwup build is broke)
 ln -sf $BASE_DIR $BUILD_DIR/fwup
 pushd fwup
-PKG_CONFIG_PATH=$PKG_CONFIG_PATH LDFLAGS="-L$DEPS_INSTALL_DIR/lib $EXTRA_LDFLAGS" CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$FWUP_INSTALL_DIR --enable-shared=no || cat config.log
-cat config.log
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH LDFLAGS="-L$DEPS_INSTALL_DIR/lib $EXTRA_LDFLAGS" CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure --prefix=$FWUP_INSTALL_DIR --enable-shared=no || (cat config.log; exit 1)
 make clean
 make $MAKE_FLAGS
 
