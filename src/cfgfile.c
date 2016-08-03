@@ -242,7 +242,7 @@ static cfg_opt_t file_resource_opts[] = {
 };
 static cfg_opt_t mbr_partition_opts[] = {
     CFG_STR("block-offset", 0, CFGF_NONE), // Special case: use a string to support unsigned 32-bit offsets on 32-bit machines
-    CFG_INT("block-count", -1, CFGF_NONE),
+    CFG_INT("block-count", INT32_MAX, CFGF_NONE),
     CFG_INT("type", -1, CFGF_NONE),
     CFG_BOOL("boot", cfg_false, CFGF_NONE),
     CFG_IGNORE_UNKNOWN

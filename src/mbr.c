@@ -272,12 +272,10 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
         partitions[partition_ix].block_offset = block_offset;
 
         partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
-        partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
+        if (partitions[partition_ix].block_count >= INT32_MAX)
+            ERR_RETURN("block-count must be specified and less than 2^31 - 1");
 
-        if (partitions[partition_ix].partition_type < 0 ||
-                partitions[partition_ix].block_offset < 0 ||
-                partitions[partition_ix].block_count < 0)
-            ERR_RETURN("type, block-offset, and block-count must all be positive and specified");
+        partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
     }
 
     if (found_partitions)
