@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.8.2-dev
+
 ## v0.8.1
 
 This release is a bug fix release on v0.8.0. The combination of significantly
