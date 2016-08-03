@@ -2,6 +2,24 @@
 
 ## v0.8.1-dev
 
+This release is a bug fix release on v0.8.0. The combination of significantly
+improved code coverage on the regression tests (see Coveralls status) and the
+Windows port uncovered several bugs. People submitting fwup to distributions are
+highly encouraged to run the regression tests (`make check`), since some issues
+only appear when running against old or misconfigured versions of libconfuse and
+libarchive.
+
+  * Bug fixes
+    * Use pkg-config in autoconf scripts to properly discover transitive
+      dependencies. Thanks to the Buildroot project for discovering a broken
+      configuration.
+    * Fix lack of compression support in libarchive in static builds (regression
+      test added to catch this in the future)
+    * Fix MBR partition handling on 32-bit systems (offsets between 2^31 and
+      2^32 would fail)
+    * Fix uninitialized variable when framing on stdin/stdout is enabled
+    * Various error message improvements thanks to Greg Mefford.
+
 ## v0.8.0
 
   * New features
