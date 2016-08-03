@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.8.1-dev
+## v0.8.1
 
 This release is a bug fix release on v0.8.0. The combination of significantly
 improved code coverage on the regression tests (see Coveralls status) and the
