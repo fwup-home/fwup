@@ -33,43 +33,6 @@ void mmc_finalize()
 {
 }
 
-static int mmc_query_volume_path(const WCHAR *volume_path, struct mmc_device *device)
-{
-    HANDLE volume_handle = CreateFile(volume_path,
-                                      GENERIC_READ | GENERIC_WRITE,
-                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                      NULL,
-                                      OPEN_EXISTING,
-                                      0,
-                                      NULL);
-    if (volume_handle == INVALID_HANDLE_VALUE) {
-        // Can't even open the device.
-        return 0;
-    }
-
-
-    DWORD bytes_returned;
-    DISK_GEOMETRY_EX geometry;
-    BOOL status = DeviceIoControl(volume_handle,
-                                  IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
-                                  NULL,
-                                  0,
-                                  &geometry,
-                                  sizeof(geometry),
-                                  &bytes_returned,
-                                  NULL);
-
-    CloseHandle(volume_handle);
-
-    if (status && geometry.DiskSize.QuadPart > 0) {
-        WideCharToMultiByte(CP_UTF8, 0, volume_path, -1, device->path, sizeof(device->path), NULL, NULL);
-        device->size = geometry.DiskSize.QuadPart;
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 /**
  * @brief Scan for SDCards and other removable media
  * @param devices where to store detected devices and some metadata
@@ -78,63 +41,49 @@ static int mmc_query_volume_path(const WCHAR *volume_path, struct mmc_device *de
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
-    DWORD  Error                = ERROR_SUCCESS;
-    HANDLE FindHandle           = INVALID_HANDLE_VALUE;
-    size_t Index                = 0;
-    BOOL   Success              = FALSE;
-    WCHAR  VolumeName[MAX_PATH] = L"";
+    // There's not an API to request all the PhysicalDrives, but they are
+    // sequentially enumerated and become invalid if they're removed.
+    // So we just scan the first 256 of them until we find enough matches
     int device_count = 0;
+    for (int i = 0; i < 256 && device_count < max_devices ; i++) {
+        WCHAR drive_path[MAX_PATH] = L"";
+        wsprintf(drive_path, L"\\\\.\\PhysicalDrive%d", i);
 
-    //  Enumerate all volumes in the system.
-    FindHandle = FindFirstVolumeW(VolumeName, ARRAYSIZE(VolumeName));
-    if (FindHandle == INVALID_HANDLE_VALUE) {
-        Error = GetLastError();
-        fprintf(stderr, "FindFirstVolumeW failed with error code %d\n", Error);
-        return 0;
-    }
+        HANDLE drive_handle;
+        drive_handle = CreateFile(drive_path,
+                                  GENERIC_READ | GENERIC_WRITE,
+                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                  NULL,
+                                  OPEN_EXISTING,
+                                  0,
+                                  NULL);
 
-    while (device_count < max_devices) {
-        //  Skip the \\?\ prefix and remove the trailing backslash.
-        Index = wcslen(VolumeName) - 1;
-
-        if (VolumeName[0]     != L'\\' ||
-            VolumeName[1]     != L'\\' ||
-            VolumeName[2]     != L'?'  ||
-            VolumeName[3]     != L'\\' ||
-            VolumeName[Index] != L'\\') {
-            Error = ERROR_BAD_PATHNAME;
-            break;
+        if (drive_handle == INVALID_HANDLE_VALUE) {
+            CloseHandle(drive_handle);
+            continue;
         }
 
-        WCHAR volume_path[Index + 1];
-        memcpy(volume_path, VolumeName, Index * sizeof(WCHAR));
-        volume_path[Index] = L'\0';
+        DWORD bytes_returned;
+        DISK_GEOMETRY_EX geometry;
+        BOOL status = DeviceIoControl(drive_handle,
+                                      IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+                                      NULL,
+                                      0,
+                                      &geometry,
+                                      sizeof(geometry),
+                                      &bytes_returned,
+                                      NULL);
+        CloseHandle(drive_handle);
 
-        if (mmc_query_volume_path(volume_path, &devices[device_count]))
+        if (status && geometry.Geometry.MediaType == RemovableMedia && geometry.DiskSize.QuadPart > 0) {
+            struct mmc_device *device;
+            device = &devices[device_count];
+            WideCharToMultiByte(CP_UTF8, 0, drive_path, -1, device->path, sizeof(device->path), NULL, NULL);
+            device->size = geometry.DiskSize.QuadPart;
             device_count++;
-
-        //
-        //  Move on to the next volume.
-        Success = FindNextVolumeW(FindHandle, VolumeName, ARRAYSIZE(VolumeName));
-
-        if ( !Success )
-        {
-            Error = GetLastError();
-
-            if (Error != ERROR_NO_MORE_FILES)
-            {
-                fprintf(stderr, "FindNextVolumeW failed with error code %d\n", Error);
-                break;
-            }
-
-            //  Finished iterating
-            //  through all the volumes.
-            Error = ERROR_SUCCESS;
-            break;
         }
     }
 
-    FindVolumeClose(FindHandle);
     return device_count;
 }
 
