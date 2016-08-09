@@ -1,0 +1,160 @@
+#!/bin/bash
+
+#
+# Test various manipulations of the FAT filesystem over multiple
+# steps. This exercises the logic that reads in existing FAT
+# filesystems rather than just creating a fresh image.
+#
+# Amazingly, it doesn't fail with the FAT cache bug, but it seems
+# nice to have around.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 150K.bin {
+	host-path = "${TESTFILE_150K}"
+}
+file-resource 15M.bin {
+	host-path = "${TESTFILE_15M}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task step1 {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "1.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "frag.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "3.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "frag2.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "5.bin")
+        }
+        on-resource 150K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "2.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "frag3.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "4.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "frag4.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "6.bin")
+        }
+        on-resource 15M.bin {
+                # Generate some holes in the hope that
+                # this big file will weave its way through the FAT
+                # and be like a canary should any misbehaving writes
+                # get done.
+                fat_rm(\${BOOT_PART_OFFSET}, "frag.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "frag2.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "frag3.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "frag4.bin")
+                fat_write(\${BOOT_PART_OFFSET}, "0.bin")
+        }
+        on-finish {
+        }
+}
+
+task step2 {
+	on-init {
+                fat_mv(\${BOOT_PART_OFFSET}, "1.bin", "1.bin.old")
+                fat_mv(\${BOOT_PART_OFFSET}, "3.bin", "3.bin.old")
+                fat_cp(\${BOOT_PART_OFFSET}, "2.bin", "3.bin")
+        }
+        on-resource 150K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "1.bin")
+        }
+}
+
+task step3 {
+	on-init {
+                fat_rm(\${BOOT_PART_OFFSET}, "1.bin.old")
+        }
+}
+
+task step4 {
+	on-init {
+                fat_mv(\${BOOT_PART_OFFSET}, "2.bin", "2.bin.old")
+                fat_mv(\${BOOT_PART_OFFSET}, "4.bin", "4.bin.old")
+                fat_cp(\${BOOT_PART_OFFSET}, "3.bin.old", "4.bin")
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "2.bin")
+        }
+}
+
+task step5 {
+	on-init {
+                fat_rm(\${BOOT_PART_OFFSET}, "3.bin.old")
+        }
+}
+
+task step6 {
+	on-init {
+                fat_rm(\${BOOT_PART_OFFSET}, "2.bin.old")
+                fat_rm(\${BOOT_PART_OFFSET}, "4.bin.old")
+                fat_rm(\${BOOT_PART_OFFSET}, "5.bin")
+                fat_rm(\${BOOT_PART_OFFSET}, "6.bin")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step1
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step2
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step3
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step4
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step5
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step6
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 46A5-9148
+Directory for ::/
+
+3        bin    150000 2015-05-05  18:10
+0        bin  15000000 2015-05-05  18:10
+1        bin    150000 2015-05-05  18:10
+4        bin      1024 2015-05-05  18:10
+2        bin      1024 2015-05-05  18:10
+        5 files          15 302 048 bytes
+                                 23 608 320 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+for i in 0 1 2 3 4; do
+    mcopy -n -i $WORK/fwup.img@@32256 ::/${i}.bin $WORK/actual.${i}.bin
+done
+
+diff $TESTFILE_15M $WORK/actual.0.bin
+diff $TESTFILE_150K $WORK/actual.1.bin
+diff $TESTFILE_1K $WORK/actual.2.bin
+diff $TESTFILE_150K $WORK/actual.3.bin
+diff $TESTFILE_1K $WORK/actual.4.bin
+
+echo Success!

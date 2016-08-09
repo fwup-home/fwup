@@ -74,6 +74,8 @@ TESTS = 001_simple_fw.test \
 	069_define_bang.test \
 	070_bad_mbr_offset.test \
 	071_big_mbr_offset.test \
-	072_compression_works.test
+	072_compression_works.test \
+	073_multistep_fat.test \
+	074_fat_cache_fail.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

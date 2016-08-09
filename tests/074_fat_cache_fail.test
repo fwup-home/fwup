@@ -1,0 +1,129 @@
+#!/bin/bash
+
+#
+# Test the case that finally exposed the bug in the
+# FAT cache. Without the fix, there will be a 512 byte
+# sequence of zeros in the middle of u-image.img.
+#
+
+. ./common.sh
+
+create_file() {
+    NAME=$1
+    SIZE=$2
+
+    dd if=/dev/urandom of=$WORK/$NAME bs=1 count=$SIZE 2>/dev/null
+}
+
+create_file MLO 65572
+create_file u-boot.img 351052
+create_file boot.scr 2308
+create_file zImage 4099880
+create_file am335x-boneblack.dtb 60958
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 32705)
+
+file-resource MLO {
+	host-path = "$WORK/MLO"
+}
+file-resource u-boot.img {
+	host-path = "$WORK/u-boot.img"
+}
+file-resource boot.scr {
+	host-path = "$WORK/boot.scr"
+}
+file-resource zImage {
+	host-path = "$WORK/zImage"
+}
+file-resource am335x-boneblack.dtb {
+	host-path = "$WORK/am335x-boneblack.dtb"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task step1 {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+                fat_setlabel(\${BOOT_PART_OFFSET}, "BOOT")
+        }
+        on-resource MLO { fat_write(\${BOOT_PART_OFFSET}, "MLO") }
+        on-resource u-boot.img { fat_write(\${BOOT_PART_OFFSET}, "u-boot.img") }
+        on-resource boot.scr { fat_write(\${BOOT_PART_OFFSET}, "boot.scr") }
+        on-resource zImage { fat_write(\${BOOT_PART_OFFSET}, "zImage") }
+        on-resource am335x-boneblack.dtb { fat_write(\${BOOT_PART_OFFSET}, "am335x-boneblack.dtb") }
+}
+
+task step2 {
+	on-init {
+                fat_rm(\${BOOT_PART_OFFSET}, "zImage.pre")
+                fat_rm(\${BOOT_PART_OFFSET}, "am335x-boneblack.dtb.pre")
+                fat_rm(\${BOOT_PART_OFFSET}, "am335x-bonegreen.dtb.pre")
+                fat_rm(\${BOOT_PART_OFFSET}, "boot.scr.pre")
+        }
+        on-resource zImage { fat_write(\${BOOT_PART_OFFSET}, "zImage.new") }
+        on-resource boot.scr { fat_write(\${BOOT_PART_OFFSET}, "boot.scr.new") }
+        on-resource am335x-boneblack.dtb { fat_write(\${BOOT_PART_OFFSET}, "am335x-boneblack.dtb.new") }
+
+        on-finish {
+                fat_mv(\${BOOT_PART_OFFSET}, "zImage", "zImage.pre")
+                fat_mv(\${BOOT_PART_OFFSET}, "boot.scr", "boot.scr.pre")
+                fat_mv(\${BOOT_PART_OFFSET}, "am335x-boneblack.dtb", "am335x-boneblack.dtb.pre")
+
+                fat_mv(\${BOOT_PART_OFFSET}, "zImage.new", "zImage")
+                fat_mv(\${BOOT_PART_OFFSET}, "boot.scr.new", "boot.scr")
+                fat_mv(\${BOOT_PART_OFFSET}, "am335x-boneblack.dtb.new", "am335x-boneblack.dtb")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step1
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step2
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : is BOOT
+  Volume Serial Number is 46A5-9148
+  Directory for ::/
+
+  MLO              65572 2015-05-05  18:10
+  u-boot   img    351052 2015-05-05  18:10
+  boot     scr      2308 2015-05-05  18:10
+  BOOTSC~1 PRE      2308 2015-05-05  18:10  boot.scr.pre
+  ZIMAGE         4099880 2015-05-05  18:10  zImage
+  AM335X~1 DTB     60958 2015-05-05  18:10  am335x-boneblack.dtb
+  ZIMAGE   PRE   4099880 2015-05-05  18:10  zImage.pre
+  AM335X~1 PRE     60958 2015-05-05  18:10  am335x-boneblack.dtb.pre
+          8 files           8 742 916 bytes
+                                    7 851 520 bytes free
+
+EOF
+
+# Check that the directory looks right
+MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+FILES="MLO zImage boot.scr u-boot.img am335x-boneblack.dtb"
+for FILE in  $FILES; do
+    MTOOLS_SKIP_CHECK=1 mcopy -n -i $WORK/fwup.img@@32256 ::/$FILE $WORK/$FILE.actual
+    diff $WORK/$FILE $WORK/$FILE.actual
+done
+
+echo Success!
