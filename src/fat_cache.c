@@ -9,23 +9,23 @@ static inline void set_dirty(struct fat_cache *fc, int block)
 {
     // Dirty implies that the block is valid, so make sure that it's set too.
     uint8_t *bits = &fc->flags[block / 4];
-    *bits = *bits | (0x3 << (block & 0x3));
+    *bits = *bits | (0x3 << (2 * (block & 0x3)));
 }
 
 static inline bool is_dirty(struct fat_cache *fc, int block)
 {
-    return (fc->flags[block / 4] & (0x1 << (block & 0x3))) != 0;
+    return (fc->flags[block / 4] & (0x1 << (2 * (block & 0x3)))) != 0;
 }
 
 static inline void set_valid(struct fat_cache *fc, int block)
 {
     uint8_t *bits = &fc->flags[block / 4];
-    *bits = *bits | (0x2 << (block & 0x3));
+    *bits = *bits | (0x2 << (2 * (block & 0x3)));
 }
 
 static inline bool is_valid(struct fat_cache *fc, int block)
 {
-    return (fc->flags[block / 4] & (0x2 << (block & 0x3))) != 0;
+    return (fc->flags[block / 4] & (0x2 << (2 * (block & 0x3)))) != 0;
 }
 
 /**
@@ -84,8 +84,10 @@ void fat_cache_format(struct fat_cache *fc)
 
     // Optimization: Initialize the first 128 KB or else there's a
     // random patchwork in the beginning that gets flushed at the end.
-    memset(fc->cache, 0, 256 * 512);
-    memset(fc->flags, 0xff, 256 / 4);
+    if (fc->cache_size_blocks >= 256) {
+        memset(fc->cache, 0, 256 * 512);
+        memset(fc->flags, 0xff, 256 / 4);
+    }
 }
 
 static ssize_t load_cache(struct fat_cache *fc, int block, int count)
@@ -163,7 +165,7 @@ int fat_cache_read(struct fat_cache *fc, int block, int count, char *buffer)
             // Not all invalid and not all valid. Punt. Just load each block individually, since this is
             // a rare case.
             for (i = 0; i < count; i++) {
-                if (load_cache(fc, block + i, 1) < 0)
+                if (!is_valid(fc, block + i) && load_cache(fc, block + i, 1) < 0)
                     return -1;
             }
 
