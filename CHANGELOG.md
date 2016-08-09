@@ -1,6 +1,20 @@
 # Changelog
 
-## v0.8.2-dev
+## v0.8.2
+
+This release has only one fix in it to address a corruption issue when updating
+an existing FAT filesystem. The corruption manifests itself as zero'ing out 512 bytes
+at some place in the filesystem that wasn't being upgraded. It appears that the
+location stays the same with the configuration that reproduced the issue. Due to some luck,
+the condition that causes this is relatively rare and appears to only have
+caused crashes for BeagleBone Green users. BeagleBone Black users still had the
+corruption, but it did not affect operation.
+
+It is highly recommended to upgrade the version of `fwup` on your target to this
+version.
+
+  * Bug fixes
+    * Fix FAT filesystem corruption when running a software update.
 
 ## v0.8.1
 
