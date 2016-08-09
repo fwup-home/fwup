@@ -102,7 +102,11 @@ int fatfs_mkfs(struct fat_cache *fc, int block_count)
     // boot partitions on platforms and not huge partitions. If this
     // changes, it would be good to make this configurable so that massive
     // partitions could be made.
-    CHECK("fat_mkfs", NULL, f_mkfs("", 1, 512));
+    //
+    // NOTE3: Specify FM_SFD (super-floppy disk) to avoid fatfs wanting to create
+    // a master boot record.
+    char buffer[_MAX_SS];
+    CHECK("fat_mkfs", NULL, f_mkfs("", FM_SFD|FM_FAT|FM_FAT32, 512, buffer, sizeof(buffer)));
 
     return 0;
 }
@@ -301,7 +305,7 @@ int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const ch
     if (size != bw) {
       ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
     }
-    
+
     return 0;
 }
 
