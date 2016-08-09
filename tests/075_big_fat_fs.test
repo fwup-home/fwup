@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#
+# Test out reads and writes beyond the fat_cache size. For this
+# to work, the file size needs to be larger than the cache.
+# Currently the cache is 12 MiB (See fwup_apply.c) and the file
+# is 15 MB.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 15M.bin {
+	host-path = "${TESTFILE_15M}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 15M.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "0.bin")
+                fat_cp(\${BOOT_PART_OFFSET}, "0.bin", "1.bin")
+        }
+        on-finish {
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+# Force a timestamp since the FAT serial number depends
+# on meta-creation-timestamp. This only needs to be done
+# at the create stage since burning is always supposed to
+# be bit for bit identical.
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 46A5-9148
+Directory for ::/
+
+0        bin  15000000 2015-05-05  18:10
+1        bin  15000000 2015-05-05  18:10
+        2 files          30 000 000 bytes
+                                  8 910 336 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+for i in 0 1; do
+    mcopy -n -i $WORK/fwup.img@@32256 ::/${i}.bin $WORK/actual.${i}.bin
+    diff $TESTFILE_15M $WORK/actual.${i}.bin
+done
+
+echo Success!
