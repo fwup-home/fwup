@@ -472,7 +472,7 @@ The remainder of the `task` section is a list of event handlers. Event handlers 
 organized as scopes. An event handler matches during the application of a firmware update
 when an event occurs. Events include initialization, completion, errors, and files being
 decompressed from the archive. Since archives are processed in a streaming manner, the
-order of events is deterministice based on the order that files were added to the archive.
+order of events is deterministic based on the order that files were added to the archive.
 If it is important that one event happen before another, make sure that `file-resource`
 sections are specified in the desired order. The following table lists supported events:
 
