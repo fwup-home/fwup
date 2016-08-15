@@ -210,6 +210,10 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
  */
 bool will_be_regular_file(const char *path)
 {
+#ifdef _WIN32
+    if (strncmp(path, "\\\\.\\", 4) == 0)
+        return 0;
+#endif
     struct stat st;
     int rc = stat(path, &st);
     return (rc == 0 && st.st_mode & S_IFREG) ||
