@@ -298,7 +298,7 @@ meta-version         | Firmware update version
 meta-author          | Author or company behind the update
 meta-platform        | Platform that this update runs on (e.g., rpi or bbb)
 meta-architecture    | Platform architectures (e.g., arm)
-meta-creation-date   | Timestamp when the update was created (automatically added)
+meta-creation-date   | Timestamp when the update was created (automatically added). If you want to force the timestamp, set the `NOW` environment variable.
 meta-fwup-version    | Version of fwup used to create the update (automatically added)
 
 After setting the above options, it is necessary to create scopes for other options. The
