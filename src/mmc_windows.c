@@ -87,12 +87,17 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     return device_count;
 }
 
-int mmc_umount_all(const char *mmc_device)
-{
-    WCHAR  VolumeName[MAX_PATH];
-    MultiByteToWideChar(CP_UTF8, 0, mmc_device, 0, VolumeName, MAX_PATH);
-
-    HANDLE volume_handle = CreateFile(VolumeName,
+/*
+ * @brief Query the Physical Drive(s) that back a Logical Volume
+ * Since we're trying dealing with SD cards, ignore any
+ * volumes that span multiple Physical Drives.
+ * @param volume_name the name of the volume as a Wide String
+ * @return the PhysicalDrive Number on success, 0 on failure
+ */
+static unsigned int query_physical_extents(LPWSTR volume_name) {
+    // We have to remove the trailing slash for this API call
+    volume_name[wcslen(volume_name) - 1] = L'\0';
+    HANDLE volume_handle = CreateFile(volume_name,
                                       GENERIC_READ | GENERIC_WRITE,
                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
                                       NULL,
@@ -100,24 +105,57 @@ int mmc_umount_all(const char *mmc_device)
                                       0,
                                       NULL);
     if (volume_handle == INVALID_HANDLE_VALUE) {
-        fwup_warnx("Cannot open '%s'", mmc_device);
-        return -1;
+        return 0;
     }
+
+    VOLUME_DISK_EXTENTS extents;
+    DWORD bytes_returned;
+    BOOL status = DeviceIoControl(volume_handle,
+                                  IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                                  NULL,
+                                  0,
+                                  &extents,
+                                  sizeof(extents),
+                                  &bytes_returned,
+                                  NULL);
+    CloseHandle(volume_handle);
+
+    if (!status || extents.NumberOfDiskExtents > 1) {
+        // Ignore it if we can't query its extents or it is backed by
+        // more than one extent because it's probably not an SD card.
+        return 0;
+    }
+
+    return extents.Extents[0].DiskNumber;
+}
+
+/*
+ * @brief Attempt to unmount the specified volume, exit with failure message if unsuccessful
+ * @param volume_name the name of the volume as a Wide String
+ */
+static void unmount_volume(LPWSTR volume_name) {
+    HANDLE volume_handle = CreateFile(volume_name,
+                                      GENERIC_READ | GENERIC_WRITE,
+                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                      NULL,
+                                      OPEN_EXISTING,
+                                      0,
+                                      NULL);
+    if (volume_handle == INVALID_HANDLE_VALUE)
+        fwup_errx(EXIT_FAILURE, "Could not open '%S' for unmounting (Error %lu)", volume_name, GetLastError());
 
     DWORD bytes_returned;
     BOOL status = DeviceIoControl(volume_handle,
-                             FSCTL_LOCK_VOLUME,
-                             NULL,
-                             0,
-                             NULL,
-                             0,
-                             &bytes_returned,
-                             NULL);
-    if (!status) {
-        fwup_warnx("Error locking '%s'", mmc_device);
-        CloseHandle(volume_handle);
-        return -1;
-    }
+                                  FSCTL_LOCK_VOLUME,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  0,
+                                  &bytes_returned,
+                                  NULL);
+
+    if (!status)
+        fwup_warnx("Could not lock '%S' for unmounting (Error %lu)", volume_name, GetLastError());
 
     status = DeviceIoControl(volume_handle,
                              FSCTL_DISMOUNT_VOLUME,
@@ -127,18 +165,38 @@ int mmc_umount_all(const char *mmc_device)
                              0,
                              &bytes_returned,
                              NULL);
-    if (!status) {
-        DWORD error = GetLastError();
-        if (error != ERROR_NOT_SUPPORTED) {
-            fwup_warnx("Error locking '%s'", mmc_device);
-            CloseHandle(volume_handle);
-            return -1;
-        } else {
-            fwup_warnx("Unmounting not supported");
-        }
-    }
 
     CloseHandle(volume_handle);
+
+    if (!status)
+        fwup_errx(EXIT_FAILURE, "Error unmounting '%S' (Error %lu)", volume_name, GetLastError());
+}
+
+/*
+ * @brief Unmount all LogicalVolumes using the specified PhysicalDrive
+ * @param mmc_device the name of the PhysicalDrive
+ * @return 0 on success, exit the program with a failure message otherwise
+ */
+int mmc_umount_all(const char *mmc_device)
+{
+    unsigned int target_disk_number = 0;
+    sscanf(mmc_device, "\\\\.\\PhysicalDrive%u", &target_disk_number);
+    if (target_disk_number == 0)
+        fwup_errx(EXIT_FAILURE, "Target device must be formatted like \\\\.\\PhysicalDisk# where # is a positive integer.");
+
+    WCHAR volume_name[MAX_PATH] = L"";
+    HANDLE volume_iter = FindFirstVolume(volume_name, ARRAYSIZE(volume_name));
+
+    if (volume_iter == INVALID_HANDLE_VALUE)
+        fwup_errx(EXIT_FAILURE, "Can't enumerate logical volumes (Error %lu)", GetLastError());
+
+    do {
+        unsigned int disk_number = query_physical_extents(volume_name);
+        if (disk_number == target_disk_number)
+            unmount_volume(volume_name);
+    } while (FindNextVolume(volume_iter, volume_name, ARRAYSIZE(volume_name)));
+
+    FindVolumeClose(volume_iter);
 
     return 0;
 }
@@ -157,35 +215,22 @@ int mmc_eject(const char *mmc_device)
  */
 int mmc_open(const char *mmc_path)
 {
-    WCHAR  VolumeName[MAX_PATH];
-    MultiByteToWideChar(CP_UTF8, 0, mmc_path, 0, VolumeName, MAX_PATH);
+    WCHAR drive_name[MAX_PATH] = L"";
+    MultiByteToWideChar(CP_UTF8, 0, mmc_path, -1, drive_name, MAX_PATH);
 
-    HANDLE volume_handle = CreateFile(VolumeName,
-                                      GENERIC_READ | GENERIC_WRITE,
-                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                      NULL,
-                                      OPEN_EXISTING,
-                                      FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
-                                      NULL);
-    if (volume_handle == INVALID_HANDLE_VALUE) {
+    HANDLE drive_handle = CreateFile(drive_name,
+                                     GENERIC_READ | GENERIC_WRITE,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     NULL,
+                                     OPEN_EXISTING,
+                                     FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+                                     NULL);
+    if (drive_handle == INVALID_HANDLE_VALUE) {
+        fwup_warnx("Unable to open drive %S\n (%lu)", drive_name, GetLastError());
         return -1;
     }
 
-    DWORD bytes_returned;
-    BOOL status = DeviceIoControl(volume_handle,
-                             FSCTL_LOCK_VOLUME,
-                             NULL,
-                             0,
-                             NULL,
-                             0,
-                             &bytes_returned,
-                             NULL);
-    if (!status) {
-        CloseHandle(volume_handle);
-        return -1;
-    }
-
-    return _open_osfhandle(volume_handle, 0);
+    return _open_osfhandle((intptr_t) drive_handle, 0);
 }
 
 #endif // defined(_WIN32) || defined(__CYGWIN__)
