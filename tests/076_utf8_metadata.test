@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#
+# Test that metadata is stored correctly
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+meta-product = "pröduct name"
+meta-description = "описание продукта"
+meta-version = "バージョン"
+meta-author = "le créateur"
+meta-platform = "硬件平台"
+meta-architecture = "kiến trúc"
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+meta-product = "pröduct name"
+meta-description = "описание продукта"
+meta-version = "バージョン"
+meta-author = "le créateur"
+meta-platform = "硬件平台"
+meta-architecture = "kiến trúc"
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
