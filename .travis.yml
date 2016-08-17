@@ -36,11 +36,41 @@ script:
 after_success:
     - scripts/ci_after_success.sh
 
+before_deploy:
+    - scripts/ci_deploy.sh
+
+deploy:
+    # Deploy tagged releases to GitHub
+    - provider: releases
+      api_key: $GITHUB_API_KEY
+      file_glob: true
+      file:
+          - "artifacts/fwup-*-1.x86_64.rpm"
+          - "artifacts/fwup_*_amd64.deb"
+          - "artifacts/fwup-*.tar.gz"
+      skip_cleanup: true
+      on:
+          repo: fhunleth/fwup
+          tags: true
+          condition: $BUILD_STATIC=true
+    # Copy all build products to S3
+    - provider: s3
+      access_key_id: $ARTIFACTS_KEY
+      secret_access_key: $ARTIFACTS_SECRET
+      bucket: $ARTIFACTS_BUCKET
+      skip_cleanup: true
+      local_dir: artifacts
+      upload-dir: fwup
+      storage_class: "REDUCED_REDUNDANCY"  # See https://github.com/travis-ci/dpl/issues/291
+      on:
+          repo: fhunleth/fwup
+          all_branches: true
+          condition: $TRAVIS_OS_NAME = linux && $BUILD_STATIC = true
+
 addons:
       coverity_scan:
              project:
                 name: "fhunleth/fwup"
-                description: "Configurable embedded Linux firmware update creator and runner"
              notification_email: fhunleth@troodon-software.com
              build_command_prepend: "./autogen.sh && ./configure"
              build_command: "make"
