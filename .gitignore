@@ -48,5 +48,4 @@ tests/framing-helper
 *.gcda
 *.gcno
 *.gcov
-tests/framing-helper.exe
-fwup.exe
+*.exe
