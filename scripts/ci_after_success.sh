@@ -12,7 +12,7 @@ set -e
 set -v
 
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
-    if [[ "$BUILD_STATIC" = "false" ]]; then
+    if [[ "$MODE" = "dynamic" ]]; then
         coveralls --exclude tests --exclude 3rdparty --exclude /usr/include --exclude confuse-3.0 --exclude libsodium --exclude-pattern "fwup-.*-dev" --exclude-pattern "libsodium-1.0" --gcov-options '\-lp'
     fi
 fi

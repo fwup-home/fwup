@@ -8,8 +8,8 @@
 #  TRAVIS_PULL_REQUEST - Must be "false". Travis should not invoke this script on pull requests
 #  TRAVIS_TAG          - The tag name if a tagged build
 #  TRAVIS_BRANCH       - The branch name
-#  TRAVIS_OS_NAME - "linux" or "osx"
-#  BUILD_STATIC   - "true" or "false"
+#  TRAVIS_OS_NAME      - "linux" or "osx"
+#  MODE                - "static", "dynamic", or "windows"
 #
 
 set -e
@@ -35,11 +35,16 @@ fi
 rm -fr artifacts
 mkdir -p artifacts/$ARTIFACT_SUBDIR
 
-if [[ "$TRAVIS_OS_NAME" = "linux" && "$BUILD_STATIC" = "true" ]]; then
-    cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
-    cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
-    cp fwup-*.tar.gz artifacts/$ARTIFACT_SUBDIR/
-fi
+case "${TRAVIS_OS_NAME}-${MODE}" in
+    linux-static)
+        cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
+        cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+        cp fwup-*.tar.gz artifacts/$ARTIFACT_SUBDIR/
+        ;;
+    linux-windows)
+        cp fwup.exe artifacts/$ARTIFACT_SUBDIR/
+        ;;
+esac
 
 # If something goes wrong with the deploy on travis, this helps a lot
 ls -las artifacts

@@ -3,29 +3,29 @@ language: c
 sudo: required
 dist: trusty
 
-os:
-    - linux
-    - osx
-
-compiler:
-    - gcc
-    - clang
-
 env:
     global:
         # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
         #   via the "travis encrypt" command using the project repo's public key
         - secure: "Q6OAiurgQl7/iZy7JfaPbUCWFe30ES35uO5eGg/0ty/fKMGAov3Bp+8oQqpmxmi6+E316cDMW3WIY9h8j79kaF4IbQNU6YcHft7Am7iFhw1Ocql1aknqqbdA/Hx9R95JUX2ZSBCTnw03GKv9JNEUuY2cV5RaJr1x+N5SfdAc3Jo="
-    matrix:
-        - BUILD_STATIC=true
-        - BUILD_STATIC=false
 
 matrix:
-    exclude:
-        - os: osx
-          compiler: gcc
+    include:
         - os: linux
+          compiler: gcc
+          env: MODE=windows
+        - os: linux
+          compiler: gcc
+          env: MODE=static
+        - os: linux
+          compiler: gcc
+          env: MODE=dynamic
+        - os: osx
           compiler: clang
+          env: MODE=static
+        - os: osx
+          compiler: clang
+          env: MODE=dynamic
 
 before_install:
     - scripts/ci_install_deps.sh
@@ -47,13 +47,25 @@ deploy:
       file:
           - "artifacts/fwup-*-1.x86_64.rpm"
           - "artifacts/fwup_*_amd64.deb"
+          - "artifacts/fwup.exe"
           - "artifacts/fwup-*.tar.gz"
       skip_cleanup: true
       on:
           repo: fhunleth/fwup
           tags: true
-          condition: $BUILD_STATIC=true
-    # Copy all build products to S3
+          condition: $TRAVIS_OS_NAME = linux && $MODE=static
+    # Deploy tagged releases to GitHub
+    - provider: releases
+      api_key: $GITHUB_API_KEY
+      file_glob: true
+      file:
+          - "artifacts/fwup.exe"
+      skip_cleanup: true
+      on:
+          repo: fhunleth/fwup
+          tags: true
+          condition: $TRAVIS_OS_NAME = linux && $MODE=windows
+     # Copy all build products to S3
     - provider: s3
       access_key_id: $ARTIFACTS_KEY
       secret_access_key: $ARTIFACTS_SECRET
@@ -65,7 +77,7 @@ deploy:
       on:
           repo: fhunleth/fwup
           all_branches: true
-          condition: $TRAVIS_OS_NAME = linux && $BUILD_STATIC = true
+          condition: $TRAVIS_OS_NAME = linux && ( $MODE=static || $MODE=windows )
 
 addons:
       coverity_scan:

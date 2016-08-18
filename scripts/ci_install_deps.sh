@@ -48,22 +48,30 @@ install_sodium() {
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     sudo apt-get update -qq
     sudo apt-get install -qq autopoint mtools unzip
-    if [[ "$BUILD_STATIC" = "false" ]]; then
-        sudo apt-get install -qq libarchive-dev
-        install_confuse
-        install_sodium
-        pip install --user cpp-coveralls
-    else
-        # Need fpm when building static so that we can make the .deb and .rpm packages
-        sudo apt-get install -qq rpm
-        gem install fpm
-    fi
+    case $MODE in
+        windows)
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y gcc-mingw-w64-x86-64 wine
+            ;;
+        dynamic)
+            sudo apt-get install -qq libarchive-dev
+            install_confuse
+            install_sodium
+            pip install --user cpp-coveralls
+            ;;
+        static)
+            # Need fpm when building static so that we can make the .deb and .rpm packages
+            sudo apt-get install -qq rpm
+            gem install fpm
+            ;;
+    esac
 else
     brew update
     brew install coreutils mtools gnu-sed
     brew install --universal gettext
     brew link --force gettext
-    if [[ "$BUILD_STATIC" = "false" ]]; then
+    if [[ "$MODE" = "dynamic" ]]; then
         brew install libarchive libsodium confuse
     fi
     # Fix brew breakage in autotools
