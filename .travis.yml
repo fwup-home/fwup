@@ -3,6 +3,9 @@ language: c
 sudo: required
 dist: trusty
 
+services:
+    - docker
+
 os:
     - linux
     - osx
@@ -23,9 +26,13 @@ env:
 matrix:
     exclude:
         - os: osx
-          compiler: gcc
+          #compiler: gcc
         - os: linux
-          compiler: clang
+          #compiler: clang
+    include:
+        - os: linux
+          compiler: gcc
+          env: CROSS_COMPILE=x86_64-w64-mingw32 BUILD_STATIC=true
 
 before_install:
     - scripts/ci_install_deps.sh
@@ -47,6 +54,8 @@ deploy:
       file:
           - "artifacts/fwup-*-1.x86_64.rpm"
           - "artifacts/fwup_*_amd64.deb"
+          - "artifacts/fwup-*.msi"
+          - "artifacts/fwup.exe"
           - "artifacts/fwup-*.tar.gz"
       skip_cleanup: true
       on:

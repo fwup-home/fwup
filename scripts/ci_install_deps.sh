@@ -48,6 +48,11 @@ install_sodium() {
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     sudo apt-get update -qq
     sudo apt-get install -qq autopoint mtools unzip
+    if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
+      sudo dpkg --add-architecture i386
+      sudo apt-get update
+      sudo apt-get install -y gcc-mingw-w64-x86-64 wine
+    fi
     if [[ "$BUILD_STATIC" = "false" ]]; then
         sudo apt-get install -qq libarchive-dev
         install_confuse

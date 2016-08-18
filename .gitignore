@@ -49,4 +49,8 @@ tests/framing-helper
 *.gcno
 *.gcov
 tests/framing-helper.exe
-fwup.exe
+*.exe
+*.msi
+*.wixobj
+*.wixpdb
+fwup-*.wxs
