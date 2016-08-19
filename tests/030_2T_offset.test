@@ -13,6 +13,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     exit 0
 fi
 
+# No sparse file support in Windows 10 bash mode, so skip it too
+if [[ -d "/mnt/c/Users" ]]; then
+    exit 0
+fi
+
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {
 	host-path = "${TESTFILE_150K}"

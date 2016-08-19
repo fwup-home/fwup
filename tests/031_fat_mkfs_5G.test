@@ -12,6 +12,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     exit 0
 fi
 
+# No sparse file support in Windows 10 bash mode, so skip it too
+if [[ -d "/mnt/c/Users" ]]; then
+    exit 0
+fi
+
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)
 define(BOOT_PART_COUNT, 9999990) # needs to be a multiple of 63 to make mtools happy
