@@ -27,7 +27,7 @@ way. The utility has the following features:
   6. Human and machine readable progress.
 
   7. Initialize or update SDCards on your development system whether you're
-     running Linux or OSX. MMC and SDCards are automatically
+     running Linux, OSX, or Windows. MMC and SDCards are automatically
      detected and unmounted. No need to scan logs or manually unmount.
 
   8. Firmware archive digital signature creation and verification (BETA!!)
@@ -67,11 +67,15 @@ On Linux, download and install the appropriate package for your platform:
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
+On Windows, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup.exe)
+and place in your path.
+
 If you're using another platform or prefer to build it yourself, download the
 latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2.tar.gz) or clone this repository. Then read one of the following files:
 
   * [Linux build instructions](docs/build_linux.md)
   * [OSX build instructions](docs/build_osx.md)
+  * [Windows build instructions](docs/build_windows.md)
 
 When building from source, please verify that the regression test pass
 on your system (run `make check`) before using `fwup` in production. While
