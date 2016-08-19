@@ -1,4 +1,4 @@
-![The fwup pup](assets/fwup-pup.png)
+![The fwup pup](docs/fwup-pup.png)
 
 # Overview
 [![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup)
@@ -26,9 +26,9 @@ way. The utility has the following features:
 
   6. Human and machine readable progress.
 
-  7. Automatic detection of MMC and SDCards. This option queries the
-  user before writing anything by default to avoid accidental
-  overwrites.
+  7. Initialize or update SDCards on your development system whether you're
+     running Linux or OSX. MMC and SDCards are automatically
+     detected and unmounted. No need to scan logs or manually unmount.
 
   8. Firmware archive digital signature creation and verification (BETA!!)
 
@@ -36,14 +36,7 @@ way. The utility has the following features:
 
 This utility is based off of firmware update utilities I've written for
 various projects. It has already received a lot of use with the open source
-Nerves Project and other embedded projects. I tend to lock the version of the
-firmware update utility once embedded devices using it start leaving the lab
-so that I don't brick them with an upgrade. Once this project hits 1.0 I will
-avoid making backward incompatible changes. (I have actually only made a couple.)
-I do encourage you to use this utility, but please take care in upgrading
-`fwup` and test that your new `fwup.conf` files still work on devices with old
-versions of `fwup`. This seems like standard practice, but since bricking
-devices in the field is so painful, please take care.
+Nerves Project and other embedded projects.
 
 # Examples!
 
@@ -52,9 +45,9 @@ for the BeagleBone Black and Raspberry Pi. The [Nerves Project](https://github.c
 has more examples and is better maintained. The regression tests can also be helpful.
 
 My real world use of `fwup` involves writing
-the new firmware to place on the Flash that's not in current use and then
+the new firmware to a place on the Flash that's not in current use and then
 'flipping' over to it at the very end. The examples tend to reflect that.
-`fwup` can also be used to overwrite the
+`fwup` can also be used to overwrite
 an installation in place assuming you're using an initramfs, but that doesn't
 give protection against someone pulling power at a bad time. Also, `fwup`'s one pass
 over the archive feature means that firmware validation is mostly done on the fly,
@@ -62,7 +55,7 @@ so you'll want to verify the archive first (see the `-V` option).
 
 # Installing
 
-The simplest way to install `fwup` is via a package manager.
+The simplest way to install `fwup` is via a package manager or installer.
 
 On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
@@ -74,123 +67,16 @@ On Linux, download and install the appropriate package for your platform:
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
-If you're using another platform or prefer to build it yourself, read on.
+If you're using another platform or prefer to build it yourself, download the
+latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2.tar.gz) or clone this repository. Then read one of the following files:
 
-## Building and installing from source
+  * [Linux build instructions](docs/build_linux.md)
+  * [OSX build instructions](docs/build_osx.md)
 
-While `fwup` is not a particularly complicated program, it is not trivial to
-build due to a couple project dependencies. If you are not comfortable with
-building applications from source (especially on Linux), please consider the packages above.
-
-### Installing dependencies
-
-On OSX:
-
-    brew install confuse libarchive libsodium
-
-On Ubuntu:
-
-    # The version of libconfuse available in apt is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-3.0
-    ./configure && make && sudo make install
-    popd
-    rm -rf /tmp/confuse-3.0
-
-    sudo apt-get install libarchive-dev libsodium-dev
-
-On CentOS 6:
-
-    # The version of libconfuse available in yum is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-3.0
-    ./configure && make && sudo make install
-    popd
-    rm -rf /tmp/confuse-3.0
-
-    # The version of libarchive available in yum is too old
-    curl -L http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz | tar -xz -C /tmp
-    pushd /tmp/libarchive-3.1.2
-    ./configure && make && sudo make install
-    popd
-    rm -rf /tmp/libarchive-3.1.2
-
-    # The version of libsodium available in yum is too old
-    curl -L https://download.libsodium.org/libsodium/releases/libsodium-1.0.8.tar.gz | tar -xz -C /tmp
-    pushd /tmp/libsodium-1.0.8
-    ./configure && make && sudo make install
-    popd
-    rm -rf /tmp/libsodium-1.0.8
-
-    # Assuming all of the libraries were installed to /usr/local/lib
-    sudo ldconfig /usr/local/lib
-
-    # Building fwup from source requires autotools
-    sudo yum install autoconf automake libtool
-
-On CentOS 7:
-
-    # The version of libconfuse available in yum is too old
-    curl -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz | tar -xz -C /tmp
-    pushd /tmp/confuse-3.0
-    ./configure && make && sudo make install
-    popd
-    rm -rf /tmp/confuse-3.0
-
-    sudo yum install libarchive-devel libsodium-devel
-
-### Downloading the source code
-
-Unless you're modifying `fwup`, it is recommended that you download the latest
-[source code release](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2.tar.gz).
-Older releases can be found on the [releases tab](https://github.com/fhunleth/fwup/releases).
-
-If cloning the source code, you should also run `autogen.sh`:
-
-    git clone https://github.com/fhunleth/fwup.git
-    cd fwup
-    ./autogen.sh
-
-### Building
-
-On OSX:
-
-    cd fwup
-    # This assumes that libarchive, libconfuse and libsodium were installed via
-    # homebrew.
-    PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure
-    make
-    sudo make install
-
-On Linux:
-
-    cd fwup
-    ./configure
-    make
-    sudo make install
-
-## Regression tests
-
-The firmware update code is one of the parts of an embedded system where bugs
-can be frustratingly difficult or impossible to fix in the field. This project
-contains unit tests to reduce the risk. This doesn't remove all of the risk, and
-your project's fwup configuration file can certainly be buggy (e.g., bad flash
-offsets, etc.) so it is still important to test your firmware updates before
-deploying them.
-
-To run the unit tests, you'll need the mtools and unzip packages.
-
-    sudo apt-get install mtools unzip
-
-On OSX, run:
-
-    brew install coreutils mtools gnu-sed
-
-Then build the project as above and run:
-
-    make check
-
-If the unit tests don't pass, please submit a bug report.
+When building from source, please verify that the regression test pass
+on your system (run `make check`) before using `fwup` in production. While
+the tests usually pass, they have found minor issues in third party libraries in the
+past that really should be fixed.
 
 # Invoking
 
