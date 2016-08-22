@@ -369,6 +369,10 @@ int fat_write_compute_progress(struct fun_context *fctx)
         ERR_RETURN("raw_write can't find matching file-resource");
     off_t expected_length = cfg_getint(resource, "length");
 
+    // Zero-length files still do something
+    if (expected_length == 0)
+        expected_length = 1;
+
     // Count each byte as a progress unit
     fctx->total_progress_units += expected_length;
 
@@ -391,8 +395,16 @@ int fat_write_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // enforce truncation semantics if the file exists
+    // Enforce truncation semantics if the file exists
     fatfs_rm(fc, fctx->argv[2]);
+
+    // Handle zero-length file
+    if (expected_length == 0) {
+        OK_OR_RETURN(fatfs_touch(fc, fctx->argv[2]));
+
+        fctx->report_progress(fctx, 1);
+        return 0;
+    }
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);

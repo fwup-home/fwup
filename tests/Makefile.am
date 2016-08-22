@@ -78,6 +78,7 @@ TESTS = 001_simple_fw.test \
 	073_multistep_fat.test \
 	074_fat_cache_fail.test \
 	075_big_fat_fs.test \
-	076_utf8_metadata.test
+	076_utf8_metadata.test \
+	077_fat_empty_file.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
