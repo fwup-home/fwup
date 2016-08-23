@@ -210,10 +210,22 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
  */
 bool will_be_regular_file(const char *path)
 {
+    bool is_in_dev = false;
+#if defined(__APPLE__) || defined(__linux__)
+    // Weakly forbid users from creating regular files in /dev, since that's
+    // pretty much never their intention. This will eventually cause
+    // an error since the code that calls this won't create files unless
+    // this function returns true.
+    // See https://github.com/fhunleth/fwup/issues/35.
+
+    if (strncmp(path, "/dev/", 5) == 0)
+        is_in_dev = true;
+#endif
+
     struct stat st;
     int rc = stat(path, &st);
-    return (rc == 0 && st.st_mode & S_IFREG) ||
-           (rc < 0 && errno == ENOENT);
+    return (rc == 0 && (st.st_mode & S_IFREG)) || // Existing regular file
+           (rc < 0 && errno == ENOENT && !is_in_dev); // Doesn't exist and not in /dev
 }
 
 /*
