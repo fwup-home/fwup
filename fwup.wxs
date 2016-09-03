@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+  <Product Name='fwup {FWUP_VERSION}'
+    Manufacturer='Frank Hunleth'
+    Id='*'
+    UpgradeCode='EAAB57F5-A337-4ADC-B917-83C852834B0C'
+    Language='1033'
+    Codepage='1252'
+    Version='{FWUP_VERSION}' >
+
+    <Package Id='*'
+      Keywords='Installer'
+      Description='fwup installer'
+      Manufacturer='Frank Hunleth'
+      Platform='x64'
+      InstallerVersion='200'
+      Languages='1033'
+      Compressed='yes'
+      SummaryCodepage='1252' />
+
+    <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+        <Directory Id='INSTALLDIR' Name='fwup'>
+          <Component Id='MainExecutable' Guid='724576C6-86BC-43CE-A671-6F3212A04E99' Win64='yes'>
+            <File Id='fwupEXE' Name='fwup.exe' DiskId='1' Source='fwup.exe' KeyPath='yes' ProcessorArchitecture='x64'/>
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Component Id='PathVariable' Guid='BB824BBD-80C8-44AB-A1BC-555D6D3F23B0' Win64='yes'>
+        <Environment Id='PathEnvVar' Name='PATH' Value='[INSTALLDIR]bin' Permanent='no' Part='last' Action='set' System='yes' />
+      </Component>
+
+    </Directory>
+
+    <Feature Id='Complete' Level='1'>
+      <ComponentRef Id='MainExecutable' />
+      <ComponentRef Id='PathVariable' />
+    </Feature>
+
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After='InstallInitialize'/>
+    </InstallExecuteSequence>
+
+  </Product>
+</Wix>

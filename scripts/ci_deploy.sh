@@ -38,6 +38,8 @@ mkdir -p artifacts/$ARTIFACT_SUBDIR
 if [[ "$TRAVIS_OS_NAME" = "linux" && "$BUILD_STATIC" = "true" ]]; then
     cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
     cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+    cp fwup-*.msi artifacts/$ARTIFACT_SUBDIR/
+    cp fwup.exe artifacts/$ARTIFACT_SUBDIR/
     cp fwup-*.tar.gz artifacts/$ARTIFACT_SUBDIR/
 fi
 

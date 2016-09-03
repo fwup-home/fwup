@@ -34,7 +34,6 @@ if [[ -z $CROSS_COMPILE ]]; then
     fi
 else
     CONFIGURE_ARGS=--host=$CROSS_COMPILE
-    SKIP_PACKAGE=true
 fi
 
 DEPS_INSTALL_DIR=$BUILD_DIR/$CROSS_COMPILE/deps/usr
@@ -88,9 +87,10 @@ if [[ "$CROSS_COMPILE" = "host" ]]; then
         exit 1
     fi
 
-    # Run the regression tests
-    make check
 fi
+
+# Run the regression tests
+make check
 
 make install-strip
 make dist
@@ -101,10 +101,20 @@ popd
 
 # Package fwup
 if [[ "$SKIP_PACKAGE" != "true" ]]; then
-    FWUP_VERSION=$($FWUP_INSTALL_DIR/bin/fwup --version)
-    rm -f fwup_*.deb fwup-*.rpm
-    fpm -s dir -t deb -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
-    fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
+    FWUP_VERSION=$(cat VERSION)
+    if [[ "$CROSS_COMPILE" = "host" ]]; then
+        # Build Linux packages
+        rm -f fwup_*.deb fwup-*.rpm
+        fpm -s dir -t deb -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
+        fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
+    elif [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
+        # Build Windows package
+        rm -f fwup-*.msi fwup.exe
+        cp $FWUP_INSTALL_DIR/bin/fwup.exe .
+        sed "s/{FWUP_VERSION}/$FWUP_VERSION/g" fwup.wxs > fwup-$FWUP_VERSION.wxs
+        docker run -v `pwd`:/home/wix/work gregmefford/wix:3.10 candle.exe -o work/fwup-$FWUP_VERSION.wixobj work/fwup-$FWUP_VERSION.wxs
+        docker run -v `pwd`:/home/wix/work gregmefford/wix:3.10 light.exe -sval -o work/fwup-$FWUP_VERSION.msi work/fwup-$FWUP_VERSION.wixobj
+    fi
 else
     echo "Static build was successful, but skipped creating packages."
     echo "The fwup installation is in $FWUP_INSTALL_DIR."

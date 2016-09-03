@@ -14,6 +14,10 @@
 set -e
 set -v
 
+if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
+  export CC=x86_64-w64-mingw32-gcc
+fi
+
 # Create ./configure
 ./autogen.sh
 
