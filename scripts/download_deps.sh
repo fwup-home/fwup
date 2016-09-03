@@ -88,7 +88,7 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
     rm -fr libsodium-*
     tar xf $DOWNLOAD_DIR/libsodium-$LIBSODIUM_VERSION.tar.gz
     pushd libsodium-$LIBSODIUM_VERSION
-    PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --enable-shared=no
+    PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --enable-shared=no --disable-asm --enable-minimal
     make $MAKE_FLAGS
     make install
     popd
