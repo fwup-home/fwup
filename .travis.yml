@@ -9,6 +9,10 @@ env:
         #   via the "travis encrypt" command using the project repo's public key
         - secure: "Q6OAiurgQl7/iZy7JfaPbUCWFe30ES35uO5eGg/0ty/fKMGAov3Bp+8oQqpmxmi6+E316cDMW3WIY9h8j79kaF4IbQNU6YcHft7Am7iFhw1Ocql1aknqqbdA/Hx9R95JUX2ZSBCTnw03GKv9JNEUuY2cV5RaJr1x+N5SfdAc3Jo="
 
+cache:
+    directories:
+        - build/dl
+
 matrix:
     include:
         - os: linux
