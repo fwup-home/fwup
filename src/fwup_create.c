@@ -35,7 +35,7 @@ static int compute_file_metadata(cfg_t *cfg)
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *paths = cfg_getstr(sec, "host-path");
         if (!paths)
-            ERR_RETURN("host-path must be set for file-resource");
+            ERR_RETURN("host-path must be set for file-resource '%s'", cfg_title(sec));
 
         crypto_generichash_state hash_state;
         crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
@@ -47,8 +47,9 @@ static int compute_file_metadata(cfg_t *cfg)
              path = strtok(NULL, ";")) {
             FILE *fp = fopen(path, "rb");
             if (!fp) {
+                set_last_error("can't open path '%s' in file-resource '%s'", path, cfg_title(sec));
                 free(paths_copy);
-                ERR_RETURN("can't open file-resource '%s'", path);
+                return -1;
             }
 
             char buffer[1024];
