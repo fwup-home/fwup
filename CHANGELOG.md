@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.9.0-dev
+
+  * New features
+    * Windows port - It's now possible to natively burn SDCards on Windows. It's
+      no longer necessary to fiddle around with a virtual machine and trying to
+      get the SDCards to be recognized inside of it.
+
+  * Bug fixes
+    * Don't create files in `/dev`. This fixes a TOCTOU bug where an SDCard
+      exists during enumeration time and disappears before the write. When this
+      happened, a regular file was created in `/dev` which just confused
+      everyone.
+    * Support writing 0-byte files to FAT partitions. They were being skipped
+      before. This is different than `touching` a file since it can be used to
+      truncate an existing file.
+
 ## v0.8.2
 
 This release has only one fix in it to address a corruption issue when updating
