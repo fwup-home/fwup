@@ -48,4 +48,4 @@ esac
 
 # If something goes wrong with the deploy on travis, this helps a lot
 ls -las artifacts
-ls -las artifacts/*
+ls -las artifacts/$ARTIFACT_SUBDIR
