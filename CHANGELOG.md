@@ -1,11 +1,10 @@
 # Changelog
 
-## v0.9.0-dev
+## v0.9.0
 
   * New features
-    * Windows port - It's now possible to natively burn SDCards on Windows. It's
-      no longer necessary to fiddle around with a virtual machine and trying to
-      get the SDCards to be recognized inside of it.
+    * Windows port - It's now possible to natively write to SDCards on
+      Windows.
 
   * Bug fixes
     * Don't create files in `/dev`. This fixes a TOCTOU bug where an SDCard

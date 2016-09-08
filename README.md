@@ -63,15 +63,15 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup_0.8.2_amd64.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2-1.x86_64.rpm)
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup_0.9.0_amd64.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup-0.9.0-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
-On Windows, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup.exe)
-and place in your path.
+On Windows, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup.exe)
+and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.8.2/fwup-0.8.2.tar.gz) or clone this repository. Then read one of the following files:
+latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup-0.9.0.tar.gz) or clone this repository. Then read one of the following files:
 
   * [Linux build instructions](docs/build_linux.md)
   * [OSX build instructions](docs/build_osx.md)
