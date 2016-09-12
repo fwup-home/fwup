@@ -13,6 +13,7 @@ ZLIB_VERSION=1.2.8
 LIBARCHIVE_VERSION=3.2.1
 LIBSODIUM_VERSION=1.0.11
 CONFUSE_VERSION=3.0
+CHOCO_VERSION=0.10.0
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR=$BASE_DIR/build
@@ -42,6 +43,9 @@ pushd $DOWNLOAD_DIR
 [[ -e confuse-$CONFUSE_VERSION.tar.xz ]] || wget https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
 [[ -e libarchive-$LIBARCHIVE_VERSION.tar.gz ]] || wget http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
 [[ -e libsodium-$LIBSODIUM_VERSION.tar.gz ]] || wget https://github.com/jedisct1/libsodium/releases/download/$LIBSODIUM_VERSION/libsodium-$LIBSODIUM_VERSION.tar.gz
+if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
+    [[ -e choco-$CHOCO_VERSION.tar.gz ]] || wget -O choco-$CHOCO_VERSION.tar.gz https://github.com/chocolatey/choco/archive/$CHOCO_VERSION.tar.gz
+fi
 popd
 
 # Build zlib
@@ -91,6 +95,18 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
     PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --enable-shared=no
     make $MAKE_FLAGS
     make install
+    popd
+fi
+
+# Chocolatey
+if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]] && [[ ! -e $DEPS_INSTALL_DIR/chocolatey ]]; then
+    rm -fr choco-*
+    tar xf $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz
+    pushd choco-$CHOCO_VERSION
+    nuget restore src/chocolatey.sln
+    chmod +x build.sh
+    ./build.sh -v
+    cp -Rf code_drop/chocolatey $DEPS_INSTALL_DIR/
     popd
 fi
 

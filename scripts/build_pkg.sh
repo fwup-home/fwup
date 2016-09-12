@@ -39,6 +39,7 @@ fi
 DEPS_INSTALL_DIR=$BUILD_DIR/$CROSS_COMPILE/deps/usr
 FWUP_INSTALL_DIR=$BUILD_DIR/$CROSS_COMPILE/fwup-staging/usr
 PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
+export ChocolateyInstall=$DEPS_INSTALL_DIR/chocolatey
 
 # Initial sanity checks
 if [[ ! -e $BASE_DIR/configure ]]; then
@@ -111,6 +112,18 @@ if [[ "$SKIP_PACKAGE" != "true" ]]; then
         # Build Windows package
         rm -f fwup.exe
         cp $FWUP_INSTALL_DIR/bin/fwup.exe .
+        
+        mkdir -p $FWUP_INSTALL_DIR/fwup/tools
+        cp scripts/fwup.nuspec $FWUP_INSTALL_DIR/fwup/
+        cp $FWUP_INSTALL_DIR/bin/fwup.exe $FWUP_INSTALL_DIR/fwup/tools/
+        
+        pushd $FWUP_INSTALL_DIR/fwup/
+        rm -f *.nupkg
+        export ChocolateyInstall=$DEPS_INSTALL_DIR/chocolatey
+        $ChocolateyInstall/console/choco.exe pack --allow-unofficial fwup.nuspec
+        popd
+        rm -f *.nupkg
+        cp $FWUP_INSTALL_DIR/fwup/*.nupkg .
     fi
 else
     echo "Static build was successful, but skipped creating packages."
