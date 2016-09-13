@@ -62,7 +62,8 @@ EXTRA_DIST= \
 	../3rdparty/fatfs/src/option/cc950.c \
 	../3rdparty/fatfs/src/option/ccsbcs.c \
 	../3rdparty/fatfs/src/option/syscall.c \
-	../3rdparty/strptime.c
+	../3rdparty/strptime.c \
+	fwup.h2m
 
 if !HAS_STRPTIME
 fwup_SOURCES+=../3rdparty/strptime.c
@@ -84,7 +85,6 @@ endif
 if HAVE_HELP2MAN
 man_MANS = fwup.1
 CLEANFILES = $(man_MANS)
-EXTRA_DIST += fwup.h2m
 
 fwup.1: fwup$(EXEEXT) fwup.h2m
 	$(HELP2MAN) --no-discard-stderr --output=$@ --no-info --include fwup.h2m \
