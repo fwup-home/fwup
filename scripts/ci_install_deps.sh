@@ -47,7 +47,7 @@ install_sodium() {
 
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     sudo apt-get update -qq
-    sudo apt-get install -qq autopoint mtools unzip
+    sudo apt-get install -qq autopoint mtools unzip zip help2man
     case $MODE in
         windows)
             sudo dpkg --add-architecture i386
