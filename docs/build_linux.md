@@ -17,7 +17,7 @@ Before building, make sure that your system has some basic packages installed.
 At least the following are required for building and running the regression
 tests:
 
-    sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip
+    sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip
 
 ## Static build
 
