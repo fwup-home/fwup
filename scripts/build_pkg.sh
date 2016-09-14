@@ -114,7 +114,8 @@ if [[ "$SKIP_PACKAGE" != "true" ]]; then
         cp $FWUP_INSTALL_DIR/bin/fwup.exe .
         
         mkdir -p $FWUP_INSTALL_DIR/fwup/tools
-        cp scripts/fwup.nuspec $FWUP_INSTALL_DIR/fwup/
+        cp -f scripts/fwup.nuspec $FWUP_INSTALL_DIR/fwup/
+        sed -i "s/%VERSION%/$(cat VERSION)/" $FWUP_INSTALL_DIR/fwup/fwup.nuspec
         cp $FWUP_INSTALL_DIR/bin/fwup.exe $FWUP_INSTALL_DIR/fwup/tools/
         
         pushd $FWUP_INSTALL_DIR/fwup/

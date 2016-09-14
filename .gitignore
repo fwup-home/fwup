@@ -50,3 +50,4 @@ tests/framing-helper
 *.gcov
 *.exe
 *.nupkg
+.vscode
