@@ -19,6 +19,8 @@
 #
 set -e
 
+FWUP_MAINTAINER="Frank Hunleth <fhunleth@troodon-software.com>"
+
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR=$BASE_DIR/build
 
@@ -37,7 +39,8 @@ else
 fi
 
 DEPS_INSTALL_DIR=$BUILD_DIR/$CROSS_COMPILE/deps/usr
-FWUP_INSTALL_DIR=$BUILD_DIR/$CROSS_COMPILE/fwup-staging/usr
+FWUP_STAGING_DIR=$BUILD_DIR/$CROSS_COMPILE/fwup-staging/
+FWUP_INSTALL_DIR=$FWUP_STAGING_DIR/usr
 PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
 
 # Initial sanity checks
@@ -103,10 +106,18 @@ popd
 if [[ "$SKIP_PACKAGE" != "true" ]]; then
     FWUP_VERSION=$(cat VERSION)
     if [[ "$CROSS_COMPILE" = "host" ]]; then
+        # Fix directory permissions for packaging
+        find $FWUP_STAGING_DIR -type d | xargs chmod 755
+
+        # Debian requires compressed man pages
+        # NOTE: Even though building man pages is optional, it is
+        #       an error if man pages don't exist when creating packages
+        gzip -9 -f $FWUP_STAGING_DIR/usr/share/man/man1/fwup.1
+
         # Build Linux packages
         rm -f fwup_*.deb fwup-*.rpm
-        fpm -s dir -t deb -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
-        fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -C $FWUP_INSTALL_DIR/..
+        fpm -s dir -t deb -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" -C $FWUP_STAGING_DIR
+        fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" -C $FWUP_STAGING_DIR
     elif [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
         # Build Windows package
         rm -f fwup.exe
