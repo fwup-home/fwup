@@ -20,6 +20,10 @@
 set -e
 
 FWUP_MAINTAINER="Frank Hunleth <fhunleth@troodon-software.com>"
+FWUP_DESCRIPTION="Configurable embedded Linux firmware update creator and runner"
+FWUP_HOMEPAGE="https://github.com/fhunleth/fwup"
+FWUP_VENDOR="fhunleth@troodon-software.com"
+FWUP_LICENSE="Apache-2.0"
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR=$BASE_DIR/build
@@ -117,8 +121,14 @@ if [[ "$SKIP_PACKAGE" != "true" ]]; then
 
         # Build Linux packages
         rm -f fwup_*.deb fwup-*.rpm
-        fpm -s dir -t deb -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" -C $FWUP_STAGING_DIR
-        fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" -C $FWUP_STAGING_DIR
+        fpm -s dir -t deb -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" \
+            --license "$FWUP_LICENSE" --description "$FWUP_DESCRIPTION" \
+            --depends "libc6 (>= 2.4)" --deb-priority optional --category devel \
+            --url "$FWUP_HOMEPAGE" --vendor "$FWUP_VENDOR" -C $FWUP_STAGING_DIR
+
+        fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" \
+            --license "$FWUP_LICENSE" --description "$FWUP_DESCRIPTION" \
+            --url "$FWUP_HOMEPAGE" --vendor "$FWUP_VENDOR" -C $FWUP_STAGING_DIR
     elif [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]]; then
         # Build Windows package
         rm -f fwup.exe
