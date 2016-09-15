@@ -53,6 +53,7 @@ deploy:
           - "artifacts/fwup_*_amd64.deb"
           - "artifacts/fwup.exe"
           - "artifacts/fwup-*.tar.gz"
+          - "artifacts/fwup.*.nupkg"
       skip_cleanup: true
       on:
           repo: fhunleth/fwup

@@ -49,3 +49,5 @@ tests/framing-helper
 *.gcno
 *.gcov
 *.exe
+*.nupkg
+.vscode
