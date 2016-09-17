@@ -20,6 +20,9 @@ matrix:
           env: MODE=windows
         - os: linux
           compiler: gcc
+          env: MODE=raspberrypi
+        - os: linux
+          compiler: gcc
           env: MODE=static
         - os: linux
           compiler: gcc
@@ -69,7 +72,18 @@ deploy:
           repo: fhunleth/fwup
           tags: true
           condition: $TRAVIS_OS_NAME = linux && $MODE=windows
-     # Copy all build products to S3
+    # Deploy tagged releases to GitHub
+    - provider: releases
+      api_key: $GITHUB_API_KEY
+      file_glob: true
+      file:
+          - "artifacts/fwup_*_armhf.deb"
+      skip_cleanup: true
+      on:
+          repo: fhunleth/fwup
+          tags: true
+          condition: $TRAVIS_OS_NAME = linux && $MODE=raspberrypi
+    # Copy all build products to S3
     - provider: s3
       access_key_id: $ARTIFACTS_KEY
       secret_access_key: $ARTIFACTS_SECRET
@@ -81,7 +95,7 @@ deploy:
       on:
           repo: fhunleth/fwup
           all_branches: true
-          condition: $TRAVIS_OS_NAME = linux && ( $MODE=static || $MODE=windows )
+          condition: $TRAVIS_OS_NAME = linux && ( $MODE=static || $MODE=windows || $MODE=raspberrypi )
 
 addons:
       coverity_scan:

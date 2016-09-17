@@ -53,7 +53,7 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
             sudo apt-get install -y gcc-mingw-w64-x86-64 wine
-            
+
             # These are needed for building choco
             sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
             echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/3.12.0 main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
@@ -71,6 +71,14 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
             sudo apt-get install -qq rpm
             gem install fpm
             ;;
+        raspberrypi)
+            sudo apt-get install -qq libarchive-dev qemu binfmt-support qemu-user-static
+            gem install fpm
+            pushd ~
+            git clone https://github.com/raspberrypi/tools.git --depth 1
+            popd
+            ;;
+
     esac
 else
     brew update

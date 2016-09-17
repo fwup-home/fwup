@@ -45,6 +45,9 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
         cp fwup.exe artifacts/$ARTIFACT_SUBDIR/
         cp fwup.*.nupkg artifacts/$ARTIFACT_SUBDIR/
         ;;
+    linux-raspberrypi)
+        cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+        ;;
 esac
 
 # If something goes wrong with the deploy on travis, this helps a lot
