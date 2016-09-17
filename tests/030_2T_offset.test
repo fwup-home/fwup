@@ -18,6 +18,13 @@ if [[ -d "/mnt/c/Users" ]]; then
     exit 0
 fi
 
+# The Raspberry Pi doesn't support big files. This seems like it
+# should work, but since this is an unlikely use case, disable the
+# test for the Raspberry Pis and other 32-bit ARMs.
+if [[ "$OSTYPE" == "linux-gnueabihf" ]]; then
+    exit 0
+fi
+
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {
 	host-path = "${TESTFILE_150K}"
