@@ -51,9 +51,7 @@ deploy:
       file:
           - "artifacts/fwup-*-1.x86_64.rpm"
           - "artifacts/fwup_*_amd64.deb"
-          - "artifacts/fwup.exe"
           - "artifacts/fwup-*.tar.gz"
-          - "artifacts/fwup.*.nupkg"
       skip_cleanup: true
       on:
           repo: fhunleth/fwup
@@ -65,6 +63,7 @@ deploy:
       file_glob: true
       file:
           - "artifacts/fwup.exe"
+          - "artifacts/fwup.*.nupkg"
       skip_cleanup: true
       on:
           repo: fhunleth/fwup
