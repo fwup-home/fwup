@@ -6,5 +6,9 @@ EXTRA_DIST=README.md \
 	   CHANGELOG.md \
 	   LICENSE \
 	   scripts/build_pkg.sh \
-	   scripts/download_deps.sh
-
+	   scripts/ci_after_success.sh \
+	   scripts/ci_build.sh \
+	   scripts/ci_deploy.sh \
+	   scripts/ci_install_deps.sh \
+	   scripts/download_deps.sh \
+	   scripts/fwup.nuspec
