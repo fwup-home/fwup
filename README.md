@@ -64,6 +64,7 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 On Linux, download and install the appropriate package for your platform:
 
   * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup_0.9.0_amd64.deb)
+  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup_0.9.0_armhf.deb)
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup-0.9.0-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
