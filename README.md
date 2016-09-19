@@ -68,7 +68,11 @@ On Linux, download and install the appropriate package for your platform:
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup-0.9.0-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 
-On Windows, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup.exe)
+On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
+
+   choco install fwup
+
+Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.9.0/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the

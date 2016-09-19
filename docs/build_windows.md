@@ -16,5 +16,8 @@ Then, run a static build using the mingw compiler:
     ./autogen.sh    # only necessary if building from a git source tree
     ./scripts/build_pkg.sh
 
-The script should exit successfully and you should have an `fwup.exe` binary. To
-recompile from now on, it is sufficient to just run `make`.
+The script should exit successfully and you should have an `fwup.exe` binary, and a `fwup.*.nupkg` Chocolatey package. 
+
+To install a pre-release Chocolatey Package:
+
+    choco install fwup.*.nupkg -pre
