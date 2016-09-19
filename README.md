@@ -70,7 +70,7 @@ On Linux, download and install the appropriate package for your platform:
 
 On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
-   choco install fwup
+    choco install fwup
 
 Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.9.1/fwup.exe)
 and place it in your path.
