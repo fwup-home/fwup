@@ -1,6 +1,12 @@
 # Changelog
 
-## v0.9.1-dev
+## v0.9.1
+
+  * New features
+    * Build Chocolatey package for Windows - lets Windows user run `choco
+      install fwup` once the package is accepted into the Chocolatey repo.
+    * Build a `.deb` package for Raspbian. This makes it easier to install
+      `fwup` on Raspberry Pis. CI now builds and tests 32-bit armhf versions.
 
 ## v0.9.0
 
