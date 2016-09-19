@@ -258,7 +258,7 @@ int raw_write_run(struct fun_context *fctx)
 
     if (len_written != expected_length) {
         if (len_written == 0)
-            ERR_RETURN("raw_write didn't write anything. Was it called twice in one on-resource?");
+            ERR_RETURN("raw_write didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->on_event->title);
         else
             ERR_RETURN("raw_write wrote %lld bytes, but should have written %lld", len_written, expected_length);
     }
