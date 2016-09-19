@@ -99,7 +99,14 @@ static int create_archive(cfg_t *cfg, const char *filename, const unsigned char 
 {
     int rc = 0;
     struct archive *a = archive_write_new();
-    archive_write_set_format_zip(a);
+    if (archive_write_set_format_zip(a) != ARCHIVE_OK ||
+        archive_write_zip_set_compression_deflate(a) != ARCHIVE_OK)
+        ERR_CLEANUP_MSG("error configuring libarchive: %s", archive_error_string(a));
+
+    // Setting the compression-level is only supported on more recent versions
+    // of libarchive, so don't check for errors.
+    archive_write_set_format_option(a, "zip", "compression-level", "9");
+
     if (archive_write_open_filename(a, filename) != ARCHIVE_OK)
         ERR_CLEANUP_MSG("error creating archive '%s': %s", filename, archive_error_string(a));
 

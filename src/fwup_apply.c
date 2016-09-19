@@ -203,7 +203,10 @@ static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive
         // If the caller wants to open a new subarchive, open it.
         if (archive_path) {
             p->subarchive = archive_write_new();
-            archive_write_set_format_zip(p->subarchive);
+            if (archive_write_set_format_zip(p->subarchive) != ARCHIVE_OK ||
+                archive_write_zip_set_compression_deflate(p->subarchive) != ARCHIVE_OK)
+                ERR_RETURN("error configuring libarchive: %s", archive_error_string(p->subarchive));
+
             if (archive_write_open_filename(p->subarchive, archive_path) != ARCHIVE_OK) {
                 archive_write_free(p->subarchive);
                 p->subarchive = NULL;

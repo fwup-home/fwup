@@ -44,7 +44,13 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     struct archive *in = archive_read_new();
     archive_read_support_format_zip(in);
     struct archive *out = archive_write_new();
-    archive_write_set_format_zip(out);
+    if (archive_write_set_format_zip(out) != ARCHIVE_OK ||
+        archive_write_zip_set_compression_deflate(out) != ARCHIVE_OK)
+        ERR_CLEANUP_MSG("error configuring libarchive: %s", archive_error_string(out));
+
+    // Setting the compression-level is only supported on more recent versions
+    // of libarchive, so don't check for errors.
+    archive_write_set_format_option(out, "zip", "compression-level", "9");
 
     if (!input_filename)
         ERR_CLEANUP_MSG("Specify an input firmware file");
