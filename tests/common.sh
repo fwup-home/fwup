@@ -3,6 +3,7 @@
 # Common unit test commands
 set -e
 
+
 export LC_ALL=C
 
 # Linux command line tools that may be different on other OSes
@@ -48,7 +49,7 @@ if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
 FRAMING_HELPER=$TESTS_DIR/framing-helper$EXEEXT
 
-WORK=$TESTS_DIR/work
+WORK=$TESTS_DIR/work-$(basename "$0")
 RESULTS=$WORK/results
 
 [ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
@@ -65,17 +66,15 @@ TRIMMED_META_CONF=$WORK/meta.conf.trimmed
 # Setup the directories
 rm -fr $WORK
 mkdir -p $WORK
-mkdir -p $UNZIPDIR
 
 unzip_fw() {
+    mkdir -p $UNZIPDIR
     unzip -q $FWFILE -d $UNZIPDIR
 }
 
 check_meta_conf() {
     # Need to unzip the fw file to check the meta.conf
-    if [ -e $UNZIPDIR/meta.conf ]; then
-        : good
-    else
+    if ! [ -e $UNZIPDIR/meta.conf ]; then
         unzip_fw
     fi
 
@@ -86,6 +85,20 @@ check_meta_conf() {
         > $TRIMMED_META_CONF
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }
+
+cleanup() {
+    if [[ $? = "0" ]]; then
+        echo "Test succeeded"
+        rm -fr $WORK
+    else
+        echo
+        echo "Test failed!"
+        echo
+        echo "Leaving test work files in '$WORK'"
+    fi
+}
+
+trap cleanup EXIT
 
 # Test input files
 
@@ -100,9 +113,11 @@ TESTFILE_1K_CORRUPT=$TESTS_DIR/1K-corrupt.bin
 TESTFILE_150K=$TESTS_DIR/150K.bin
 
 # Generated test data
-TESTFILE_15M=$TESTS_DIR/15M.bin
-if [ ! -e $TESTFILE_15M ]; then
-    for i in {1..100}; do
-        cat $TESTFILE_150K >> $TESTFILE_15M
-    done
-fi
+create_15M_file() {
+    if [ ! -e $TESTFILE_15M ]; then
+        for i in {1..100}; do
+            cat $TESTFILE_150K >> $TESTFILE_15M
+        done
+    fi
+}
+TESTFILE_15M=$WORK/15M.bin

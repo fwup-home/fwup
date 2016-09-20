@@ -18,18 +18,22 @@ task complete {
 EOF
 
 # Create new keys
+pushd $WORK
 $FWUP_CREATE -g
+popd
 
 # Sign the firmware
-$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # Create new keys and try to use them instead of the first ones
 # It should be insanely unlikely that we'll generate the same keys twice
+pushd $WORK
 $FWUP_CREATE -g
+popd
 
 # Check that applying the firmware with checking signatures fails
 echo Expecting a failure from apply...
-if cat $FWFILE | $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -t complete; then
+if cat $FWFILE | $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -t complete; then
     echo A bad signature should have been detected
     exit 1
 fi

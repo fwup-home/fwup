@@ -41,4 +41,3 @@ cat >$WORK/expected_output.txt <<EOF
 100
 EOF
 diff -w $WORK/expected_output.txt $WORK/actual_output.txt
-

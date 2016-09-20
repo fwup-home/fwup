@@ -8,6 +8,7 @@
 #
 
 . ./common.sh
+create_15M_file
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)

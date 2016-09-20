@@ -5,6 +5,7 @@
 #
 
 . ./common.sh
+create_15M_file
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {

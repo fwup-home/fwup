@@ -17,32 +17,34 @@ task complete {
 EOF
 
 # Create new keys
+pushd $WORK
 $FWUP_CREATE -g
+popd
 
 # DON'T sign the firmware
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that applying the firmware breaks
 echo Expecting error from apply...
-if $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
+if $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; then
     echo "Expecting an unsigned firmware install to fail."
     exit 1
 fi
 
 echo Expecting error from verify...
-if $FWUP_APPLY -V -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -V -p $WORK/fwup-key.pub -i $FWFILE; then
     echo "Expecting an unsigned firmware to fail."
     exit 1
 fi
 
 echo Expecting error from list...
-if $FWUP_APPLY -l -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -l -p $WORK/fwup-key.pub -i $FWFILE; then
     echo "Expecting an unsigned firmware to fail."
     exit 1
 fi
 
 echo Expecting error from metadata...
-if $FWUP_APPLY -m -p fwup-key.pub -i $FWFILE; then
+if $FWUP_APPLY -m -p $WORK/fwup-key.pub -i $FWFILE; then
     echo "Expecting an unsigned firmware to fail."
     exit 1
 fi

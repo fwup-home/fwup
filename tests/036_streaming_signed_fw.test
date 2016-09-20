@@ -29,10 +29,12 @@ task "complete" {
 EOF
 
 # Create new keys
+pushd $WORK
 $FWUP_CREATE -g
+popd
 
 # Sign the firmware
-$FWUP_CREATE -s fwup-key.priv -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
@@ -41,4 +43,4 @@ check_meta_conf
 cat $FWFILE | $FWUP_APPLY -q -a -d $IMGFILE -t complete
 
 # Check that applying the firmware with checking signatures works
-cat $FWFILE | $FWUP_APPLY -q -p fwup-key.pub -a -d $IMGFILE -t complete
+cat $FWFILE | $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -t complete
