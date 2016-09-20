@@ -82,15 +82,55 @@ static off_t mmc_device_size_raw(const char *devpath)
     return len < 0 ? 0 : len;
 }
 
-static bool is_mmc_device(off_t device_size)
+struct mmc_device_info
 {
-    // Check 1: Path exists and can read length
-    if (device_size == 0)
+    char devpath[16];
+
+    off_t device_size;
+    struct stat st;
+};
+
+static bool mmc_get_device_stats(const char *devpath_pattern,
+                                 const char *sysfs_size_pattern,
+                                 int instance,
+                                 struct mmc_device_info *info)
+{
+    sprintf(info->devpath, devpath_pattern, instance);
+
+    if (stat(info->devpath, &info->st) < 0)
         return false;
 
-    // Check 2: Capacity larger than 65 GiB -> false
-    if (device_size > (65 * ONE_GiB))
+    info->device_size = mmc_device_size_raw(info->devpath);
+    if (info->device_size == 0) {
+        char sysfspath[32];
+        sprintf(sysfspath, sysfs_size_pattern, instance);
+        info->device_size = mmc_device_size_sysfs(sysfspath);
+    }
+    return true;
+}
+
+static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, const struct stat *rootdev)
+{
+    // Check 1: Not on the device containing the root fs
+    // NOTE: This check is an approximation to what we really want. We'd like
+    //       to know the root device for the root directory, but stat only
+    //       returns the partition device for the root directory. Since it
+    //       is often the case of 16 minor devices to support each real device,
+    //       assume that if we mask the root directory's device off that we'll get
+    //       its parent.
+    if (info->st.st_rdev == (rootdev->st_dev & 0xfff0))
         return false;
+
+    // Check 2: Zero capacity devices
+    if (info->device_size <= 0)
+        return false;
+
+    // Check 3: Capacity larger than 65 GiB -> false
+    // NOTE: The rationale for this check is that the user's main drives will be
+    //       large capacity and we don't want to autodetect them when looking for
+    //       SDCards.
+    //if (info->device_size > (65 * ONE_GiB))
+    //    return false;
 
     return true;
 }
@@ -103,40 +143,42 @@ static bool is_mmc_device(off_t device_size)
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
+    // Get the root device so that we can filter
+    // it's drive out of the autodetected list
+    struct stat rootdev;
+    if (stat("/", &rootdev) < 0) {
+        fwup_warnx("can't stat root directory");
+        rootdev.st_dev = 0;
+    }
+
     int device_count = 0;
 
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
     for (char c = 'a'; c != 'z'; c++) {
-        char devpath[16];
-        sprintf(devpath, "/dev/sd%c", c);
-
-        off_t device_size = mmc_device_size_raw(devpath);
-        if (device_size == 0) {
-            char sysfspath[32];
-            sprintf(sysfspath, "/sys/block/sd%c/size", c);
-            device_size = mmc_device_size_sysfs(sysfspath);
-        }
-        if (is_mmc_device(device_size) && device_count < max_devices) {
-            strcpy(devices[device_count].path, devpath);
-            devices[device_count].size = device_size;
+        struct mmc_device_info info;
+        if (mmc_get_device_stats("/dev/sd%c",
+                                 "/sys/block/sd%c/size",
+                                 c,
+                                 &info) &&
+            is_autodetectable_mmc_device(&info, &rootdev) &&
+            device_count < max_devices) {
+            strcpy(devices[device_count].path, info.devpath);
+            devices[device_count].size = info.device_size;
             device_count++;
         }
     }
 
     // Scan the mmcblk devices
     for (int i = 0; i < 16; i++) {
-        char devpath[16];
-        sprintf(devpath, "/dev/mmcblk%d", i);
-
-        off_t device_size = mmc_device_size_raw(devpath);
-        if (device_size == 0) {
-            char sysfspath[32];
-            sprintf(sysfspath, "/sys/block/mmcblk%d/size", i);
-            device_size = mmc_device_size_sysfs(sysfspath);
-        }
-        if (is_mmc_device(device_size) && device_count < max_devices) {
-            strcpy(devices[device_count].path, devpath);
-            devices[device_count].size = device_size;
+        struct mmc_device_info info;
+        if (mmc_get_device_stats("/dev/mmcblk%d",
+                                 "/sys/block/mmcblk%d/size",
+                                 i,
+                                 &info) &&
+            is_autodetectable_mmc_device(&info, &rootdev) &&
+            device_count < max_devices) {
+            strcpy(devices[device_count].path, info.devpath);
+            devices[device_count].size = info.device_size;
             device_count++;
         }
     }
