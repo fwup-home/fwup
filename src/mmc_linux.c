@@ -106,9 +106,7 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     int device_count = 0;
 
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
-    // NOTE: Don't scan /dev/sda, since I don't think this is ever right
-    // for any use case.
-    for (char c = 'b'; c != 'z'; c++) {
+    for (char c = 'a'; c != 'z'; c++) {
         char devpath[16];
         sprintf(devpath, "/dev/sd%c", c);
 
