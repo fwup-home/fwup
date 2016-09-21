@@ -2,6 +2,14 @@
 
 ## v0.9.2-dev
 
+  * Bug fixes
+    * Allow /dev/sda to be auto-detected as an SDCard on Linux. It turned out
+      that for some systems, this was a legit location. Most people will not
+      see it, since it doesn't pass other tests.
+    * Set compression parameters on libarchive's zip compressor. This wasn't a
+      actually a bug, but there seemed to be some variability in how .fw files
+      were compressed.
+
 ## v0.9.1
 
   * New features
