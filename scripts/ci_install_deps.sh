@@ -82,14 +82,18 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     esac
 else
     brew update
+
+    # Fix "/usr/local/Library/ENV/4.3/sed: Not such file" errors
+    brew uninstall libtool
+    brew install libtool
+
     brew install coreutils mtools gnu-sed
-    brew install --universal gettext
-    brew link --force gettext
+    brew install gettext
     if [[ "$MODE" = "dynamic" ]]; then
         brew install libarchive libsodium confuse
     fi
     # Fix brew breakage in autotools
-    mkdir /usr/local/Library/ENV
+    mkdir -p /usr/local/Library/ENV
     ln -s /usr/local/Library/Homebrew/shims/super /usr/local/Library/ENV/4.3
     ls /usr/local/Library/ENV/4.3
 fi
