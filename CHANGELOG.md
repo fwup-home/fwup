@@ -1,8 +1,10 @@
 # Changelog
 
-## v0.9.2-dev
+## v0.9.2
 
   * Bug fixes
+    * Fix SDCard corruption issue on Windows. Disk volumes are now locked for
+      the duration of the write process. Thanks to @michaelkschmidt for the fix.
     * Allow /dev/sda to be auto-detected as an SDCard on Linux. It turned out
       that for some systems, this was a legit location. Most people will not
       see it, since it doesn't pass other tests.
