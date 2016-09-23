@@ -168,7 +168,7 @@ static void unmount_volume(LPWSTR volume_name) {
 
 
     if (!status)
-        fwup_errx(EXIT_FAILURE, "Error unmounting '%S' (Error %lu)", volume_name, GetLastError());   
+        fwup_errx(EXIT_FAILURE, "Error unmounting '%S' (Error %lu)", volume_name, GetLastError());
 
     // Note we deliberately do not FSCTL_UNLOCK_VOLUME or call CloseHandle, as the Logical Volume must
     // remained locked.  We rely on Windows to cleanup for us
