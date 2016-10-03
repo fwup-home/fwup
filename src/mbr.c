@@ -41,12 +41,14 @@ int mbr_verify(const struct mbr_partition partitions[4])
         if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0)
             ERR_RETURN("invalid partition type");
 
-        // Check if empty.
-        if (partitions[i].partition_type == 0)
-            continue;
-
         uint32_t ileft = partitions[i].block_offset;
         uint32_t iright = ileft + partitions[i].block_count;
+
+        // Check if empty.
+        if (partitions[i].partition_type == 0 ||
+                ileft == iright)
+            continue;
+
         int j;
         for (j = 0; j < 4; j++) {
             if (j == i)
@@ -54,6 +56,10 @@ int mbr_verify(const struct mbr_partition partitions[4])
 
             uint32_t jleft = partitions[j].block_offset;
             uint32_t jright = jleft + partitions[j].block_count;
+
+            if (partitions[j].partition_type == 0 ||
+                    jleft == jright)
+                continue;
 
             if ((ileft >= jleft && ileft < jright) ||
                 (iright > jleft && iright <= jright))
@@ -96,20 +102,17 @@ static int create_partition(const struct mbr_partition *partition, uint8_t *outp
     // Clear out the partition entry
     memset(output, 0, 16);
 
-    // Only fill in the entry if it is actually used.
-    if (partition->partition_type != 0) {
-        output[0] = partition->boot_flag ? 0x80 : 0x00;
+    output[0] = partition->boot_flag ? 0x80 : 0x00;
 
-        if (lba_to_chs(partition->block_offset, &output[1]) < 0)
-            return -1;
+    if (lba_to_chs(partition->block_offset, &output[1]) < 0)
+        return -1;
 
-        output[4] = partition->partition_type;
-        if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
-            return -1;
+    output[4] = partition->partition_type;
+    if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
+        return -1;
 
-        copy_le32(&output[8], partition->block_offset);
-        copy_le32(&output[12], partition->block_count);
-    }
+    copy_le32(&output[8], partition->block_offset);
+    copy_le32(&output[12], partition->block_count);
 
     return 0;
 }
