@@ -129,8 +129,8 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, con
     // NOTE: The rationale for this check is that the user's main drives will be
     //       large capacity and we don't want to autodetect them when looking for
     //       SDCards.
-    //if (info->device_size > (65 * ONE_GiB))
-    //    return false;
+    if (info->device_size > (65 * ONE_GiB))
+        return false;
 
     return true;
 }
