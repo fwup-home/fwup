@@ -104,13 +104,19 @@ static int create_partition(const struct mbr_partition *partition, uint8_t *outp
     // Clear out the partition entry
     memset(output, 0, 16);
 
-    output[0] = partition->boot_flag ? 0x80 : 0x00;
+    // Don't write most of the partition entry if it is unused.
+    if (partition->partition_type > 0) {
+        output[0] = partition->boot_flag ? 0x80 : 0x00;
 
-    lba_to_chs(partition->block_offset, &output[1]);
+        lba_to_chs(partition->block_offset, &output[1]);
 
-    output[4] = partition->partition_type;
-    lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]);
+        output[4] = partition->partition_type;
+        lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]);
+    }
 
+    // There's an ugly hack use case where data is stored in the block offset and
+    // count of unused partition entries. That's why the following two lines aren't
+    // in the "if" block above.
     copy_le32(&output[8], partition->block_offset);
     copy_le32(&output[12], partition->block_count);
 
