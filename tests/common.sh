@@ -9,12 +9,14 @@ export LC_ALL=C
 READLINK=readlink
 SED=sed
 STAT=stat
+BASE64_DECODE=-d
 
 case "$OSTYPE" in
     darwin*)
         READLINK=/usr/local/bin/greadlink
         SED=/usr/local/bin/gsed
         STAT=/usr/local/bin/gstat
+        BASE64_DECODE=-D
 
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e $STAT ] || ( echo "Please run 'brew install coreutils' to install gstat"; exit 1 )
@@ -24,6 +26,10 @@ case "$OSTYPE" in
     *)
         ;;
 esac
+
+base64_decode() {
+    base64 $BASE64_DECODE
+}
 
 TESTS_DIR=$(dirname $($READLINK -f $0))
 

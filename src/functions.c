@@ -20,6 +20,7 @@
 #include "mbr.h"
 #include "fwfile.h"
 #include "block_writer.h"
+#include "uboot_env.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -47,6 +48,9 @@ DECLARE_FUN(fat_touch);
 DECLARE_FUN(fw_create);
 DECLARE_FUN(fw_add_local_file);
 DECLARE_FUN(mbr_write);
+DECLARE_FUN(uboot_clearenv);
+DECLARE_FUN(uboot_setenv);
+DECLARE_FUN(uboot_unsetenv);
 
 struct fun_info {
     const char *name;
@@ -70,6 +74,9 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fw_create),
     FUN_INFO(fw_add_local_file),
     FUN_INFO(mbr_write),
+    FUN_INFO(uboot_clearenv),
+    FUN_INFO(uboot_setenv),
+    FUN_INFO(uboot_unsetenv)
 };
 
 static struct fun_info *lookup(int argc, const char **argv)
@@ -699,4 +706,168 @@ int mbr_write_run(struct fun_context *fctx)
 
     fctx->report_progress(fctx, 1);
     return 0;
+}
+
+int uboot_clearenv_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("uboot_clearenv requires a uboot-environment reference");
+
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+
+    if (!ubootsec)
+        ERR_RETURN("uboot_clearenv can't find uboot-environment reference");
+
+    return 0;
+}
+int uboot_clearenv_compute_progress(struct fun_context *fctx)
+{
+    fctx->total_progress_units++; // Arbitarily count as 1 unit
+    return 0;
+}
+int uboot_clearenv_run(struct fun_context *fctx)
+{
+    int rc = 0;
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    struct uboot_env env;
+
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
+        return -1;
+
+    // Just in case we're raw writing to the FAT partition, make sure
+    // that we flush any cached data.
+    fctx->fatfs_ptr(fctx, -1, NULL);
+
+    char *buffer = malloc(env.env_size);
+    if (uboot_env_write(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (written != (ssize_t) env.env_size)
+        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+
+    fctx->report_progress(fctx, 1);
+
+cleanup:
+    uboot_env_free(&env);
+    free(buffer);
+    return rc;
+}
+
+int uboot_setenv_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("uboot_setenv requires a uboot-environment reference, variable name and value");
+
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+
+    if (!ubootsec)
+        ERR_RETURN("uboot_setenv can't find uboot-environment reference");
+
+    return 0;
+}
+int uboot_setenv_compute_progress(struct fun_context *fctx)
+{
+    fctx->total_progress_units++; // Arbitarily count as 1 unit
+    return 0;
+}
+int uboot_setenv_run(struct fun_context *fctx)
+{
+    int rc = 0;
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    struct uboot_env env;
+
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
+        return -1;
+
+    // Just in case we're raw writing to the FAT partition, make sure
+    // that we flush any cached data.
+    fctx->fatfs_ptr(fctx, -1, NULL);
+
+    char *buffer = malloc(env.env_size);
+    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (read != (ssize_t) env.env_size)
+        ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
+
+    if (uboot_env_read(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    if (uboot_env_setenv(&env, fctx->argv[2], fctx->argv[3]) < 0)
+        ERR_CLEANUP();
+
+    if (uboot_env_write(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (written != (ssize_t) env.env_size)
+        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+
+    fctx->report_progress(fctx, 1);
+
+cleanup:
+    uboot_env_free(&env);
+    free(buffer);
+    return rc;
+}
+
+int uboot_unsetenv_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("uboot_unsetenv requires a uboot-environment reference and a variable name");
+
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+
+    if (!ubootsec)
+        ERR_RETURN("uboot_unsetenv can't find uboot-environment reference");
+
+    return 0;
+}
+int uboot_unsetenv_compute_progress(struct fun_context *fctx)
+{
+    fctx->total_progress_units++; // Arbitarily count as 1 unit
+    return 0;
+}
+int uboot_unsetenv_run(struct fun_context *fctx)
+{
+    int rc = 0;
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    struct uboot_env env;
+
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
+        return -1;
+
+    // Just in case we're raw writing to the FAT partition, make sure
+    // that we flush any cached data.
+    fctx->fatfs_ptr(fctx, -1, NULL);
+
+    char *buffer = malloc(env.env_size);
+    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (read != (ssize_t) env.env_size)
+        ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
+
+    if (uboot_env_read(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    if (uboot_env_unsetenv(&env, fctx->argv[2]) < 0)
+        ERR_CLEANUP();
+
+    if (uboot_env_write(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (written != (ssize_t) env.env_size)
+        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+
+    fctx->report_progress(fctx, 1);
+
+cleanup:
+    uboot_env_free(&env);
+    free(buffer);
+    return rc;
 }

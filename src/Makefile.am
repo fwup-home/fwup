@@ -6,6 +6,7 @@ fwup_SOURCES=\
 	block_writer.c \
 	cfgfile.c \
 	cfgprint.c \
+	crc32.c \
 	fatfs.c \
 	fat_cache.c \
 	functions.c \
@@ -24,11 +25,13 @@ fwup_SOURCES=\
 	mmc_windows.c \
 	requirement.c \
 	simple_string.c \
+	uboot_env.c \
 	util.c \
 	archive_open.h \
 	block_writer.h \
 	cfgfile.h \
 	cfgprint.h \
+	crc32.h \
 	fatfs.h \
 	functions.h \
 	fat_cache.h \
@@ -44,6 +47,7 @@ fwup_SOURCES=\
 	mmc.h \
 	requirement.h \
 	simple_string.h \
+	uboot_env.h \
 	util.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \

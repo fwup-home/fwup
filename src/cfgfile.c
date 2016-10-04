@@ -18,6 +18,7 @@
 #include "functions.h"
 #include "requirement.h"
 #include "mbr.h"
+#include "uboot_env.h"
 #include "util.h"
 #include "archive_open.h"
 
@@ -222,6 +223,25 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     return 0;
 }
 
+static int cb_validate_uboot(cfg_t *cfg, cfg_opt_t *opt)
+{
+    // This is called for each uboot environment block, so we only need to
+    // validate the last one.
+    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
+    if(!sec)
+    {
+        cfg_error(cfg, "section is NULL!?");
+        return -1;
+    }
+
+    if (uboot_env_verify_cfg(sec) < 0) {
+        cfg_error(cfg, last_error());
+        return -1;
+    }
+
+    return 0;
+}
+
 // libconfuse v3.0 ignore unknown options
 #ifdef CFGF_IGNORE_UNKNOWN
 #define CFG_IGNORE_UNKNOWN \
@@ -271,6 +291,12 @@ static cfg_opt_t mbr_opts[] = {
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };
+static cfg_opt_t uboot_environment_opts[] = {
+    CFG_INT("block-offset", -1, CFGF_NONE),
+    CFG_INT("block-count", INT32_MAX, CFGF_NONE),
+    CFG_IGNORE_UNKNOWN
+    CFG_END()
+};
 
 #define CFG_ON_EVENT_FUNCTIONS(CB) \
     CFG_STR_LIST("funlist", 0, CFGF_NONE), \
@@ -286,7 +312,10 @@ static cfg_opt_t mbr_opts[] = {
     CFG_FUNC("fat_touch", CB), \
     CFG_FUNC("fw_create", CB), \
     CFG_FUNC("fw_add_local_file", CB), \
-    CFG_FUNC("mbr_write", CB)
+    CFG_FUNC("mbr_write", CB), \
+    CFG_FUNC("uboot_clearenv", CB), \
+    CFG_FUNC("uboot_setenv", CB), \
+    CFG_FUNC("uboot_unsetenv", CB)
 
 static cfg_opt_t task_on_init_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),
@@ -309,6 +338,7 @@ static cfg_opt_t task_opts[] = {
     CFG_STR_LIST("reqlist", 0, CFGF_NONE), // Internal - use functions below
     CFG_FUNC("require-partition-offset", cb_task_require_func),
     CFG_FUNC("require-fat-file-exists", cb_task_require_func),
+    CFG_FUNC("require-uboot-variable", cb_task_require_func),
 
     CFG_INT("require-partition1-offset", -1, CFGF_NONE), // Deprecated
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE), // Deprecated
@@ -336,6 +366,7 @@ cfg_opt_t opts[] = {
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_SEC("uboot-environment", uboot_environment_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_FUNC("include", &cfg_include),
     CFG_IGNORE_UNKNOWN
     CFG_END()
@@ -364,6 +395,7 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     // set a validating callback function for sections
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
+    cfg_set_validate_func(toplevel_cfg, "uboot-environment", cb_validate_uboot);
     switch (cfg_parse(toplevel_cfg, filename)) {
     case CFG_SUCCESS:
         break;

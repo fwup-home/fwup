@@ -7,10 +7,10 @@
 
 The `fwup` utility is a configurable image-based firmware update utility for
 embedded Linux-based systems. It has two modes of operation. The first mode
-creates compressed archives containing root file system images, bootloaders, and
-other image material. These can be distributed via websites, email or update
-servers. The second mode applies the firmware images in a robust and repeatable
-way. The utility has the following features:
+creates compressed archives containing root file system images, bootloaders,
+and other image material. These can be distributed via websites, email or
+update servers. The second mode applies the firmware images in a robust and
+repeatable way. The utility has the following features:
 
   1. Uses standard ZIP archives to make debugging and transmission simple.
 
@@ -34,24 +34,24 @@ way. The utility has the following features:
 
   9. Permissive license (Apache 2.0 License - see end of doc)
 
-This utility is based off of firmware update utilities I've written for
-various projects. It has already received a lot of use with the open source
-Nerves Project and other embedded projects.
+This utility is based off of firmware update utilities I've written for various
+projects. It has already received a lot of use with the open source Nerves
+Project and other embedded projects.
 
 # Examples!
 
-See [bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for firmware update examples
-for the BeagleBone Black and Raspberry Pi. The [Nerves Project](https://github.com/nerves-project/nerves_system_br)
-has more examples and is better maintained. The regression tests can also be helpful.
+See [bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for
+firmware update examples for the BeagleBone Black and Raspberry Pi. The [Nerves
+Project](https://github.com/nerves-project/nerves_system_br) has more examples
+and is better maintained. The regression tests can also be helpful.
 
-My real world use of `fwup` involves writing
-the new firmware to a place on the Flash that's not in current use and then
-'flipping' over to it at the very end. The examples tend to reflect that.
-`fwup` can also be used to overwrite
-an installation in place assuming you're using an initramfs, but that doesn't
-give protection against someone pulling power at a bad time. Also, `fwup`'s one pass
-over the archive feature means that firmware validation is mostly done on the fly,
-so you'll want to verify the archive first (see the `-V` option).
+My real world use of `fwup` involves writing the new firmware to a place on the
+Flash that's not in current use and then 'flipping' over to it at the very end.
+The examples tend to reflect that. `fwup` can also be used to overwrite an
+installation in place assuming you're using an initramfs, but that doesn't give
+protection against someone pulling power at a bad time. Also, `fwup`'s one pass
+over the archive feature means that firmware validation is mostly done on the
+fly, so you'll want to verify the archive first (see the `-V` option).
 
 # Installing
 
@@ -150,33 +150,37 @@ an existing archive run:
 
 # Configuration file format
 
-`fwup` uses the Unix configuration library, [libconfuse](http://www.nongnu.org/confuse/),
-so its configuration has some similarities to other programs. The configuration file is
-used to create firmware archives. During creation, `fwup` embeds a processed version of the configuration file into
-the archive that has been stripped of comments, has had all variables resolved, and has
-some additional useful metadata added. Configuration files are
-organized into scoped blocks and options are set using a `key = value` syntax.
+`fwup` uses the Unix configuration library,
+[libconfuse](http://www.nongnu.org/confuse/), so its configuration has some
+similarities to other programs. The configuration file is used to create
+firmware archives. During creation, `fwup` embeds a processed version of the
+configuration file into the archive that has been stripped of comments, has had
+all variables resolved, and has some additional useful metadata added.
+Configuration files are organized into scoped blocks and options are set using
+a `key = value` syntax.
 
 ## Environment variables
 
-For integration into build systems and other scripts, `fwup` performs environment variable
-substitution inside of the configuration files. Keep in mind that environment variables are
-resolved on the host during firmware update creation. Environment variables are referenced as
-follows:
+For integration into build systems and other scripts, `fwup` performs
+environment variable substitution inside of the configuration files. Keep in
+mind that environment variables are resolved on the host during firmware update
+creation. Environment variables are referenced as follows:
 
     key = ${ANY_ENVIRONMENT_VARIABLE}
 
-It is possible to provide default values for environment variables using the `:-` symbol:
+It is possible to provide default values for environment variables using the
+`:-` symbol:
 
     key = ${ANY_ENVIRONMENT_VARIABLE:-adefault}
 
-Inside configuration files, it can be useful to define constants that are used throughout
-the file. All constants are stored as environment variables. By default, definitions do
-not overwrite environment variables with the same name:
+Inside configuration files, it can be useful to define constants that are used
+throughout the file. All constants are stored as environment variables. By
+default, definitions do not overwrite environment variables with the same name:
 
     define(MY_CONSTANT, 5)
 
-To define a constant that is not affected by environment variables of the same name, use `define!`:
+To define a constant that is not affected by environment variables of the same
+name, use `define!`:
 
     define!(MY_CONSTANT, "Can't override this")
 
@@ -208,11 +212,12 @@ task                 | Defines a firmware update task (referenced using -t from 
 
 ## file-resource
 
-A `file-resource` specifies a file on the host that should be included in the archive. Each
-`file-resource` should be given a unique name so that it can be referred to by other parts of
-the update configuration. `fwup` will automatically record the length and BLAKE2b-256 hash of the
-file in the archive. These fields are used internally to compute progress and verify the contents
-of the archive. A typical `file-resource` section looks like this:
+A `file-resource` specifies a file on the host that should be included in the
+archive. Each `file-resource` should be given a unique name so that it can be
+referred to by other parts of the update configuration. `fwup` will
+automatically record the length and BLAKE2b-256 hash of the file in the
+archive. These fields are used internally to compute progress and verify the
+contents of the archive. A typical `file-resource` section looks like this:
 
 ```
 file-resource zImage {
@@ -223,8 +228,8 @@ file-resource zImage {
 Resources are usually stored in the `data` directory of the firmware archive.
 This is transparent for most users. If you need to make the `.fw` file
 interoperate with other software, it is sometimes useful to embed a file into
-the archive at another location. This can be done by specifying an absolute path
-resource as follows:
+the archive at another location. This can be done by specifying an absolute
+path resource as follows:
 
 ```
 file-resource "/my_custom_metadata" {
@@ -234,12 +239,13 @@ file-resource "/my_custom_metadata" {
 
 ### Resource concatenation
 
-Sometimes you need to concatenate multiple files together to form one `file-resource`. While
-you can sometimes do this using multiple calls to `raw_write`, that won't work if you don't
-know the file offsets a priori or the offsets don't fall on block boundaries. Another
-alternative is to concatenate files as a prep step to fwup. If that's inconvenient, `fwup`
-allows multiple paths to be specified in `host-path` that are separated by semicolons.
-They will be concatenated in the order they appear.
+Sometimes you need to concatenate multiple files together to form one
+`file-resource`. While you can sometimes do this using multiple calls to
+`raw_write`, that won't work if you don't know the file offsets a priori or the
+offsets don't fall on block boundaries. Another alternative is to concatenate
+files as a prep step to fwup. If that's inconvenient, `fwup` allows multiple
+paths to be specified in `host-path` that are separated by semicolons. They
+will be concatenated in the order they appear.
 
 ```
 file-resource kernel_and_rootfs {
@@ -251,12 +257,14 @@ file-resource kernel_and_rootfs {
 
 ### File resource validation checks
 
-When creating archives, `fwup` can perform validation checking on file resources to catch
-simple errors. These checks can catch common errors like file resources growing too large
-to fit on the destination or files truncated due to cancelled builds.
+When creating archives, `fwup` can perform validation checking on file
+resources to catch simple errors. These checks can catch common errors like
+file resources growing too large to fit on the destination or files truncated
+due to cancelled builds.
 
-Note that these checks are not performed when applying updates, since the actual
-length (and a hash) is recorded in the archive metadata and used for verification.
+Note that these checks are not performed when applying updates, since the
+actual length (and a hash) is recorded in the archive metadata and used for
+verification.
 
 The following checks are supported:
 
@@ -278,12 +286,14 @@ file-resource rootfs.img {
 
 ## mbr
 
-A `mbr` section specifies the contents of the Master Boot Record on the destination media. This
-section contains the partition table that's read by Linux and the bootloaders for finding the
-file systems that exist on the media. In comparison to a tool like `fdisk`, `fwup` only supports
-simplistic partition setup, but this is sufficient for many devices. Tools such as `fdisk` can be
-used to determine the block offsets and sizes of partitions for the configuration file. Offsets
-and sizes are given in 512 byte blocks. Here's a potential mbr definition:
+A `mbr` section specifies the contents of the Master Boot Record on the
+destination media. This section contains the partition table that's read by
+Linux and the bootloaders for finding the file systems that exist on the media.
+In comparison to a tool like `fdisk`, `fwup` only supports simplistic partition
+setup, but this is sufficient for many devices. Tools such as `fdisk` can be
+used to determine the block offsets and sizes of partitions for the
+configuration file. Offsets and sizes are given in 512 byte blocks. Here's a
+potential mbr definition:
 
 ```
 mbr mbr-a {
@@ -313,12 +323,13 @@ mbr mbr-a {
 }
 ```
 
-If you're using an Intel Edison or similar platform, `fwup` supports generation of the OSIP
-header in the MBR. This header provides information for where to load the bootloader (e.g.., U-Boot)
-in memory. The `include-osip` option controls whether the header is generated. The OSIP and
-image record (OSII) option names map directly to the header fields with the exception that
-length, checksum and image count fields are automatically calculated. The following is an
-example that shows all of the options:
+If you're using an Intel Edison or similar platform, `fwup` supports generation
+of the OSIP header in the MBR. This header provides information for where to
+load the bootloader (e.g.., U-Boot) in memory. The `include-osip` option
+controls whether the header is generated. The OSIP and image record (OSII)
+option names map directly to the header fields with the exception that length,
+checksum and image count fields are automatically calculated. The following is
+an example that shows all of the options:
 
 ```
 mbr mbr-a {
@@ -345,32 +356,61 @@ mbr mbr-a {
 }
 ```
 
+## U-boot environment
+
+For systems using the U-boot bootloader, some support is included for modifying
+U-boot environment blocks. In order to take advantage of this, you must declare
+a `uboot-environment` section at the top level that describes how the
+environment block:
+
+```
+uboot-environment my_uboot_env {
+    block-offset = 2048
+    block-count = 16
+}
+```
+
+See the functions in the task section for getting and setting U-boot variables.
+
+NOTE: Currently, I've only implemented support for U-boot environments that I
+use. Notably, this doesn't support redundant environments, big endian targets,
+and writes to raw NAND parts. Please consider contributing back support for
+these if you use them.
+
+If `fwup`'s U-boot support does not meet your needs, it is always possible to
+create environment images using the `mkenvimage` utility and `raw_write` them
+to the proper locations. This is probably more appropriate when setting lots of
+variables.
+
 ## task
 
-The `task` section specifies a firmware update task. These sections are the main part of the
-firmware update archive since they describe the conditions upon which an update is applied
-and the steps to apply the update. Each `task` section must have a unique name, but when searching
-for a task, the firmware update tool only does a prefix match. This lets you define multiple tasks
-that can be evaluated based on conditions on the target hardware. The first matching task is the
-one that gets applied. This can
-be useful if the upgrade process is different based on the version of firmware currently
-on the target, the target architecture, etc. The following table lists the supported
-constraints:
+The `task` section specifies a firmware update task. These sections are the
+main part of the firmware update archive since they describe the conditions
+upon which an update is applied and the steps to apply the update. Each `task`
+section must have a unique name, but when searching for a task, the firmware
+update tool only does a prefix match. This lets you define multiple tasks that
+can be evaluated based on conditions on the target hardware. The first matching
+task is the one that gets applied. This can be useful if the upgrade process is
+different based on the version of firmware currently on the target, the target
+architecture, etc. The following table lists the supported constraints:
 
 Constraint                                         | Description
 ---------------------------------------------------|------------
 require-partition-offset(partition, block_offset)  | Require that the block offset of a partition be the specified value
 require-fat-file-exists(block_offset, filename)    | Require that a file exists in the specified FAT filesystem
+require-uboot-variable(my_uboot_env, varname, value)  | Require that a variable is set to the specified value in the U-boot environment
 
 *More constraints to be added as needed*
 
-The remainder of the `task` section is a list of event handlers. Event handlers are
-organized as scopes. An event handler matches during the application of a firmware update
-when an event occurs. Events include initialization, completion, errors, and files being
-decompressed from the archive. Since archives are processed in a streaming manner, the
-order of events is deterministic based on the order that files were added to the archive.
-If it is important that one event happen before another, make sure that `file-resource`
-sections are specified in the desired order. The following table lists supported events:
+The remainder of the `task` section is a list of event handlers. Event handlers
+are organized as scopes. An event handler matches during the application of a
+firmware update when an event occurs. Events include initialization,
+completion, errors, and files being decompressed from the archive. Since
+archives are processed in a streaming manner, the order of events is
+deterministic based on the order that files were added to the archive. If it is
+important that one event happen before another, make sure that `file-resource`
+sections are specified in the desired order. The following table lists
+supported events:
 
 Event                         | Description
 ------------------------------|------------
@@ -396,75 +436,83 @@ fat_setlabel(block_offset, label)     | Set the volume label on a FAT file syste
 fat_touch(block_offset, filename)     | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
+uboot_clearenv(my_uboot_env)             | Initialize a clean, variable free U-boot environment
+uboot_setenv(my_uboot_env, name, value)  | Set the specified U-boot variable
+uboot_unsetenv(my_uboot_env, name, value)  | Unset the specified U-boot variable
 
 # Firmware authentication
 
-Firmware archives can be authenticated using a simple public/private key scheme. To
-get started, create a public/private key pair by invoking `fwup -g`. The algorithm
-used is [Ed25519](http://ed25519.cr.yp.to/). This generates two file: `fwup-key.pub`
-and `fwup-key.priv`. It is critical to keep the signing key, `fwup-key.priv` secret.
+Firmware archives can be authenticated using a simple public/private key
+scheme. To get started, create a public/private key pair by invoking `fwup -g`.
+The algorithm used is [Ed25519](http://ed25519.cr.yp.to/). This generates two
+file: `fwup-key.pub` and `fwup-key.priv`. It is critical to keep the signing
+key, `fwup-key.priv` secret.
 
-To sign an archive, pass `-s fwup-key.priv` to fwup when creating the firmware. The
-other option is to sign the firmware archive after creation with `--sign` or `-S`.
+To sign an archive, pass `-s fwup-key.priv` to fwup when creating the firmware.
+The other option is to sign the firmware archive after creation with `--sign`
+or `-S`.
 
-To verify that an archive has been signed, pass `-p fwup-key.pub` on the command line
-to any of the commands that read the archive. E.g., `-a`, `-l` or `-m`.
+To verify that an archive has been signed, pass `-p fwup-key.pub` on the
+command line to any of the commands that read the archive. E.g., `-a`, `-l` or
+`-m`.
 
-It is important to understand how verification works so that the security of the
-archive isn't compromised. Firmware updates are applied in one pass to avoid needing
-a lot of memory or disk space. The consequence of this is that verification is
-done on the fly. The main metadata for the archive is always verified before any
-operations occur. Cryptographic hashs (using the [BLAKE2b-256](https://blake2.net/) algorithm) of each
-file contained in the archive is stored in the metadata. The hash for each file
-is computed on the fly, so a compromised file may not be detected until it has
-been written to Flash. Since this is obviously bad, the strategy for creating
-firmware updates is to write them to an unused location first and then switch
-over at the last possible minute. This is desirable to do anyway, since this strategy
-also provides some protection against the user disconnecting power midway through
+It is important to understand how verification works so that the security of
+the archive isn't compromised. Firmware updates are applied in one pass to
+avoid needing a lot of memory or disk space. The consequence of this is that
+verification is done on the fly. The main metadata for the archive is always
+verified before any operations occur. Cryptographic hashs (using the
+[BLAKE2b-256](https://blake2.net/) algorithm) of each file contained in the
+archive is stored in the metadata. The hash for each file is computed on the
+fly, so a compromised file may not be detected until it has been written to
+Flash. Since this is obviously bad, the strategy for creating firmware updates
+is to write them to an unused location first and then switch over at the last
+possible minute. This is desirable to do anyway, since this strategy also
+provides some protection against the user disconnecting power midway through
 the firmware update.
 
 # Integration with applications
 
-It is expected that many users will want to integrate `fwup` with their applications.
-Many operations can be accomplished by just invoking the `fwup` executable and parsing
-the text written to `stdout`. When applying firmware progress updates are delivered
-based on commandline options:
+It is expected that many users will want to integrate `fwup` with their
+applications. Many operations can be accomplished by just invoking the `fwup`
+executable and parsing the text written to `stdout`. When applying firmware
+progress updates are delivered based on commandline options:
 
   1. Human readable - This is the default. Progress is updated from the text `0%` to `100%`.
   2. Numeric (`-n`) - Progess is printed as `0\n` to `100\n`
   3. Quiet (`-q`) - No progress is printed
 
-While the above works well for scripts and when errors can be seen by the operator, `fwup`
-supports a structured use of `stdin`/`stdout` as well. Specify the `--framing` option to
-any of the commands to use this option.
+While the above works well for scripts and when errors can be seen by the
+operator, `fwup` supports a structured use of `stdin`/`stdout` as well. Specify
+the `--framing` option to any of the commands to use this option.
 
-The framing feature is influenced by the Erlang VM's port API and should be relatively
-easy to integrate with non-Erlang VM languages. The framing works around deficiencies
-in the built-in interprocess communication. For example, by enabling framing, a program
-can stream a firmware update through `fwup's` `stdin` without needing to close its
-`stdout` to signal end of file. Another feature aided by framing is knowing what text
-goes together and whether the text is part of an error message or not. Exit status is
-still an indicator of success or failure, but the controlling application doesn't
-need to wait for the program to exit to know what happened.
+The framing feature is influenced by the Erlang VM's port API and should be
+relatively easy to integrate with non-Erlang VM languages. The framing works
+around deficiencies in the built-in interprocess communication. For example, by
+enabling framing, a program can stream a firmware update through `fwup's`
+`stdin` without needing to close its `stdout` to signal end of file. Another
+feature aided by framing is knowing what text goes together and whether the
+text is part of an error message or not. Exit status is still an indicator of
+success or failure, but the controlling application doesn't need to wait for
+the program to exit to know what happened.
 
-In `--framing` mode, all communication with `fwup`
-is done in packets (rather than byte streams). A packet starts with a 4 byte length field.
-The length is a big endian (network byte order) unsigned integer. A zero-length packet
-(i.e., 4 bytes of zeros) signals end of input.
+In `--framing` mode, all communication with `fwup` is done in packets (rather
+than byte streams). A packet starts with a 4 byte length field. The length is a
+big endian (network byte order) unsigned integer. A zero-length packet (i.e., 4
+bytes of zeros) signals end of input.
 
 Field          | Size         | Description
 ---------------|--------------|-------------
 Length         | 4 bytes      | Packet length as a big endian integer
 Data           | Length bytes | Payload
 
-Input and output packets have different formats. For sending input to `fwup` (like when
-streaming a `.fw` file using stdio), the input bytes should be framed into packets
-however is most convenient. For example, if bytes are received in 4K chunks, then they
-can be sent to `fwup` in 4K packets with a zero-length packet at the end. The packets
-need not be the same size.
+Input and output packets have different formats. For sending input to `fwup`
+(like when streaming a `.fw` file using stdio), the input bytes should be
+framed into packets however is most convenient. For example, if bytes are
+received in 4K chunks, then they can be sent to `fwup` in 4K packets with a
+zero-length packet at the end. The packets need not be the same size.
 
-All output packets from `fwup` have a 2 byte type field at the
-beginning of the packet:
+All output packets from `fwup` have a 2 byte type field at the beginning of the
+packet:
 
 Field          | Size           | Description
 ---------------|----------------|-------------
@@ -515,14 +563,14 @@ On the target device, you can retrieve the version by using `-m`. For example:
 
 ## How do I get the best performance?
 
-In general, `fwup` writes to Flash memory in large blocks so that
-the update can occur quickly. Obviously, reducing the amount that needs to get
-written always helps. Beyond that, most optimizations are platform dependent.
-Linux caches writes so aggressively that writes to Flash memory are nearly as
-fast as possible. OSX, on the other hand, does very little caching, so doing
-things like only working with one FAT filesystem at a time can help. In this
-case, `fwup` only caches writes to one FAT filesystem at a time, so mixing them
-will flush caches. OSX is also slow to unmount disks, so keep in mind that
+In general, `fwup` writes to Flash memory in large blocks so that the update
+can occur quickly. Obviously, reducing the amount that needs to get written
+always helps. Beyond that, most optimizations are platform dependent. Linux
+caches writes so aggressively that writes to Flash memory are nearly as fast as
+possible. OSX, on the other hand, does very little caching, so doing things
+like only working with one FAT filesystem at a time can help. In this case,
+`fwup` only caches writes to one FAT filesystem at a time, so mixing them will
+flush caches. OSX is also slow to unmount disks, so keep in mind that
 performance can only be so fast on some systems.
 
 # Licenses

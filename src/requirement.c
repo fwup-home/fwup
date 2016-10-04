@@ -18,6 +18,7 @@
 #include "util.h"
 #include "mbr.h"
 #include "fatfs.h"
+#include "uboot_env.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -31,6 +32,7 @@
 
 DECLARE_REQ(require_partition_offset);
 DECLARE_REQ(require_fat_file_exists);
+DECLARE_REQ(require_uboot_variable);
 
 struct req_info {
     const char *name;
@@ -41,7 +43,8 @@ struct req_info {
 #define REQ_INFO(NAME, REQ) {NAME, REQ ## _validate, REQ ## _requirement_met}
 static struct req_info req_table[] = {
     REQ_INFO("require-partition-offset", require_partition_offset),
-    REQ_INFO("require-fat-file-exists", require_fat_file_exists)
+    REQ_INFO("require-fat-file-exists", require_fat_file_exists),
+    REQ_INFO("require-uboot-variable", require_uboot_variable)
 };
 
 static struct req_info *lookup(int argc, const char **argv)
@@ -193,3 +196,51 @@ int require_fat_file_exists_requirement_met(struct fun_context *fctx)
     return 0;
 }
 
+int require_uboot_variable_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("require-uboot-variable requires a uboot-environment reference, variable name, and value");
+
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+
+    if (!ubootsec)
+        ERR_RETURN("require-uboot-variable can't find uboot-environment reference");
+
+    return 0;
+}
+int require_uboot_variable_requirement_met(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        return -1;
+
+    int rc = 0; // No error -> the requirement has been met.
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    struct uboot_env env;
+
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
+        return -1;
+
+    char *buffer = malloc(env.env_size);
+    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    if (read != (ssize_t) env.env_size)
+        ERR_CLEANUP();
+
+    if (uboot_env_read(&env, buffer) < 0)
+        ERR_CLEANUP();
+
+    char *current_value;
+    if (uboot_env_getenv(&env, fctx->argv[2], &current_value) < 0)
+        ERR_CLEANUP();
+
+    if (strcmp(current_value, fctx->argv[3]) != 0)
+        rc = -1;
+
+    free(current_value);
+
+cleanup:
+    uboot_env_free(&env);
+    free(buffer);
+    return rc;
+}

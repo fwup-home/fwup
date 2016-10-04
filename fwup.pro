@@ -37,7 +37,9 @@ SOURCES += \
     src/cfgprint.c \
     src/simple_string.c \
     src/archive_open.c \
-    src/mmc_windows.c
+    src/mmc_windows.c \
+    src/uboot_env.c \
+    src/crc32.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -78,7 +80,9 @@ HEADERS += \
     src/requirement.h \
     src/cfgprint.h \
     src/simple_string.h \
-    src/archive_open.h
+    src/archive_open.h \
+    src/uboot_env.h \
+    src/crc32.h
 
 OTHER_FILES += \
     fwupdate.conf \
@@ -144,4 +148,37 @@ DISTFILES += \
     scripts/build_pkg.sh \
     scripts/ci_build.sh \
     scripts/ci_install_deps.sh \
-    scripts/download_deps.sh
+    scripts/download_deps.sh \
+    tests/077_fat_empty_file.test \
+    tests/076_utf8_metadata.test \
+    tests/075_big_fat_fs.test \
+    tests/074_fat_cache_fail.test \
+    tests/073_multistep_fat.test \
+    tests/072_compression_works.test \
+    tests/071_big_mbr_offset.test \
+    tests/070_bad_mbr_offset.test \
+    tests/069_define_bang.test \
+    tests/068_readonly_output_error.test \
+    tests/067_usage.test \
+    tests/066_fat_attrib.test \
+    tests/065_fat_mkdir.test \
+    tests/064_mbr_bootcode.test \
+    tests/063_detect.test \
+    tests/062_long_meta_conf.test \
+    tests/061_framed_partial_metadata.test \
+    tests/060_framed_streaming.test \
+    tests/059_framed_error.test \
+    tests/058_framed_list_tasks.test \
+    tests/057_list_tasks_empty.test \
+    tests/056_list_tasks.test \
+    tests/055_metadata_partial_file.test \
+    tests/054_framed_metadata.test \
+    tests/053_framed_progress.test \
+    tests/052_file_concatenation.test \
+    tests/079_uboot_setenv.test \
+    tests/078_partial_mbr2.test \
+    tests/080_uboot_empty_env.test \
+    tests/081_uboot_clearenv.test \
+    tests/082_uboot_upgrade.test \
+    tests/083_uboot_unsetenv.test \
+    tests/084_corrupt_uboot.test
