@@ -70,17 +70,19 @@ int mbr_verify(const struct mbr_partition partitions[4])
     return 0;
 }
 
-static int lba_to_chs(uint32_t lba, uint8_t *output)
+static void lba_to_chs(uint32_t lba, uint8_t *output)
 {
-    uint16_t cylinder = lba / (SECTORS_PER_HEAD * HEADS_PER_CYLINDER);
-    uint8_t head = (uint8_t) ((lba / SECTORS_PER_HEAD) % HEADS_PER_CYLINDER);
-    uint8_t sector = (uint8_t) (lba % SECTORS_PER_HEAD) + 1;
+    // If the block offset can't be represented in CHS form,
+    // don't bother since it's mostly likely not used anyway.
+    if (lba <= (SECTORS_PER_HEAD * HEADS_PER_CYLINDER * 0x3ff)) {
+        uint16_t cylinder = lba / (SECTORS_PER_HEAD * HEADS_PER_CYLINDER);
+        uint8_t head = (uint8_t) ((lba / SECTORS_PER_HEAD) % HEADS_PER_CYLINDER);
+        uint8_t sector = (uint8_t) (lba % SECTORS_PER_HEAD) + 1;
 
-    output[0] = head;
-    output[1] = ((cylinder & 0x300) >> 2) | sector;
-    output[2] = (cylinder & 0xff);
-
-    return 0;
+        output[0] = head;
+        output[1] = ((cylinder & 0x300) >> 2) | sector;
+        output[2] = (cylinder & 0xff);
+    }
 }
 
 static void copy_le32(uint8_t *output, uint32_t v)
@@ -104,12 +106,10 @@ static int create_partition(const struct mbr_partition *partition, uint8_t *outp
 
     output[0] = partition->boot_flag ? 0x80 : 0x00;
 
-    if (lba_to_chs(partition->block_offset, &output[1]) < 0)
-        return -1;
+    lba_to_chs(partition->block_offset, &output[1]);
 
     output[4] = partition->partition_type;
-    if (lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]) < 0)
-        return -1;
+    lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]);
 
     copy_le32(&output[8], partition->block_offset);
     copy_le32(&output[12], partition->block_count);
