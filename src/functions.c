@@ -695,7 +695,7 @@ int mbr_write_run(struct fun_context *fctx)
 
     ssize_t written = pwrite(fctx->output_fd, buffer, 512, 0);
     if (written != 512)
-        ERR_RETURN("unexpected error writing mbr to destination");
+        ERR_RETURN("unexpected error writing mbr: %s", strerror(errno));
 
     fctx->report_progress(fctx, 1);
     return 0;
