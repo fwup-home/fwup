@@ -1,6 +1,16 @@
 # Changelog
 
-## v0.9.3-dev
+## v0.10.0-dev
+
+  * New features
+    * Added U-Boot environment support. This allows firmware updates to modify
+      the U-Boot environment to indicate things like which partition is active.
+      fwup can also look at the U-Boot environment to decide which partition to
+      update.
+
+  * Bug fixes
+    * Re-added max SDCard size check on Linux to reduce risk of writing to an
+      hard drive partition by accident.
 
 ## v0.9.2
 
