@@ -141,6 +141,10 @@ if [[ "$SKIP_PACKAGE" != "true" ]]; then
         sed -i "s/%VERSION%/$(cat VERSION)/" $FWUP_INSTALL_DIR/fwup/fwup.nuspec
         cp $FWUP_INSTALL_DIR/bin/fwup.exe $FWUP_INSTALL_DIR/fwup/tools/
 
+        cp -f scripts/VERIFICATION.txt $FWUP_INSTALL_DIR/fwup/tools/
+        sed -i "s/%VERSION%/$(cat VERSION)/" $FWUP_INSTALL_DIR/fwup/tools/VERIFICATION.txt
+        cat scripts/LICENSE.txt LICENSE > $FWUP_INSTALL_DIR/fwup/tools/LICENSE.txt
+
         pushd $FWUP_INSTALL_DIR/fwup/
         rm -f *.nupkg
         export ChocolateyInstall=$DEPS_INSTALL_DIR/chocolatey
