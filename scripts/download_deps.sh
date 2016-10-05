@@ -4,6 +4,7 @@
 # Download and build dependencies as static libs
 #
 # Inputs:
+#     SKIP_PACKAGE  - set to "true" to skip the package making step
 #     CROSS_COMPILE - if set to a gcc tuple, tries to crosscompile
 #                     (e.g., x86_64-w64-mingw32)
 #
@@ -99,7 +100,9 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
 fi
 
 # Chocolatey
-if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]] && [[ ! -e $DEPS_INSTALL_DIR/chocolatey ]]; then
+if [[ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]] &&
+    [[ ! -e $DEPS_INSTALL_DIR/chocolatey ]] &&
+    [[ "$SKIP_PACKAGE" != "true" ]]; then
     rm -fr choco-*
     tar xf $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz
     pushd choco-$CHOCO_VERSION
