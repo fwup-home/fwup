@@ -67,6 +67,8 @@ On Linux, download and install the appropriate package for your platform:
   * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.9.2/fwup_0.9.2_armhf.deb)
   * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.9.2/fwup-0.9.2-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
+  * Buildroot - Support is included upstream since the 2016.05 release
+  * Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
 
 On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
