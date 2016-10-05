@@ -112,6 +112,10 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 #endif
 
+#ifndef HAVE_STRNDUP
+char *strndup(const char *s, size_t n);
+#endif
+
 // Getting and setting the environment
 
 // Ideally setenv() is available. If not, provide an implementation.

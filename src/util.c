@@ -366,3 +366,18 @@ int set_environment(const char *key, const char *value)
     return putenv(str);
 }
 #endif
+
+#ifndef HAVE_STRNDUP
+char *strndup(const char *s, size_t n)
+{
+    size_t len = strlen(s);
+    if (len < n)
+        n = len;
+    char *buf = (char *) malloc(n + 1);
+    if (buf) {
+        memcpy(buf, s, n);
+        buf[n] = '\0';
+    }
+    return buf;
+}
+#endif
