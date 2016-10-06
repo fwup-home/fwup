@@ -426,8 +426,6 @@ write to raw locations on the destination.
 
 Action                                | Description
 --------------------------------------|------------
-raw_write(block_offset)               | Write the resource to the specified block offset
-mbr_write(mbr)                        | Write the specified mbr to the target
 fat_mkfs(block_offset, block_count)   | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)     | Write the resource to the FAT file system at the specified block offset
 fat_attrib(block_offset, filename, attrib) | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
@@ -438,6 +436,9 @@ fat_setlabel(block_offset, label)     | Set the volume label on a FAT file syste
 fat_touch(block_offset, filename)     | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
 fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
 fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
+mbr_write(mbr)                        | Write the specified mbr to the target
+raw_memset(block_offset, block_count, value) | Write the specified byte value repeatedly for the specified blocks
+raw_write(block_offset)               | Write the resource to the specified block offset
 uboot_clearenv(my_uboot_env)             | Initialize a clean, variable free U-boot environment
 uboot_setenv(my_uboot_env, name, value)  | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name, value)  | Unset the specified U-boot variable

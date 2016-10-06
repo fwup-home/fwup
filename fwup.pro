@@ -181,4 +181,5 @@ DISTFILES += \
     tests/081_uboot_clearenv.test \
     tests/082_uboot_upgrade.test \
     tests/083_uboot_unsetenv.test \
-    tests/084_corrupt_uboot.test
+    tests/084_corrupt_uboot.test \
+    tests/085_raw_memset.test

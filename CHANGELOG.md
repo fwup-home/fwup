@@ -3,13 +3,17 @@
 ## v0.10.0-dev
 
   * New features
-    * Added U-Boot environment support. This allows firmware updates to modify
+    * Add U-Boot environment support. This allows firmware updates to modify
       the U-Boot environment to indicate things like which partition is active.
       fwup can also look at the U-Boot environment to decide which partition to
       update.
+    * Add raw_memset to write a fixed value over a range of blocks. This is good
+      for invalidating SDCard regions in manufacturing so that they're
+      guaranteed to be reinitialized on first boot. SDCard TRIM support would be
+      better, but fwup doesn't work on the bulk programmers.
 
   * Bug fixes
-    * Re-added max SDCard size check on Linux to reduce risk of writing to an
+    * Re-enable max SDCard size check on Linux to reduce risk of writing to an
       hard drive partition by accident.
 
 ## v0.9.2

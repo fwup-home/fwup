@@ -36,6 +36,7 @@
     static int FUN ## _run(struct fun_context *fctx)
 
 DECLARE_FUN(raw_write);
+DECLARE_FUN(raw_memset);
 DECLARE_FUN(fat_attrib);
 DECLARE_FUN(fat_mkfs);
 DECLARE_FUN(fat_write);
@@ -62,6 +63,7 @@ struct fun_info {
 #define FUN_INFO(FUN) {#FUN, FUN ## _validate, FUN ## _compute_progress, FUN ## _run}
 static struct fun_info fun_table[] = {
     FUN_INFO(raw_write),
+    FUN_INFO(raw_memset),
     FUN_INFO(fat_attrib),
     FUN_INFO(fat_mkfs),
     FUN_INFO(fat_write),
@@ -279,6 +281,66 @@ int raw_write_run(struct fun_context *fctx)
         if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
             ERR_RETURN("raw_write detected blake2b digest mismatch");
     }
+
+    return 0;
+}
+
+int raw_memset_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("raw_memset requires a block offset, count, and value");
+
+    CHECK_ARG_UINT64(fctx->argv[1], "raw_memset requires a non-negative integer block offset");
+    CHECK_ARG_UINT64_MAX(fctx->argv[2], INT32_MAX / 512, "raw_memset requires a non-negative integer block count");
+    CHECK_ARG_UINT64_MAX(fctx->argv[2], 255, "raw_memset requires value to be between 0 and 255");
+
+    return 0;
+}
+int raw_memset_compute_progress(struct fun_context *fctx)
+{
+    int count = strtol(fctx->argv[2], NULL, 0);
+
+    // Count each byte as a progress unit
+    fctx->total_progress_units += count * 512;
+
+    return 0;
+}
+int raw_memset_run(struct fun_context *fctx)
+{
+    // Just in case we're raw writing to the FAT partition, make sure
+    // that we flush any cached data.
+    fctx->fatfs_ptr(fctx, -1, NULL);
+
+    const int block_size = 512;
+
+    off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * 512;
+    int count = strtol(fctx->argv[2], NULL, 0) * 512;
+    int value = strtol(fctx->argv[3], NULL, 0);
+    char buffer[block_size];
+    memset(buffer, value, sizeof(buffer));
+
+    struct block_writer writer;
+    OK_OR_RETURN(block_writer_init(&writer, fctx->output_fd, 128 * 1024, 9)); // 9 -> 512 byte blocks
+
+    off_t len_written = 0;
+    off_t offset;
+    for (offset = 0; offset < count; offset += block_size) {
+        ssize_t written = block_writer_pwrite(&writer, buffer, block_size, dest_offset + offset);
+        if (written < 0)
+            ERR_RETURN("raw_memset couldn't write %d bytes to offset %lld", block_size, dest_offset + offset);
+
+        len_written += written;
+        fctx->report_progress(fctx, written);
+    }
+
+    ssize_t lastwritten = block_writer_free(&writer);
+    if (lastwritten < 0)
+        ERR_RETURN("raw_memset couldn't write final bytes");
+    len_written += lastwritten;
+    fctx->report_progress(fctx, lastwritten);
+
+    if (len_written != count)
+        ERR_RETURN("raw_memset wrote %lld bytes, but should have written %lld", len_written, count);
 
     return 0;
 }

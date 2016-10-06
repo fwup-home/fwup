@@ -62,6 +62,7 @@ extern bool fwup_verbose;
 // This checks that the argument can be converted to a uint. It is
 // non-trivial to suppress compiler warnings.
 #define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; unsigned long long int _ = strtoull(ARG, NULL, 0); (void) _; if (errno != 0) ERR_RETURN(MSG); } while (0)
+#define CHECK_ARG_UINT64_MAX(ARG, MAX_VAL, MSG) do { errno=0; unsigned long long int val = strtoull(ARG, NULL, 0); if (errno != 0 || val > (MAX_VAL)) ERR_RETURN(MSG); } while (0)
 
 #ifdef __GNUC__
 #define FWUP_ERR_ATTRS __attribute__ ((__noreturn__, __format__ (__printf__, 2, 3)))

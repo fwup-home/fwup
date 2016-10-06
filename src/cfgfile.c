@@ -300,6 +300,7 @@ static cfg_opt_t uboot_environment_opts[] = {
 
 #define CFG_ON_EVENT_FUNCTIONS(CB) \
     CFG_STR_LIST("funlist", 0, CFGF_NONE), \
+    CFG_FUNC("raw_memset", CB), \
     CFG_FUNC("raw_write", CB), \
     CFG_FUNC("fat_mkfs", CB), \
     CFG_FUNC("fat_attrib", CB), \

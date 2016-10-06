@@ -86,6 +86,7 @@ TESTS = 001_simple_fw.test \
 	081_uboot_clearenv.test \
 	082_uboot_upgrade.test \
 	083_uboot_unsetenv.test \
-	084_corrupt_uboot.test
+	084_corrupt_uboot.test \
+	085_raw_memset.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
