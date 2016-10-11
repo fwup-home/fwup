@@ -396,11 +396,11 @@ task is the one that gets applied. This can be useful if the upgrade process is
 different based on the version of firmware currently on the target, the target
 architecture, etc. The following table lists the supported constraints:
 
-Constraint                                         | Description
----------------------------------------------------|------------
-require-partition-offset(partition, block_offset)  | Require that the block offset of a partition be the specified value
-require-fat-file-exists(block_offset, filename)    | Require that a file exists in the specified FAT filesystem
-require-uboot-variable(my_uboot_env, varname, value)  | Require that a variable is set to the specified value in the U-boot environment
+Constraint                                         | Min fwup version | Description
+---------------------------------------------------|------------------|------------
+require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the block offset of a partition be the specified value
+require-fat-file-exists(block_offset, filename)    | 0.7.0 | Require that a file exists in the specified FAT filesystem
+require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-boot environment
 
 *More constraints to be added as needed*
 
@@ -424,24 +424,24 @@ on-resource <resource name>   | Sent as events occur. Currently, this is sent as
 The event scopes contain a list of actions. Actions can format file systems, copy files to file systems or
 write to raw locations on the destination.
 
-Action                                | Description
---------------------------------------|------------
-fat_mkfs(block_offset, block_count)   | Create a FAT file system at the specified block offset and count
-fat_write(block_offset, filename)     | Write the resource to the FAT file system at the specified block offset
-fat_attrib(block_offset, filename, attrib) | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
-fat_mv(block_offset, oldname, newname) | Rename the specified file on a FAT file system
-fat_rm(block_offset, filename)        | Delete the specified file
-fat_mkdir(block_offset, filename)     | Create a directory on a FAT file system
-fat_setlabel(block_offset, label)     | Set the volume label on a FAT file system
-fat_touch(block_offset, filename)     | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
-fw_create(fwpath)                     | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
-fw_add_local_file(fwpath, name, local_path) | Add the specified local file to a firmware archive as the resource "name"
-mbr_write(mbr)                        | Write the specified mbr to the target
-raw_memset(block_offset, block_count, value) | Write the specified byte value repeatedly for the specified blocks
-raw_write(block_offset)               | Write the resource to the specified block offset
-uboot_clearenv(my_uboot_env)             | Initialize a clean, variable free U-boot environment
-uboot_setenv(my_uboot_env, name, value)  | Set the specified U-boot variable
-uboot_unsetenv(my_uboot_env, name, value)  | Unset the specified U-boot variable
+Action                                | Min fwup version | Description
+--------------------------------------|------------------|------------
+fat_mkfs(block_offset, block_count)   | 0.1.0 | Create a FAT file system at the specified block offset and count
+fat_write(block_offset, filename)     | 0.1.0 | Write the resource to the FAT file system at the specified block offset
+fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
+fat_mv(block_offset, oldname, newname) | 0.1.0 | Rename the specified file on a FAT file system
+fat_rm(block_offset, filename)        | 0.1.0 | Delete the specified file
+fat_mkdir(block_offset, filename)     | 0.2.0 | Create a directory on a FAT file system
+fat_setlabel(block_offset, label)     | 0.2.0 | Set the volume label on a FAT file system
+fat_touch(block_offset, filename)     | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
+fw_create(fwpath)                     | 0.1.0 | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
+fw_add_local_file(fwpath, name, local_path) | 0.1.0 | Add the specified local file to a firmware archive as the resource "name"
+mbr_write(mbr)                        | 0.1.0 | Write the specified mbr to the target
+raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
+raw_write(block_offset)               | 0.1.0 | Write the resource to the specified block offset
+uboot_clearenv(my_uboot_env)             | 0.10.0 | Initialize a clean, variable free U-boot environment
+uboot_setenv(my_uboot_env, name, value)  | 0.10.0 | Set the specified U-boot variable
+uboot_unsetenv(my_uboot_env, name, value)  | 0.10.0 | Unset the specified U-boot variable
 
 # Firmware authentication
 
