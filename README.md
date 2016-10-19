@@ -576,6 +576,19 @@ like only working with one FAT filesystem at a time can help. In this case,
 flush caches. OSX is also slow to unmount disks, so keep in mind that
 performance can only be so fast on some systems.
 
+## How do I update /dev/mmcblock0boot0?
+
+The special eMMC boot partitions are updateable the same way as the main
+partition. When I create .fw files for manufacturing, I create two targets, a
+`complete` target that updates the main eMMC and a `bootloader` target that
+updates `mmcblock0boot0`. The manufacturing script runs `fwup` twice: once for
+the `complete` target and then again for the `bootloader` target.
+
+Also, the `/dev/mmcblock0boot0` device is also forced read-only by the kernel. To
+unlock it, run:
+
+    $ echo 0 > /sys/block/mmcblk0boot0/force_ro
+
 # Licenses
 
 This utility contains source code with various licenses. The bulk of the code is
