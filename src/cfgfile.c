@@ -21,6 +21,7 @@
 #include "uboot_env.h"
 #include "util.h"
 #include "archive_open.h"
+#include "eval_math.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -123,45 +124,76 @@ static int cb_task_require_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char
     return 0;
 }
 
-static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int check_param_count(cfg_t *cfg, cfg_opt_t *opt, int argc, int required)
 {
-    if(argc != 2) {
-        cfg_error(cfg, "Too few parameters for the '%s' function",
-                  opt->name);
+    if (argc != required) {
+        cfg_error(cfg, "'%s' requires %d parameters",
+                  opt->name, required);
         return -1;
     }
-
-    INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
-
-    // Overwrite the environment.
-    if (set_environment(argv[0], argv[1]) < 0) {
-        cfg_error(cfg, "set_environment failed");
-        return -1;
-    }
-
     return 0;
 }
 
-static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+static int define_helper(cfg_t *cfg, const char *key, const char *value, bool override)
 {
-    // Non-overwriting version of define
-    if(argc != 2) {
-        cfg_error(cfg, "Too few parameters for the '%s' function",
-                  opt->name);
-        return -1;
-    }
+    INFO("Defining '%s'='%s'\n", key, value);
 
-    if (!get_environment(argv[0])) {
-        INFO("Defining '%s'='%s'\n", argv[0], argv[1]);
-
-        if (set_environment(argv[0], argv[1]) < 0) {
+    if (override || !get_environment(key)) {
+        if (set_environment(key, value) < 0) {
             cfg_error(cfg, "set_environment failed");
             return -1;
         }
     } else {
-        INFO("Not defining '%s'. Already set to '%s'\n", argv[0], getenv(argv[0]));
+        INFO("Not defining '%s'. Already set to '%s'\n", key, getenv(key));
     }
     return 0;
+}
+
+static int cb_define_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    if (check_param_count(cfg, opt, argc, 2) < 0 ||
+            define_helper(cfg, argv[0], argv[1], true) < 0)
+        return -1;
+    else
+        return 0;
+}
+
+static int cb_define(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    if (check_param_count(cfg, opt, argc, 2) < 0 ||
+            define_helper(cfg, argv[0], argv[1], false) < 0)
+        return -1;
+    else
+        return 0;
+}
+
+static int cb_define_eval(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    if (check_param_count(cfg, opt, argc, 2) < 0)
+        return -1;
+
+    char result_str[24]; // Large enough to hold 64 bit int
+    if (eval_math_str(argv[1], result_str, sizeof(result_str)) < 0) {
+        cfg_error(cfg, "error evaluating '%s'", argv[1]);
+        return -1;
+    }
+
+    return define_helper(cfg, argv[0], result_str, false);
+}
+
+static int cb_define_eval_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    // Overriding version of define_eval
+    if (check_param_count(cfg, opt, argc, 2) < 0)
+        return -1;
+
+    char result_str[24]; // Large enough to hold 64 bit int
+    if (eval_math_str(argv[1], result_str, sizeof(result_str)) < 0) {
+        cfg_error(cfg, "error evaluating '%s'", argv[1]);
+        return -1;
+    }
+
+    return define_helper(cfg, argv[0], result_str, true);
 }
 
 static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
@@ -364,6 +396,8 @@ cfg_opt_t opts[] = {
     CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
     CFG_FUNC("define", cb_define),
     CFG_FUNC("define!", cb_define_bang),
+    CFG_FUNC("define-eval", cb_define_eval),
+    CFG_FUNC("define-eval!", cb_define_eval_bang),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),

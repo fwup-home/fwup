@@ -39,7 +39,8 @@ SOURCES += \
     src/archive_open.c \
     src/mmc_windows.c \
     src/uboot_env.c \
-    src/crc32.c
+    src/crc32.c \
+    src/eval_math.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -82,7 +83,8 @@ HEADERS += \
     src/simple_string.h \
     src/archive_open.h \
     src/uboot_env.h \
-    src/crc32.h
+    src/crc32.h \
+    src/eval_math.h
 
 OTHER_FILES += \
     fwupdate.conf \

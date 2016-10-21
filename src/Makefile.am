@@ -7,6 +7,7 @@ fwup_SOURCES=\
 	cfgfile.c \
 	cfgprint.c \
 	crc32.c \
+	eval_math.c \
 	fatfs.c \
 	fat_cache.c \
 	functions.c \
@@ -32,6 +33,7 @@ fwup_SOURCES=\
 	cfgfile.h \
 	cfgprint.h \
 	crc32.h \
+	eval_math.h \
 	fatfs.h \
 	functions.h \
 	fat_cache.h \

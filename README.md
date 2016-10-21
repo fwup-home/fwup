@@ -164,9 +164,11 @@ a `key = value` syntax.
 ## Environment variables
 
 For integration into build systems and other scripts, `fwup` performs
-environment variable substitution inside of the configuration files. Keep in
+variable substitution inside of the configuration files. Keep in
 mind that environment variables are resolved on the host during firmware update
-creation. Environment variables are referenced as follows:
+file creation. Generated firmware files do not contain
+
+Environment variables are referenced as follows:
 
     key = ${ANY_ENVIRONMENT_VARIABLE}
 
@@ -176,16 +178,30 @@ It is possible to provide default values for environment variables using the
     key = ${ANY_ENVIRONMENT_VARIABLE:-adefault}
 
 Inside configuration files, it can be useful to define constants that are used
-throughout the file. All constants are stored as environment variables. By
-default, definitions do not overwrite environment variables with the same name:
+throughout the file. Constants are referenced identically to environment
+variables. Here is an example:
 
     define(MY_CONSTANT, 5)
 
-To define a constant that is not affected by environment variables of the same
-name, use `define!`:
+By default, repeated definitions of the same constant do not change that
+constant's value. In other words, the first definition wins. Note that the first
+definition could come from a similarly named environment variable. This makes
+it possible to override a constant in a build script.
+
+In some cases, having the last definition win is preferable for constants that
+never ever should be overriden by the environment or by earlier calls to
+`define`. For this behavior, use `define!`:
 
     define!(MY_CONSTANT, "Can't override this")
 
+Simple math calculations may also be performed using `define_eval()` and
+`define_eval!()`. For example:
+
+    define_eval(AN_OFFSET, "${PREVIOUS_OFFSET} + ${PREVIOUS_COUNT}")
+
+These two functions were added in release 0.10.0, but since
+they are evaluated at firmware creation time, .fw files created using them are
+compatible with older versions of `fwup`.
 
 ## Global scope
 

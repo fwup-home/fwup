@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#
+# Test that math works
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+# Do the math
+define-eval(ELEVEN, "5+6")
+define-eval(MINUSONE, "5-6")
+define-eval!(MINUSELEVEN, "-\${ELEVEN}")
+define-eval!(ONETHIRTYTWO, "\${ELEVEN} + \${ELEVEN} * \${ELEVEN}")
+define-eval(THREE, "1 + (2 * 3 + 4)/5")
+define-eval(SIXTEEN, "2^4")
+
+# Store the answers in a place that's easy to check
+meta-product = \${ELEVEN}
+meta-description = \${MINUSONE}
+meta-version = \${MINUSELEVEN}
+meta-platform = \${ONETHIRTYTWO}
+meta-architecture = \${THREE}
+meta-author = \${SIXTEEN}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+meta-product="11"
+meta-description="-1"
+meta-version="-11"
+meta-author="16"
+meta-platform="132"
+meta-architecture="3"
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf

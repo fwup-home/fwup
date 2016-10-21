@@ -9,6 +9,9 @@
 
 cat >$CONFIG <<EOF
 define(TEST_DEFINE, "define_override")
+define(TEST_DEFINE, "define_override*2") # Doubly ignored
+
+define!(TEST_DEFINE_BANG, "define_bang_override_first_try") # Overridden by next line
 define!(TEST_DEFINE_BANG, "define_bang_override")
 
 # Test substitution in a field
