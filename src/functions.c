@@ -223,8 +223,8 @@ int raw_write_run(struct fun_context *fctx)
         ERR_RETURN("raw_write can't find matching file-resource");
     off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (expected_hash && strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_RETURN("raw_write detected blake2b hash with the wrong length");
+    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
+        ERR_RETURN("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
 
     // Just in case we're raw writing to the FAT partition, make sure
     // that we flush any cached data.
@@ -456,8 +456,8 @@ int fat_write_run(struct fun_context *fctx)
         ERR_RETURN("fat_write can't find matching file-resource");
     off_t expected_length = cfg_getint(resource, "length");
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (expected_hash && strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_RETURN("fat_write detected blake2b hash with the wrong length");
+    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
+        ERR_RETURN("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
 
     struct fat_cache *fc;
     off_t len_written = 0;

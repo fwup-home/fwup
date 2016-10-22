@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#
+# Test the SHA-256 check when write raw bytes.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource 1K.bin {
+                raw_write(0)
+        }
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Now be sneaking and replace the data file with a same-sized imposter
+unzip -q $FWFILE -d $UNZIPDIR
+cp $UNZIPDIR/meta.conf $WORK
+cat $WORK/meta.conf | grep -v blake2b | grep -v sha256 >$UNZIPDIR/meta.conf
+cd $UNZIPDIR
+zip -q $WORK/imposter.fw meta.conf data/1K.bin
+cd -
+echo Expecting missing hash error...
+if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+    echo "This should have failed"
+    exit 1
+fi
