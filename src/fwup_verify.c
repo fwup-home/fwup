@@ -94,7 +94,7 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
 
     rc = fwup_archive_open_filename(a, input_filename);
     if (rc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Cannot open archive '%s'", input_filename);
+        ERR_CLEANUP_MSG("Error reading archive '%s': %s", input_filename, archive_error_string(a));
 
     struct archive_entry *ae;
     rc = archive_read_next_header(a, &ae);
