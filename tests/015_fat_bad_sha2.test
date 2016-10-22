@@ -49,9 +49,7 @@ if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
 fi
 
 echo Expecting Blake2b mismatch during verificatin...
-if $FWUP -V -i $WORK/imposter.fw; then
+if $FWUP_APPLY -V -i $WORK/imposter.fw; then
     echo "This should have failed"
     exit 1
 fi
-
-
