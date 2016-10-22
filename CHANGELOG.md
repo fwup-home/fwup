@@ -11,6 +11,9 @@
       for invalidating SDCard regions in manufacturing so that they're
       guaranteed to be reinitialized on first boot. SDCard TRIM support would be
       better, but fwup doesn't work on the bulk programmers.
+    * Add define_eval() to support running simple math expressions when building
+      firmware update packages. This makes entering offset/size pairs less
+      tedious.
 
   * Bug fixes
     * Re-enable max SDCard size check on Linux to reduce risk of writing to an
