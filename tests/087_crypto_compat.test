@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#
+# Test that the signing crypto didn't change
+#
+
+. ./common.sh
+
+# To create the files for this test, run 024_metadata_sig.test,
+# run:
+#
+# $ base64 fwup-key.pub
+# $ base64 work/fwup.fw
+#
+# Save the results here.
+
+base64_decode >$WORK/fwup-key.pub <<EOF
+oK7j5KVPcYta5rGKrA4x93Gu46n+sIyioXQ1oNJimII=
+EOF
+base64_decode >$WORK/bad-fwup-key.pub <<EOF
+VHKg4Qkcl+P+4SOrVjxGZXKZGDppV/Ncb6/ZAhzoGps=
+EOF
+
+base64_decode >$FWFILE << EOF
+UEsDBBQACAAIAAAAIQAAAAAAAAAAAEAAAAARACAAbWV0YS5jb25mLmVkMjU1MTlVVA0ABwAAAAAA
+AAAAAAAAAHV4CwABBAAAAAAEAAAAAAFAAL//x/el+RHvIm1IHWF1TPCZtPaza1UfiaciIsgf+FR6
+1JZiMELfYt14jr8ZPN4wWGUnxNLTgfA1LkIwOTMFjxkvAVBLBwircg+1RQAAAEAAAABQSwMEFAAI
+AAgAAAAhAAAAAAAAAAAA/QAAAAkAIABtZXRhLmNvbmZVVA0ABwAAAAAAAAAAAAAAAHV4CwABBAAA
+AAAEAAAAAE2PzQqDMAyA7z5F6b3SVthA8C122i3UiML6Q0z19adbi96SfF/+PDKoRHHMjgdZAhHA
+o2z8yUZcHS2JlxgufisWbUNaf8oaPYqSFQaZ50h/FEMdnD7AUyQ/SBA1rg3k5oXRcSY8cBD3QnEc
+IZz71Qh8SFabhzJaWfOyXW913z3fxZz2nK77dGt0q4+3Ntl8AVBLBwgOK/Z5kAAAAP0AAABQSwEC
+FAMUAAgACAAAACEAq3IPtUUAAABAAAAAEQANAAAAAAAAAAAApIEAAAAAbWV0YS5jb25mLmVkMjU1
+MTlVVAUABwAAAAB1eAAAUEsBAhQDFAAIAAgAAAAhAA4r9nmQAAAA/QAAAAkADQAAAAAAAAAAAKSB
+pAAAAG1ldGEuY29uZlVUBQAHAAAAAHV4AABQSwUGAAAAAAIAAgCQAAAAiwEAAAAA
+EOF
+
+# This signing check should pass
+$FWUP_APPLY -p $WORK/fwup-key.pub -i $FWFILE -m
+
+# Check a failure just in case everything passes
+echo "Verification on next test should fail."
+if $FWUP_APPLY -p $WORK/bad-fwup-key.pub -i $FWFILE -m; then
+    echo "Verifying an old bad key was supposed to fail!"
+    exit 1
+fi
+
