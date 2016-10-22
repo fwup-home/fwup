@@ -99,7 +99,7 @@ fi
 
 if [[ "$CROSS_COMPILE" != "arm-linux-gnueabihf" ]]; then
     # Run the regression tests
-    make check
+    make $MAKE_FLAGS check
 fi
 
 make install-strip

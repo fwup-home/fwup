@@ -49,8 +49,8 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
 esac
 
 # Normal build
-make
-make check
+make -j4
+make -j4 check
 make dist
 
 # Check that the distribution version works by building it again
@@ -61,7 +61,7 @@ if [ "$TRAVIS_OS_NAME" = "linux" ]; then
 else
     PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
 fi
-make
-make check
+make -j4
+make -j4 check
 
 
