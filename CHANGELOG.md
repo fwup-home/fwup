@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.10.0-dev
+## v0.10.0
 
   * New features
     * Add U-Boot environment support. This allows firmware updates to modify
