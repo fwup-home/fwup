@@ -13,11 +13,14 @@
      broken links until the release files are uploaded, but "that's ok".
   6. Tag
   7. Push last commit(s) *and* tag to GitHub
-  8. Wait for the Travis builds to complete successfully. They should work since
+  8. Copy the latest `CHANGELOG.md` entry to the GitHub releases description.
+     Save it as a "draft". You have until the Travis builds complete to do this,
+     so don't delay. As soon as Travis uploads its artifacts, GitHub will send
+     release emails out with new text.
+  9. Wait for the Travis builds to complete successfully. They should work since
      no code changes were made, but wait to be safe.
-  9. Check that the `.deb`, `.rpm`, `.exe`, and source tarball were
+ 10. Check that the `.deb`, `.rpm`, `.exe`, and source tarball were
      uploaded properly to GitHub.
- 10. Copy the latest `CHANGELOG.md` entry to the GitHub releases description.
  11. Start the next dev cycle. Start a new section in `CHANGELOG.md` and
      update the version in `VERSION` to a `-dev` version.
  12. Push changes up to GitHub
