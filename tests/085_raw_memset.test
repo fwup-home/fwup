@@ -9,7 +9,7 @@
 cat >$CONFIG <<EOF
 task complete {
     on-init {
-        raw_memset(1, 8, 0xff)
+        raw_memset(1, 512, 0xff)
     }
 }
 EOF
@@ -20,5 +20,5 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
 # (The tr translates the zeros from /dev/zero to 0xff bytes)
-dd if=/dev/zero count=8 2>/dev/zero | tr \\000 \\377 | dd seek=1 of=$WORK/check.bin 2>/dev/null
+dd if=/dev/zero count=512 2>/dev/zero | tr \\000 \\377 | dd seek=1 of=$WORK/check.bin 2>/dev/null
 diff $WORK/check.bin $IMGFILE

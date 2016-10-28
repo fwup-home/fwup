@@ -292,7 +292,7 @@ int raw_memset_validate(struct fun_context *fctx)
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_memset requires a non-negative integer block offset");
     CHECK_ARG_UINT64_MAX(fctx->argv[2], INT32_MAX / 512, "raw_memset requires a non-negative integer block count");
-    CHECK_ARG_UINT64_MAX(fctx->argv[2], 255, "raw_memset requires value to be between 0 and 255");
+    CHECK_ARG_UINT64_MAX(fctx->argv[3], 255, "raw_memset requires value to be between 0 and 255");
 
     return 0;
 }
