@@ -194,10 +194,10 @@ never ever should be overriden by the environment or by earlier calls to
 
     define!(MY_CONSTANT, "Can't override this")
 
-Simple math calculations may also be performed using `define_eval()` and
-`define_eval!()`. For example:
+Simple math calculations may also be performed using `define-eval()` and
+`define-eval!()`. For example:
 
-    define_eval(AN_OFFSET, "${PREVIOUS_OFFSET} + ${PREVIOUS_COUNT}")
+    define-eval(AN_OFFSET, "${PREVIOUS_OFFSET} + ${PREVIOUS_COUNT}")
 
 These two functions were added in release 0.10.0, but since
 they are evaluated at firmware creation time, .fw files created using them are
