@@ -141,12 +141,12 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
         }
     } else if (opt->type != CFGT_FUNC && opt->type != CFGT_NONE) {
         if (is_set(CFGF_LIST, opt->flags) &&
-                opt->nvalues) {
-            ssprintf(s, "%s = {", opt->name);
+                opt->nvalues > 1) {
+            ssprintf(s, "%s={", opt->name);
 
             fwup_cfg_opt_nprint_var(opt, 0, s);
             for (unsigned int i = 1; i < opt->nvalues; i++) {
-                ssprintf(s, ", ");
+                ssprintf(s, ",");
                 fwup_cfg_opt_nprint_var(opt, i, s);
             }
 
