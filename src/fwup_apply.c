@@ -36,6 +36,7 @@
 #include "mbr.h"
 #include "fwfile.h"
 #include "archive_open.h"
+#include "sparse_file.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -54,7 +55,7 @@ static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
         if (mbr_decode(buffer, partitions) < 0)
             return false;
 
-        if (partitions[1].block_offset != part1_offset)
+        if (partitions[1].block_offset != (uint32_t) part1_offset)
             return false;
     }
 
@@ -119,6 +120,16 @@ struct fwup_data
 {
     struct archive *a;
 
+    // Sparse file handling
+    off_t *sparse_map;
+    int sparse_map_len;
+    int sparse_map_ix;
+    off_t sparse_block_offset;
+    off_t actual_offset;
+    const void *sparse_leftover;
+    off_t sparse_leftover_len;
+
+    // FAT file system support
     bool using_fat_cache;
     struct fat_cache fc;
     off_t current_fatfs_block_offset;
@@ -128,20 +139,91 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
 {
     struct fwup_data *p = (struct fwup_data *) fctx->cookie;
 
+    // Even though libarchive's API supports sparse files, the ZIP file format
+    // does not support them, so it can't be used. To workaround this, all of the data
+    // chunks of a sparse file are concatenated together. This function breaks them
+    // apart.
+
+    if (p->sparse_map_ix == p->sparse_map_len) {
+        // End of file
+        *len = 0;
+        *buffer = NULL;
+        *offset = 0;
+        return 0;
+    }
+    off_t sparse_file_chunk_len = p->sparse_map[p->sparse_map_ix];
+    off_t remaining_data_in_sparse_file_chunk =
+            sparse_file_chunk_len - p->sparse_block_offset;
+
+    if (p->sparse_leftover_len > 0) {
+        // Handle the case where a previous call had data remaining
+        *buffer = p->sparse_leftover;
+        *offset = p->actual_offset;
+        if (remaining_data_in_sparse_file_chunk >= p->sparse_leftover_len)
+            *len = p->sparse_leftover_len;
+        else
+            *len = remaining_data_in_sparse_file_chunk;
+
+        p->sparse_leftover += *len;
+        p->sparse_leftover_len -= *len;
+        p->actual_offset += *len;
+        p->sparse_block_offset += *len;
+        if (p->sparse_block_offset == sparse_file_chunk_len) {
+            // Advance over hole (unless this is the end)
+            p->sparse_map_ix++;
+            p->sparse_block_offset = 0;
+            if (p->sparse_map_ix != p->sparse_map_len) {
+                p->actual_offset += p->sparse_map[p->sparse_map_ix];
+
+                // Advance to next data block
+                p->sparse_map_ix++;
+            }
+        }
+        return 0;
+    }
+
+    // Decompress more data
+
     // off_t could be 32-bits so offset can't be passed directly to archive_read_data_block
     int64_t offset64 = 0;
     int rc = archive_read_data_block(p->a, buffer, len, &offset64);
-    *offset = (off_t) offset64;
-
     if (rc == ARCHIVE_EOF) {
         *len = 0;
         *buffer = NULL;
         *offset = 0;
         return 0;
-    } else if (rc == ARCHIVE_OK) {
-        return 0;
-    } else
+    } else if (rc != ARCHIVE_OK)
         ERR_RETURN(archive_error_string(p->a));
+
+    *offset = (off_t) offset64;
+    if (*offset != p->actual_offset)
+        ERR_RETURN("Out of sync with archive. Please file a bug: %d vs. %d", (int) *offset, (int) p->actual_offset);
+
+    if (remaining_data_in_sparse_file_chunk > (off_t) *len) {
+        // The amount decompressed doesn't cross a sparse file hole
+        p->actual_offset += *len;
+        p->sparse_block_offset += *len;
+    } else {
+        // The amount decompressed crosses a hole in a sparse file,
+        // so return the contiguous chunk and save the leftovers.
+        p->actual_offset += remaining_data_in_sparse_file_chunk;
+        p->sparse_leftover_len = *len - remaining_data_in_sparse_file_chunk;
+        p->sparse_leftover = *buffer + *len;
+
+        *len = remaining_data_in_sparse_file_chunk;
+
+        // Advance over hole (unless this is the end)
+        p->sparse_map_ix++;
+        p->sparse_block_offset = 0;
+        if (p->sparse_map_ix != p->sparse_map_len) {
+            p->actual_offset += p->sparse_map[p->sparse_map_ix];
+
+            // Advance to next data block
+            p->sparse_map_ix++;
+        }
+    }
+
+    return 0;
 }
 
 static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc)
@@ -363,7 +445,33 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
             char resource_name[FWFILE_MAX_ARCHIVE_PATH];
 
             OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
+
+            OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx.cfg, resource_name, &pd.sparse_map, &pd.sparse_map_len));
+            pd.sparse_map_ix = 0;
+            pd.sparse_block_offset = 0;
+            pd.actual_offset = 0;
+            pd.sparse_leftover = NULL;
+            pd.sparse_leftover_len = 0;
+            if (pd.sparse_map[0] == 0) {
+                if (pd.sparse_map_len > 2) {
+                    // This is the case where there's a hole at the beginning. Advance to
+                    // the offset of the data.
+                    pd.sparse_map_ix = 2;
+                    pd.actual_offset = pd.sparse_map[1];
+                } else {
+                    // sparse map has a 0 length data block and possibly a hole,
+                    // but it doesn't have anoter data block. This means that it's
+                    // either a 0-length file or it's all sparse. Signal EOF. This
+                    // might be a bug, but I can't think of a real use case for a completely
+                    // sparse file.
+                    pd.sparse_map_ix = pd.sparse_map_len;
+                }
+            }
+
             OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", resource_name, fun_run));
+
+            free(pd.sparse_map);
+            pd.sparse_map = NULL;
         }
 
         fctx.type = FUN_CONTEXT_FINISH;
@@ -381,6 +489,9 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     fwup_apply_report_final_progress(&fctx);
 
 cleanup:
+    if (pd.sparse_map)
+        free(pd.sparse_map);
+
     archive_read_free(pd.a);
     if (fctx.output_fd >= 0)
         close(fctx.output_fd);

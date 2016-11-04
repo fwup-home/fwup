@@ -26,6 +26,7 @@ fwup_SOURCES=\
 	mmc_windows.c \
 	requirement.c \
 	simple_string.c \
+	sparse_file.c \
 	uboot_env.c \
 	util.c \
 	archive_open.h \
@@ -49,6 +50,7 @@ fwup_SOURCES=\
 	mmc.h \
 	requirement.h \
 	simple_string.h \
+	sparse_file.h \
 	uboot_env.h \
 	util.h \
 	../3rdparty/fatfs/src/diskio.h \

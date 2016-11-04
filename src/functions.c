@@ -202,7 +202,7 @@ int raw_write_compute_progress(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    off_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getnint(resource, "length", 0);
 
     // Count each byte as a progress unit
     fctx->total_progress_units += expected_length;
@@ -217,7 +217,7 @@ int raw_write_run(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    off_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getnint(resource, "length", 0);
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
@@ -432,7 +432,7 @@ int fat_write_compute_progress(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("raw_write can't find matching file-resource");
-    off_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getnint(resource, "length", 0);
 
     // Zero-length files still do something
     if (expected_length == 0)
@@ -450,7 +450,7 @@ int fat_write_run(struct fun_context *fctx)
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
         ERR_RETURN("fat_write can't find matching file-resource");
-    off_t expected_length = cfg_getint(resource, "length");
+    off_t expected_length = cfg_getnint(resource, "length", 0);
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
         ERR_RETURN("invalid blake2b-256 hash for '%s'", fctx->on_event->title);

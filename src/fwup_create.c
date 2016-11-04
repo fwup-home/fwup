@@ -69,7 +69,7 @@ static int compute_file_metadata(cfg_t *cfg)
         bytes_to_hex(hash, hash_str, sizeof(hash));
 
         cfg_setstr(sec, "blake2b-256", hash_str);
-        cfg_setint(sec, "length", total);
+        cfg_setnint(sec, "length", total, 0);
     }
 
     return 0;
