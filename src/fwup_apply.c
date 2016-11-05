@@ -121,8 +121,7 @@ struct fwup_data
     struct archive *a;
 
     // Sparse file handling
-    off_t *sparse_map;
-    int sparse_map_len;
+    struct sparse_file_map sfm;
     int sparse_map_ix;
     off_t sparse_block_offset;
     off_t actual_offset;
@@ -144,14 +143,14 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     // chunks of a sparse file are concatenated together. This function breaks them
     // apart.
 
-    if (p->sparse_map_ix == p->sparse_map_len) {
+    if (p->sparse_map_ix == p->sfm.map_len) {
         // End of file
         *len = 0;
         *buffer = NULL;
         *offset = 0;
         return 0;
     }
-    off_t sparse_file_chunk_len = p->sparse_map[p->sparse_map_ix];
+    off_t sparse_file_chunk_len = p->sfm.map[p->sparse_map_ix];
     off_t remaining_data_in_sparse_file_chunk =
             sparse_file_chunk_len - p->sparse_block_offset;
 
@@ -172,8 +171,8 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
             // Advance over hole (unless this is the end)
             p->sparse_map_ix++;
             p->sparse_block_offset = 0;
-            if (p->sparse_map_ix != p->sparse_map_len) {
-                p->actual_offset += p->sparse_map[p->sparse_map_ix];
+            if (p->sparse_map_ix != p->sfm.map_len) {
+                p->actual_offset += p->sfm.map[p->sparse_map_ix];
 
                 // Advance to next data block
                 p->sparse_map_ix++;
@@ -195,9 +194,9 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     } else if (rc != ARCHIVE_OK)
         ERR_RETURN(archive_error_string(p->a));
 
-    *offset = (off_t) offset64;
-    if (*offset != p->actual_offset)
-        ERR_RETURN("Out of sync with archive. Please file a bug: %d vs. %d", (int) *offset, (int) p->actual_offset);
+    *offset = p->actual_offset;
+//    if (*offset != (off_t) offset64)
+//        ERR_RETURN("Out of sync with archive. Please file a bug: %d vs. %d", (int) *offset, (int) p->actual_offset);
 
     if (remaining_data_in_sparse_file_chunk > (off_t) *len) {
         // The amount decompressed doesn't cross a sparse file hole
@@ -208,15 +207,15 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         // so return the contiguous chunk and save the leftovers.
         p->actual_offset += remaining_data_in_sparse_file_chunk;
         p->sparse_leftover_len = *len - remaining_data_in_sparse_file_chunk;
-        p->sparse_leftover = *buffer + *len;
+        p->sparse_leftover = *buffer + remaining_data_in_sparse_file_chunk;
 
         *len = remaining_data_in_sparse_file_chunk;
 
         // Advance over hole (unless this is the end)
         p->sparse_map_ix++;
         p->sparse_block_offset = 0;
-        if (p->sparse_map_ix != p->sparse_map_len) {
-            p->actual_offset += p->sparse_map[p->sparse_map_ix];
+        if (p->sparse_map_ix != p->sfm.map_len) {
+            p->actual_offset += p->sfm.map[p->sparse_map_ix];
 
             // Advance to next data block
             p->sparse_map_ix++;
@@ -446,32 +445,31 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
 
             OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
 
-            OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx.cfg, resource_name, &pd.sparse_map, &pd.sparse_map_len));
+            OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx.cfg, resource_name, &pd.sfm));
             pd.sparse_map_ix = 0;
             pd.sparse_block_offset = 0;
             pd.actual_offset = 0;
             pd.sparse_leftover = NULL;
             pd.sparse_leftover_len = 0;
-            if (pd.sparse_map[0] == 0) {
-                if (pd.sparse_map_len > 2) {
+            if (pd.sfm.map[0] == 0) {
+                if (pd.sfm.map_len > 2) {
                     // This is the case where there's a hole at the beginning. Advance to
                     // the offset of the data.
                     pd.sparse_map_ix = 2;
-                    pd.actual_offset = pd.sparse_map[1];
+                    pd.actual_offset = pd.sfm.map[1];
                 } else {
                     // sparse map has a 0 length data block and possibly a hole,
                     // but it doesn't have anoter data block. This means that it's
                     // either a 0-length file or it's all sparse. Signal EOF. This
                     // might be a bug, but I can't think of a real use case for a completely
                     // sparse file.
-                    pd.sparse_map_ix = pd.sparse_map_len;
+                    pd.sparse_map_ix = pd.sfm.map_len;
                 }
             }
 
             OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", resource_name, fun_run));
 
-            free(pd.sparse_map);
-            pd.sparse_map = NULL;
+            sparse_file_free(&pd.sfm);
         }
 
         fctx.type = FUN_CONTEXT_FINISH;
@@ -489,8 +487,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     fwup_apply_report_final_progress(&fctx);
 
 cleanup:
-    if (pd.sparse_map)
-        free(pd.sparse_map);
+    sparse_file_free(&pd.sfm);
 
     archive_read_free(pd.a);
     if (fctx.output_fd >= 0)

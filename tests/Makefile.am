@@ -92,4 +92,13 @@ TESTS = 001_simple_fw.test \
 	088_missing_hash.test \
 	089_dev_null.test
 
+if HAVE_SPARSE_SEEK
+TESTS += \
+	090_sparse_write.test \
+	091_sparse_write2.test \
+	092_sparse_write3.test \
+	093_sparse_concat.test \
+	094_sparse_concat2.test
+endif
+
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#
+# Test writing a sparse file resource to an offset
+#
+
+. ./common.sh
+
+# Sparse file support depends on the filesystem. The size
+# of the sparse blocks may vary as well. To ensure that
+# this test works across filesystems that support sparse
+# files, keep everything on 4K boundaries.
+
+TESTFILE_4K=$WORK/4k.bin
+cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
+
+# This sparse file looks like this:
+#
+# Offset         Length        Contents
+# 0              4K            $TESTFILE_4K
+# 4K             192K          Hole
+# 196K           4K            $TESTFILE_4K
+# 200K           192K          Hole
+# ...
+#
+# This repeats 140 times to overflow fwup's sparse map length.
+# The final holes should be recorded as data. The exact
+# threshold is 128 (set loop var to 127) if you're debugging an
+# issue with this test.
+
+SPARSE_FILE=$WORK/sparse.bin
+for i in {0..139}; do
+    dd if=$TESTFILE_4K bs=1k seek=$(($i * 196)) of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+done
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${SPARSE_FILE}"
+}
+
+task complete {
+        on-resource sparsefile { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "sparsefile" {
+length={4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,4096,196608,2412544}
+blake2b-256="3a2dca980c62d81052e953012c7a02b93810856debab1efd763620a6199cc5f1"
+}
+task "complete" {
+on-resource "sparsefile" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+check_meta_conf
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+
+# Apply it and check that the output compares the same as the input
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+cmp $SPARSE_FILE $IMGFILE

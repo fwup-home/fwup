@@ -57,6 +57,10 @@ win32 {
     QMAKE_CFLAGS += -std=gnu99
 }
 
+linux {
+    QMAKE_CFLAGS += -std=gnu99
+}
+
 LIBS += -lconfuse -larchive -lsodium
 
 HEADERS += \

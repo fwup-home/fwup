@@ -33,6 +33,20 @@ AC_PROG_CC_C99
 AC_CHECK_FUNCS([memset setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+                   [[
+                    #define _GNU_SOURCE
+                    #include <sys/types.h>
+                    #include <unistd.h>
+                    ]],
+                    [[
+                     int x = SEEK_HOLE+SEEK_DATA;
+                     ]])],
+                  [AC_DEFINE([HAVE_SPARSE_SEEK], [1], [Defined if sparse seeking is supported])
+                   have_sparse_seek="yes"],
+                  [AC_MSG_WARN([Sparse seek support not found. fwup won't be able to detect holes in sparse file resources])])
+AM_CONDITIONAL([HAVE_SPARSE_SEEK], [test "${have_sparse_seek}" = "yes"])
+
 AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 AS_IF([test "x$PKG_CONFIG" = "xno"],[
    AC_MSG_ERROR([

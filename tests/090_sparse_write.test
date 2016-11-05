@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#
+# Test writing a sparse file resource to an offset
+#
+
+. ./common.sh
+
+# Sparse file support depends on the filesystem. The size
+# of the sparse blocks may vary as well. To ensure that
+# this test works across filesystems that support sparse
+# files, keep everything on 4K boundaries.
+
+TESTFILE_4K=$WORK/4k.bin
+cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
+
+# This sparse file looks like this:
+#
+# Offset         Length        Contents
+# 0              32K           Hole
+# 32K            4K            $TESTFILE_4K
+# 36K            28K           Hole
+# 64K            4K            $TESTFILE_4K
+# 68K            932K          Hole
+# 1024K          4K            $TESTFILE_4K
+
+SPARSE_FILE=$WORK/sparse.bin
+dd if=$TESTFILE_4K bs=1k seek=32 of=$SPARSE_FILE conv=sync 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=64 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=1024 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${SPARSE_FILE}"
+}
+
+task complete {
+        on-resource sparsefile { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "sparsefile" {
+length={0,32768,4096,28672,4096,978944,4096}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+task "complete" {
+on-resource "sparsefile" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+check_meta_conf
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+
+
+# Create a file of all 0xff's so that it's easy to tell
+# if the sparse file overwrote the holes or not.
+BASE_IMAGE=$WORK/base.img
+dd if=/dev/zero bs=1k count=1028 2>/dev/zero | tr \\000 \\377 | dd of=$BASE_IMAGE 2>/dev/null
+cp $BASE_IMAGE $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+cp $BASE_IMAGE $WORK/check.bin
+dd if=$TESTFILE_4K bs=1k seek=32 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+# This next line is needed since fwup pads small gaps with zeros.
+dd if=/dev/zero bs=1k seek=36 count=28 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=64 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+cmp $WORK/check.bin $IMGFILE

@@ -19,6 +19,7 @@
 #include "util.h"
 #include "cfgfile.h"
 #include "archive_open.h"
+#include "sparse_file.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -32,7 +33,12 @@ static int check_resource(cfg_t *cfg, const char *file_resource_name, struct arc
     cfg_t *resource = cfg_gettsec(cfg, "file-resource", file_resource_name);
     if (!resource)
         ERR_RETURN("Can't find file-resource for %s", file_resource_name);
-    size_t expected_length = cfg_getint(resource, "length");
+
+    struct sparse_file_map sfm;
+    sparse_file_init(&sfm);
+    OK_OR_RETURN(sparse_file_get_map_from_resource(resource, &sfm));
+
+    size_t expected_length = sparse_file_data_size(&sfm);
     ssize_t archive_length = archive_entry_size(ae);
     if (archive_length < 0)
         ERR_RETURN("Missing file length in archive for %s", file_resource_name);

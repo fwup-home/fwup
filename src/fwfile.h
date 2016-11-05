@@ -19,6 +19,7 @@
 
 #include <confuse.h>
 #include <archive.h>
+#include "sparse_file.h"
 
 #define FWFILE_MAX_ARCHIVE_PATH     512
 
@@ -30,9 +31,5 @@ struct fwfile_assertions {
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key);
 int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
                              struct archive *a, const unsigned char *signing_key);
-int fwfile_add_local_file(struct archive *a,
-                          const char *resource_name,
-                          const char *local_paths,
-                          const struct fwfile_assertions *assertions);
 
 #endif // FWFILE_H

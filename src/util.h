@@ -129,4 +129,12 @@ char *strndup(const char *s, size_t n);
 int set_environment(const char *key, const char *value);
 #endif
 
+// On Win32, if open(2) isn't called with O_BINARY, the results are very
+// unintuitive for anyone used to Linux development.
+#ifdef __WIN32__
+#define O_WIN32_BINARY O_BINARY
+#else
+#define O_WIN32_BINARY 0
+#endif
+
 #endif // UTIL_H

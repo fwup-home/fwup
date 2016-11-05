@@ -1,0 +1,130 @@
+#!/bin/bash
+
+#
+# Test concatenating a set of sparse files
+# This is similar to 093_sparse_concat.test except
+# with small holes to exercise the block_cache's
+# small gap handling. This test actually isn't intended
+# to verify concatenation at all, but it was easier
+# to test the block_cache with the sparse concat test
+# than with others.
+#
+
+. ./common.sh
+
+# Sparse file support depends on the filesystem. The size
+# of the sparse blocks may vary as well. To ensure that
+# this test works across filesystems that support sparse
+# files, keep everything on 4K boundaries.
+
+TESTFILE_4K=$WORK/4k.bin
+cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
+
+TESTFILE_A=$WORK/a.bin
+TESTFILE_B=$WORK/b.bin
+
+# A's pattern is data, then hole
+# B's pattern is hole, then data
+
+dd if=/dev/zero of=$TESTFILE_A bs=1k count=12 conv=sparse 2>/dev/null
+dd if=$TESTFILE_4K of=$TESTFILE_A bs=1k seek=0 conv=notrunc 2>/dev/null
+
+dd if=$TESTFILE_4K of=$TESTFILE_B bs=1k seek=8 conv=sync 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource a {
+        host-path = "${TESTFILE_A}"
+}
+file-resource b {
+        host-path = "${TESTFILE_B}"
+}
+file-resource aa {
+        host-path = "${TESTFILE_A};${TESTFILE_A}"
+}
+file-resource ab {
+        host-path = "${TESTFILE_A};${TESTFILE_B}"
+}
+file-resource ba {
+        host-path = "${TESTFILE_B};${TESTFILE_A}"
+}
+file-resource bb {
+        host-path = "${TESTFILE_B};${TESTFILE_B}"
+}
+file-resource aab {
+        host-path = "${TESTFILE_A};${TESTFILE_A};${TESTFILE_B}"
+}
+file-resource aba {
+        host-path = "${TESTFILE_A};${TESTFILE_B};${TESTFILE_A}"
+}
+file-resource abb {
+        host-path = "${TESTFILE_A};${TESTFILE_B};${TESTFILE_B}"
+}
+file-resource baa {
+        host-path = "${TESTFILE_B};${TESTFILE_A};${TESTFILE_A}"
+}
+file-resource bab {
+        host-path = "${TESTFILE_B};${TESTFILE_A};${TESTFILE_B}"
+}
+file-resource bba {
+        host-path = "${TESTFILE_B};${TESTFILE_B};${TESTFILE_A}"
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "a" {
+length={4096,8192}
+blake2b-256="a0a076fb2a298b203ba8b004f8d1f5e3ee545de8b97a1dde59b269f786035ec0"
+}
+file-resource "b" {
+length={0,8192,4096}
+blake2b-256="a0a076fb2a298b203ba8b004f8d1f5e3ee545de8b97a1dde59b269f786035ec0"
+}
+file-resource "aa" {
+length={4096,8192,4096,8192}
+blake2b-256="d4f20d061d03d6664003aca543ab72f59be02c8d515e03b46529ee12850153a6"
+}
+file-resource "ab" {
+length={4096,16384,4096}
+blake2b-256="d4f20d061d03d6664003aca543ab72f59be02c8d515e03b46529ee12850153a6"
+}
+file-resource "ba" {
+length={0,8192,8192,8192}
+blake2b-256="d4f20d061d03d6664003aca543ab72f59be02c8d515e03b46529ee12850153a6"
+}
+file-resource "bb" {
+length={0,8192,4096,8192,4096}
+blake2b-256="d4f20d061d03d6664003aca543ab72f59be02c8d515e03b46529ee12850153a6"
+}
+file-resource "aab" {
+length={4096,8192,4096,16384,4096}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+file-resource "aba" {
+length={4096,16384,8192,8192}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+file-resource "abb" {
+length={4096,16384,4096,8192,4096}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+file-resource "baa" {
+length={0,8192,8192,8192,4096,8192}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+file-resource "bab" {
+length={0,8192,8192,16384,4096}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+file-resource "bba" {
+length={0,8192,4096,8192,8192,8192}
+blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+check_meta_conf
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+

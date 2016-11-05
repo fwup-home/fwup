@@ -41,6 +41,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
 
     bw->write_offset = 0;
     bw->buffer_index = 0;
+    bw->added_bytes = 0;
     return 0;
 }
 
@@ -52,7 +53,7 @@ static ssize_t flush_buffer(struct block_writer *bw)
     // Note: this isn't necessary when writing through a cache to a device, but that's
     //       not always the case.
     size_t block_boundary = (bw->buffer_index + ~bw->block_size_mask) & bw->block_size_mask;
-    ssize_t added_bytes = 0;
+    ssize_t added_bytes = bw->added_bytes;
     if (block_boundary != bw->buffer_index) {
         added_bytes = block_boundary - bw->buffer_index;
         memset(&bw->buffer[bw->buffer_index], 0, added_bytes);
@@ -62,10 +63,10 @@ static ssize_t flush_buffer(struct block_writer *bw)
     ssize_t rc = pwrite(bw->fd, bw->buffer, bw->buffer_index, bw->write_offset);
     bw->write_offset += bw->buffer_index;
     bw->buffer_index = 0;
+    bw->added_bytes = 0;
 
     // Don't report back the bytes that we padded the output by.
-    if (rc > added_bytes)
-        rc -= added_bytes;
+    rc -= added_bytes;
 
     return rc;
 }
@@ -102,12 +103,13 @@ ssize_t block_writer_pwrite(struct block_writer *bw, const void *buf, size_t cou
             } else {
                 // Small gap, so fill it in with 0s and buffer more
                 memset(&bw->buffer[bw->buffer_index], 0, gap_size);
+                bw->added_bytes += gap_size;
                 bw->buffer_index += gap_size;
                 to_write -= gap_size;
             }
         }
 
-        assert(offset == position);
+        assert(offset == (off_t) (bw->write_offset + bw->buffer_index));
         if (count < to_write) {
             // Not enough to write to disk, so buffer for next time
             memcpy(&bw->buffer[bw->buffer_index], buf, count);

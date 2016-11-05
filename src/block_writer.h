@@ -35,6 +35,7 @@ struct block_writer {
     char *buffer;
     off_t write_offset;
     size_t buffer_index;
+    size_t added_bytes;
 };
 
 int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2_block_size);
