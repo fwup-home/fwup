@@ -65,3 +65,6 @@ diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img@@32256 ::/1K-new.bin $WORK/actual.1K.bin
 diff $TESTFILE_1K $WORK/actual.1K.bin
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

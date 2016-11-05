@@ -56,3 +56,5 @@ EOF
 mattrib -i $WORK/fwup.img@@32256 system.txt hidden.txt readonly.txt shr.txt > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

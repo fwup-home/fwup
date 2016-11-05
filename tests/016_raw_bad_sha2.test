@@ -27,8 +27,14 @@ cp $TESTFILE_1K_CORRUPT $UNZIPDIR/data/1K.bin
 cd $UNZIPDIR
 zip -q $WORK/imposter.fw meta.conf data/1K.bin
 cd -
-echo Expecting SHA256 mismatch...
+echo Expecting Blake2b mismatch...
 if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+    echo "This should have failed"
+    exit 1
+fi
+
+echo Expecting Blake2b mismatch during verification...
+if $FWUP_APPLY -V -i $WORK/imposter.fw; then
     echo "This should have failed"
     exit 1
 fi

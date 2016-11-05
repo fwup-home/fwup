@@ -77,3 +77,6 @@ diff -w $EXPECTED_OUTPUT_ROOT $ACTUAL_OUTPUT_ROOT
 # Check that the subdirectory looks right
 mdir -i $WORK/fwup.img@@32256 test_dir > $ACTUAL_OUTPUT_SUBDIR
 diff -w $EXPECTED_OUTPUT_SUBDIR $ACTUAL_OUTPUT_SUBDIR
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

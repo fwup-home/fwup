@@ -36,3 +36,6 @@ $FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
 cat >$WORK/expected_output.txt <<EOF
 EOF
 diff $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

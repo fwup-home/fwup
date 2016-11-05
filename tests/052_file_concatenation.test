@@ -39,3 +39,5 @@ diff $TESTFILE_1K.x2 $UNZIPDIR/data/TEST
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 diff $IMGFILE $TESTFILE_1K.x2
 
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

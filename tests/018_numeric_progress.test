@@ -41,3 +41,6 @@ cat >$WORK/expected_output.txt <<EOF
 100
 EOF
 diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

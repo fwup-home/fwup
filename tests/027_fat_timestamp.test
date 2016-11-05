@@ -46,3 +46,6 @@ sleep 1
 $FWUP_APPLY -a -d ${IMGFILE}.2 -i $FWFILE -t complete
 
 diff ${IMGFILE}.1 ${IMGFILE}.2
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

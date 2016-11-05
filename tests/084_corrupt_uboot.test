@@ -37,3 +37,5 @@ if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
     exit 1
 fi
 
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

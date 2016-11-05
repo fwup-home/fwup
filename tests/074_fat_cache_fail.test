@@ -126,4 +126,5 @@ for FILE in  $FILES; do
     diff $WORK/$FILE $WORK/$FILE.actual
 done
 
-echo Success!
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

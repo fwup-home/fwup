@@ -130,3 +130,6 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 # Extract and compare the first partition
 dd if=$IMGFILE skip=2048 count=2 of=$WORK/upgrade-first-part.bin 2>/dev/null
 diff $TESTFILE_1K $WORK/upgrade-first-part.bin
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

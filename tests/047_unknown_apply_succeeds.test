@@ -28,3 +28,7 @@ popd
 
 # See that it still applies
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE.new -t complete
+
+# Check that the verify logic works on both files
+$FWUP_APPLY -V -i $FWFILE
+$FWUP_APPLY -V -i $FWFILE.new

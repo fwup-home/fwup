@@ -49,3 +49,6 @@ diff $TESTFILE_1K $UNZIPDIR/data/$TESTFILE
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 diff $IMGFILE $TESTFILE_1K
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

@@ -78,3 +78,6 @@ for i in 1 2 3 4 5 6 7; do
     mcopy -n -i $WORK/fwup.img@@32256 ::/${i}.bin $WORK/actual.1K.bin
     diff $TESTFILE_1K $WORK/actual.1K.bin
 done
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

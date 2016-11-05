@@ -73,4 +73,5 @@ for i in 0 1; do
     diff $TESTFILE_15M $WORK/actual.${i}.bin
 done
 
-echo Success!
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

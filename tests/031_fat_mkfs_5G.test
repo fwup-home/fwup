@@ -44,3 +44,6 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # MTOOLS_SKIP_CHECK=1 can normally be used, but since this is
 # the most fundamental of FAT checks, we're trying to leave it off.
 mdir -i $WORK/fwup.img@@32256
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

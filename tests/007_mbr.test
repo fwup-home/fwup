@@ -90,3 +90,6 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # The firmware file is equivalent to the following dd call
 diff $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

@@ -158,4 +158,5 @@ diff $TESTFILE_1K $WORK/actual.2.bin
 diff $TESTFILE_150K $WORK/actual.3.bin
 diff $TESTFILE_1K $WORK/actual.4.bin
 
-echo Success!
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

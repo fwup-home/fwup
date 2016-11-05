@@ -136,3 +136,5 @@ cp $WORK/check-upgraded.bin $WORK/check-upgraded2.bin
 dd if=$WORK/uboota.bin seek=4 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/dev/null
 cmp $WORK/check-upgraded2.bin $IMGFILE
 
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

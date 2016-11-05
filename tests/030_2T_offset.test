@@ -45,3 +45,6 @@ dd if=$TESTFILE_150K seek=4300000000 of=$WORK/check.bin conv=sync 2>/dev/null
 # diffing the files takes too long, so skip to the end
 # where the interesting stuff is
 cmp $WORK/check.bin $IMGFILE 2200000000000 2200000000000
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
