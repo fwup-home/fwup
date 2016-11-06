@@ -37,7 +37,6 @@ src/fwup.1
 /pkg_build
 /build
 /deps
-tests/1K.bin.x2
 m4/libtool.m4
 m4/ltoptions.m4
 m4/ltsugar.m4

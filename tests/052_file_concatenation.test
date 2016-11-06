@@ -8,7 +8,7 @@
 
 cat >$CONFIG <<EOF
 file-resource TEST {
-        host-path = "${TESTFILE_1K};${TESTFILE_1K}"
+        host-path = "${TESTFILE_1K};${TESTFILE_150K};${TESTFILE_1K_CORRUPT}"
 }
 
 task complete {
@@ -18,8 +18,8 @@ EOF
 
 cat >$EXPECTED_META_CONF <<EOF
 file-resource "TEST" {
-length=2048
-blake2b-256="7049efc404edfbd339c1814c3306ba84cb59fb89580219998402f3e3719ed788"
+length=152048
+blake2b-256="792ac899e67b886626954873c976baa23d9d9c3b379410515041e9e94687e13a"
 }
 task "complete" {
 on-resource "TEST" {
@@ -32,12 +32,16 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-cat $TESTFILE_1K $TESTFILE_1K > $TESTFILE_1K.x2
-diff $TESTFILE_1K.x2 $UNZIPDIR/data/TEST
+cat $TESTFILE_1K $TESTFILE_150K $TESTFILE_1K_CORRUPT > $WORK/cat.bin
+cmp $WORK/cat.bin $UNZIPDIR/data/TEST
+
+# When checking the output, pad the test result image to a block
+# boundary, since fwup does this automatically.
+dd if=$WORK/cat.bin of=$WORK/cat-blockboundary.bin conv=sync 2>/dev/null
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $TESTFILE_1K.x2
+cmp $IMGFILE $WORK/cat-blockboundary.bin
 
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE
