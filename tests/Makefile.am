@@ -42,7 +42,6 @@ TESTS = 001_simple_fw.test \
         037_streaming_bad_sig.test \
         038_write_15M.test \
 	039_upgrade.test \
-	040_create_mini_fw.test \
 	041_version.test \
 	042_fat_am335x.test \
 	043_fat_touch.test \

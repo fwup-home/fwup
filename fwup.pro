@@ -133,7 +133,6 @@ DISTFILES += \
     tests/037_streaming_bad_sig.test \
     tests/038_write_15M.test \
     tests/039_upgrade.test \
-    tests/040_create_mini_fw.test \
     CHANGELOG.md \
     src/fwup.h2m \
     tests/041_version.test \

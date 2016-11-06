@@ -83,9 +83,6 @@ struct fun_context {
     // Callback for getting a fat_cache handle for use with the fatfs code.
     int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc);
 
-    // Callback for creating a subarchive
-    int (*subarchive_ptr)(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created);
-
     // Output file descriptor. <= 0 if not opened. (stdin is never ok)
     int output_fd;
 

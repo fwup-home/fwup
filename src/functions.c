@@ -46,8 +46,6 @@ DECLARE_FUN(fat_cp);
 DECLARE_FUN(fat_mkdir);
 DECLARE_FUN(fat_setlabel);
 DECLARE_FUN(fat_touch);
-DECLARE_FUN(fw_create);
-DECLARE_FUN(fw_add_local_file);
 DECLARE_FUN(mbr_write);
 DECLARE_FUN(uboot_clearenv);
 DECLARE_FUN(uboot_setenv);
@@ -73,8 +71,6 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_mkdir),
     FUN_INFO(fat_setlabel),
     FUN_INFO(fat_touch),
-    FUN_INFO(fw_create),
-    FUN_INFO(fw_add_local_file),
     FUN_INFO(mbr_write),
     FUN_INFO(uboot_clearenv),
     FUN_INFO(uboot_setenv),
@@ -672,64 +668,6 @@ int fat_touch_run(struct fun_context *fctx)
         return -1;
 
     OK_OR_RETURN(fatfs_touch(fc, fctx->argv[2]));
-
-    fctx->report_progress(fctx, 1);
-    return 0;
-}
-
-int fw_create_validate(struct fun_context *fctx)
-{
-    if (fctx->argc != 2)
-        ERR_RETURN("fw_create requires a filename");
-
-    return 0;
-}
-int fw_create_compute_progress(struct fun_context *fctx)
-{
-    fctx->total_progress_units++; // Arbitarily count as 1 unit
-    return 0;
-}
-int fw_create_run(struct fun_context *fctx)
-{
-    struct archive *a;
-    bool created;
-    if (fctx->subarchive_ptr(fctx, fctx->argv[1], &a, &created) < 0)
-        return -1;
-
-    if (!created)
-        ERR_RETURN("fw_create called on archive that was already open");
-
-    if (fwfile_add_meta_conf(fctx->cfg, a, NULL) < 0)
-        return -1;
-
-    fctx->report_progress(fctx, 1);
-    return 0;
-}
-
-int fw_add_local_file_validate(struct fun_context *fctx)
-{
-    if (fctx->argc != 4)
-        ERR_RETURN("fw_add_local_file requires a firmware filename, filename, and file with the contents");
-
-    return 0;
-}
-int fw_add_local_file_compute_progress(struct fun_context *fctx)
-{
-    fctx->total_progress_units++; // Arbitarily count as 1 unit
-    return 0;
-}
-int fw_add_local_file_run(struct fun_context *fctx)
-{
-    struct archive *a;
-    bool created;
-    if (fctx->subarchive_ptr(fctx, fctx->argv[1], &a, &created) < 0)
-        return -1;
-
-    if (created)
-        ERR_RETURN("call fw_create before calling fw_add_local_file");
-
-    if (fwfile_add_local_file(a, fctx->argv[2], fctx->argv[3], NULL) < 0)
-        return -1;
 
     fctx->report_progress(fctx, 1);
     return 0;

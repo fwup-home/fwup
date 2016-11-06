@@ -450,8 +450,6 @@ fat_rm(block_offset, filename)        | 0.1.0 | Delete the specified file
 fat_mkdir(block_offset, filename)     | 0.2.0 | Create a directory on a FAT file system
 fat_setlabel(block_offset, label)     | 0.2.0 | Set the volume label on a FAT file system
 fat_touch(block_offset, filename)     | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
-fw_create(fwpath)                     | 0.1.0 | Create a firmware update archive in the specified place on the target (e.g., /tmp/on-reboot.fw)
-fw_add_local_file(fwpath, name, local_path) | 0.1.0 | Add the specified local file to a firmware archive as the resource "name"
 mbr_write(mbr)                        | 0.1.0 | Write the specified mbr to the target
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset)               | 0.1.0 | Write the resource to the specified block offset

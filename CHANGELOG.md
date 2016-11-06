@@ -2,6 +2,16 @@
 
 ## v0.10.1-dev
 
+  * Backwards incompatible changes
+    * Remove support for fw_create and fw_add_local_file. Neither of these were
+      used much and there were better ways of accomplishing their functions.
+      They became a pain to support, since they create .fw files that are
+      missing sections, so they don't validate. It is much easier to run fwup
+      to create multiple .fw files that are included in the master one for doing
+      things like apply/commit or apply/revert style updates that stay within
+      fwup. If you're using the functions, either don't upgrade or create new
+      .fw configurings that embed pre-generated .fw files.
+
 ## v0.10.0
 
   * New features

@@ -343,8 +343,6 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("fat_mkdir", CB), \
     CFG_FUNC("fat_setlabel", CB), \
     CFG_FUNC("fat_touch", CB), \
-    CFG_FUNC("fw_create", CB), \
-    CFG_FUNC("fw_add_local_file", CB), \
     CFG_FUNC("mbr_write", CB), \
     CFG_FUNC("uboot_clearenv", CB), \
     CFG_FUNC("uboot_setenv", CB), \

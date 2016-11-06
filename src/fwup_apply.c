@@ -122,9 +122,6 @@ struct fwup_data
     bool using_fat_cache;
     struct fat_cache fc;
     off_t current_fatfs_block_offset;
-
-    struct archive *subarchive;
-    char *subarchive_path;
 };
 
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
@@ -176,50 +173,6 @@ static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, stru
     if (fc)
         *fc = &p->fc;
 
-    return 0;
-}
-
-static int subarchive_ptr_callback(struct fun_context *fctx, const char *archive_path, struct archive **a, bool *created)
-{
-    struct fwup_data *p = (struct fwup_data *) fctx->cookie;
-
-    if (created)
-        *created = false;
-
-    // Check if the archive path has changed
-    if ((p->subarchive_path == NULL && archive_path != NULL) ||
-        (p->subarchive_path != NULL && archive_path == NULL) ||
-        (p->subarchive_path && archive_path && strcmp(archive_path, p->subarchive_path) != 0)) {
-
-        // If a subarchive is open, close it.
-        if (p->subarchive) {
-            archive_write_close(p->subarchive);
-            archive_write_free(p->subarchive);
-            p->subarchive = NULL;
-            free(p->subarchive_path);
-            p->subarchive_path = NULL;
-        }
-
-        // If the caller wants to open a new subarchive, open it.
-        if (archive_path) {
-            p->subarchive = archive_write_new();
-            if (archive_write_set_format_zip(p->subarchive) != ARCHIVE_OK ||
-                archive_write_zip_set_compression_deflate(p->subarchive) != ARCHIVE_OK)
-                ERR_RETURN("error configuring libarchive: %s", archive_error_string(p->subarchive));
-
-            if (archive_write_open_filename(p->subarchive, archive_path) != ARCHIVE_OK) {
-                archive_write_free(p->subarchive);
-                p->subarchive = NULL;
-                ERR_RETURN("error creating archive '%s'", archive_path);
-            }
-
-            p->subarchive_path = strdup(archive_path);
-            if (created)
-                *created = true;
-        }
-    }
-    if (a)
-        *a = p->subarchive;
     return 0;
 }
 
@@ -326,7 +279,6 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.fatfs_ptr = fatfs_ptr_callback;
-    fctx.subarchive_ptr = subarchive_ptr_callback;
     fctx.progress_mode = progress;
     fctx.report_progress = fwup_apply_report_progress;
     fctx.last_progress_reported = 0; // fwup_apply_zero_progress is assumed to have been called.
@@ -420,9 +372,6 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
 
     // Flush the FATFS code in case it was used.
     OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL));
-
-    // Flush a subarchive that's being built.
-    OK_OR_CLEANUP(subarchive_ptr_callback(&fctx, NULL, NULL, NULL));
 
     // Close the file before we report 100% just in case that takes some time (Linux)
     close(fctx.output_fd);
