@@ -89,6 +89,7 @@ TESTS = 001_simple_fw.test \
 	085_raw_memset.test \
 	086_math.test \
 	087_crypto_compat.test \
-	088_missing_hash.test
+	088_missing_hash.test \
+	089_dev_null.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

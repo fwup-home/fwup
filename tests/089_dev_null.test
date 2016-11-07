@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#
+# Test reading from /dev/null
+#
+# This is only interesting since /dev/null is a file
+# that is simultaneously data and a hole for the
+# sparse file tests.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource devnull {
+        host-path = "/dev/null"
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "devnull" {
+blake2b-256="0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8"
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
