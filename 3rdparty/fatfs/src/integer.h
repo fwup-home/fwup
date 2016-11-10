@@ -9,6 +9,8 @@
 
 #include <windows.h>
 #include <tchar.h>
+typedef unsigned __int64 QWORD;
+
 
 #else			/* Embedded platform */
 
@@ -29,6 +31,9 @@ typedef uint32_t	UINT;
 /* These types MUST be 32 bit */
 typedef int32_t			LONG;
 typedef uint32_t	DWORD;
+
+/* This type MUST be 64-bit (Remove this for C89 compatibility) */
+typedef uint64_t QWORD;
 
 #endif
 
