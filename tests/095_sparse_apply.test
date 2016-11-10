@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#
+# Manually create a .fw file that includes a sparse file inside
+# of it and then test applying it. This is done in a way that
+# can be run on systems w/o sparse file support.
+#
+
+. ./common.sh
+
+# Create the "sparse" resource.
+
+# Create the compacted 60KB of random bytes
+COMPACT_FILE=$WORK/compact.bin
+for i in {0..6}; do
+    cat $TESTFILE_1K >> $COMPACT_FILE
+done
+
+# Create the sparse file using the Fibonacci
+# series to specify the gaps between writes. This
+# makes it possible to create a pathological sequence
+# of data and hole segments.
+SPARSE_FILE=$WORK/sparse.bin
+seek=0
+hole1=0
+hole2=1
+loc=0
+SPARSE_MAP="{0"
+for i in {0..31}; do
+    skip=$(($i * 224))
+    hole=$(($hole1 + $hole2))
+    seek=$(($seek+$hole))
+    dd if=$COMPACT_FILE bs=1 count=224 skip=$skip of=$SPARSE_FILE.tmp seek=$seek conv=notrunc 2>/dev/null
+    SPARSE_MAP="$SPARSE_MAP,$hole,224"
+
+    seek=$(($seek+224))
+
+    hole1=$hole2
+    hole2=$hole
+done
+SPARSE_MAP="$SPARSE_MAP}"
+
+# Make sure that the sparse file is block-sized since it will be used
+# to check fwup's output and fwup only outputs blocks.
+dd if=$SPARSE_FILE.tmp bs=512 of=$SPARSE_FILE conv=sync,sparse 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${COMPACT_FILE}"
+}
+
+task complete {
+        on-resource sparsefile { raw_write(0) }
+}
+EOF
+
+NEW_META_CONF=$WORK/new-meta.conf
+cat >$NEW_META_CONF <<EOF
+file-resource "sparsefile" {
+length=$SPARSE_MAP
+blake2b-256="41efd72b91db5f9cc01642393f343770d0640448a433a8cfcdadab43b33904d8"
+}
+task "complete" {
+on-resource "sparsefile" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+
+# Create the new "sparse" fw file
+NEW_FWFILE=$WORK/new.fw
+unzip -q $FWFILE -d $UNZIPDIR
+cp $NEW_META_CONF $UNZIPDIR/meta.conf
+cd $UNZIPDIR
+zip -q $NEW_FWFILE meta.conf data/sparsefile
+cd -
+
+# It should still verify
+$FWUP_APPLY -V -i $NEW_FWFILE
+
+# Create the output and compare it to what we made
+$FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t complete
+cmp $SPARSE_FILE $IMGFILE
