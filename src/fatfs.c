@@ -297,14 +297,36 @@ int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const ch
         current_file_ = strdup(filename);
     }
 
-    CHECK("fat_write can't seek in file", filename, f_lseek(&fil_, offset));
+    // Check if this pwrite requires a seek.
+    DWORD desired_offset = offset;
+    if (desired_offset != f_tell(&fil_)) {
+        // Need to seek, but if we're seeking past the end, be sure to fill in with zeros.
+        if (desired_offset > f_size(&fil_)) {
+            // Seek to the end
+            CHECK("fat_write can't seek to end of file", filename, f_lseek(&fil_, f_size(&fil_)));
+
+            // Write zeros.
+            DWORD zero_count = desired_offset - f_tell(&fil_);
+            char zero_buffer[512];
+            memset(zero_buffer, 0, sizeof(zero_buffer));
+            while (zero_count) {
+                DWORD btw = (zero_count < sizeof(zero_buffer) ? zero_count : sizeof(zero_buffer));
+                DWORD bw;
+                CHECK("fat_write can't write", filename, f_write(&fil_, zero_buffer, btw, &bw));
+                if (btw != bw)
+                    ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+                zero_count -= bw;
+            }
+        } else {
+            CHECK("fat_write can't seek in file", filename, f_lseek(&fil_, desired_offset));
+        }
+    }
 
     UINT bw;
     CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
 
-    if (size != bw) {
-      ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
-    }
+    if (size != bw)
+        ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
 
     return 0;
 }
