@@ -263,11 +263,20 @@ static int set_time_from_cfg(cfg_t *cfg)
     // (e.g., FATFS timestamps) to the firmware creation date. This is needed
     // to make sure that the images that we create are bit-for-bit identical.
     const char *timestr = cfg_getstr(cfg, "meta-creation-date");
-    if (!timestr)
-        ERR_RETURN("Firmware missing meta-creation-date");
 
     struct tm tmp;
-    OK_OR_RETURN(timestamp_to_tm(timestr, &tmp));
+    if (timestr) {
+        // Set the timestamp to the creation time
+        OK_OR_RETURN(timestamp_to_tm(timestr, &tmp));
+    } else {
+        // Set the timestamp to FAT time 0
+        tmp.tm_year = 80;
+        tmp.tm_mon = 0;
+        tmp.tm_mday = 0;
+        tmp.tm_hour = 0;
+        tmp.tm_min = 0;
+        tmp.tm_sec = 0;
+    }
 
     fatfs_set_time(&tmp);
     return 0;
