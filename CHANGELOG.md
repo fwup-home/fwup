@@ -2,7 +2,17 @@
 
 ## v0.10.1-dev
 
+  * New features
+    * Added sparse file support. This can significantly reduce the amount of
+      time required to write a large EXT2 partition to Flash. It queries the
+      OS for gaps so that it will write to the same places that mke2fs wrote
+      and skip the places it didn't. See README.md for more info.
+    * Updated FatFs from R0.11a to R0.12b. See
+      http://elm-chan.org/fsw/ff/updates.txt.
+
   * Backwards incompatible changes
+    * Sparse file support - if used, the created archives will not work on old
+      versions of fwup.
     * Remove support for fw_create and fw_add_local_file. Neither of these were
       used much and there were better ways of accomplishing their functions.
       They became a pain to support, since they create .fw files that are

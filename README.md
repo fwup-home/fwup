@@ -32,7 +32,10 @@ repeatable way. The utility has the following features:
 
   8. Firmware archive digital signature creation and verification (BETA!!)
 
-  9. Permissive license (Apache 2.0 License - see end of doc)
+  9. Sparse file support to reduce number of bytes that need to be written when
+     initializing large filesystems (see section on sparse files)
+
+  10. Permissive license (Apache 2.0 License - see end of doc)
 
 This utility is based off of firmware update utilities I've written for various
 projects. It has already received a lot of use with the open source Nerves
@@ -456,6 +459,32 @@ raw_write(block_offset)               | 0.1.0 | Write the resource to the specif
 uboot_clearenv(my_uboot_env)             | 0.10.0 | Initialize a clean, variable free U-boot environment
 uboot_setenv(my_uboot_env, name, value)  | 0.10.0 | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name, value)  | 0.10.0 | Unset the specified U-boot variable
+
+## Sparse files
+
+Sparse files are files with gaps in them that are only represented on the
+filesystem in metadata. Not all filesystems support sparse files, but in
+general, Linux has good support. Creating a sparse file is easy: just seek to a
+location past the end of file and write some data. The gap is "stored" as a
+hole in the filesystem metadata. Data is read back from the hole as zeros. Data
+and holes are restricted to start and end on filesystem block boundaries, so
+small gaps may be filled in with zeros rather than being stored as a hole.
+
+Why is this important? If you're using `fwup` to write a large EXT2 partition,
+you'll find that it contains many gaps. It would be better to just write the
+EXT2 data and metadata without filling in all of the unused space. Sparse file
+support in `fwup` lets you do that. Since EXT2 filesystems legitimately contain
+long runs of zeros that must be written to Flash, `fwup` queries the filesystem
+containing the EXT2 data to find the gaps. Other tools like `dd(1)` only look
+for runs of zeros so their sparse file support cannot be used to emulate this.
+You may see warnings about copying sparse files to Flash and it has to do with
+tools not writing long runs of zeros. The consequence of `fwup` querying the
+filesystem for holes is that this feature only works when firmware update
+archives are created on operating systems and filesystems that support it. Of
+course, firmware updates can be applied on systems without support for querying
+holes in files. Those systems also benefit from not having to write as much to
+Flash devices. If you instead apply a firmware update to a normal file, though,
+the OS will likely fill in the gaps with zeros and thus offer no improvement.
 
 # Firmware authentication
 
