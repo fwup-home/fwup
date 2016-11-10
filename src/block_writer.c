@@ -55,20 +55,21 @@ static ssize_t flush_buffer(struct block_writer *bw)
     size_t block_boundary = (bw->buffer_index + ~bw->block_size_mask) & bw->block_size_mask;
     ssize_t added_bytes = bw->added_bytes;
     if (block_boundary != bw->buffer_index) {
-        added_bytes = block_boundary - bw->buffer_index;
-        memset(&bw->buffer[bw->buffer_index], 0, added_bytes);
+        ssize_t padding_bytes = block_boundary - bw->buffer_index;
+        memset(&bw->buffer[bw->buffer_index], 0, padding_bytes);
+        added_bytes += padding_bytes;
         bw->buffer_index = block_boundary;
     }
 
     ssize_t rc = pwrite(bw->fd, bw->buffer, bw->buffer_index, bw->write_offset);
+    if (rc != (ssize_t) bw->buffer_index)
+        return -1;
+
+    // Success. Adjust rc to not count the padding.
     bw->write_offset += bw->buffer_index;
     bw->buffer_index = 0;
     bw->added_bytes = 0;
-
-    // Don't report back the bytes that we padded the output by.
-    rc -= added_bytes;
-
-    return rc;
+    return rc - added_bytes;
 }
 
 /**
@@ -114,7 +115,7 @@ ssize_t block_writer_pwrite(struct block_writer *bw, const void *buf, size_t cou
             // Not enough to write to disk, so buffer for next time
             memcpy(&bw->buffer[bw->buffer_index], buf, count);
             bw->buffer_index += count;
-            return 0;
+            return amount_written;
         } else {
             // Fill out the buffer
             memcpy(&bw->buffer[bw->buffer_index], buf, to_write);
@@ -132,6 +133,7 @@ ssize_t block_writer_pwrite(struct block_writer *bw, const void *buf, size_t cou
 empty_buffer:
     assert(bw->buffer_index == 0);
     assert(offset >= bw->write_offset);
+    assert(bw->added_bytes == 0);
 
     // Advance to the offset, but make sure that it's on a block boundary
     bw->write_offset = (offset & bw->block_size_mask);
@@ -146,22 +148,25 @@ empty_buffer:
         //       a use case for this, but the config file format specifies everything in block
         //       offsets anyway.
         memset(bw->buffer, 0, padding);
+        bw->added_bytes += padding;
         if (count + padding >= bw->block_size) {
             // Handle the block fragment
             size_t to_write = bw->block_size - padding;
             memcpy(&bw->buffer[padding], buf, to_write);
-            if (pwrite(bw->fd, buf, bw->block_size, bw->write_offset) < 0)
+            if (pwrite(bw->fd, bw->buffer, bw->block_size, bw->write_offset) < 0)
                 return -1;
 
             bw->write_offset += bw->block_size;
-            amount_written += to_write;
+            amount_written += bw->block_size - bw->added_bytes;
+
+            bw->added_bytes = 0;
             buf += to_write;
             count -= to_write;
         } else {
             // Buffer the block fragment for next time
             memcpy(&bw->buffer[padding], buf, count);
             bw->buffer_index = count + padding;
-            return 0;
+            return amount_written;
         }
     }
 
@@ -172,10 +177,12 @@ empty_buffer:
     // without even trying to buffer.
     if (count > bw->buffer_size) {
         size_t to_write = (count & bw->block_size_mask);
-        amount_written += to_write;
         if (pwrite(bw->fd, buf, to_write, bw->write_offset) < 0)
             return -1;
         bw->write_offset += to_write;
+        amount_written += to_write - bw->added_bytes;
+
+        bw->added_bytes = 0;
         buf += to_write;
         count -= to_write;
     }
