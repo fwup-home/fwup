@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.10.1-dev
+## v0.11.0-dev
 
   * New features
     * Added sparse file support. This can significantly reduce the amount of
