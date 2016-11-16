@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#
+# Test that fwup returns an error if a resource name
+# isn't found.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+task complete {
+	on-resource foo { raw_write(0) }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting failure?"
+    exit 1
+fi

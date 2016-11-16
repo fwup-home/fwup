@@ -91,7 +91,8 @@ TESTS = 001_simple_fw.test \
 	087_crypto_compat.test \
 	088_missing_hash.test \
 	089_dev_null.test \
-	095_sparse_apply.test
+	095_sparse_apply.test \
+	096_missing_resource.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

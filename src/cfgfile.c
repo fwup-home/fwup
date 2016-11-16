@@ -196,16 +196,17 @@ static int cb_define_eval_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
     return define_helper(cfg, argv[0], result_str, true);
 }
 
+// libconfuse calls the validators every time an item is added
+// to a section. The idiom is to validate the most recently
+// added item each time. This one is also the last one in the list.
+// It is a coding error if cfg_opt_getnsec returns error, so errors
+// aren't checked. (They segfault.)
+#define MOST_RECENTLY_ADDED_SECTION(opt) \
+    cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1)
+
 static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
 {
-    // This is called for each file-resource, so we only need to
-    // validate the last one.
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-    if(!sec)
-    {
-        cfg_error(cfg, "section is NULL!?");
-        return -1;
-    }
+    cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
     const char *path = cfg_getstr(sec, "host-path");
     if (!path) {
         cfg_error(cfg, "host-path must be set for file-resource '%s'", cfg_title(sec));
@@ -217,14 +218,7 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
 
 static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
 {
-    // This is called for each mbr, so we only need to
-    // validate the last one.
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-    if(!sec)
-    {
-        cfg_error(cfg, "section is NULL!?");
-        return -1;
-    }
+    cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
 
     const char *path = cfg_getstr(sec, "bootstrap-code-host-path");
     const char *bootstrap_hex = cfg_getstr(sec, "bootstrap-code");
@@ -257,14 +251,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
 
 static int cb_validate_uboot(cfg_t *cfg, cfg_opt_t *opt)
 {
-    // This is called for each uboot environment block, so we only need to
-    // validate the last one.
-    cfg_t *sec = cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1);
-    if(!sec)
-    {
-        cfg_error(cfg, "section is NULL!?");
-        return -1;
-    }
+    cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
 
     if (uboot_env_verify_cfg(sec) < 0) {
         cfg_error(cfg, last_error());
@@ -272,6 +259,24 @@ static int cb_validate_uboot(cfg_t *cfg, cfg_opt_t *opt)
     }
 
     return 0;
+}
+
+static int cb_validate_on_resource(cfg_t *cfg, cfg_opt_t *opt)
+{
+    cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
+
+    const char *resource_name = cfg_title(sec);
+
+    cfg_t *resource;
+    int i = 0;
+    while ((resource = cfg_getnsec(toplevel_cfg, "file-resource", i)) != NULL) {
+        if (strcmp(cfg_title(resource), resource_name) == 0)
+            return 0;
+        i++;
+    }
+
+    cfg_error(cfg, "unknown resource: %s", resource_name);
+    return -1;
 }
 
 // libconfuse v3.0 ignore unknown options
@@ -429,6 +434,8 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
     cfg_set_validate_func(toplevel_cfg, "uboot-environment", cb_validate_uboot);
+    cfg_set_validate_func(toplevel_cfg, "task|on-resource", cb_validate_on_resource);
+
     switch (cfg_parse(toplevel_cfg, filename)) {
     case CFG_SUCCESS:
         break;
