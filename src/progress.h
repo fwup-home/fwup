@@ -17,6 +17,8 @@
 #ifndef PROGRESS_H
 #define PROGRESS_H
 
+#include <stdint.h>
+
 /**
  * @brief How to report progress to the user
  */
@@ -33,13 +35,16 @@ struct fwup_progress {
 
     // If we're showing progress when applying, this is the number of progress_units that
     // should be 100%.
-    int total_units;
+    int64_t total_units;
 
     // This counts up as we make progress.
-    int current_units;
+    int64_t current_units;
 
     // The most recent progress reported is cached to avoid unnecessary context switching/IO
     int last_reported;
+
+    // If the mode supports it, this is the start time of the update in milliseconds
+    int start_time;
 };
 
 void progress_init(struct fwup_progress *progress, enum fwup_progress_mode mode);

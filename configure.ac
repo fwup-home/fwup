@@ -30,7 +30,7 @@ AC_SYS_LARGEFILE
 AC_PROG_CC_C99
 
 # Checks for library functions
-AC_CHECK_FUNCS([memset setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite])
+AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
