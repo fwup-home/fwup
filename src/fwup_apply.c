@@ -37,6 +37,7 @@
 #include "fwfile.h"
 #include "archive_open.h"
 #include "sparse_file.h"
+#include "progress.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -282,100 +283,18 @@ static int set_time_from_cfg(cfg_t *cfg)
     return 0;
 }
 
-static void fwup_apply_report_progress(struct fun_context *fctx, int progress_units)
-{
-    if (fctx->progress_mode == FWUP_APPLY_NO_PROGRESS)
-        return;
-
-    fctx->current_progress_units += progress_units;
-    int percent;
-    if (fctx->total_progress_units > 0)
-        percent = (int) ((100.0 * fctx->current_progress_units + 50.0) / fctx->total_progress_units);
-    else
-        percent = 0;
-
-    // Don't report 100% until the very, very end just in case something takes
-    // longer than expected in the code after all progress units have been reported.
-    if (percent > 99)
-        percent = 99;
-
-    if (percent == fctx->last_progress_reported)
-        return;
-
-    fctx->last_progress_reported = percent;
-
-    switch (fctx->progress_mode) {
-    case FWUP_APPLY_NUMERIC_PROGRESS:
-        printf("%d\n", percent);
-        break;
-
-    case FWUP_APPLY_NORMAL_PROGRESS:
-        printf("\r%3d%%", percent);
-        fflush(stdout);
-        break;
-
-    case FWUP_APPLY_FRAMING_PROGRESS:
-        fwup_output(FRAMING_TYPE_PROGRESS, percent, "");
-        break;
-
-    case FWUP_APPLY_NO_PROGRESS:
-    default:
-        break;
-    }
-}
-
-static void fwup_apply_report_final_progress(struct fun_context *fctx)
-{
-    switch (fctx->progress_mode) {
-    case FWUP_APPLY_NUMERIC_PROGRESS:
-        printf("100\n");
-        break;
-
-    case FWUP_APPLY_NORMAL_PROGRESS:
-        printf("\r100%%\n");
-        break;
-
-    case FWUP_APPLY_FRAMING_PROGRESS:
-        fwup_output(FRAMING_TYPE_PROGRESS, 100, "");
-        break;
-
-    case FWUP_APPLY_NO_PROGRESS:
-    default:
-        break;
-    }
-}
-
-/**
- * @brief Report zero percent progress
- *
- * This function's only purpose is to improve the user experience of seeing
- * 0% progress as soon as fwup is called. See fwup.c.
- */
-void fwup_apply_zero_progress(enum fwup_apply_progress progress)
-{
-    // Minimally initialize the fun_context so that fwup_apply_report_progress
-    // works.
-    struct fun_context fctx;
-    memset(&fctx, 0, sizeof(fctx));
-    fctx.progress_mode = progress;
-    fctx.last_progress_reported = -1;
-    fwup_apply_report_progress(&fctx, 0);
-}
-
-int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, enum fwup_apply_progress progress, const unsigned char *public_key)
+int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, struct fwup_progress *progress, const unsigned char *public_key)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.fatfs_ptr = fatfs_ptr_callback;
-    fctx.progress_mode = progress;
-    fctx.report_progress = fwup_apply_report_progress;
-    fctx.last_progress_reported = 0; // fwup_apply_zero_progress is assumed to have been called.
+    fctx.progress = progress;
     fctx.output_fd = output_fd;
 
     // Report 0 progress before doing anything
-    fwup_apply_report_progress(&fctx, 0);
+    progress_report(fctx.progress, 0);
 
     struct fwup_data pd;
     memset(&pd, 0, sizeof(pd));
@@ -417,7 +336,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
     // Compute the total progress units if we're going to display it
-    if (progress != FWUP_APPLY_NO_PROGRESS) {
+    if (progress != PROGRESS_MODE_OFF) {
         fctx.type = FUN_CONTEXT_INIT;
         OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_compute_progress));
 
@@ -493,7 +412,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     fctx.output_fd = -1;
 
     // Report 100% to the user
-    fwup_apply_report_final_progress(&fctx);
+    progress_report_complete(fctx.progress);
 
 cleanup:
     sparse_file_free(&pd.sfm);

@@ -24,6 +24,7 @@ fwup_SOURCES=\
 	mmc_linux.c \
 	mmc_osx.c \
 	mmc_windows.c \
+	progress.c \
 	requirement.c \
 	simple_string.c \
 	sparse_file.c \
@@ -48,6 +49,7 @@ fwup_SOURCES=\
 	fwup_verify.h \
 	mbr.h \
 	mmc.h \
+	progress.h \
 	requirement.h \
 	simple_string.h \
 	sparse_file.h \

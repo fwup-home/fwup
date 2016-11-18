@@ -29,19 +29,10 @@ enum fun_context_type {
     FUN_CONTEXT_FILE
 };
 
-/**
- * @brief How to report progress to the user
- */
-enum fwup_apply_progress {
-    FWUP_APPLY_NO_PROGRESS,
-    FWUP_APPLY_NUMERIC_PROGRESS,
-    FWUP_APPLY_NORMAL_PROGRESS,
-    FWUP_APPLY_FRAMING_PROGRESS
-};
-
 #define FUN_MAX_ARGS  (10)
 struct archive;
 struct fat_cache;
+struct fwup_progress;
 
 struct fun_context {
     // Context of where the function is called
@@ -60,25 +51,12 @@ struct fun_context {
     // When processing events (on-init, on-resource, on-finish, etc.) this is that configuration
     cfg_t *on_event;
 
-    // This is set based on command line parameters
-    enum fwup_apply_progress progress_mode;
-
-    // If we're showing progress when applying, this is the number of progress_units that
-    // should be 100%.
-    int total_progress_units;
-
-    // This counts up as we make progress.
-    int current_progress_units;
-
-    // The most recent progress reported is cached to avoid unnecessary context switching/IO
-    int last_progress_reported;
+    // Progress reporting
+    struct fwup_progress *progress;
 
     // If the context supplies data, this function gets it. If read returns 0,
     // no more data is available. If <0, then there's an error.
     int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset);
-
-    // Callback for reporting progress
-    void (*report_progress)(struct fun_context *fctx, int progress_units);
 
     // Callback for getting a fat_cache handle for use with the fatfs code.
     int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc);

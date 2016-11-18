@@ -36,6 +36,7 @@
 #include "fwup_genkeys.h"
 #include "fwup_sign.h"
 #include "fwup_verify.h"
+#include "progress.h"
 #include "simple_string.h"
 #include "../config.h"
 
@@ -398,16 +399,17 @@ int main(int argc, char **argv)
         if (!mmc_device_path)
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
 
-        enum fwup_apply_progress progress_option;
+        enum fwup_progress_mode progress_mode;
         if (quiet)
-            progress_option = FWUP_APPLY_NO_PROGRESS;
+            progress_mode = PROGRESS_MODE_OFF;
         else if (fwup_framing)
-            progress_option = FWUP_APPLY_FRAMING_PROGRESS;
+            progress_mode = PROGRESS_MODE_FRAMING;
         else if (numeric_progress)
-            progress_option = FWUP_APPLY_NUMERIC_PROGRESS;
+            progress_mode = PROGRESS_MODE_NUMERIC;
         else
-            progress_option = FWUP_APPLY_NORMAL_PROGRESS;
-        fwup_apply_zero_progress(progress_option);
+            progress_mode = PROGRESS_MODE_NORMAL;
+        struct fwup_progress progress;
+        progress_init(&progress, progress_mode);
 
         // Check if the mmc_device_path is really a special device. If
         // we're just creating an image file, then don't try to unmount
@@ -451,7 +453,7 @@ int main(int argc, char **argv)
         if (fwup_apply(input_firmware,
                        task,
                        output_fd,
-                       progress_option,
+                       &progress,
                        public_key) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
