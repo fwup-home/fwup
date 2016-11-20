@@ -396,6 +396,10 @@ int eval_math_str(const char *str, char *result_str, int result_str_len)
     if (eval_math(str, &result) < 0)
         return -1;
 
-    sprintf(result_str, "%ld", result);
+#ifdef _WIN32
+    sprintf(result_str, "%I64d", result);
+#else
+    sprintf(result_str, "%lld", result);
+#endif
     return 0;
 }
