@@ -311,7 +311,7 @@ int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const ch
             memset(zero_buffer, 0, sizeof(zero_buffer));
             while (zero_count) {
                 DWORD btw = (zero_count < sizeof(zero_buffer) ? zero_count : sizeof(zero_buffer));
-                DWORD bw;
+                UINT bw;
                 CHECK("fat_write can't write", filename, f_write(&fil_, zero_buffer, btw, &bw));
                 if (btw != bw)
                     ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
