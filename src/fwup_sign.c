@@ -126,7 +126,7 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     out = NULL;
     in = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
     // On Windows, the output_file must not exist or the rename fails.
     if (unlink(output_filename) < 0 && errno != ENOENT)
         ERR_CLEANUP_MSG("Error overwriting '%s': %s", output_filename, strerror(errno));

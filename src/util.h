@@ -82,7 +82,7 @@ void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
 char* strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
 
-#ifdef __WIN32__
+#ifdef _WIN32
 // Assume that all windows platforms are little endian
 #define TO_BIGENDIAN16(X) _byteswap_ushort(X)
 #define FROM_BIGENDIAN16(X) _byteswap_ushort(X)
@@ -131,7 +131,7 @@ int set_environment(const char *key, const char *value);
 
 // On Win32, if open(2) isn't called with O_BINARY, the results are very
 // unintuitive for anyone used to Linux development.
-#ifdef __WIN32__
+#ifdef _WIN32
 #define O_WIN32_BINARY O_BINARY
 #else
 #define O_WIN32_BINARY 0
