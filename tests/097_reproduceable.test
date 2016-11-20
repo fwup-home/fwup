@@ -1,0 +1,121 @@
+#!/bin/bash
+
+#
+# Create a firmware image and verify that it we create it a second later that
+# the bits are the same. This checks for timestamps being stored in the files.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | p0: Boot (Simulated)        |
+# +-----------------------------+
+# | p1*: Rootfs A (Simulated)   |
+# +-----------------------------+
+# | p1*: Rootfs B (Simulated)   |
+# +-----------------------------+
+# | p2: Data (Simulated)        |
+# +-----------------------------+
+
+define(BOOT_PART_OFFSET, 256) # at offset 128K
+define(BOOT_PART_COUNT, 256)
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+define(APP_PART_OFFSET, 4096)
+define(APP_PART_COUNT, 1024)
+
+file-resource boot.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource data.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.stuff {
+        host-path = "${TESTFILE_150K}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+mbr mbr-b {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+    }
+    on-resource boot.stuff { raw_write(\${BOOT_PART_OFFSET}) }
+    on-resource data.stuff { raw_write(\${APP_PART_OFFSET}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_B_PART_OFFSET})
+    on-init { mbr_write(mbr-a) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_A_PART_OFFSET})
+    on-init { mbr_write(mbr-b) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+}
+
+# This task is just needed to help support the unit test
+task dump_mbr_b {
+    on-init {
+        mbr_write(mbr-b)
+    }
+}
+EOF
+
+# Create the "same" firmware file two seconds apart
+# to see if there are any timestamps not affected by $NOW
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+sleep 2
+NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE.2
+
+cmp $FWFILE $FWFILE.2

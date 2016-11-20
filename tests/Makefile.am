@@ -92,7 +92,8 @@ TESTS = 001_simple_fw.test \
 	088_missing_hash.test \
 	089_dev_null.test \
 	095_sparse_apply.test \
-	096_missing_resource.test
+	096_missing_resource.test \
+	097_reproduceable.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \
