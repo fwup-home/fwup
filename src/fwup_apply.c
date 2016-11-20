@@ -335,30 +335,27 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     if (fctx.task == 0)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
-    // Compute the total progress units if we're going to display it
-    if (progress != PROGRESS_MODE_OFF) {
-        fctx.type = FUN_CONTEXT_INIT;
-        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_compute_progress));
+    // Compute the total progress units
+    fctx.type = FUN_CONTEXT_INIT;
+    OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_compute_progress));
 
-        fctx.type = FUN_CONTEXT_FILE;
-
-        cfg_t *sec;
-        int i = 0;
-        while ((sec = cfg_getnsec(fctx.task, "on-resource", i++)) != NULL) {
-            cfg_t *resource = cfg_gettsec(fctx.cfg, "file-resource", sec->title);
-            if (!resource) {
-                // This really shouldn't happen, but failing to calculate
-                // progress for a missing file-resource seems harsh.
-                INFO("Can't find file-resource for %s", sec->title);
-                continue;
-            }
-
-            OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", sec->title, fun_compute_progress));
+    fctx.type = FUN_CONTEXT_FILE;
+    cfg_t *sec;
+    int i = 0;
+    while ((sec = cfg_getnsec(fctx.task, "on-resource", i++)) != NULL) {
+        cfg_t *resource = cfg_gettsec(fctx.cfg, "file-resource", sec->title);
+        if (!resource) {
+            // This really shouldn't happen, but failing to calculate
+            // progress for a missing file-resource seems harsh.
+            INFO("Can't find file-resource for %s", sec->title);
+            continue;
         }
 
-        fctx.type = FUN_CONTEXT_FINISH;
-        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_compute_progress));
+        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", sec->title, fun_compute_progress));
     }
+
+    fctx.type = FUN_CONTEXT_FINISH;
+    OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_compute_progress));
 
     // Run
     {
