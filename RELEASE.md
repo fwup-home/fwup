@@ -3,9 +3,10 @@
   1. Pre-release: Check version numbers on static link script
      (`scripts/download_deps.sh`). There may be security updates! Verify that
      they work.
-  2. Run a coverity scan. See https://scan.coverity.com/projects/fhunleth-fwup.
-     Scans must be manually uploaded since the travis-ci integration isn't
-     working. Fix issues.
+  2. Run a coverity scan by changing to the coverity branch and fast forwarding
+     it up to the latest master. Push and wait for travis-ci. Eventually the
+     results will be at https://scan.coverity.com/projects/fhunleth-fwup. Fix
+     issues.
   3. Update `CHANGELOG.md` with a bulletpoint list of new features and bug fixes
   4. Remove the `-dev` from the version numbers in `CHANGELOG.md` and `VERSION`. If
      doing an `rc` release, mark them appropriately.
