@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.11.0-dev
+## v0.11.0
 
   * New features
     * Added sparse file support. This can significantly reduce the amount of
@@ -9,6 +9,12 @@
       and skip the places it didn't. See README.md for more info.
     * Updated FatFs from R0.11a to R0.12b. See
       http://elm-chan.org/fsw/ff/updates.txt.
+
+  * Bug fixes
+    * Several issues were found and fixed in the write caching code by
+      constructing a special .fw file manually. To my knowledge, none of the
+      issues could be triggered w/o sparse file support and a filesystem
+      that supported <512 byte sparse blocks.
 
   * Backwards incompatible changes
     * Sparse file support - if used, the created archives will not work on old
