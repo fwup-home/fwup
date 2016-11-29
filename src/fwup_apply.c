@@ -196,8 +196,6 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         ERR_RETURN(archive_error_string(p->a));
 
     *offset = p->actual_offset;
-//    if (*offset != (off_t) offset64)
-//        ERR_RETURN("Out of sync with archive. Please file a bug: %d vs. %d", (int) *offset, (int) p->actual_offset);
 
     if (remaining_data_in_sparse_file_chunk > (off_t) *len) {
         // The amount decompressed doesn't cross a sparse file hole
