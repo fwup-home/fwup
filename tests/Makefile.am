@@ -93,7 +93,9 @@ TESTS = 001_simple_fw.test \
 	089_dev_null.test \
 	095_sparse_apply.test \
 	096_missing_resource.test \
-	097_reproduceable.test
+	097_reproduceable.test \
+	098_sparse_empty.test \
+	099_sparse_lasthole.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

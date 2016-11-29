@@ -232,7 +232,7 @@ int raw_write_run(struct fun_context *fctx)
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
     off_t expected_length = sparse_file_data_size(&sfm);
 
-    // Just in case we're raw writing to the FAT partition, make sure
+    // Just in case we're raw writing to a FAT partition, make sure
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL);
 
@@ -263,6 +263,24 @@ int raw_write_run(struct fun_context *fctx)
 
         len_written += written;
         progress_report(fctx->progress, len);
+    }
+
+    size_t ending_hole = sparse_ending_hole_size(&sfm);
+    if (ending_hole) {
+        // If this is a regular file, seeking is insufficient in making the file
+        // the right length, so write a block of zeros to the end.
+        char zeros[512];
+        memset(zeros, 0, sizeof(zeros));
+        size_t to_write = sizeof(zeros);
+        if (ending_hole < to_write)
+            to_write = ending_hole;
+        off_t offset = sparse_file_size(&sfm) - to_write;
+        ssize_t written = block_writer_pwrite(&writer, zeros, to_write, dest_offset + offset);
+        if (written < 0)
+            ERR_CLEANUP_MSG("raw_write couldn't write to hole at offset %lld", dest_offset + offset);
+
+        // Unaccount for these bytes
+        len_written += written - to_write;
     }
 
     ssize_t lastwritten = block_writer_free(&writer);
@@ -477,7 +495,8 @@ int fat_write_run(struct fun_context *fctx)
     fatfs_rm(fc, fctx->argv[2]);
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
-    off_t expected_length = sparse_file_data_size(&sfm);
+    off_t expected_data_length = sparse_file_data_size(&sfm);
+    off_t expected_length = sparse_file_size(&sfm);
 
     // Handle zero-length file
     if (expected_length == 0) {
@@ -509,7 +528,13 @@ int fat_write_run(struct fun_context *fctx)
         progress_report(fctx->progress, len);
     }
 
-    if (len_written != expected_length) {
+    size_t ending_hole = sparse_ending_hole_size(&sfm);
+    if (ending_hole) {
+        // If the file ends in a hole, fatfs_pwrite can be used to grow it.
+        OK_OR_CLEANUP(fatfs_pwrite(fc, fctx->argv[2], (int) expected_length, NULL, 0));
+    }
+
+    if (len_written != expected_data_length) {
         if (len_written == 0)
             ERR_CLEANUP_MSG("fat_write didn't write anything. Was it called twice in one on-resource?");
         else

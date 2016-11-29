@@ -150,6 +150,20 @@ size_t sparse_file_data_size(const struct sparse_file_map *sfm)
 }
 
 /**
+ * @brief Returns how many bytes are in the hole at the very end of the file
+ * @param sfm the sparse map
+ * @return true if ending with a hole; false if not
+ */
+size_t sparse_ending_hole_size(const struct sparse_file_map *sfm)
+{
+    // If even length then it ends with a hole, so return it.
+    if ((sfm->map_len & 1) == 0)
+        return sfm->map[sfm->map_len - 1];
+    else
+        return 0;
+}
+
+/**
  * @brief Compute a sparse map of a file from a file descriptor
  *
  * The fd's position is left at an arbitrary location. This can
@@ -311,4 +325,3 @@ int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int f
     *len = rc;
     return 0;
 }
-

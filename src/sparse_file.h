@@ -55,6 +55,7 @@ int sparse_file_build_map_from_fd(int fd, struct sparse_file_map *sfm);
 
 size_t sparse_file_size(const struct sparse_file_map *sfm);
 size_t sparse_file_data_size(const struct sparse_file_map *sfm);
+size_t sparse_ending_hole_size(const struct sparse_file_map *sfm);
 
 void sparse_file_start_read(const struct sparse_file_map *sfm, struct sparse_file_read_iterator *iterator);
 int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int fd, off_t *offset, void *buf, size_t buf_len, size_t *len);

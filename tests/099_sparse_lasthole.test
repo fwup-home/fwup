@@ -1,0 +1,94 @@
+#!/bin/bash
+
+#
+# Manually create a .fw file that has a hole at the end.
+#
+
+. ./common.sh
+
+# Create the "sparse" resource.
+SPARSE_FILE=$WORK/sparse.bin
+cp $TESTFILE_1K $SPARSE_FILE
+dd bs=1 count=0 seek=1536 of=$SPARSE_FILE 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${TESTFILE_1K}"
+}
+task raw {
+        on-resource sparsefile { raw_write(0) }
+}
+task fat {
+        on-resource sparsefile {
+            fat_mkfs(0, 32760)
+            fat_write(4, "sparse.bin")
+        }
+}
+EOF
+
+NEW_META_CONF=$WORK/new-meta.conf
+cat >$NEW_META_CONF <<EOF
+file-resource "sparsefile" {
+length={1024,512}
+blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "raw" {
+on-resource "sparsefile" {
+funlist={"2","raw_write","4"}
+}
+}
+task "fat" {
+on-resource "sparsefile" {
+funlist={"3","fat_mkfs","0","32760","3","fat_write","0","sparse.bin"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+
+# Create the new "sparse" fw file
+NEW_FWFILE=$WORK/new.fw
+unzip -q $FWFILE -d $UNZIPDIR
+cp $NEW_META_CONF $UNZIPDIR/meta.conf
+cd $UNZIPDIR
+zip -q $NEW_FWFILE meta.conf data/sparsefile
+cd -
+
+# It should still verify
+$FWUP_APPLY -V -i $NEW_FWFILE
+
+# Check that raw_write works with the sparse file
+$FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t raw
+dd if=$IMGFILE skip=4 of=$IMGFILE.part 2>/dev/null
+cmp $SPARSE_FILE $IMGFILE.part
+
+# Check that fat_write works with the sparse file
+rm $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t fat
+
+EXPECTED_FAT_OUTPUT=$WORK/expected.out
+ACTUAL_FAT_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_FAT_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0020-0000
+Directory for ::/
+
+sparse   bin      1536 1980-01-00   0:00
+        1 file                1 536 bytes
+                         16 623 616 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@0 > $ACTUAL_FAT_OUTPUT
+diff -w $EXPECTED_FAT_OUTPUT $ACTUAL_FAT_OUTPUT
+
+# Check the contents of the file
+mcopy -n -i $WORK/fwup.img@@0 ::/sparse.bin $WORK/actual.sparse.bin
+cmp $SPARSE_FILE $WORK/actual.sparse.bin
+
