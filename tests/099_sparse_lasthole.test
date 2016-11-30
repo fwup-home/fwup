@@ -85,10 +85,10 @@ sparse   bin      1536 1980-01-00   0:00
 EOF
 
 # Check that the directory looks right
-mdir -i $WORK/fwup.img@@0 > $ACTUAL_FAT_OUTPUT
+mdir -i $WORK/fwup.img > $ACTUAL_FAT_OUTPUT
 diff -w $EXPECTED_FAT_OUTPUT $ACTUAL_FAT_OUTPUT
 
 # Check the contents of the file
-mcopy -n -i $WORK/fwup.img@@0 ::/sparse.bin $WORK/actual.sparse.bin
+mcopy -n -i $WORK/fwup.img ::/sparse.bin $WORK/actual.sparse.bin
 cmp $SPARSE_FILE $WORK/actual.sparse.bin
 
