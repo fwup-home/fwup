@@ -2,6 +2,15 @@
 
 ## v0.11.1-dev
 
+  * New features
+    * Added easy way of invoking fwup for those just wanting to program an
+      SDCard. Just run, "fwup myfile.fw" and fwup will automatically look
+      for an attached SDCard, ask for confirmation, and apply the complete
+      task.
+
+  * Bug fixes
+    * Sparse files that end with holes will be the right length when written.
+
 ## v0.11.0
 
   * New features
