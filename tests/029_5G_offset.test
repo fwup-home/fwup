@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test writing to a 5 GB offset. This test shouldn't require
@@ -10,12 +10,12 @@
 . ./common.sh
 
 # No sparse file support on OSX, so skip
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [ "$OSTYPE" = "darwin"* ]; then
     exit 0
 fi
 
-# No sparse file support in Windows 10 bash mode, so skip it too
-if [[ -d "/mnt/c/Users" ]]; then
+# No sparse file support in Windows 10 sh mode, so skip it too
+if [ -d "/mnt/c/Users" ]; then
     exit 0
 fi
 

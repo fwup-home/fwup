@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that applying firmware with the wrong public key fails when
@@ -18,18 +18,18 @@ task complete {
 EOF
 
 # Create new keys
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
 # Sign the firmware
 $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # Create new keys and try to use them instead of the first ones
 # It should be insanely unlikely that we'll generate the same keys twice
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
 # Check that applying the firmware with checking signatures fails
 echo Expecting a failure from apply...

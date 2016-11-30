@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test out reads and writes beyond the fat_cache size. For this

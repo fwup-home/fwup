@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test out progress reporting on a firmware write
@@ -8,10 +8,17 @@
 
 VERSION=$($FWUP_CREATE --version)
 
-if [[ $VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
-    echo "fwup version is $VERSION"
-    exit 0
-else
-    echo "Unexpected fwup version: $VERSION"
-    exit 1
-fi
+case $VERSION in
+    *[0-9].*[0-9].*[0-9])
+        echo "fwup version is $VERSION"
+        exit 0
+        ;;
+    *[0-9].*[0-9].*[0-9]-dev)
+        echo "development fwup version is $VERSION"
+        exit 0
+        ;;
+    *)
+        echo "unexpected fwup version: $VERSION"
+        exit 1
+esac
+

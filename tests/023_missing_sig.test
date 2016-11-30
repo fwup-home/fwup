@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that installing a firmware that's missing a signature fails
@@ -17,9 +17,9 @@ task complete {
 EOF
 
 # Create new keys
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
 # DON'T sign the firmware
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE

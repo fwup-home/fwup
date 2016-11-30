@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test creating a 5GB FAT partition to verify that LFS is enabled
@@ -8,12 +8,12 @@
 . ./common.sh
 
 # No sparse file support on OSX, so skip
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [ "$OSTYPE" = "darwin"* ]; then
     exit 0
 fi
 
 # No sparse file support in Windows 10 bash mode, so skip it too
-if [[ -d "/mnt/c/Users" ]]; then
+if [ -d "/mnt/c/Users" ]; then
     exit 0
 fi
 

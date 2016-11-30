@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that an mbr offset that requires a 32-bit unsigned int works

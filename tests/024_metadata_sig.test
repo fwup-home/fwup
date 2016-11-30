@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that signing checks work when inspecting metadata
@@ -27,9 +27,9 @@ meta-platform="a platform"
 meta-architecture="an architecture"
 EOF
 
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # No signing check should still pass

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that signing firmware after it was made does the right thing
@@ -17,9 +17,9 @@ task complete {
 EOF
 
 # Create new keys
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
 # Create the firmware
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE

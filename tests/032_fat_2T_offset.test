@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test various FAT file system operations at a large
@@ -8,19 +8,19 @@
 . ./common.sh
 
 # No sparse file support on OSX, so skip
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [ "$OSTYPE" = "darwin"* ]; then
     exit 0
 fi
 
-# No sparse file support in Windows 10 bash mode, so skip it too
-if [[ -d "/mnt/c/Users" ]]; then
+# No sparse file support in Windows 10 sh mode, so skip it too
+if [ -d "/mnt/c/Users" ]; then
     exit 0
 fi
 
 # The Raspberry Pi doesn't support big files. This seems like it
 # should work, but since this is an unlikely use case, disable the
 # test for the Raspberry Pis and other 32-bit ARMs.
-if [[ "$OSTYPE" == "linux-gnueabihf" ]]; then
+if [ "$OSTYPE" = "linux-gnueabihf" ]; then
     exit 0
 fi
 

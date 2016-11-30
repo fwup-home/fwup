@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Manually create a .fw file that includes a sparse file inside
@@ -12,7 +12,7 @@
 
 # Create the compacted 60KB of random bytes
 COMPACT_FILE=$WORK/compact.bin
-for i in {0..6}; do
+for i in $(seq 0 6); do
     cat $TESTFILE_1K >> $COMPACT_FILE
 done
 
@@ -26,14 +26,14 @@ hole1=0
 hole2=1
 loc=0
 SPARSE_MAP="{0"
-for i in {0..31}; do
-    skip=$(($i * 224))
-    hole=$(($hole1 + $hole2))
-    seek=$(($seek+$hole))
+for i in $(seq 0 31); do
+    skip=$(expr $i \* 224 || true)
+    hole=$(expr $hole1 + $hole2)
+    seek=$(expr $seek + $hole)
     dd if=$COMPACT_FILE bs=1 count=224 skip=$skip of=$SPARSE_FILE seek=$seek conv=notrunc 2>/dev/null
     SPARSE_MAP="$SPARSE_MAP,$hole,224"
 
-    seek=$(($seek+224))
+    seek=$(expr $seek + 224)
 
     hole1=$hole2
     hole2=$hole
@@ -124,5 +124,4 @@ diff -w $EXPECTED_FAT_OUTPUT $ACTUAL_FAT_OUTPUT
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img@@0 ::/sparse.bin $WORK/actual.sparse.bin
 cmp $SPARSE_FILE $WORK/actual.sparse.bin
-
 

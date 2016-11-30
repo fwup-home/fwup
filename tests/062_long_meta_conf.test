@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that having a long meta.conf doesn't break anything
@@ -25,7 +25,7 @@ task complete {
 EOF
 
 # Pad it substantially
-for i in {1..200}; do
+for i in $(seq 1 200); do
     cat >>$CONFIG << EOF
 task complete$i {
         on-resource abc { raw_write(0) }
@@ -60,7 +60,7 @@ task "complete" {
   }
 }
 EOF
-for i in {1..200}; do
+for i in $(seq 1 200); do
     cat >>$EXPECTED_META_CONF << EOF
 task "complete$i" {
   on-resource "abc" {

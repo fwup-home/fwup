@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
 # Common unit test commands
 set -e
-
 
 export LC_ALL=C
 
@@ -87,7 +86,7 @@ check_meta_conf() {
 }
 
 cleanup() {
-    if [[ $? = "0" ]]; then
+    if [ $? = "0" ]; then
         echo "Test succeeded"
         rm -fr $WORK
     else
@@ -115,7 +114,7 @@ TESTFILE_150K=$TESTS_DIR/150K.bin
 # Generated test data
 create_15M_file() {
     if [ ! -e $TESTFILE_15M ]; then
-        for i in {1..100}; do
+        for i in $(seq 1 100); do
             cat $TESTFILE_150K >> $TESTFILE_15M
         done
     fi

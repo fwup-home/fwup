@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test out progress reporting on a firmware write
@@ -6,15 +6,15 @@
 
 . ./common.sh
 
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
-if [ `wc -c $WORK/fwup-key.pub | cut -f 1 -d ' '` -ne 32 ]; then
+if [ `wc -c $WORK/fwup-key.pub | awk '{print $1}'` -ne 32 ]; then
     echo "fwup-key.pub isn't 32 bytes"
     exit 1
 fi
-if [ `wc -c $WORK/fwup-key.priv | cut -f 1 -d ' '` -ne 64 ]; then
+if [ `wc -c $WORK/fwup-key.priv | awk '{print $1}'` -ne 64 ]; then
     echo "fwup-key.priv isn't 64 bytes"
     exit 1
 fi

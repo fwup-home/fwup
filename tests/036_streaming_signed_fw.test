@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test that applying signed firmware the streaming way works
@@ -29,9 +29,9 @@ task "complete" {
 EOF
 
 # Create new keys
-pushd $WORK
+cd $WORK
 $FWUP_CREATE -g
-popd
+cd -
 
 # Sign the firmware
 $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE

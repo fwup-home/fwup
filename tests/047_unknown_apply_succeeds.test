@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Test the applying a .fw with an unknown metadata field still succeeds
@@ -22,9 +22,9 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 # Add a field to the meta.conf
 unzip_fw
 echo "meta-mynewmeta=\"something\"" >> $UNZIPDIR/meta.conf
-pushd $UNZIPDIR
+cd $UNZIPDIR
 zip -q $FWFILE.new meta.conf
-popd
+cd -
 
 # See that it still applies
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE.new -t complete
