@@ -8,18 +8,17 @@ export LC_ALL=C
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
 SED=sed
-STAT=stat
+STAT_FILESIZE_FLAGS=-c%s
 BASE64_DECODE=-d
 
 case "$OSTYPE" in
     darwin*)
         READLINK=/usr/local/bin/greadlink
         SED=/usr/local/bin/gsed
-        STAT=/usr/local/bin/gstat
+        STAT_FILESIZE_FLAGS=-f %z
         BASE64_DECODE=-D
 
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
-        [ -e $STAT ] || ( echo "Please run 'brew install coreutils' to install gstat"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
         [ -e $SED ] || ( echo "Please run 'brew install gnu-sed' to install gsed"; exit 1 )
         ;;
@@ -29,6 +28,10 @@ esac
 
 base64_decode() {
     base64 $BASE64_DECODE
+}
+
+filesize() {
+    stat $STAT_FILESIZE_FLAGS $1
 }
 
 TESTS_DIR=$(dirname $($READLINK -f $0))

@@ -22,9 +22,9 @@ EOF
 # Create the firmware file
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-FWFILE_SIZE=$($STAT -c%s $FWFILE)
+FWFILE_SIZE=$(filesize $FWFILE)
 
-if (( $FWFILE_SIZE > 1000 )); then
+if [ $FWFILE_SIZE -gt 1000 ]; then
     # When originally tested, the .fw size was 644 bytes
     echo "Firmware size larger than expected: $FWFILE_SIZE"
     exit 1
