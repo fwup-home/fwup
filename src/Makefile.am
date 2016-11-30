@@ -21,6 +21,7 @@ fwup_SOURCES=\
 	fwup_metadata.c \
 	fwup_genkeys.c \
 	mbr.c \
+	mmc_bsd.c \
 	mmc_linux.c \
 	mmc_osx.c \
 	mmc_windows.c \
