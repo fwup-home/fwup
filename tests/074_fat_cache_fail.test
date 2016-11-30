@@ -117,13 +117,13 @@ EOF
 
 # Check that the directory looks right
 MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+diff -i -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check the contents of the file
 FILES="MLO zImage boot.scr u-boot.img am335x-boneblack.dtb"
 for FILE in  $FILES; do
     MTOOLS_SKIP_CHECK=1 mcopy -n -i $WORK/fwup.img@@32256 ::/$FILE $WORK/$FILE.actual
-    diff $WORK/$FILE $WORK/$FILE.actual
+    cmp $WORK/$FILE $WORK/$FILE.actual
 done
 
 # Check that the verify logic works on this file
