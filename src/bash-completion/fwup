@@ -39,11 +39,14 @@ _fwup()
 
     if [[ "$cur" == -* ]] ; then
         COMPREPLY=( $( compgen -W '-a --apply -c --create \
-                -d -D --detect -E --eject --no-eject -f -g --gen-keys -i \
+                -d -D --detect -E --eject --no-eject -f -F -g --gen-keys -i \
                 -l --list -m --metadata -n -o -p -q --quiet -s -S --sign \
                 -t --task -u --unmount -U --no-unmount -v --verbose \
                 -V --verify --version -y -z' \
                 -- "$cur" ) )
+    else
+            _filedir '@(fw)'
+            return 0
     fi
 
 } &&
