@@ -94,6 +94,10 @@ static void print_usage()
     printf("\n");
     printf("Examples:\n");
     printf("\n");
+    printf("Initialize an attached SDCard using all of the default options:\n");
+    printf("\n");
+    printf("  $ %s myfirmware.fw\n", program_name);
+    printf("\n");
     printf("Create a firmware update archive:\n");
     printf("\n");
     printf("  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", program_name);
@@ -267,6 +271,7 @@ int main(int argc, char **argv)
     bool eject_on_success = false;
 #endif
     bool unmount_first = true;
+    bool easy_mode = true;
 
     if (argc == 1) {
         print_usage();
@@ -281,9 +286,11 @@ int main(int argc, char **argv)
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
+            easy_mode = false;
             break;
         case 'c': // --create
             command = CMD_CREATE;
+            easy_mode = false;
             break;
         case 'd':
             mmc_device_path = optarg;
@@ -297,27 +304,35 @@ int main(int argc, char **argv)
             break;
         case 'f':
             configfile = optarg;
+            easy_mode = false;
             break;
         case 'F': // --framing
             fwup_framing = true;
+            easy_mode = false;
             break;
         case 'g': // --gen-keys
             command = CMD_GENERATE_KEYS;
+            easy_mode = false;
             break;
         case 'i':
             input_firmware = optarg;
+            easy_mode = false;
             break;
         case 'l': // --list
             command = CMD_LIST;
+            easy_mode = false;
             break;
         case 'm': // --metadata
             command = CMD_METADATA;
+            easy_mode = false;
             break;
         case 'o':
             output_firmware = optarg;
+            easy_mode = false;
             break;
         case 'p':
             public_key = load_public_key(optarg);
+            easy_mode = false;
             break;
         case 'n':
             numeric_progress = true;
@@ -327,9 +342,11 @@ int main(int argc, char **argv)
             break;
         case 'S': // --sign
             command = CMD_SIGN;
+            easy_mode = false;
             break;
         case 's':
             signing_key = load_signing_key(optarg);
+            easy_mode = false;
             break;
         case 't': // --task
             task = optarg;
@@ -339,6 +356,7 @@ int main(int argc, char **argv)
             break;
         case 'V': // --verify
             command = CMD_VERIFY;
+            easy_mode = false;
             break;
         case 'u': // --unmount
             unmount_first = true;
@@ -376,8 +394,19 @@ int main(int argc, char **argv)
     if (quiet && numeric_progress)
         fwup_errx(EXIT_FAILURE, "pick either -n or -q, but not both");
 
-    if (optind < argc)
+    // Support an easy mode where the user can pass a .fw file
+    // and it will program an attached SDCard, etc. with minimal
+    // fuss. Some options are supported.
+    if (easy_mode && optind == argc - 1) {
+        command = CMD_APPLY;
+        input_firmware = argv[optind++];
+        if (!task)
+            task = "complete";
+    }
+
+    if (optind < argc) {
         fwup_errx(EXIT_FAILURE, "unexpected parameter: %s", argv[optind]);
+    }
 
     // Normalize the firmware filenames in the case that the user wants
     // to use stdin/stdout

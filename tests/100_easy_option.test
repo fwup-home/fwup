@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#
+# Test invoking fwup using the easy way
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_150K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(1) }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# The firmware file is equivalent to the following dd call
+# (The conv=sync makes sure that the output is a multiple of 512 bytes)
+dd if=$TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
+
+# The *easy* way -> Look, no -a or -i or -t
+$FWUP_APPLY -d $IMGFILE $FWFILE
+cmp $WORK/check.bin $IMGFILE
+rm $IMGFILE
+
+# Switch the option order
+$FWUP_APPLY $FWFILE -d $IMGFILE
+cmp $WORK/check.bin $IMGFILE
+rm $IMGFILE
+
+# Check that bunch of options still are "easy"
+$FWUP_APPLY --eject -y -n $FWFILE -d $IMGFILE -u -t complete
+cmp $WORK/check.bin $IMGFILE
+rm $IMGFILE
+
+# Check that quiet works
+$FWUP_APPLY -q $FWFILE -d $IMGFILE
+cmp $WORK/check.bin $IMGFILE
