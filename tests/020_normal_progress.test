@@ -31,12 +31,12 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Run the command and turn the `\r`s into periods to make
-# it easy to compare with the expected output. The second
+# it easy to compare with the expected output. The
 # call to sed is to discard the final `\r` that's present
 # on Windows.
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete \
-    | $SED 's/\r/./g' \
-    | $SED 's/\.$//g' \
+    | tr '\r' '.' \
+    | sed 's/\.$//g' \
     | grep -v '^Elapsed time' \
     > $WORK/actual_output.txt
 

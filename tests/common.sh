@@ -7,7 +7,6 @@ export LC_ALL=C
 
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
-SED=sed
 STAT_FILESIZE_FLAGS=-c%s
 BASE64_DECODE=-d
 
@@ -23,13 +22,11 @@ fi
 case "$HOST_OS" in
     Darwin)
         READLINK=/usr/local/bin/greadlink
-        SED=/usr/local/bin/gsed
         STAT_FILESIZE_FLAGS="-f %z"
         BASE64_DECODE=-D
 
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
-        [ -e $SED ] || ( echo "Please run 'brew install gnu-sed' to install gsed"; exit 1 )
         ;;
     FreeBSD)
         STAT_FILESIZE_FLAGS="-f %z"
