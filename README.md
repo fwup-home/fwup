@@ -95,6 +95,21 @@ past that really should be fixed.
 
 # Invoking
 
+If you were given a `.fw` file and just want to install its contents on an
+SDCard, here's an example run on Linux:
+```
+$ sudo fwup example.fw
+Use 14.92 GiB memory card found at /dev/sdc? [y/N] y
+100%
+Elapsed time: 2.736s
+```
+If you're on OSX or Windows, leave off the call to `sudo`.
+
+IMPORTANT: If you're using an older version of `fwup`, you'll have to specify
+more arguments. Run: `fwup -a -i example.fw -t complete`
+
+Here's a list of other options:
+
 ```
 Usage: fwup [OPTION]...
 
