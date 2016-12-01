@@ -6,7 +6,7 @@ x86 since `fpm` doesn't install for me.
 
 On the Raspbian, the easiest way to build is to run:
 
-   sudo apt-get install
+   sudo apt-get install autoconf libtool mtools unzip zip help2man
     ./autogen.sh    # only necessary if building from a git source tree
     ./scripts/build_pkg.sh # This will fail when packaging (ignore this)
     make install
