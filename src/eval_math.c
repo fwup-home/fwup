@@ -17,6 +17,7 @@
 #include "eval_math.h"
 #include "util.h"
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define EVAL_STACK_SIZE 16
 
@@ -396,10 +397,6 @@ int eval_math_str(const char *str, char *result_str, int result_str_len)
     if (eval_math(str, &result) < 0)
         return -1;
 
-#ifdef _WIN32
-    sprintf(result_str, "%I64d", result);
-#else
-    sprintf(result_str, "%lld", result);
-#endif
+    sprintf(result_str, "%" PRId64, result);
     return 0;
 }
