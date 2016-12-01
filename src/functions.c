@@ -260,7 +260,6 @@ int raw_write_run(struct fun_context *fctx)
         ssize_t written = block_writer_pwrite(&writer, buffer, len, dest_offset + offset);
         if (written < 0)
             ERR_CLEANUP_MSG("raw_write couldn't write %d bytes to offset %lld", len, dest_offset + offset);
-
         len_written += written;
         progress_report(fctx->progress, len);
     }
@@ -271,7 +270,7 @@ int raw_write_run(struct fun_context *fctx)
         // the right length, so write a block of zeros to the end.
         char zeros[512];
         memset(zeros, 0, sizeof(zeros));
-        size_t to_write = sizeof(zeros);
+        off_t to_write = sizeof(zeros);
         if (ending_hole < to_write)
             to_write = ending_hole;
         off_t offset = sparse_file_size(&sfm) - to_write;

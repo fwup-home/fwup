@@ -126,9 +126,9 @@ int sparse_file_set_map_in_resource(cfg_t *resource, const struct sparse_file_ma
  * @param sfm the sparse map
  * @return the size is returned
  */
-size_t sparse_file_size(const struct sparse_file_map *sfm)
+off_t sparse_file_size(const struct sparse_file_map *sfm)
 {
-    size_t size = 0;
+    off_t size = 0;
     for (int i = 0; i < sfm->map_len; i++)
         size += sfm->map[i];
 
@@ -140,9 +140,9 @@ size_t sparse_file_size(const struct sparse_file_map *sfm)
  * @param sfm the sparse map
  * @return the size is returned
  */
-size_t sparse_file_data_size(const struct sparse_file_map *sfm)
+off_t sparse_file_data_size(const struct sparse_file_map *sfm)
 {
-    size_t size = 0;
+    off_t size = 0;
     for (int i = 0; i < sfm->map_len; i += 2)
         size += sfm->map[i];
 
@@ -154,7 +154,7 @@ size_t sparse_file_data_size(const struct sparse_file_map *sfm)
  * @param sfm the sparse map
  * @return true if ending with a hole; false if not
  */
-size_t sparse_ending_hole_size(const struct sparse_file_map *sfm)
+off_t sparse_ending_hole_size(const struct sparse_file_map *sfm)
 {
     // If even length then it ends with a hole, so return it.
     if ((sfm->map_len & 1) == 0)
@@ -307,7 +307,7 @@ int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int f
     };
 
     // Read as much as we can.
-    size_t to_read = sfm->map[iterator->map_ix] - iterator->offset_in_segment;
+    off_t to_read = sfm->map[iterator->map_ix] - iterator->offset_in_segment;
     if (to_read > buf_len)
         to_read = buf_len;
 
