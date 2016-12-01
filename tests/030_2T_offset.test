@@ -8,6 +8,8 @@
 
 . ./common.sh
 
+# Skip this test on systems that don't support sparse files
+# or large files.
 case $HOST_OS in
     Darwin|Windows)
         # No sparse file support on OSX or Windows, so skip
@@ -16,13 +18,15 @@ case $HOST_OS in
     *)
         ;;
 esac
-
-# The Raspberry Pi doesn't support big files. This seems like it
-# should work, but since this is an unlikely use case, disable the
-# test for the Raspberry Pis and other 32-bit ARMs.
-if [ "$HOST_ARCH" = "arm" ]; then
-    exit 0
-fi
+case $HOST_ARCH in
+    arm*)
+        # Raspberry Pi and likely other 32-bit ARMs error out
+	# on large files.
+        exit 0
+        ;;
+    *)
+        ;;
+esac
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {
