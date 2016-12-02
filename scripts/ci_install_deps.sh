@@ -14,9 +14,7 @@
 set -e
 set -v
 
-LIBARCHIVE_VERSION=3.2.1
-LIBSODIUM_VERSION=1.0.10
-CONFUSE_VERSION=3.0
+source scripts/third_party_versions.sh
 
 MAKE_FLAGS=-j4
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
@@ -26,7 +24,7 @@ else
 fi
 
 install_confuse() {
-    wget https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
+    curl -LO https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
     tar xf confuse-$CONFUSE_VERSION.tar.xz
     pushd confuse-$CONFUSE_VERSION
     ./configure --prefix=$DEPS_INSTALL_DIR --disable-examples
@@ -36,7 +34,7 @@ install_confuse() {
 }
 
 install_sodium() {
-    wget https://download.libsodium.org/libsodium/releases/libsodium-$LIBSODIUM_VERSION.tar.gz
+    curl -LO https://download.libsodium.org/libsodium/releases/libsodium-$LIBSODIUM_VERSION.tar.gz
     tar xf libsodium-$LIBSODIUM_VERSION.tar.gz
     pushd libsodium-$LIBSODIUM_VERSION
     ./configure --prefix=$DEPS_INSTALL_DIR
@@ -53,12 +51,6 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
             sudo apt-get install -qq gcc-mingw-w64-x86-64 wine
-
-            # These are needed for building choco
-            sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-            echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/3.12.0 main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
-            sudo apt-get update
-            sudo apt-get install -qq mono-devel mono-gmcs nuget
             ;;
         dynamic)
             sudo apt-get install -qq libarchive-dev

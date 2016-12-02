@@ -15,20 +15,16 @@ Then, run a static build using the mingw compiler:
     export CROSS_COMPILE=x86_64-w64-mingw32
     export CC=$CROSS_COMPILE-gcc
 
-    # These are needed for building choco (the Windows package manager).
-    # You can skip this next part if you're not interested in the fwup
-    # Chocolatey package. Export SKIP_PACKAGE=true to avoid the error
-    # when running ./scripts/build_pkg.sh below.
-
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-    echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/3.12.0 main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
-    sudo apt-get update
-    sudo apt-get install -qq mono-devel mono-gmcs nuget
-
     ./autogen.sh    # only necessary if building from a git source tree
+    ./scripts/build_static.sh
+
+    # If you'd like to build an fwup.*.nupkg for Chocolatey, try running the
+    # build_pkg.sh script. Chocolatey is tricky to install, so see
+    # scripts/ubuntu_install_chocolatey.sh if something goes wrong.
+
     ./scripts/build_pkg.sh
 
-The script should exit successfully and you should have an `fwup.exe` binary, and an `fwup.*.nupkg` Chocolatey package.
+The script should exit successfully and you should have a `fwup.exe` binary and a `fwup.*.nupkg` Chocolatey package.
 
 To install a pre-release Chocolatey Package:
 
