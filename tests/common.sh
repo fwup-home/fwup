@@ -28,7 +28,7 @@ case "$HOST_OS" in
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
         ;;
-    FreeBSD)
+    FreeBSD|NetBSD)
         STAT_FILESIZE_FLAGS="-f %z"
         ;;
     *)

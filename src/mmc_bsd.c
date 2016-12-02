@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__)
 
 #include "mmc.h"
 #include "util.h"
@@ -62,7 +62,8 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
     return true;
 }
 
-static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, const struct stat *rootdev)
+static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, 
+                                         const struct stat *rootdev)
 {
     // Check 1: Not on the device containing the root fs
     // NOTE: This check is an approximation to what we really want. We'd like
@@ -88,6 +89,29 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, con
     return true;
 }
 
+static void mmc_scan_by_pattern(struct mmc_device *devices,
+                                const char *pattern,
+                                int low,
+                                int high,
+                                const struct stat *rootdev,
+                                int max_devices,
+                                int *device_count)
+{
+    // Scan memory cards connected via USB.
+    int dc = *device_count;
+    for (int i = low; i <= high; i++) {
+        struct mmc_device_info info;
+        if (mmc_get_device_stats(pattern, i, &info) &&
+            is_autodetectable_mmc_device(&info, rootdev) &&
+            *device_count < max_devices) {
+            strcpy(devices[dc].path, info.devpath);
+            devices[dc].size = info.device_size;
+            dc++;
+        }
+    }
+    *device_count = dc;
+}
+
 /**
  * @brief Scan for SDCards and other removable media
  * @param devices where to store detected devices and some metadata
@@ -106,19 +130,12 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 
     int device_count = 0;
 
-    // Scan memory cards connected via USB. These are /dev/da_ devices.
-    for (int i = 0; i < 16; i++) {
-        struct mmc_device_info info;
-        if (mmc_get_device_stats("/dev/da%d",
-                                 i,
-                                 &info) &&
-            is_autodetectable_mmc_device(&info, &rootdev) &&
-            device_count < max_devices) {
-            strcpy(devices[device_count].path, info.devpath);
-            devices[device_count].size = info.device_size;
-            device_count++;
-        }
-    }
+    // Scan memory cards connected via USB.
+#if defined(__FreeBSD__)
+    mmc_scan_by_pattern(devices, "/dev/da%d", 0, 15, &rootdev, max_devices, &device_count);
+#elif defined(__NetBSD__)
+    mmc_scan_by_pattern(devices, "/dev/rs%c0d", 'a', 'z', &rootdev, max_devices, &device_count);
+#endif
 
     return device_count;
 }
