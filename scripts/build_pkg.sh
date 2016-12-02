@@ -29,7 +29,7 @@ fi
 
 # Package fwup
 FWUP_VERSION=$(cat $BASE_DIR/VERSION)
-if [ "$CROSS_COMPILE" = "host" ]; then
+if [ -z "$CROSS_COMPILE" ]; then
     # Fix directory permissions for packaging
     find $FWUP_STAGING_DIR -type d | xargs chmod 755
 

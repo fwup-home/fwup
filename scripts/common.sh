@@ -17,25 +17,27 @@ FWUP_LICENSE="Apache-2.0"
 
 source $BASE_DIR/scripts/third_party_versions.sh
 
-BUILD_DIR=$BASE_DIR/build
-DOWNLOAD_DIR=$BUILD_DIR/dl
-
 MAKE_FLAGS=-j8
 LDD=ldd
 
-if [ -z $CROSS_COMPILE ]; then
-    CROSS_COMPILE=host
+if [ -z "$CROSS_COMPILE" ]; then
+    # Not cross-compiling
+    BUILD_DIR=$BASE_DIR/build/host
 
     if [ $(uname -s) = "Darwin" ]; then
         LDD="otool -L"
     fi
 else
+    # Cross-compiling
     CONFIGURE_ARGS=--host=$CROSS_COMPILE
+    BUILD_DIR=$BASE_DIR/build/$CROSS_COMPILE
 fi
 
-DEPS_DIR=$BUILD_DIR/$CROSS_COMPILE/deps
+DOWNLOAD_DIR=$BASE_DIR/build/dl
+
+DEPS_DIR=$BUILD_DIR/deps
 DEPS_INSTALL_DIR=$DEPS_DIR/usr
-FWUP_STAGING_DIR=$BUILD_DIR/$CROSS_COMPILE/fwup-staging/
+FWUP_STAGING_DIR=$BUILD_DIR/fwup-staging/
 FWUP_INSTALL_DIR=$FWUP_STAGING_DIR/usr
 PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
 

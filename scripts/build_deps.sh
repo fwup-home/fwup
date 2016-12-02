@@ -25,7 +25,7 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
     rm -fr $DEPS_DIR/zlib-*
     tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.xz
     cd zlib-$ZLIB_VERSION
-    if [ -n $CROSS_COMPILE ]; then
+    if [ -n "$CROSS_COMPILE" ]; then
         ZLIB_CONFIGURE_ENV="CC=$CROSS_COMPILE-gcc"
     fi
     (export $ZLIB_CONFIGURE_ENV; PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure --prefix=$DEPS_INSTALL_DIR --static)

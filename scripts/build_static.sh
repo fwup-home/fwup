@@ -49,7 +49,7 @@ PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$FWUP_INST
 make clean
 make $MAKE_FLAGS
 
-if [ "$CROSS_COMPILE" = "host" ]; then
+if [ -z "$CROSS_COMPILE" ]; then
     # Verify that it was statically linked
     for CHECK_LIB in libz confuse archive sodium; do
         if $LDD src/fwup | grep $CHECK_LIB; then
