@@ -6,35 +6,15 @@
 
 . ./common.sh
 
-xxd -r - $WORK/bootstrap-data <<EOF
-00000000: 33c0 fa8e d88e d0bc 007c 89e6 0657 8ec0  3........|...W..
-00000010: fbfc bf00 06b9 0001 f3a5 ea1f 0600 0052  ...............R
-00000020: 52b4 41bb aa55 31c9 30f6 f9cd 1372 1381  R.A..U1.0....r..
-00000030: fb55 aa75 0dd1 e973 0966 c706 8d06 b442  .U.u...s.f.....B
-00000040: eb15 5ab4 08cd 1383 e13f 510f b6c6 40f7  ..Z......?Q...@.
-00000050: e152 5066 31c0 6699 e866 00e8 3501 4d69  .RPf1.f..f..5.Mi
-00000060: 7373 696e 6720 6f70 6572 6174 696e 6720  ssing operating
-00000070: 7379 7374 656d 2e0d 0a66 6066 31d2 bb00  system...f.f1...
-00000080: 7c66 5266 5006 536a 016a 1089 e666 f736  |fRfP.Sj.j...f.6
-00000090: f47b c0e4 0688 e188 c592 f636 f87b 88c6  .{.........6.{..
-000000a0: 08e1 41b8 0102 8a16 fa7b cd13 8d64 1066  ..A......{...d.f
-000000b0: 61c3 e8c4 ffbe be7d bfbe 07b9 2000 f3a5  a......}.... ...
-000000c0: c366 6089 e5bb be07 b904 0031 c053 51f6  .f.........1.SQ.
-000000d0: 0780 7403 4089 de83 c310 e2f3 4874 5b79  ..t.@.......Ht[y
-000000e0: 3959 5b8a 4704 3c0f 7406 247f 3c05 7522  9Y[.G.<.t.$.<.u"
-000000f0: 668b 4708 668b 5614 6601 d066 21d2 7503  f.G.f.V.f..f!.u.
-00000100: 6689 c2e8 acff 7203 e8b6 ff66 8b46 1ce8  f.....r....f.F..
-00000110: a0ff 83c3 10e2 cc66 61c3 e876 004d 756c  .......fa..v.Mul
-00000120: 7469 706c 6520 6163 7469 7665 2070 6172  tiple active par
-00000130: 7469 7469 6f6e 732e 0d0a 668b 4408 6603  titions...f.D.f.
-00000140: 461c 6689 4408 e830 ff72 2766 813e 007c  F.f.D..0.r'f.>.|
-00000150: 5846 5342 7509 6683 c004 e81c ff72 1381  XFSBu.f......r..
-00000160: 3efe 7d55 aa0f 85f2 febc fa7b 5a5f 07fa  >.}U.......{Z_..
-00000170: ffe4 e81e 004f 7065 7261 7469 6e67 2073  .....Operating s
-00000180: 7973 7465 6d20 6c6f 6164 2065 7272 6f72  ystem load error
-00000190: 2e0d 0a5e acb4 0e8a 3e62 04b3 07cd 103c  ...^....>b.....<
-000001a0: 0a75 f1cd 18f4 ebfd 0000 0000 0000 0000  .u..............
-000001b0: 0000 0000 0000 0000                      ........
+base64_decode >$WORK/bootstrap-data <<EOF
+M8D6jtiO0LwAfInmBleOwPv8vwAGuQAB86XqHwYAAFJStEG7qlUxyTD2+c0TchOB+1WqdQ3R6XMJ
+ZscGjQa0QusVWrQIzROD4T9RD7bGQPfhUlBmMcBmmehmAOg1AU1pc3Npbmcgb3BlcmF0aW5nIHN5
+c3RlbS4NCmZgZjHSuwB8ZlJmUAZTagFqEInmZvc29HvA5AaI4YjFkvY2+HuIxgjhQbgBAooW+nvN
+E41kEGZhw+jE/76+fb++B7kgAPOlw2ZgieW7vge5BAAxwFNR9geAdANAid6DwxDi80h0W3k5WVuK
+RwQ8D3QGJH88BXUiZotHCGaLVhRmAdBmIdJ1A2aJwuis/3ID6Lb/ZotGHOig/4PDEOLMZmHD6HYA
+TXVsdGlwbGUgYWN0aXZlIHBhcnRpdGlvbnMuDQpmi0QIZgNGHGaJRAjoMP9yJ2aBPgB8WEZTQnUJ
+ZoPABOgc/3ITgT7+fVWqD4Xy/rz6e1pfB/r/5OgeAE9wZXJhdGluZyBzeXN0ZW0gbG9hZCBlcnJv
+ci4NCl6stA6KPmIEswfNEDwKdfHNGPTr/QAAAAAAAAAAAAAAAAAAAAA=
 EOF
 
 cat >$CONFIG <<EOF
@@ -58,41 +38,17 @@ task complete {
 }
 EOF
 
-# Create the expected by running xxd on the expected binary image
-# The -r below reverses the output.
-xxd -r - $WORK/expected.img <<EOF
-00000000: 33c0 fa8e d88e d0bc 007c 89e6 0657 8ec0  3........|...W..
-00000010: fbfc bf00 06b9 0001 f3a5 ea1f 0600 0052  ...............R
-00000020: 52b4 41bb aa55 31c9 30f6 f9cd 1372 1381  R.A..U1.0....r..
-00000030: fb55 aa75 0dd1 e973 0966 c706 8d06 b442  .U.u...s.f.....B
-00000040: eb15 5ab4 08cd 1383 e13f 510f b6c6 40f7  ..Z......?Q...@.
-00000050: e152 5066 31c0 6699 e866 00e8 3501 4d69  .RPf1.f..f..5.Mi
-00000060: 7373 696e 6720 6f70 6572 6174 696e 6720  ssing operating
-00000070: 7379 7374 656d 2e0d 0a66 6066 31d2 bb00  system...f.f1...
-00000080: 7c66 5266 5006 536a 016a 1089 e666 f736  |fRfP.Sj.j...f.6
-00000090: f47b c0e4 0688 e188 c592 f636 f87b 88c6  .{.........6.{..
-000000a0: 08e1 41b8 0102 8a16 fa7b cd13 8d64 1066  ..A......{...d.f
-000000b0: 61c3 e8c4 ffbe be7d bfbe 07b9 2000 f3a5  a......}.... ...
-000000c0: c366 6089 e5bb be07 b904 0031 c053 51f6  .f.........1.SQ.
-000000d0: 0780 7403 4089 de83 c310 e2f3 4874 5b79  ..t.@.......Ht[y
-000000e0: 3959 5b8a 4704 3c0f 7406 247f 3c05 7522  9Y[.G.<.t.$.<.u"
-000000f0: 668b 4708 668b 5614 6601 d066 21d2 7503  f.G.f.V.f..f!.u.
-00000100: 6689 c2e8 acff 7203 e8b6 ff66 8b46 1ce8  f.....r....f.F..
-00000110: a0ff 83c3 10e2 cc66 61c3 e876 004d 756c  .......fa..v.Mul
-00000120: 7469 706c 6520 6163 7469 7665 2070 6172  tiple active par
-00000130: 7469 7469 6f6e 732e 0d0a 668b 4408 6603  titions...f.D.f.
-00000140: 461c 6689 4408 e830 ff72 2766 813e 007c  F.f.D..0.r'f.>.|
-00000150: 5846 5342 7509 6683 c004 e81c ff72 1381  XFSBu.f......r..
-00000160: 3efe 7d55 aa0f 85f2 febc fa7b 5a5f 07fa  >.}U.......{Z_..
-00000170: ffe4 e81e 004f 7065 7261 7469 6e67 2073  .....Operating s
-00000180: 7973 7465 6d20 6c6f 6164 2065 7272 6f72  ystem load error
-00000190: 2e0d 0a5e acb4 0e8a 3e62 04b3 07cd 103c  ...^....>b.....<
-000001a0: 0a75 f1cd 18f4 ebfd 0000 0000 0000 0000  .u..............
-000001b0: 0000 0000 0000 0000 0000 0000 0000 8001  ................
-000001c0: 0100 0ccf 1704 3f00 0000 cd2d 0100 0000  ......?....-....
-000001d0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
-000001e0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
-000001f0: 0000 0000 0000 0000 0000 0000 0000 55aa  ..............U.
+# Create the expected by running base64 on the expected binary image.
+base64_decode >$WORK/expected.img <<EOF
+M8D6jtiO0LwAfInmBleOwPv8vwAGuQAB86XqHwYAAFJStEG7qlUxyTD2+c0TchOB+1WqdQ3R6XMJ
+ZscGjQa0QusVWrQIzROD4T9RD7bGQPfhUlBmMcBmmehmAOg1AU1pc3Npbmcgb3BlcmF0aW5nIHN5
+c3RlbS4NCmZgZjHSuwB8ZlJmUAZTagFqEInmZvc29HvA5AaI4YjFkvY2+HuIxgjhQbgBAooW+nvN
+E41kEGZhw+jE/76+fb++B7kgAPOlw2ZgieW7vge5BAAxwFNR9geAdANAid6DwxDi80h0W3k5WVuK
+RwQ8D3QGJH88BXUiZotHCGaLVhRmAdBmIdJ1A2aJwuis/3ID6Lb/ZotGHOig/4PDEOLMZmHD6HYA
+TXVsdGlwbGUgYWN0aXZlIHBhcnRpdGlvbnMuDQpmi0QIZgNGHGaJRAjoMP9yJ2aBPgB8WEZTQnUJ
+ZoPABOgc/3ITgT7+fVWqD4Xy/rz6e1pfB/r/5OgeAE9wZXJhdGluZyBzeXN0ZW0gbG9hZCBlcnJv
+ci4NCl6stA6KPmIEswfNEDwKdfHNGPTr/QAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQEADM8XBD8A
+AADNLQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVao=
 EOF
 
 # Create the firmware file, then "burn it"

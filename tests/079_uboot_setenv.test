@@ -190,8 +190,8 @@ EOF
 #
 # printf "newvar=hello\nvar1=2000\nvar2=2\nvar3=4000\nvar4=4" | mkenvimage -s "8192" - | base64
 #
-# NOTE: Don't use xxd. It would skip a line in the output and that would
-#       leave a bunch of zeros and fail U-boot's CRC32.
+# NOTE: To future self: don't be tempted by xxd. It would skip a line in
+#       the output and that would leave a bunch of zeros and fail U-boot's CRC32.
 base64_decode >$WORK/expected-env.img <<EOF
 k3b/hm5ld3Zhcj1oZWxsbwB2YXIxPTIwMDAAdmFyMj0yAHZhcjM9NDAwMAB2YXI0PTQAAP//////
 ////////////////////////////////////////////////////////////////////////////
