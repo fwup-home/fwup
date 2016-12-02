@@ -87,7 +87,7 @@ latest [source code release](https://github.com/fhunleth/fwup/releases/download/
   * [OSX build instructions](docs/build_osx.md)
   * [Windows build instructions](docs/build_windows.md)
   * [Raspbian build instructions](docs/build_rpi.md)
-  * [FreeBSD build instructions](docs/build_freebsd.md)
+  * [FreeBSD/NetBSD/OpenBSD build instructions](docs/build_bsd.md)
 
 When building from source, please verify that the regression test pass
 on your system (run `make check`) before using `fwup` in production. While
