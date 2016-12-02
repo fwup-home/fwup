@@ -40,10 +40,10 @@ for i in $(seq 0 31); do
 done
 SPARSE_MAP="$SPARSE_MAP}"
 
-# Make sure that the sparse file is block-sized since it will be used
+# Make sure that the fake sparse file is block-sized since it will be used
 # to check fwup's output and fwup only outputs blocks.
 SPARSE_FILE_BLK=$WORK/sparse-blk.bin
-dd if=$SPARSE_FILE bs=512 of=$SPARSE_FILE_BLK conv=sync,sparse 2>/dev/null
+dd if=$SPARSE_FILE bs=512 of=$SPARSE_FILE_BLK conv=sync 2>/dev/null
 
 cat >$CONFIG <<EOF
 file-resource sparsefile {

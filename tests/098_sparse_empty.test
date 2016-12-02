@@ -9,7 +9,7 @@
 
 # Create the "sparse" resource.
 SPARSE_FILE=$WORK/sparse.bin
-dd count=0 seek=256 of=$SPARSE_FILE 2>/dev/null
+dd if=/dev/zero count=256 of=$SPARSE_FILE 2>/dev/null
 
 cat >$CONFIG <<EOF
 file-resource sparsefile {
