@@ -7,6 +7,7 @@
 set -e
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+USE_PREBUILT=true
 
 source $BASE_DIR/scripts/common.sh
 
@@ -23,18 +24,33 @@ mkdir -p $DOWNLOAD_DIR
 mkdir -p $DEPS_DIR
 
 # Download Chocolatey
-if [ ! -e $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz ]; then
-    curl -L -o $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz https://github.com/chocolatey/choco/archive/$CHOCO_VERSION.tar.gz
+if $USE_PREBUILT; then
+    if [ ! -e $DOWNLOAD_DIR/choco-${CHOCO_VERSION}-binaries.tar.gz ]; then
+        # Download a prebuilt version
+        cd $DOWNLOAD_DIR
+        curl -LO http://files.troodon-software.com/choco/choco-${CHOCO_VERSION}-binaries.tar.gz
+        cd $BASE_DIR
+    fi
+else
+    if [ ! -e $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz ]; then
+        # Download the source
+        curl -L -o $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz https://github.com/chocolatey/choco/archive/$CHOCO_VERSION.tar.gz
+    fi
 fi
 
 # Build Chocolatey if not already built
 if [ ! -e $DEPS_INSTALL_DIR/chocolatey/console/choco.exe ]; then
-    cd $DEPS_DIR
-    rm -fr choco-*
-    tar xf $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz
-    cd choco-$CHOCO_VERSION
-    nuget restore src/chocolatey.sln
-    chmod +x build.sh
-    ./build.sh -v
-    cp -Rf code_drop/chocolatey $DEPS_INSTALL_DIR/
+
+    if $USE_PREBUILT; then
+        tar xf $DOWNLOAD_DIR/choco-${CHOCO_VERSION}-binaries.tar.gz -C $DEPS_INSTALL_DIR
+    else
+        cd $DEPS_DIR
+        rm -fr choco-*
+        tar xf $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz
+        cd choco-$CHOCO_VERSION
+        nuget restore src/chocolatey.sln
+        chmod +x build.sh
+        ./build.sh -v
+        cp -Rf code_drop/chocolatey $DEPS_INSTALL_DIR/
+    fi
 fi
