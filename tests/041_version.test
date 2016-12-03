@@ -9,12 +9,12 @@
 VERSION=$($FWUP_CREATE --version)
 
 case $VERSION in
-    *[0-9].*[0-9].*[0-9])
-        echo "fwup version is $VERSION"
+    *[0-9].*[0-9].*[0-9]-dev*)
+        echo "development fwup version is $VERSION"
         exit 0
         ;;
-    *[0-9].*[0-9].*[0-9]-dev)
-        echo "development fwup version is $VERSION"
+    *[0-9].*[0-9].*[0-9]*)
+        echo "fwup version is $VERSION"
         exit 0
         ;;
     *)
