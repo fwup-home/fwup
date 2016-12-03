@@ -79,7 +79,7 @@ else
     brew uninstall libtool
     brew install libtool
 
-    brew install coreutils mtools
+    brew install mtools
     brew install gettext
     if [[ "$MODE" = "dynamic" ]]; then
         brew install libarchive libsodium confuse
