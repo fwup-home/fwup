@@ -42,7 +42,8 @@ SOURCES += \
     src/crc32.c \
     src/eval_math.c \
     src/sparse_file.c \
-    src/progress.c
+    src/progress.c \
+    src/mmc_bsd.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
