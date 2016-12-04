@@ -49,10 +49,18 @@ static bool quiet = false;
 
 static void print_usage()
 {
-#if __APPLE__
+#if defined(__APPLE__)
     const char *example_sd = "/dev/rdisk2";
-#else
+#elif defined(__linux__)
     const char *example_sd = "/dev/sdc";
+#elif defined(__FreeBSD__)  || defined(__OpenBSD__) || defined(__DragonFly__)
+    const char *example_sd = "/dev/da0";
+#elif defined(__NetBSD__)
+    const char *example_sd = "/dev/rsc0d";
+#elif defined(_WIN32) || defined(__CYGWIN__)
+    const char *example_sd = "\\.\PhysicalDrive2";
+#else
+#error Fill in with an example SDCard/MMC device.
 #endif
     const char *program_name = PACKAGE_NAME;
 
