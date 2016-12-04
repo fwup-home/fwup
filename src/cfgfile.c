@@ -59,7 +59,7 @@ static int cb_func(enum fun_context_type ctype, cfg_t *cfg, cfg_opt_t *opt, int 
     }
 
     char str_argc[5];
-    sprintf(str_argc, "%d", fctx.argc);
+    snprintf(str_argc, sizeof(str_argc), "%d", fctx.argc);
 
     cfg_addlist(cfg, "funlist", 2, str_argc, fctx.argv[0]);
     int i;
@@ -114,7 +114,7 @@ static int cb_task_require_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char
     }
 
     char str_argc[5];
-    sprintf(str_argc, "%d", fctx.argc);
+    snprintf(str_argc, sizeof(str_argc), "%d", fctx.argc);
 
     cfg_addlist(cfg, "reqlist", 2, str_argc, fctx.argv[0]);
     int i;

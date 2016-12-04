@@ -38,7 +38,7 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
 
-void format_pretty_size(off_t amount, char *out);
+void format_pretty_size(off_t amount, char *out, size_t out_size);
 
 extern bool fwup_verbose;
 

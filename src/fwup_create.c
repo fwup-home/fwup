@@ -193,7 +193,7 @@ static int add_file_resource(struct archive *a,
 
         strcpy(archive_path, &resource_name[1]);
     } else {
-        sprintf(archive_path, "data/%s", resource_name);
+        snprintf(archive_path, sizeof(archive_path), "data/%s", resource_name);
     }
 
     off_t data_len = sparse_file_data_size(sfm);

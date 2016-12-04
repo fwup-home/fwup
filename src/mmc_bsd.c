@@ -42,7 +42,7 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
                                  int instance,
                                  struct mmc_device_info *info)
 {
-    sprintf(info->devpath, devpath_pattern, instance);
+    snprintf(info->devpath, sizeof(info->devpath), devpath_pattern, instance);
 
     if (stat(info->devpath, &info->st) < 0)
         return false;

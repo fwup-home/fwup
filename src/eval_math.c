@@ -390,13 +390,12 @@ int eval_math(const char *str, int64_t *result)
  */
 int eval_math_str(const char *str, char *result_str, int result_str_len)
 {
-    if (result_str_len < 24)
-        return -1;
-
     int64_t result;
     if (eval_math(str, &result) < 0)
         return -1;
 
-    sprintf(result_str, "%" PRId64, result);
+    if (snprintf(result_str, result_str_len, "%" PRId64, result) >= result_str_len)
+        return -1;
+
     return 0;
 }

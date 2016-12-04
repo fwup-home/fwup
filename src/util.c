@@ -243,16 +243,16 @@ bool file_exists(const char *path)
 }
 
 
-void format_pretty_size(off_t amount, char *out)
+void format_pretty_size(off_t amount, char *out, size_t out_size)
 {
     if (amount >= ONE_GiB)
-        sprintf(out, "%.2f GiB", ((double) amount) / ONE_GiB);
+        snprintf(out, out_size, "%.2f GiB", ((double) amount) / ONE_GiB);
     else if (amount >= ONE_MiB)
-        sprintf(out, "%.2f MiB", ((double) amount) / ONE_MiB);
+        snprintf(out, out_size, "%.2f MiB", ((double) amount) / ONE_MiB);
     else if (amount >= ONE_KiB)
-        sprintf(out, "%d KiB", (int) (amount / ONE_KiB));
+        snprintf(out, out_size, "%d KiB", (int) (amount / ONE_KiB));
     else
-        sprintf(out, "%d bytes", (int) amount);
+        snprintf(out, out_size, "%d bytes", (int) amount);
 }
 
 void fwup_err(int status, const char *format, ...)
