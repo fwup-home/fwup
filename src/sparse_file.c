@@ -308,7 +308,7 @@ int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int f
 
     // Read as much as we can.
     off_t to_read = sfm->map[iterator->map_ix] - iterator->offset_in_segment;
-    if (to_read > buf_len)
+    if (to_read > (off_t) buf_len)
         to_read = buf_len;
 
     ssize_t rc = pread(fd, buf, to_read, *offset);

@@ -264,8 +264,8 @@ int raw_write_run(struct fun_context *fctx)
         progress_report(fctx->progress, len);
     }
 
-    size_t ending_hole = sparse_ending_hole_size(&sfm);
-    if (ending_hole) {
+    off_t ending_hole = sparse_ending_hole_size(&sfm);
+    if (ending_hole > 0) {
         // If this is a regular file, seeking is insufficient in making the file
         // the right length, so write a block of zeros to the end.
         char zeros[512];

@@ -43,9 +43,10 @@ const char *get_creation_timestamp()
         if (now != NULL) {
             // The user specified NOW, so check that it's parsable.
             struct tm tmp;
-            if (strptime(now, timestamp_format, &tmp) != NULL &&
-                snprintf(time_string, sizeof(time_string), "%s", now) < sizeof(time_string)) {
-                return time_string;
+            if (strptime(now, timestamp_format, &tmp) != NULL) {
+                int rc = snprintf(time_string, sizeof(time_string), "%s", now);
+                if (rc >= 0 && rc < (int) sizeof(time_string))
+                    return time_string;
             }
 
             INFO("NOW environment variable set, but not in YYYY-MM-DDTHH:MM:SSZ format so ignoring");
@@ -195,7 +196,7 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
     else
         length = snprintf(result, maxlength, "/%s", name);
 
-    if (length >= maxlength)
+    if (length < 0 || length >= (int) maxlength)
        ERR_RETURN("Bad path found in archive");
 
     return 0;
