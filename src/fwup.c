@@ -211,7 +211,7 @@ static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const c
     struct mmc_device device;
     autoselect_mmc_device(&device);
     if (!accept_found_device) {
-        if (strcmp(input_firmware, "-") == 0)
+        if (!input_firmware)
             fwup_errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", device.path);
 
         char sizestr[16];
