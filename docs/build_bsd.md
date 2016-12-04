@@ -22,6 +22,10 @@ On NetBSD, run:
 
     pkg_add autoconf automake libtool pkg-config zip help2man mtools base64
 
+On DragonFlyBSD, run:
+
+    pkg install autoconf automake libtool pkgconf zip help2man mtools base64
+
 ## Building
 
 On other platforms, `fwup` can be built statically or dynamically. At
@@ -30,7 +34,7 @@ To build the dynamic version, install the shared library dependencies:
 
     # Install compile-time and run-time dependencies
 
-    ## FreeBSD
+    ## FreeBSD/DragonFlyBSD
     pkg install libarchive libsodium
 
     ## OpenBSD
@@ -39,7 +43,7 @@ To build the dynamic version, install the shared library dependencies:
     ## NetBSD
     pkg_add confuse libarchive libsodium
 
-    # The FreeBSD and OpenBSD versions of libconfuse are very old (v2.7)
+    # The FreeBSD, DragonFlyBSD, and OpenBSD versions of libconfuse are very old (v2.7)
     # 2.8 or later is needed and 3.0 is much preferred.
     curl -O -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz
     tar xzf confuse-3.0.tar.gz

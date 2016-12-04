@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || \
+    defined(__OpenBSD__) || defined(__DragonFly__)
 
 #include "mmc.h"
 #include "util.h"
@@ -131,7 +132,7 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     int device_count = 0;
 
     // Scan memory cards connected via USB.
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) | defined(__OpenBSD__) | defined(__DragonFly__)
     mmc_scan_by_pattern(devices, "/dev/da%d", 0, 15, &rootdev, max_devices, &device_count);
 #elif defined(__NetBSD__)
     mmc_scan_by_pattern(devices, "/dev/rs%c0d", 'a', 'z', &rootdev, max_devices, &device_count);

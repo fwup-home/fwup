@@ -16,6 +16,10 @@ case $HOST_OS in
         # Seems to have 32KB sparse blocks. Need to investigate more.
         exit 0
         ;;
+    DragonFly)
+	# Support passes autoconf check, but doesn't work w/ UFS
+	exit 0
+	;;
     *)
         ;;
 esac

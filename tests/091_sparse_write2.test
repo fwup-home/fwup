@@ -16,7 +16,7 @@ case $HOST_OS in
         # Seems to have 32KB sparse blocks. Need to investigate more.
         exit 0
         ;;
-    OpenBSD)
+    OpenBSD|DragonFly)
         # Seems to have some support, but not in default filesystem.
         exit 0
         ;;

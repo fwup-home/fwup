@@ -7,7 +7,6 @@ export LC_ALL=C
 
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
-STAT_FILESIZE_FLAGS=-c%s
 BASE64_DECODE=-d
 
 if [ -d "/mnt/c/Users" ]; then
@@ -21,17 +20,23 @@ fi
 
 case "$HOST_OS" in
     Darwin)
-        READLINK=/usr/local/bin/greadlink
+	# BSD stat
         STAT_FILESIZE_FLAGS="-f %z"
+
+	# Not -d?
         BASE64_DECODE=-D
 
+        READLINK=/usr/local/bin/greadlink
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
         ;;
-    FreeBSD|NetBSD|OpenBSD)
+    FreeBSD|NetBSD|OpenBSD|DragonFly)
+	# BSD stat
         STAT_FILESIZE_FLAGS="-f %z"
         ;;
     *)
+	# GNU stat
+	STAT_FILESIZE_FLAGS=-c%s
         ;;
 esac
 
