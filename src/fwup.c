@@ -188,11 +188,6 @@ static void autoselect_mmc_device(struct mmc_device *device)
     if (found_devices == 1) {
         *device = devices[0];
     } else if (found_devices == 0) {
-#ifdef __linux__
-        // Linux requires root permissions to scan devices
-        if (getuid() != 0)
-            fwup_errx(EXIT_FAILURE, "Memory card couldn't be found automatically.\nTry running as root or specify -? for help");
-#endif
         fwup_errx(EXIT_FAILURE, "No memory cards found. Try reinserting the card.");
     } else {
         fprintf(stderr, "Too many possible memory cards found: \n");
