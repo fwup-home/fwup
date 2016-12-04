@@ -36,8 +36,10 @@ cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
 #
 
 SPARSE_FILE=$WORK/sparse.bin
-for i in $(seq 0 139); do
+i=0
+while [ $i -lt 140 ]; do
     dd if=$TESTFILE_4K bs=1k seek=$(expr $i \* 196 + 192 || true) of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+    i=$(expr $i + 1)
 done
 
 cat >$CONFIG <<EOF

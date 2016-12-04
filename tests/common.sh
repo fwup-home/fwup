@@ -28,7 +28,7 @@ case "$HOST_OS" in
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
         ;;
-    FreeBSD|NetBSD)
+    FreeBSD|NetBSD|OpenBSD)
         STAT_FILESIZE_FLAGS="-f %z"
         ;;
     *)
@@ -126,8 +126,10 @@ TESTFILE_150K=$TESTS_DIR/150K.bin
 # Generated test data
 create_15M_file() {
     if [ ! -e $TESTFILE_15M ]; then
-        for i in $(seq 1 100); do
+        i=0
+        while [ $i -lt 100 ]; do
             cat $TESTFILE_150K >> $TESTFILE_15M
+            i=$(expr $i + 1)
         done
     fi
 }

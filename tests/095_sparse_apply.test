@@ -12,8 +12,10 @@
 
 # Create the compacted 60KB of random bytes
 COMPACT_FILE=$WORK/compact.bin
-for i in $(seq 0 6); do
+i=0
+while [ $i -lt 7 ]; do
     cat $TESTFILE_1K >> $COMPACT_FILE
+    i=$(expr $i + 1)
 done
 
 # Create the sparse file using the Fibonacci
@@ -26,7 +28,8 @@ hole1=0
 hole2=1
 loc=0
 SPARSE_MAP="{0"
-for i in $(seq 0 31); do
+i=0
+while [ $i -lt 32 ]; do
     skip=$(expr $i \* 224 || true)
     hole=$(expr $hole1 + $hole2)
     seek=$(expr $seek + $hole)
@@ -37,6 +40,7 @@ for i in $(seq 0 31); do
 
     hole1=$hole2
     hole2=$hole
+    i=$(expr $i + 1)
 done
 SPARSE_MAP="$SPARSE_MAP}"
 

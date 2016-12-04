@@ -148,7 +148,7 @@ mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check the contents of the file
-for i in $(seq 0 4); do
+for i in 0 1 2 3 4; do
     mcopy -n -i $WORK/fwup.img@@32256 ::/$i.bin $WORK/actual.$i.bin
 done
 

@@ -25,7 +25,8 @@ task complete {
 EOF
 
 # Pad it substantially
-for i in $(seq 1 200); do
+i=0
+while [ $i -lt 200 ]; do
     cat >>$CONFIG << EOF
 task complete$i {
         on-resource abc { raw_write(0) }
@@ -33,6 +34,7 @@ task complete$i {
         on-resource ghi { raw_write(8) }
 }
 EOF
+    i=$(expr $i + 1)
 done
 
 cat >$EXPECTED_META_CONF <<EOF
@@ -60,7 +62,8 @@ task "complete" {
   }
 }
 EOF
-for i in $(seq 1 200); do
+i=0
+while [ $i -lt 200 ]; do
     cat >>$EXPECTED_META_CONF << EOF
 task "complete$i" {
   on-resource "abc" {
@@ -74,6 +77,7 @@ task "complete$i" {
   }
 }
 EOF
+    i=$(expr $i + 1)
 done
 
 
