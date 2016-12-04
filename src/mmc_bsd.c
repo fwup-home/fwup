@@ -105,7 +105,7 @@ static void mmc_scan_by_pattern(struct mmc_device *devices,
         if (mmc_get_device_stats(pattern, i, &info) &&
             is_autodetectable_mmc_device(&info, rootdev) &&
             *device_count < max_devices) {
-            strcpy(devices[dc].path, info.devpath);
+            snprintf(devices[dc].path, sizeof(devices[dc].path), "%s", info.devpath);
             devices[dc].size = info.device_size;
             dc++;
         }

@@ -191,7 +191,7 @@ static int add_file_resource(struct archive *a,
             strcmp(resource_name, "/data") == 0)
             ERR_CLEANUP_MSG("use a normal resource name rather than specifying /data");
 
-        strcpy(archive_path, &resource_name[1]);
+        snprintf(archive_path, sizeof(archive_path), "%s", &resource_name[1]);
     } else {
         snprintf(archive_path, sizeof(archive_path), "data/%s", resource_name);
     }

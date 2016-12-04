@@ -44,8 +44,7 @@ const char *get_creation_timestamp()
             // The user specified NOW, so check that it's parsable.
             struct tm tmp;
             if (strptime(now, timestamp_format, &tmp) != NULL &&
-                    strlen(now) < sizeof(time_string) - 1) {
-                strcpy(time_string, now);
+                snprintf(time_string, sizeof(time_string), "%s", now) < sizeof(time_string)) {
                 return time_string;
             }
 
@@ -185,20 +184,19 @@ int bytes_to_hex(const uint8_t *bytes, char *str, size_t byte_count)
 
 int archive_filename_to_resource(const char *name, char *result, size_t maxlength)
 {
-    // Check that there's enough room to copy the string
-    if (maxlength < strlen(name) + 2)
-        ERR_RETURN("Bad path found in archive");
+    int length;
 
     // As a matter of convention, everything useful in the archive is stored
     // in the data directory. There are a couple scenarios where it's useful
     // to stuff a file in the root directory of the archive for compatibility
     // with other programs. Those are specified as absolute paths.
-    if (memcmp(name, "data/", 5) == 0) {
-        strcpy(result, &name[5]);
-    } else {
-        result[0] = '/';
-        strcpy(&result[1], name);
-    }
+    if (memcmp(name, "data/", 5) == 0)
+        length = snprintf(result, maxlength, "%s", &name[5]);
+    else
+        length = snprintf(result, maxlength, "/%s", name);
+
+    if (length >= maxlength)
+       ERR_RETURN("Bad path found in archive");
 
     return 0;
 }

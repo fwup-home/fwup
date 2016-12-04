@@ -59,11 +59,11 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     if (!signing_key)
         ERR_CLEANUP_MSG("Specify a signing key");
 
-    temp_filename = malloc(strlen(input_filename) + 5);
+    size_t temp_filename_len = strlen(input_filename) + 5;
+    temp_filename = malloc(temp_filename_len);
     if (!temp_filename)
         ERR_CLEANUP_MSG("Out of memory");
-    strcpy(temp_filename, input_filename);
-    strcat(temp_filename, ".tmp");
+    snprintf(temp_filename, temp_filename_len, "%s.tmp", input_filename);
 
     rc = fwup_archive_open_filename(in, input_filename);
     if (rc != ARCHIVE_OK)
