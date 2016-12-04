@@ -91,7 +91,7 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
     struct scan_context *context = (struct scan_context *) c;
     int ix = context->count;
     if (ix < context->max_devices) {
-        sprintf(context->devices[ix].path, "/dev/r%s", DADiskGetBSDName(disk));
+        snprintf(context->devices[ix].path, sizeof(context->devices[ix].path), "/dev/r%s", DADiskGetBSDName(disk));
 
         CFDictionaryRef info = DADiskCopyDescription(disk);
         CFNumberRef cfsize = CFDictionaryGetValue(info, kDADiskDescriptionMediaSizeKey);
@@ -183,7 +183,7 @@ static int authopen_fd(char * const pathname)
         close(devnull);
 
         char permissions[16];
-        sprintf(permissions, "%d", O_RDWR);
+        snprintf(permissions, sizeof(permissions), "%d", O_RDWR);
         char * const exec_argv[] = { "/usr/libexec/authopen",
                               "-stdoutpipe",
                               "-o",
@@ -252,7 +252,7 @@ int mmc_open(const char *mmc_path)
 
     // always operate on the raw device
     char raw_path[16];
-    sprintf(raw_path, "/dev/r%s", bsdname);
+    snprintf(raw_path, sizeof(raw_path), "/dev/r%s", bsdname);
 
     // Use authopen to get permissions to the device
     return authopen_fd(raw_path);

@@ -95,7 +95,7 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
                                  int instance,
                                  struct mmc_device_info *info)
 {
-    sprintf(info->devpath, devpath_pattern, instance);
+    snprintf(info->devpath, sizeof(info->devpath), devpath_pattern, instance);
 
     if (stat(info->devpath, &info->st) < 0)
         return false;
@@ -103,7 +103,7 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
     info->device_size = mmc_device_size_raw(info->devpath);
     if (info->device_size == 0) {
         char sysfspath[32];
-        sprintf(sysfspath, sysfs_size_pattern, instance);
+        snprintf(sysfspath, sizeof(sysfspath), sysfs_size_pattern, instance);
         info->device_size = mmc_device_size_sysfs(sysfspath);
     }
     return true;
@@ -286,7 +286,7 @@ int mmc_umount_all(const char *mmc_device)
             // If /etc/mtab, then call umount(8) so that
             // gets updated correctly.
             char cmdline[384];
-            sprintf(cmdline, "/bin/umount %s", todo[i]);
+            snprintf(cmdline, sizeof(cmdline), "/bin/umount %s", todo[i]);
             int rc = system(cmdline);
             if (rc != 0) {
                 fwup_warnx("%s", cmdline);
