@@ -11,7 +11,7 @@
 # Skip this test on systems that don't support sparse files
 # or large files.
 case $HOST_OS in
-    Darwin|Windows)
+    Darwin|Windows|OpenBSD)
         # No sparse file support on OSX or Windows, so skip
         exit 0
         ;;

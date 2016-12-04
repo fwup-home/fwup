@@ -8,7 +8,7 @@
 . ./common.sh
 
 case $HOST_OS in
-    Darwin|Windows)
+    Darwin|Windows|OpenBSD)
         # No sparse file support on OSX or Windows, so skip
         exit 0
         ;;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 
 #include "mmc.h"
 #include "util.h"

@@ -18,6 +18,9 @@ case $HOST_OS in
         # Seems to have 32KB sparse blocks. Need to investigate more.
         exit 0
         ;;
+    OpenBSD)
+        exit 0
+        ;;
     *)
         ;;
 esac
