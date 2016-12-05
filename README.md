@@ -27,7 +27,7 @@ repeatable way. The utility has the following features:
   6. Human and machine readable progress.
 
   7. Initialize or update SDCards on your development system whether you're
-     running Linux, OSX, or Windows. MMC and SDCards are automatically
+     running Linux, OSX, BSD, or Windows. MMC and SDCards are automatically
      detected and unmounted. No need to scan logs or manually unmount.
 
   8. Firmware archive digital signature creation and verification (BETA!!)
