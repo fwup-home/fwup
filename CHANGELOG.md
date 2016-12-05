@@ -7,6 +7,9 @@
       SDCard. Just run, "fwup myfile.fw" and fwup will automatically look
       for an attached SDCard, ask for confirmation, and apply the complete
       task.
+    * Ported to FreeBSD and other BSDs. This allows .fw files to be created
+      and applied on these systems. (I'm interested in hearing from embedded
+      BSD users for refining this support.)
 
   * Bug fixes
     * Sparse files that end with holes will be the right length when written.
