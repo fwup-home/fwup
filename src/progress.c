@@ -41,6 +41,7 @@ static void output_progress(struct fwup_progress *progress, int to_report)
     switch (progress->mode) {
     case PROGRESS_MODE_NUMERIC:
         printf("%d\n", to_report);
+        fflush(stdout);
         break;
 
     case PROGRESS_MODE_NORMAL:
