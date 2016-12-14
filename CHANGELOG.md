@@ -10,6 +10,8 @@
     * Ported to FreeBSD and other BSDs. This allows .fw files to be created
       and applied on these systems. (I'm interested in hearing from embedded
       BSD users for refining this support.)
+    * Added commandline options to scale the progress reports. See
+      --progress-low and --progress-high
 
   * Bug fixes
     * Sparse files that end with holes will be the right length when written.

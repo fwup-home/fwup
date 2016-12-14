@@ -130,6 +130,8 @@ Options:
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -p <keyfile> A public key file for verifying firmware updates
+  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%)
+  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%)
   -q, --quiet   Quiet
   -s <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)

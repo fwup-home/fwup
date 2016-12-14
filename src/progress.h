@@ -43,11 +43,17 @@ struct fwup_progress {
     // The most recent progress reported is cached to avoid unnecessary context switching/IO
     int last_reported;
 
+    // This is the starting progress value (normally 0 for 0%)
+    int low;
+
+    // This is the number of progress values (normally 100 to get from 0% to 100%)
+    int range;
+
     // If the mode supports it, this is the start time of the update in milliseconds
     int start_time;
 };
 
-void progress_init(struct fwup_progress *progress, enum fwup_progress_mode mode);
+void progress_init(struct fwup_progress *progress, enum fwup_progress_mode mode, int progress_low, int progress_high);
 void progress_report(struct fwup_progress *progress, int progress_units);
 void progress_report_complete(struct fwup_progress *progress);
 

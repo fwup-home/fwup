@@ -31,25 +31,25 @@ static int current_time_ms()
     return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
 
-static void output_progress(struct fwup_progress *progress, int percent)
+static void output_progress(struct fwup_progress *progress, int to_report)
 {
-    if (percent == progress->last_reported)
+    if (to_report == progress->last_reported)
         return;
 
-    progress->last_reported = percent;
+    progress->last_reported = to_report;
 
     switch (progress->mode) {
     case PROGRESS_MODE_NUMERIC:
-        printf("%d\n", percent);
+        printf("%d\n", to_report);
         break;
 
     case PROGRESS_MODE_NORMAL:
-        printf("\r%3d%%", percent);
+        printf("\r%3d%%", to_report);
         fflush(stdout);
         break;
 
     case PROGRESS_MODE_FRAMING:
-        fwup_output(FRAMING_TYPE_PROGRESS, percent, "");
+        fwup_output(FRAMING_TYPE_PROGRESS, to_report, "");
         break;
 
     case PROGRESS_MODE_OFF:
@@ -61,18 +61,28 @@ static void output_progress(struct fwup_progress *progress, int percent)
 /**
  * @brief Initialize progress reporting
  *
+ * @param progress the progress state struct
+ * @param mode how progress should be reported
+ * @param progress_low the lowest progress value (normally 0)
+ * @param progress_high the highest progress value (normally 100)
+ *
  * This function also immediately outputs 0% progress so that the user
  * gets feedback as soon as possible.
  */
-void progress_init(struct fwup_progress *progress, enum fwup_progress_mode mode)
+void progress_init(struct fwup_progress *progress,
+                   enum fwup_progress_mode mode,
+                   int progress_low,
+                   int progress_high)
 {
     progress->mode = mode;
     progress->last_reported = -1;
     progress->total_units = 0;
     progress->current_units = 0;
     progress->start_time = 0;
+    progress->low = progress_low;
+    progress->range = progress_high - progress_low;
 
-    output_progress(progress, 0);
+    output_progress(progress, progress_low);
 }
 
 /**
@@ -92,19 +102,18 @@ void progress_report(struct fwup_progress *progress, int units)
     progress->current_units += units;
     assert(progress->current_units <= progress->total_units);
 
-    int percent;
+    int to_report = progress->low;
     if (progress->total_units) {
-        percent = (int) (progress->current_units * 100 / progress->total_units);
+        int amt = (int) (progress->current_units * progress->range / progress->total_units);
 
-        // Don't report 100% until the very, very end just in case something takes
+        // Don't report "100%" until the very, very end just in case something takes
         // longer than expected in the code after all progress units have been reported.
-        if (percent > 99)
-            percent = 99;
-    } else {
-        percent = 0;
+        if (amt >= progress->range)
+            amt = progress->range - 1;
+        to_report += amt;
     }
 
-    output_progress(progress, percent);
+    output_progress(progress, to_report);
 }
 
 /**
@@ -114,7 +123,8 @@ void progress_report(struct fwup_progress *progress, int units)
  */
 void progress_report_complete(struct fwup_progress *progress)
 {
-    output_progress(progress, 100);
+    // Force 100%
+    output_progress(progress, progress->low + progress->range);
 
     switch (progress->mode) {
     case PROGRESS_MODE_NORMAL:

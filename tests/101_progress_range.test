@@ -1,0 +1,46 @@
+#!/bin/sh
+
+#
+# Test out progress over a custom range
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 2.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 3.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 4.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource 1.bin { raw_write(0) }
+	on-resource 2.bin { raw_write(0) }
+	on-resource 3.bin { raw_write(0) }
+	on-resource 4.bin { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a -n --progress-low 10 --progress-high 50 -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+
+cat >$WORK/expected_output.txt <<EOF
+10
+20
+30
+40
+49
+50
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

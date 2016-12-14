@@ -44,7 +44,6 @@
 bool fwup_verbose = false;
 bool fwup_framing = false;
 
-static bool numeric_progress = false;
 static bool quiet = false;
 
 static void print_usage()
@@ -88,6 +87,8 @@ static void print_usage()
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     printf("  -p <keyfile> A public key file for verifying firmware updates\n");
+    printf("  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%%)\n");
+    printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
     printf("  -q, --quiet   Quiet\n");
     printf("  -s <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
@@ -149,6 +150,8 @@ static struct option long_options[] = {
     {"gen-keys", no_argument,       0, 'g'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
+    {"progress-low", required_argument, 0, '$'},
+    {"progress-high", required_argument, 0, '%'},
     {"quiet",    no_argument,       0, 'q'},
     {"sign",     no_argument,       0, 'S'},
     {"task",     required_argument, 0, 't'},
@@ -275,6 +278,9 @@ int main(int argc, char **argv)
 #endif
     bool unmount_first = true;
     bool easy_mode = true;
+    bool numeric_progress = false;
+    int progress_low = 0;    // 0%
+    int progress_high = 100; // to 100%
 
     if (argc == 1) {
         print_usage();
@@ -381,6 +387,12 @@ int main(int argc, char **argv)
         case '#': // --no-eject
             eject_on_success = false;
             break;
+        case '$': // progress-low
+            progress_low = strtol(optarg, 0, 0);
+            break;
+        case '%': // progress-high
+            progress_high = strtol(optarg, 0, 0);
+            break;
         default: /* '?' */
             print_usage();
             exit(EXIT_FAILURE);
@@ -441,7 +453,7 @@ int main(int argc, char **argv)
         else
             progress_mode = PROGRESS_MODE_NORMAL;
         struct fwup_progress progress;
-        progress_init(&progress, progress_mode);
+        progress_init(&progress, progress_mode, progress_low, progress_high);
 
         // Check if the mmc_device_path is really a special device. If
         // we're just creating an image file, then don't try to unmount
