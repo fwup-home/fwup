@@ -97,7 +97,8 @@ TESTS = 001_simple_fw.test \
 	098_sparse_empty.test \
 	099_sparse_lasthole.test \
 	100_easy_option.test \
-	101_progress_range.test
+	101_progress_range.test \
+	102_multi_requires.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

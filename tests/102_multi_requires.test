@@ -1,0 +1,84 @@
+#!/bin/sh
+
+#
+# Test that multiple "require" clauses pick the right option.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+uboot-environment uboot-env {
+    block-offset = 0
+    block-count = 2
+}
+
+task complete {
+    on-init {
+        uboot_clearenv(uboot-env)
+        uboot_setenv(uboot-env, "a", 0)
+        uboot_setenv(uboot-env, "b", 1)
+    }
+}
+task expected {
+    on-init {
+        uboot_clearenv(uboot-env)
+        uboot_setenv(uboot-env, "a", 0)
+        uboot_setenv(uboot-env, "b", 1)
+        uboot_setenv(uboot-env, "picked", "right0")
+    }
+}
+task upgrade.wrong0 {
+    require-uboot-variable(uboot-env, "a", 0)
+    require-uboot-variable(uboot-env, "b", 0)
+    on-finish { uboot_setenv(uboot-env, "picked", "wrong0") }
+}
+task upgrade.wrong1 {
+    require-uboot-variable(uboot-env, "a", 1)
+    require-uboot-variable(uboot-env, "b", 0)
+    on-finish { uboot_setenv(uboot-env, "picked", "wrong1") }
+}
+task upgrade.wrong2 {
+    require-uboot-variable(uboot-env, "a", 1)
+    require-uboot-variable(uboot-env, "b", 1)
+    on-finish { uboot_setenv(uboot-env, "picked", "wrong2") }
+}
+task upgrade.wrong3 {
+    require-uboot-variable(uboot-env, "a", 1)
+    on-finish { uboot_setenv(uboot-env, "picked", "wrong3") }
+}
+task upgrade.wrong4 {
+    require-uboot-variable(uboot-env, "b", 0)
+    on-finish { uboot_setenv(uboot-env, "picked", "wrong4") }
+}
+task upgrade.right0 {
+    require-uboot-variable(uboot-env, "a", 0)
+    require-uboot-variable(uboot-env, "b", 1)
+    on-finish { uboot_setenv(uboot-env, "picked", "right0") }
+}
+task upgrade.right1 {
+    # right0 should be picked first
+    require-uboot-variable(uboot-env, "a", 0)
+    on-finish { uboot_setenv(uboot-env, "picked", "right1") }
+}
+task upgrade.right2 {
+    # right0 should be picked first
+    require-uboot-variable(uboot-env, "b", 1)
+    on-finish { uboot_setenv(uboot-env, "picked", "right2") }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -a -d $IMGFILE.expected -i $FWFILE -t expected
+
+# Now upgrade the IMGFILE file
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+# Check that the right option was picked
+cmp $IMGFILE $IMGFILE.expected
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
