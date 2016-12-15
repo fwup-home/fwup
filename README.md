@@ -626,6 +626,19 @@ On the target device, you can retrieve the version by using `-m`. For example:
     meta-architecture = "arm"
     meta-creation-date = "2014-09-07T19:50:57Z"
 
+## How do I debug?
+
+I apply updates to regular files on my laptop (as opposed to eMMC or SDCards)
+and examine them with a hex editor. A few other routes might be useful too:
+
+1. Unzip the .fw file to inspect the contents. It's a regular ZIP file and
+   the `meta.conf` file inside it is the stripped down view of what your
+   configuration looks like after variable substitution, etc.
+2. Add the `error()` function to do printf-style debugging.
+3. Find an image that works and skip updating some sections. For example,
+   some processors are very picky on the MBR contents and it's easier to
+   get everything else working before tackling partition constraints.
+
 ## How do I get the best performance?
 
 In general, `fwup` writes to Flash memory in large blocks so that the update
