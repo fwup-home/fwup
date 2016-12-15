@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#
+# Test that printing an error message works
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+task complete {
+    on-init {
+        error("Don't run this")
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
+
+# Check that it fails to apply
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "Expected this to fail, but it didn't."
+    exit 1
+fi
+

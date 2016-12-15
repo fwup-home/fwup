@@ -463,6 +463,7 @@ write to raw locations on the destination.
 
 Action                                | Min fwup version | Description
 --------------------------------------|------------------|------------
+error(message)                        | 0.12.0 | Immediately fail a firmware update with an error
 fat_mkfs(block_offset, block_count)   | 0.1.0 | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)     | 0.1.0 | Write the resource to the FAT file system at the specified block offset
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
