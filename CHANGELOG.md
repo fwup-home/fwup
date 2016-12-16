@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.12.0-dev
+## v0.12.0
 
   * New features
     * Added easy way of invoking fwup for those just wanting to program an
@@ -12,7 +12,7 @@
       BSD users for refining this support.)
     * Added commandline options to scale the progress reports. See
       --progress-low and --progress-high
-    * Added error() function to let config files produce friendlier error
+    * Added an error() function to let config files produce friendlier error
       messages when none of the upgrade (or any other) tasks match.
 
   * Bug fixes
