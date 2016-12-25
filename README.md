@@ -323,6 +323,21 @@ file-resource rootfs.img {
 }
 ```
 
+### Files from strings
+
+Sometimes it's useful to create short files inside the `fwup` config file
+rather than referencing them. This can be accomplished using the `contents` key
+in a `file-resource`. Variable substitution works in the `contents` string just
+like any other string in the `fwup` configuration file.
+
+```
+file-resource short-file.txt {
+        contents = "You're looking at a short\n\
+file creating by fwup.\n\
+When it was made, FOO was ${FOO}.\n"
+}
+```
+
 ## mbr
 
 A `mbr` section specifies the contents of the Master Boot Record on the

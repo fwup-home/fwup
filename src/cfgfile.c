@@ -208,8 +208,13 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
 {
     cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
     const char *path = cfg_getstr(sec, "host-path");
-    if (!path) {
-        cfg_error(cfg, "host-path must be set for file-resource '%s'", cfg_title(sec));
+    const char *contents = cfg_getstr(sec, "contents");
+    if (!path && !contents) {
+        cfg_error(cfg, "host-path or contents must be set for file-resource '%s'", cfg_title(sec));
+        return -1;
+    }
+    if (path && contents) {
+        cfg_error(cfg, "only one of host-path or contents should be set for file-resource '%s'", cfg_title(sec));
         return -1;
     }
 
@@ -299,6 +304,7 @@ static cfg_opt_t file_resource_opts[] = {
 #else
     CFG_INT_LIST("length", 0, CFGF_NONE),
 #endif
+    CFG_STR("contents", 0, CFGF_NONE),
     CFG_STR("blake2b-256", 0, CFGF_NONE),
     CFG_STR("sha256", 0, CFGF_NONE), // Old hash for files - use blake2b-256 now
     CFG_INT("assert-size-lte", -1, CFGF_NONE),

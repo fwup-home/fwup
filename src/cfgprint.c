@@ -33,8 +33,10 @@
 //   4. Remove extra spaces and indentation
 //   5. Remove custom printers (we didn't used them anyway)
 //   6. Remove "assert-" attributes since they're only used during archive creation
-//   7. Remove "host-path" attributes since they're only used during archive creation
+//   7. Remove "file-resource|host-path" attributes since they're only used during archive creation
 //      and they contain host paths which may not be desirable to distribute
+//   8. Remove "file-resource|contents" attributes since they're converted to files
+//      during archive creation.
 //
 // Since fwup_cfg_to_string() is used to generate the meta.conf file in the generated
 // firmware images, it is important that it be work for the version of fwup applying
@@ -177,9 +179,10 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
             if (strncmp("assert-", opt->name, 7) == 0)
                 return;
 
-            // Skip host-path (see note in top comment)
+            // Skip attributes not used after archive creation (see note in top comment)
             if (strcmp("host-path", opt->name) == 0 ||
-                strcmp("bootstrap-code-host-path", opt->name) == 0)
+                strcmp("bootstrap-code-host-path", opt->name) == 0 ||
+                strcmp("contents", opt->name) == 0)
                 return;
 
             ssprintf(s, "%s=", opt->name);

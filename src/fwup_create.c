@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 
 struct calc_metadata_state
 {
@@ -114,29 +115,72 @@ static int compute_file_metadata(cfg_t *cfg)
 
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *paths = cfg_getstr(sec, "host-path");
-        if (!paths)
-            ERR_RETURN("host-path must be set for file-resource '%s'", cfg_title(sec));
-
-        struct calc_metadata_state state;
-
-        // Compute the sparse file map
-        sparse_file_init(&state.sfm);
-        OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, build_sparse_map, &state));
-        OK_OR_RETURN(sparse_file_set_map_in_resource(sec, &state.sfm));
-
-        // Compute the hash across the files
-        crypto_generichash_init(&state.hash_state, NULL, 0, crypto_generichash_BYTES);
-        sparse_file_start_read(&state.sfm, &state.read_iterator);
-        OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, calc_hash, &state));
 
         unsigned char hash[crypto_generichash_BYTES];
-        crypto_generichash_final(&state.hash_state, hash, sizeof(hash));
+        if (paths) {
+            struct calc_metadata_state state;
+
+            // Compute the sparse file map
+            sparse_file_init(&state.sfm);
+            OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, build_sparse_map, &state));
+            OK_OR_RETURN(sparse_file_set_map_in_resource(sec, &state.sfm));
+
+            // Compute the hash across the files
+            crypto_generichash_init(&state.hash_state, NULL, 0, crypto_generichash_BYTES);
+            sparse_file_start_read(&state.sfm, &state.read_iterator);
+            OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, calc_hash, &state));
+
+            crypto_generichash_final(&state.hash_state, hash, sizeof(hash));
+            sparse_file_free(&state.sfm);
+        } else {
+            const char *contents = cfg_getstr(sec, "contents");
+            assert(contents); // config file verification guarantees either paths or contents are defined
+            size_t len = strlen(contents);
+#if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
+            // See cfgfile.c for why we have to do this.
+            cfg_setfloat(sec, "length", len);
+#else
+            cfg_setint(sec, "length", len);
+#endif
+
+            crypto_generichash(hash, sizeof(hash), (const unsigned char *) contents, len, NULL, 0);
+        }
         char hash_str[sizeof(hash) * 2 + 1];
         bytes_to_hex(hash, hash_str, sizeof(hash));
-
         cfg_setstr(sec, "blake2b-256", hash_str);
+    }
 
-        sparse_file_free(&state.sfm);
+    return 0;
+}
+
+static int resource_name_to_archive_path(const char *resource_name, char *archive_path)
+{
+    // Convert the resource name to an archive path (most resources should be in the data directory)
+    size_t resource_name_len = strlen(resource_name);
+    if (resource_name_len + 6 > FWFILE_MAX_ARCHIVE_PATH)
+        ERR_RETURN("resource name '%s' is too long", resource_name);
+    if (resource_name_len == '\0')
+        ERR_RETURN("resource name can't be empty");
+    if (resource_name[resource_name_len - 1] == '/')
+        ERR_RETURN("resource name '%s' can't end in a '/'", resource_name);
+
+    if (resource_name[0] == '/') {
+        if (resource_name[1] == '\0')
+            ERR_RETURN("resource name can't be the root directory");
+
+        // This seems like it's just asking for trouble, so error out.
+        if (strcmp(resource_name, "/meta.conf") == 0)
+            ERR_RETURN("resources can't be named /meta.conf");
+
+        // Absolute paths are not intended to be commonly used and ones
+        // in /data won't work when applying the updates, so error out.
+        if (memcmp(resource_name, "/data/", 6) == 0 ||
+            strcmp(resource_name, "/data") == 0)
+            ERR_RETURN("use a normal resource name rather than specifying /data");
+
+        snprintf(archive_path, FWFILE_MAX_ARCHIVE_PATH, "%s", &resource_name[1]);
+    } else {
+        snprintf(archive_path, FWFILE_MAX_ARCHIVE_PATH, "data/%s", resource_name);
     }
 
     return 0;
@@ -167,34 +211,8 @@ static int add_file_resource(struct archive *a,
                             local_paths, total_len, assertions->assert_lte, assertions->assert_lte / 512);
     }
 
-    // Convert the resource name to an archive path (most resources should be in the data directory)
     char archive_path[FWFILE_MAX_ARCHIVE_PATH];
-    size_t resource_name_len = strlen(resource_name);
-    if (resource_name_len + 6 > sizeof(archive_path))
-        ERR_CLEANUP_MSG("resource name '%s' is too long", resource_name);
-    if (resource_name_len == '\0')
-        ERR_CLEANUP_MSG("resource name can't be empty");
-    if (resource_name[resource_name_len - 1] == '/')
-        ERR_CLEANUP_MSG("resource name '%s' can't end in a '/'", resource_name);
-
-    if (resource_name[0] == '/') {
-        if (resource_name[1] == '\0')
-            ERR_CLEANUP_MSG("resource name can't be the root directory");
-
-        // This seems like it's just asking for trouble, so error out.
-        if (strcmp(resource_name, "/meta.conf") == 0)
-            ERR_CLEANUP_MSG("resources can't be named /meta.conf");
-
-        // Absolute paths are not intended to be commonly used and ones
-        // in /data won't work when applying the updates, so error out.
-        if (memcmp(resource_name, "/data/", 6) == 0 ||
-            strcmp(resource_name, "/data") == 0)
-            ERR_CLEANUP_MSG("use a normal resource name rather than specifying /data");
-
-        snprintf(archive_path, sizeof(archive_path), "%s", &resource_name[1]);
-    } else {
-        snprintf(archive_path, sizeof(archive_path), "data/%s", resource_name);
-    }
+    OK_OR_CLEANUP(resource_name_to_archive_path(resource_name, archive_path));
 
     off_t data_len = sparse_file_data_size(sfm);
 
@@ -214,6 +232,34 @@ cleanup:
     return rc;
 }
 
+static int add_string_resource(struct archive *a,
+                          const char *resource_name,
+                          const char *contents)
+{
+    int rc = 0;
+    struct archive_entry *entry = archive_entry_new();
+
+    char archive_path[FWFILE_MAX_ARCHIVE_PATH];
+    OK_OR_CLEANUP(resource_name_to_archive_path(resource_name, archive_path));
+
+    size_t len = strlen(contents);
+
+    archive_entry_set_pathname(entry, archive_path);
+    archive_entry_set_size(entry, len);
+    archive_entry_set_filetype(entry, AE_IFREG);
+    archive_entry_set_perm(entry, 0644);
+    archive_write_header(a, entry);
+
+    ssize_t written = archive_write_data(a, contents, len);
+    if (written != (ssize_t) len)
+        ERR_CLEANUP_MSG("error writing to archive");
+
+
+cleanup:
+    archive_entry_free(entry);
+    return rc;
+}
+
 static int add_file_resources(cfg_t *cfg, struct archive *a)
 {
     cfg_t *sec;
@@ -225,16 +271,18 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
 
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *hostpath = cfg_getstr(sec, "host-path");
-        if (!hostpath)
-            ERR_CLEANUP_MSG("specify a host-path");
+        if (hostpath) {
+            struct fwfile_assertions assertions;
+            assertions.assert_lte = cfg_getint(sec, "assert-size-lte") * 512;
+            assertions.assert_gte = cfg_getint(sec, "assert-size-gte") * 512;
 
-        struct fwfile_assertions assertions;
-        assertions.assert_lte = cfg_getint(sec, "assert-size-lte") * 512;
-        assertions.assert_gte = cfg_getint(sec, "assert-size-gte") * 512;
+            OK_OR_CLEANUP(sparse_file_get_map_from_resource(sec, &sfm));
 
-        OK_OR_CLEANUP(sparse_file_get_map_from_resource(sec, &sfm));
-
-        OK_OR_CLEANUP(add_file_resource(a, cfg_title(sec), hostpath, &sfm, &assertions));
+            OK_OR_CLEANUP(add_file_resource(a, cfg_title(sec), hostpath, &sfm, &assertions));
+        } else {
+            const char *contents = cfg_getstr(sec, "contents");
+            OK_OR_CLEANUP(add_string_resource(a, cfg_title(sec), contents));
+        }
     }
 
 cleanup:

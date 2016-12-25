@@ -1,0 +1,46 @@
+#!/bin/sh
+
+#
+# Test the creation and application of a trivial firmware file
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource info.txt {
+        contents = "Hello!"
+}
+
+define(FOO,"foo")
+file-resource foo.txt {
+        contents = "foo"
+}
+
+file-resource multiline.txt {
+        contents = "This is a long \n\
+multi-line\n\
+file.\n"
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "info.txt" {
+length=6
+blake2b-256="8c722f76c12a9585d1bd96b4919d376d9c02a22488590b8ecca68426bac82c4b"
+}
+file-resource "foo.txt" {
+length=3
+blake2b-256="b8fe9f7f6255a6fa08f668ab632a8d081ad87983c77cd274e48ce450f0b349fd"
+}
+file-resource "multiline.txt" {
+length=33
+blake2b-256="d3f58e2c947b441cfe4452b1e6342cc2e9d2754c3bf47af5501d47664f272eec"
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
