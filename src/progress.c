@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+extern enum fwup_progress_option fwup_progress_mode;
+
 // Elapsed time measurement maxes out at 2^31 ms = 24 days
 // Despite not being monotic, gettimeofday is more portable, and
 // getting the duration wrong is not the end of the world.
@@ -38,7 +40,7 @@ static void output_progress(struct fwup_progress *progress, int to_report)
 
     progress->last_reported = to_report;
 
-    switch (progress->mode) {
+    switch (fwup_progress_mode) {
     case PROGRESS_MODE_NUMERIC:
         printf("%d\n", to_report);
         fflush(stdout);
@@ -63,7 +65,6 @@ static void output_progress(struct fwup_progress *progress, int to_report)
  * @brief Initialize progress reporting
  *
  * @param progress the progress state struct
- * @param mode how progress should be reported
  * @param progress_low the lowest progress value (normally 0)
  * @param progress_high the highest progress value (normally 100)
  *
@@ -71,11 +72,9 @@ static void output_progress(struct fwup_progress *progress, int to_report)
  * gets feedback as soon as possible.
  */
 void progress_init(struct fwup_progress *progress,
-                   enum fwup_progress_mode mode,
                    int progress_low,
                    int progress_high)
 {
-    progress->mode = mode;
     progress->last_reported = -1;
     progress->total_units = 0;
     progress->current_units = 0;
@@ -95,7 +94,7 @@ void progress_init(struct fwup_progress *progress,
 void progress_report(struct fwup_progress *progress, int units)
 {
     // Start the timer once we start for real
-    if (progress->mode == PROGRESS_MODE_NORMAL &&
+    if (fwup_progress_mode == PROGRESS_MODE_NORMAL &&
             progress->start_time == 0 &&
             progress->total_units > 0)
         progress->start_time = current_time_ms();
@@ -127,7 +126,7 @@ void progress_report_complete(struct fwup_progress *progress)
     // Force 100%
     output_progress(progress, progress->low + progress->range);
 
-    switch (progress->mode) {
+    switch (fwup_progress_mode) {
     case PROGRESS_MODE_NORMAL:
         if (progress->start_time) {
             int elapsed = current_time_ms() - progress->start_time;

@@ -22,7 +22,7 @@
 /**
  * @brief How to report progress to the user
  */
-enum fwup_progress_mode {
+enum fwup_progress_option {
     PROGRESS_MODE_OFF,
     PROGRESS_MODE_NUMERIC,
     PROGRESS_MODE_NORMAL,
@@ -30,9 +30,6 @@ enum fwup_progress_mode {
 };
 
 struct fwup_progress {
-    // This is set based on command line parameters
-    enum fwup_progress_mode mode;
-
     // If we're showing progress when applying, this is the number of progress_units that
     // should be 100%.
     int64_t total_units;
@@ -53,7 +50,7 @@ struct fwup_progress {
     int start_time;
 };
 
-void progress_init(struct fwup_progress *progress, enum fwup_progress_mode mode, int progress_low, int progress_high);
+void progress_init(struct fwup_progress *progress, int progress_low, int progress_high);
 void progress_report(struct fwup_progress *progress, int progress_units);
 void progress_report_complete(struct fwup_progress *progress);
 

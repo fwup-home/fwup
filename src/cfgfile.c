@@ -352,7 +352,8 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("uboot_clearenv", CB), \
     CFG_FUNC("uboot_setenv", CB), \
     CFG_FUNC("uboot_unsetenv", CB), \
-    CFG_FUNC("error", CB)
+    CFG_FUNC("error", CB), \
+    CFG_FUNC("info", CB) \
 
 static cfg_opt_t task_on_init_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),

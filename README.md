@@ -472,6 +472,7 @@ fat_rm(block_offset, filename)        | 0.1.0 | Delete the specified file
 fat_mkdir(block_offset, filename)     | 0.2.0 | Create a directory on a FAT file system
 fat_setlabel(block_offset, label)     | 0.2.0 | Set the volume label on a FAT file system
 fat_touch(block_offset, filename)     | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
+info(message)                         | 0.13.0 | Print out an informational message
 mbr_write(mbr)                        | 0.1.0 | Write the specified mbr to the target
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset)               | 0.1.0 | Write the resource to the specified block offset

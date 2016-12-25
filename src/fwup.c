@@ -43,6 +43,7 @@
 // Global options
 bool fwup_verbose = false;
 bool fwup_framing = false;
+enum fwup_progress_option fwup_progress_mode = PROGRESS_MODE_OFF;
 
 static bool quiet = false;
 
@@ -443,17 +444,16 @@ int main(int argc, char **argv)
         if (!mmc_device_path)
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
 
-        enum fwup_progress_mode progress_mode;
         if (quiet)
-            progress_mode = PROGRESS_MODE_OFF;
+            fwup_progress_mode = PROGRESS_MODE_OFF;
         else if (fwup_framing)
-            progress_mode = PROGRESS_MODE_FRAMING;
+            fwup_progress_mode = PROGRESS_MODE_FRAMING;
         else if (numeric_progress)
-            progress_mode = PROGRESS_MODE_NUMERIC;
+            fwup_progress_mode = PROGRESS_MODE_NUMERIC;
         else
-            progress_mode = PROGRESS_MODE_NORMAL;
+            fwup_progress_mode = PROGRESS_MODE_NORMAL;
         struct fwup_progress progress;
-        progress_init(&progress, progress_mode, progress_low, progress_high);
+        progress_init(&progress, progress_low, progress_high);
 
         // Check if the mmc_device_path is really a special device. If
         // we're just creating an image file, then don't try to unmount

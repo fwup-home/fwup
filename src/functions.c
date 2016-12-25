@@ -53,6 +53,7 @@ DECLARE_FUN(uboot_clearenv);
 DECLARE_FUN(uboot_setenv);
 DECLARE_FUN(uboot_unsetenv);
 DECLARE_FUN(error);
+DECLARE_FUN(info);
 
 struct fun_info {
     const char *name;
@@ -78,7 +79,8 @@ static struct fun_info fun_table[] = {
     FUN_INFO(uboot_clearenv),
     FUN_INFO(uboot_setenv),
     FUN_INFO(uboot_unsetenv),
-    FUN_INFO(error)
+    FUN_INFO(error),
+    FUN_INFO(info)
 };
 
 static struct fun_info *lookup(int argc, const char **argv)
@@ -915,7 +917,7 @@ cleanup:
 int error_validate(struct fun_context *fctx)
 {
     if (fctx->argc != 2)
-        ERR_RETURN("error requires a message parameter");
+        ERR_RETURN("error() requires a message parameter");
 
     return 0;
 }
@@ -929,3 +931,20 @@ int error_run(struct fun_context *fctx)
     ERR_RETURN("%s", fctx->argv[1]);
 }
 
+int info_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("info() requires a message parameter");
+
+    return 0;
+}
+int info_compute_progress(struct fun_context *fctx)
+{
+    (void) fctx; // UNUSED
+    return 0;
+}
+int info_run(struct fun_context *fctx)
+{
+    fwup_warnx("%s", fctx->argv[1]);
+    return 0;
+}

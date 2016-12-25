@@ -99,7 +99,8 @@ TESTS = 001_simple_fw.test \
 	100_easy_option.test \
 	101_progress_range.test \
 	102_multi_requires.test \
-	103_error_msg.test
+	103_error_msg.test \
+	104_info_msg.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

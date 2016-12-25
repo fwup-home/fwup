@@ -16,6 +16,7 @@
 #define _GNU_SOURCE // for vasprintf
 #include "util.h"
 #include "simple_string.h"
+#include "progress.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -28,6 +29,7 @@
 
 char *strptime(const char *s, const char *format, struct tm *tm);
 extern bool fwup_framing;
+extern enum fwup_progress_option fwup_progress_mode;
 
 static char *last_error_message = NULL;
 static char time_string[200] = {0};
@@ -326,6 +328,9 @@ void fwup_output(const char *type, uint16_t code, const char *str)
         fwrite(&be_length, 4, 1, stdout);
         fwrite(type, 2, 1, stdout);
         fwrite(&be_code, 2, 1, stdout);
+    } else if (fwup_progress_mode == PROGRESS_MODE_NORMAL) {
+        // Erase the current % and then print the message
+        fwrite("\r   \r", 5, 1, stdout);
     }
     fwrite(str, 1, len, stdout);
 }

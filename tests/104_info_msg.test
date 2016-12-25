@@ -1,0 +1,71 @@
+#!/bin/sh
+
+#
+# Test out the info function
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 2.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 3.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 4.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource 1.bin { info("1.bin") }
+        on-resource 2.bin { info("2.bin") }
+        on-resource 3.bin { info("3.bin") }
+        on-resource 4.bin { info("4.bin") }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Try info() with numeric progress
+$FWUP_APPLY -a -n -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+0
+fwup: 1.bin
+fwup: 2.bin
+fwup: 3.bin
+fwup: 4.bin
+100
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Try info() with regular progress
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete \
+    | tr '\r' '.' \
+    | sed 's/\.$//g' \
+    | grep -v '^Elapsed time' \
+    > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+.  0%.   .fwup: 1.bin
+.   .fwup: 2.bin
+.   .fwup: 3.bin
+.   .fwup: 4.bin
+.100%
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Try info() in quiet mode
+$FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: 1.bin
+fwup: 2.bin
+fwup: 3.bin
+fwup: 4.bin
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
