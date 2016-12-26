@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Test that resources get applied in declaration order
+# no matter what the ordering of the 'on-resource' is.
+#
+# This reason that this is so important is that for firmware
+# updates, some operations are more critical than others. For
+# A/B upgrades, the ones that switch the active partition
+# need to occur at the end. Usually this is handled in the
+# 'on-finish' handler, but sometimes a file triggers it.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 2.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 3.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 4.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource 4.bin { info("4.bin") }
+        on-finish { info("finish") }
+        on-resource 2.bin { info("2.bin") }
+        on-resource 1.bin { info("1.bin") }
+        on-init { info("init") }
+        on-resource 3.bin { info("3.bin") }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Try info() with numeric progress
+$FWUP_APPLY -a -n -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+0
+fwup: init
+fwup: 1.bin
+fwup: 2.bin
+fwup: 3.bin
+fwup: 4.bin
+fwup: finish
+100
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE
