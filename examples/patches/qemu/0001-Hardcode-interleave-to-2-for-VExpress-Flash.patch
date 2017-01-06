@@ -1,0 +1,29 @@
+From 2caed1980ec94f7a2e82ae8d4b4375990c10d5db Mon Sep 17 00:00:00 2001
+From: Frank Hunleth <fhunleth@troodon-software.com>
+Date: Thu, 29 Dec 2016 15:52:20 -0500
+Subject: [PATCH] Hardcode interleave to 2 for VExpress Flash
+
+These boards have 2 NOR Flash chips. Linux handles this and doubles the
+write size. Without this change, qemu writes half as much as it should
+to the simulated Flash.
+---
+ hw/block/pflash_cfi01.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/hw/block/pflash_cfi01.c b/hw/block/pflash_cfi01.c
+index 62d7a56..589a119 100644
+--- a/hw/block/pflash_cfi01.c
++++ b/hw/block/pflash_cfi01.c
+@@ -818,7 +818,8 @@ static void pflash_cfi01_realize(DeviceState *dev, Error **errp)
+     } else {
+         pfl->cfi_table[0x2A] = 0x0B;
+     }
+-    pfl->writeblock_size = 1 << pfl->cfi_table[0x2A];
++    /* FAH: change interleave factor to 2 for vexpress board */
++    pfl->writeblock_size = 2 << pfl->cfi_table[0x2A];
+ 
+     pfl->cfi_table[0x2B] = 0x00;
+     /* Number of erase block regions (uniform) */
+-- 
+2.7.4
+

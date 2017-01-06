@@ -1,0 +1,43 @@
+#!/bin/sh
+
+APPDATA_PARTITION=mmcblk0p3
+
+start() {
+    # Mount the writable file system.
+    # Check that the root file system was successfully mounted
+    grep $APPDATA_PARTITION /proc/mounts >/dev/null
+    if [ "$?" != "0" ] && ! mount /mnt; then
+	echo "Performing first time format of ($APPDATA_PARTITION)"
+        mke2fs -q -F -t ext4 -O ^huge_file -L appdata /dev/$APPDATA_PARTITION
+
+        # Mount our newly formatted user partition
+	mount /mnt
+
+        # Fill out a base skeleton
+        mkdir -p /mnt/etc/dropbear
+    fi
+}
+
+stop() {
+    # Nothing needs to be done
+    echo ""
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	stop
+	start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

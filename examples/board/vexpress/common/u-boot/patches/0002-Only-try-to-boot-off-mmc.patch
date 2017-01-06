@@ -1,0 +1,28 @@
+From fae3d447c2748edea946ffa8ebe7e9d16a4bf118 Mon Sep 17 00:00:00 2001
+From: Frank Hunleth <fhunleth@troodon-software.com>
+Date: Fri, 28 Oct 2016 10:06:58 -0400
+Subject: [PATCH] Only try to boot off mmc
+
+---
+ include/configs/vexpress_common.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/include/configs/vexpress_common.h b/include/configs/vexpress_common.h
+index beffccd..3ac4dc9 100644
+--- a/include/configs/vexpress_common.h
++++ b/include/configs/vexpress_common.h
+@@ -193,10 +193,7 @@
+ 	"run bootflash; "
+ 
+ #define BOOT_TARGET_DEVICES(func) \
+-        func(MMC, mmc, 1) \
+-        func(MMC, mmc, 0) \
+-        func(PXE, pxe, na) \
+-        func(DHCP, dhcp, na)
++        func(MMC, mmc, 0)
+ #include <config_distro_bootcmd.h>
+ 
+ #ifdef CONFIG_VEXPRESS_ORIGINAL_MEMORY_MAP
+-- 
+2.7.4
+

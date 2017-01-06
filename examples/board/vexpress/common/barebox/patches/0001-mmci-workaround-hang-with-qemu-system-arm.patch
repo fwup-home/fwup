@@ -1,0 +1,54 @@
+From dc9e854d7ffb4ab181b58fc6880954697a398e63 Mon Sep 17 00:00:00 2001
+From: Frank Hunleth <fhunleth@troodon-software.com>
+Date: Sun, 16 Oct 2016 22:02:05 -0400
+Subject: [PATCH] mmci: workaround hang with qemu-system-arm
+
+The SDCard implementation with qemu-system-arm -M vexpress-a9 hangs
+unless this change is applied.
+
+Not my work. This was found on the web. NEED TO FIND REFERENCE!
+---
+ drivers/mci/mmci.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/mci/mmci.c b/drivers/mci/mmci.c
+index 9d1e858..2ce88d4 100644
+--- a/drivers/mci/mmci.c
++++ b/drivers/mci/mmci.c
+@@ -263,6 +263,7 @@ static int read_bytes(struct mci_host *mci, char *dest, unsigned int blkcount, u
+
+ 	dev_dbg(host->hw_dev, "read_bytes: blkcount=%u blksize=%u\n", blkcount, blksize);
+
++#if 0
+ 	do {
+ 		mmci_writel(host, MMCIDATACTRL, mmci_readl(host, MMCIDATACTRL));
+ 		len = mmci_pio_read(host, dest, xfercount);
+@@ -272,6 +273,25 @@ static int read_bytes(struct mci_host *mci, char *dest, unsigned int blkcount, u
+ 		status_err = status & (MCI_DATACRCFAIL | MCI_DATATIMEOUT |
+ 			     MCI_RXOVERRUN);
+ 	} while(xfercount && !status_err);
++#else
++        {
++            u32 *tempbuff = dest;
++        status = mmci_readl(host, MMCISTATUS);
++        status_err = status & (MCI_DATACRCFAIL | MCI_DATATIMEOUT |
++			     MCI_RXOVERRUN);
++        while ((!status_err) && (xfercount >= sizeof(u32))) {
++            if (status & MCI_RXDATAAVLBL) {
++
++		*(tempbuff) = readl(host->base + MMCIFIFO);
++                tempbuff++;
++                xfercount -= sizeof(u32);
++            }
++            status = mmci_readl(host, MMCISTATUS);
++            status_err = status & (MCI_DATACRCFAIL | MCI_DATATIMEOUT |
++	        		     MCI_RXOVERRUN);
++        }
++        }
++#endif
+
+ 	status_err = status &
+ 		(MCI_DATACRCFAIL | MCI_DATATIMEOUT | MCI_DATABLOCKEND |
+--
+2.7.4
+

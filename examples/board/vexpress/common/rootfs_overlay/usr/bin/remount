@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Helper script to remount the root filesystem as read/write
+# and expand it to fill the partition
+
+mount -o remount,rw /
+
+# Expand the filesystem to the max size since
+# there might not be that much free space in a pristine image.
+#
+# If rdev isn't available, enable it in busybox
+PART=$(rdev | cut -d' ' -f1)
+
+if [ -z $PART ]; then
+    echo "Couldn't find device holding root partition. Maybe rdev isn't installed?"
+    exit 1
+fi
+
+resize2fs $PART 2> /dev/null
+

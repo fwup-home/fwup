@@ -1,0 +1,11 @@
+#!/bin/sh
+
+global.bootm.image=/mnt/disk0.0/boot/zImage
+global.bootm.oftree=/mnt/disk0.0/boot/vexpress-v2p-ca9.dtb
+
+#bootargs="console=ttyAMA0,115200n8 root=/dev/mmcblk0p2 wait"
+global linux.bootargs.dyn.root="root=/dev/mmcblk0p1 wait"
+
+mount -a
+mount -t squashfs /dev/disk0.0 /mnt/disk0.0
+
