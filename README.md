@@ -697,6 +697,13 @@ unlock it, run:
 
     $ echo 0 > /sys/block/mmcblk0boot0/force_ro
 
+## How do you pronounce fwup?
+
+I used to pronounce it "eff-double-you-up", but then coworkers and others started calling
+it "fwup" (one syllable) and "fwup-dates" when referring to the `.fw` files.
+I now use the one syllable version. This has caused some issues in the
+documentation where "an" is used rather than "a". Feel free to send PRs.
+
 # Licenses
 
 This utility contains source code with various licenses. The bulk of the code is
