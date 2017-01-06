@@ -1,4 +1,4 @@
-![The fwup pup](docs/fwup-pup.png)
+﻿![The fwup pup](docs/fwup-pup.png)
 
 # Overview
 [![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup)
@@ -692,7 +692,7 @@ partition. When I create .fw files for manufacturing, I create two targets, a
 updates `mmcblock0boot0`. The manufacturing script runs `fwup` twice: once for
 the `complete` target and then again for the `bootloader` target.
 
-Also, the `/dev/mmcblock0boot0` device is also forced read-only by the kernel. To
+Also, the `/dev/mmcblock0boot0` device is forced read-only by the kernel. To
 unlock it, run:
 
     $ echo 0 > /sys/block/mmcblk0boot0/force_ro
