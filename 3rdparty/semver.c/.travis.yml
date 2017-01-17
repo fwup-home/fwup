@@ -1,0 +1,9 @@
+language: c
+
+script:
+  - make test unittest
+  - valgrind --leak-check=full --error-exitcode=1 ./test
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install valgrind -qq

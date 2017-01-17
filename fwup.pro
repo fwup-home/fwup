@@ -14,6 +14,7 @@ TEMPLATE = app
 SOURCES += \
     3rdparty/fatfs/src/ff.c \
     3rdparty/fatfs/src/option/unicode.c \
+    3rdparty/base64.c \
     3rdparty/strptime.c \
     src/fwup.c \
     src/fatfs.c \
@@ -45,7 +46,7 @@ SOURCES += \
     src/resources.c \
     src/block_cache.c \
     src/pad_to_block_writer.c \
-    3rdparty/base64.c
+    3rdparty/semver.c/semver.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -98,7 +99,8 @@ HEADERS += \
     src/block_cache.h \
     src/fatfs.h \
     src/pad_to_block_writer.h \
-    3rdparty/base64.h
+    3rdparty/base64.h \
+    3rdparty/semver.c/semver.h
 
 OTHER_FILES += \
     fwupdate.conf \

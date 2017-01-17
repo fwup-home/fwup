@@ -22,6 +22,7 @@
 #include "util.h"
 #include "archive_open.h"
 #include "eval_math.h"
+#include "3rdparty/semver.c/semver.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -221,7 +222,6 @@ static int cb_include(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 #define MOST_RECENTLY_ADDED_SECTION(opt) \
     cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1)
 
-
 // Automatically add environment variables when we validate a file resource
 //
 // Currently we generate:
@@ -267,6 +267,34 @@ static int add_file_resource_variables(const char *path, cfg_t *sec)
         free(key);
     }
 
+    return rc;
+}
+
+static int cb_validate_require_fwup_version(cfg_t *cfg, cfg_opt_t *opt)
+{
+    semver_t current_version;
+    if (semver_parse(VERSION, &current_version) < 0)
+        fwup_errx(EXIT_FAILURE, "Invalid fwup version: " VERSION);
+
+    semver_t version_req;
+    const char *version_req_str = cfg_opt_getnstr(opt, 0);
+    if (semver_parse(version_req_str, &version_req)) {
+        cfg_error(cfg, "Invalid version '%s' passed to require-fwup-version", version_req_str);
+        semver_free(&current_version);
+        return -1;
+    }
+
+    int rc;
+    if (semver_lte(version_req, current_version)) {
+        // Required version is less than or equal to this version, so ok.
+        rc = 0;
+    } else {
+        cfg_error(cfg, "fwup version '%s' required. This is fwup version '%s'.", version_req_str, VERSION);
+        rc = -1;
+    }
+
+    semver_free(&current_version);
+    semver_free(&version_req);
     return rc;
 }
 
@@ -491,7 +519,7 @@ cfg_opt_t opts[] = {
     CFG_STR("meta-vcs-identifier", 0, CFGF_NONE),
     CFG_STR("meta-misc", 0, CFGF_NONE),
 
-    CFG_STR("require-fwup-version", "0.0", CFGF_NONE),
+    CFG_STR("require-fwup-version", "0", CFGF_NONE),
     CFG_FUNC("define", cb_define),
     CFG_FUNC("define!", cb_define_bang),
     CFG_FUNC("define-eval", cb_define_eval),
@@ -526,6 +554,7 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     toplevel_cfg = cfg_init(opts, 0);
 
     // set a validating callback function for sections
+    cfg_set_validate_func(toplevel_cfg, "require-fwup-version", cb_validate_require_fwup_version);
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
     cfg_set_validate_func(toplevel_cfg, "uboot-environment", cb_validate_uboot);
@@ -631,6 +660,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
 #warning See scripts/download_deps.sh.
     *cfg = cfg_init(opts, 0);
 #endif
+    cfg_set_validate_func(*cfg, "require-fwup-version", cb_validate_require_fwup_version);
     if (cfg_parse_buf(*cfg, meta_conf) != 0)
         ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 

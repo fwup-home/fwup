@@ -272,7 +272,7 @@ At the global scope, the following options are available:
 
 Key                  | Description
 ---------------------|------------
-require-fwup-version | Require a minimum version of fwup to apply this update (currently informational only)
+require-fwup-version | Require a minimum version of fwup to apply this update
 meta-product         | Product name
 meta-description     | Description of product or firmware update
 meta-version         | Firmware version
@@ -809,6 +809,10 @@ developments under license policy of following terms.
   personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
 * Redistributions of source code must retain the above copyright notice.
 >>>
+
+`fwup` uses [semver.c](https://github.com/h2non/semver.c) for checking versions.
+`semver.c` is Copyright (c) Tomás Aparicio and distributed under the MIT
+License. See [LICENSE](3rdparty/semver.c/LICENSE).
 
 On systems without the function strptime(), a version from Google is
 included that is distributed under the Apache 2.0 license.

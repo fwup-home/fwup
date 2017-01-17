@@ -1,0 +1,45 @@
+#!/bin/sh
+
+#
+# Test require-fwup-version
+#
+
+. ./common.sh
+
+
+cat >$CONFIG.pass1 <<EOF
+require-fwup-version = "0.16.0"
+EOF
+cat >$CONFIG.pass2 <<EOF
+require-fwup-version = "0.0.0"
+EOF
+cat >$CONFIG.pass3 <<EOF
+require-fwup-version = "0.16"
+EOF
+cat >$CONFIG.fail1 <<EOF
+require-fwup-version = "2.0.0"
+EOF
+cat >$CONFIG.fail2 <<EOF
+require-fwup-version = "2.0"
+EOF
+cat >$CONFIG.fail3 <<EOF
+require-fwup-version = "2"
+EOF
+
+$FWUP_CREATE -c -f $CONFIG.pass1 -o $FWFILE.1
+$FWUP_CREATE -c -f $CONFIG.pass2 -o $FWFILE.2
+$FWUP_CREATE -c -f $CONFIG.pass3 -o $FWFILE.3
+
+echo "Expecting error from fwup..."
+if $FWUP_CREATE -c -f $CONFIG.fail1 -o $FWFILE; then
+    echo "This should have failed"
+    exit 1
+fi
+if $FWUP_CREATE -c -f $CONFIG.fail2 -o $FWFILE; then
+    echo "This should have failed"
+    exit 1
+fi
+if $FWUP_CREATE -c -f $CONFIG.fail3 -o $FWFILE; then
+    echo "This should have failed"
+    exit 1
+fi

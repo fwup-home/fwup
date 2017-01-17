@@ -60,6 +60,8 @@ fwup_SOURCES=\
 	util.h \
 	../3rdparty/base64.c \
 	../3rdparty/base64.h \
+	../3rdparty/semver.c/semver.c \
+	../3rdparty/semver.c/semver.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \
 	../3rdparty/fatfs/src/ff.c \
@@ -77,6 +79,11 @@ EXTRA_DIST= \
 	../3rdparty/fatfs/src/option/cc950.c \
 	../3rdparty/fatfs/src/option/ccsbcs.c \
 	../3rdparty/fatfs/src/option/syscall.c \
+	../3rdparty/semver.c/README.md \
+	../3rdparty/semver.c/LICENSE \
+	../3rdparty/semver.c/Makefile \
+	../3rdparty/semver.c/semver_unit.c \
+	../3rdparty/semver.c/semver_test.c \
 	../3rdparty/strptime.c \
 	fwup.h2m
 
