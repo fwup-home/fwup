@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.12.1
+
+  * Bug fixes
+    * Fix really subtle issue with archive_read_data_block returning 0 bytes
+      when not at EOF. This issue should have been present since the beginning,
+      but it only appeared recently.
+
 ## v0.12.0
 
   * New features
