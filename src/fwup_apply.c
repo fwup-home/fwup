@@ -368,6 +368,13 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
 
             OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
 
+            // Skip an empty filename. This is easy to get when you run 'zip'
+            // on the command line to create a firmware update file and include
+            // the 'data' directory. It's annoying when it creates an error
+            // (usually when debugging something else), so ignore it.
+            if (resource_name[0] == '\0')
+                continue;
+
             OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx.cfg, resource_name, &pd.sfm));
             pd.sparse_map_ix = 0;
             pd.sparse_block_offset = 0;
