@@ -15,10 +15,12 @@
  */
 
 #include "requirement.h"
-#include "util.h"
-#include "mbr.h"
+
 #include "fatfs.h"
+#include "mbr.h"
+#include "mmc.h"
 #include "uboot_env.h"
+#include "util.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -33,6 +35,7 @@
 DECLARE_REQ(require_partition_offset);
 DECLARE_REQ(require_fat_file_exists);
 DECLARE_REQ(require_uboot_variable);
+DECLARE_REQ(require_path_on_device);
 
 struct req_info {
     const char *name;
@@ -42,8 +45,9 @@ struct req_info {
 
 #define REQ_INFO(NAME, REQ) {NAME, REQ ## _validate, REQ ## _requirement_met}
 static struct req_info req_table[] = {
-    REQ_INFO("require-partition-offset", require_partition_offset),
     REQ_INFO("require-fat-file-exists", require_fat_file_exists),
+    REQ_INFO("require-partition-offset", require_partition_offset),
+    REQ_INFO("require-path-on-device", require_path_on_device),
     REQ_INFO("require-uboot-variable", require_uboot_variable)
 };
 
@@ -243,4 +247,25 @@ cleanup:
     uboot_env_free(&env);
     free(buffer);
     return rc;
+}
+
+int require_path_on_device_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("require-path-on-device requires a path and a device");
+
+    return 0;
+}
+int require_path_on_device_requirement_met(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        return -1;
+
+    const char *path = fctx->argv[1];
+    const char *device = fctx->argv[2];
+
+    if (mmc_is_path_on_device(path, device) > 0)
+        return 0; // Requirement met
+    else
+        return -1; // Not met
 }

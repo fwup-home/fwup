@@ -100,7 +100,8 @@ TESTS = 001_simple_fw.test \
 	101_progress_range.test \
 	102_multi_requires.test \
 	103_error_msg.test \
-	104_info_msg.test
+	104_info_msg.test \
+	105_require_path_on_device.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

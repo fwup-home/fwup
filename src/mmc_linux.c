@@ -135,12 +135,6 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, con
     return true;
 }
 
-/**
- * @brief Scan for SDCards and other removable media
- * @param devices where to store detected devices and some metadata
- * @param max_devices the max to return
- * @return the number of devices found
- */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
     // Get the root device so that we can filter
@@ -184,6 +178,22 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     }
 
     return device_count;
+}
+
+int mmc_is_path_on_device(const char *file_path, const char *device_path)
+{
+    // Stat both paths.
+    struct stat file_st;
+    if (stat(file_path, &file_st) < 0)
+        return -1;
+
+    struct stat device_st;
+    if (stat(device_path, &device_st) < 0)
+        return -1;
+
+    // Check that the device's major/minor are the same
+    // as the file's containing device's major/minor
+    return device_st.st_rdev == file_st.st_dev ? 1 : 0;
 }
 
 static char *unescape_string(const char *input)
@@ -320,11 +330,6 @@ int mmc_eject(const char *mmc_device)
     return 0;
 }
 
-/**
- * @brief Open an SDCard/MMC device
- * @param mmc_path the path
- * @return a filehandle or <0 on error
- */
 int mmc_open(const char *mmc_path)
 {
     return open(mmc_path, O_RDWR);

@@ -172,4 +172,9 @@ void mmc_finalize()
 {
 }
 
+int mmc_is_path_on_device(const char *file_path, const char *device_path)
+{
+    // Not implemented
+    return -1;
+}
 #endif // __FreeBSD__

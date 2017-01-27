@@ -1,0 +1,91 @@
+#!/bin/sh
+
+#
+# Tests that the "require-path-on-device" feature works. This
+# allows one to update firmware images based on what where
+# the filesystem is mounted.
+#
+
+. ./common.sh
+
+case $HOST_OS in
+    Darwin|Windows)
+        # require-path-on-device not implemented due to not
+	# expecting it to be needed.
+        exit 0
+        ;;
+    *)
+        ;;
+esac
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # Try to detect the cross-compile for Windows case since
+    # this really doesn't make sense for this test.
+    exit 0
+fi
+
+# Figure out where the root filesystem is. Sadly, we can't
+# depend on Busybox's rdev, since it's not compiled into
+# Busybox on Linux.
+find_rdev() {
+    WANT=$(stat / -c "%04D")
+    FILES=$(find /dev)
+    for FILE in $FILES; do
+        GOT=$(stat $FILE -c "%02t%02T")
+        if [ $WANT = $GOT ]; then
+            echo $FILE
+            break
+        fi
+    done
+}
+RDEV=$(find_rdev)
+
+cat >$CONFIG <<EOF
+task upgrade.devnull {
+    require-path-on-device("/", "/dev/null")
+    on-init { info("devnull") }
+}
+task upgrade.notadevice {
+    require-path-on-device("/", "/dev")
+    on-init { info("notadevice") }
+}
+task upgrade.notafile {
+    require-path-on-device("/", "/nosuchfilehopefully")
+    on-init { info("notafile") }
+}
+task upgrade.empty {
+    require-path-on-device("", "")
+    on-init { info("empty") }
+}
+task upgrade.empty2 {
+    require-path-on-device("/", "")
+    on-init { info("empty2") }
+}
+task upgrade.empty3 {
+    require-path-on-device("", "/dev/null")
+    on-init { info("empty3") }
+}
+task upgrade.badparams {
+    require-path-on-device("/tmp", "/tmp")
+    on-init { info("badparams") }
+}
+task upgrade.right {
+    require-path-on-device("/", "$RDEV")
+    on-init { info("correct") }
+}
+task upgrade.catchall {
+    on-init { info("catchall") }
+}
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

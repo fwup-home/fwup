@@ -235,4 +235,9 @@ int mmc_open(const char *mmc_path)
     return _open_osfhandle((intptr_t) drive_handle, 0);
 }
 
+int mmc_is_path_on_device(const char *file_path, const char *device_path)
+{
+    // Not implemented - I don't think there's a use case for this on Windows.
+    return -1;
+}
 #endif // defined(_WIN32) || defined(__CYGWIN__)
