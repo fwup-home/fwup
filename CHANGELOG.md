@@ -2,6 +2,13 @@
 
 ## v0.13.0-dev
 
+  * New features
+    * Add `require-path-on-device` as another way of detecting which partition
+      is active when running A/B updates. This is only works when updating on
+      device (the usual way of updating).
+    * Add `info()` function for printing out information messages from updates.
+      This is helpful when debugging scripts.
+
 ## v0.12.1
 
   * Bug fixes
