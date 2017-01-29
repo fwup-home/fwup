@@ -328,11 +328,14 @@ void fwup_output(const char *type, uint16_t code, const char *str)
         fwrite(&be_length, 4, 1, stdout);
         fwrite(type, 2, 1, stdout);
         fwrite(&be_code, 2, 1, stdout);
-    } else if (fwup_progress_mode == PROGRESS_MODE_NORMAL) {
+    } else if (fwup_progress_mode == PROGRESS_MODE_NORMAL && len > 0) {
         // Erase the current % and then print the message
         fwrite("\r   \r", 5, 1, stdout);
     }
-    fwrite(str, 1, len, stdout);
+    if (len)
+        fwrite(str, 1, len, stdout);
+
+    fflush(stdout);
 }
 
 /*
