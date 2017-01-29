@@ -9,6 +9,10 @@
     * Add `info()` function for printing out information messages from updates.
       This is helpful when debugging scripts.
 
+  * Bug fixes
+    * Flush messages in framed mode to prevent them from getting queued.
+    * Send "OK" success message when done applying in framed mode.
+
 ## v0.12.1
 
   * Bug fixes
