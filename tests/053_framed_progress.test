@@ -34,7 +34,7 @@ $FWUP_APPLY -a --framing -d $IMGFILE -i $FWFILE -t complete > $WORK/actual_outpu
 
 # Create the expected by running base64 on the expected binary image.
 base64_decode >$WORK/expected_output.bin <<EOF
-AAAABFBSAAAAAAAEUFIAGQAAAARQUgAyAAAABFBSAEsAAAAEUFIAYwAAAARQUgBk
+AAAABFBSAAAAAAAEUFIAGQAAAARQUgAyAAAABFBSAEsAAAAEUFIAYwAAAARQUgBkAAAABE9LAAA=
 EOF
 diff $WORK/expected_output.bin $WORK/actual_output.bin
 

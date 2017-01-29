@@ -509,6 +509,7 @@ int main(int argc, char **argv)
             // This just does whatever is needed so that the device can be removed.
             mmc_eject(mmc_device_path);
         }
+        fwup_output(FRAMING_TYPE_SUCCESS, 0, "");
         break;
     }
 
