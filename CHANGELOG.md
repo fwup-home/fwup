@@ -12,6 +12,7 @@
   * Bug fixes
     * Flush messages in framed mode to prevent them from getting queued.
     * Send "OK" success message when done applying in framed mode.
+    * Support writing >2GiB files on 32-bit platforms
 
 ## v0.12.1
 
