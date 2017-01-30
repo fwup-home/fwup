@@ -289,7 +289,16 @@ static int cb_validate_on_resource(cfg_t *cfg, cfg_opt_t *opt)
 
 static cfg_opt_t file_resource_opts[] = {
     CFG_STR("host-path", 0, CFGF_NONE),
+#if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
+    // If we're on a 32-bit machine that has large file offsets,
+    // use "doubles" to store offsets in the config file to get
+    // more bits. This enables support of updates well past
+    // gigabytes. Search for "length" (with quotes) to verify
+    // that the other uses of the parameter are ok.
+    CFG_FLOAT_LIST("length", 0, CFGF_NONE),
+#else
     CFG_INT_LIST("length", 0, CFGF_NONE),
+#endif
     CFG_STR("blake2b-256", 0, CFGF_NONE),
     CFG_STR("sha256", 0, CFGF_NONE), // Old hash for files - use blake2b-256 now
     CFG_INT("assert-size-lte", -1, CFGF_NONE),

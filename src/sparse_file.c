@@ -98,8 +98,15 @@ int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *s
     }
 
     off_t *map = (off_t *) malloc(len * sizeof(off_t));
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
+#if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
+        // See comment in cfgfile.c to use of doubles to represent
+        // file offsets on 32-bit platforms.
+        map[i] = (off_t) cfg_getnfloat(resource, "length", i);
+#else
         map[i] = cfg_getnint(resource, "length", i);
+#endif
+    }
 
     sfm->map = map;
     sfm->map_len = len;
@@ -115,8 +122,14 @@ int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *s
  */
 int sparse_file_set_map_in_resource(cfg_t *resource, const struct sparse_file_map *sfm)
 {
-    for (int i = 0; i < sfm->map_len; i++)
+    for (int i = 0; i < sfm->map_len; i++) {
+#if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
+        cfg_setnfloat(resource, "length", sfm->map[i], i);
+#else
         cfg_setnint(resource, "length", sfm->map[i], i);
+#endif
+    }
+
     return 0;
 }
 

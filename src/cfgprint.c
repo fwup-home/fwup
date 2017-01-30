@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 // This implementation is essentially a copy/pasted version of the default cfg_print
 // from libconfuse with the following changes:
@@ -55,9 +56,15 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
         break;
 
     case CFGT_FLOAT:
-        ssprintf(s, "%f", cfg_opt_getnfloat(opt, index));
+    {
+        // On 32-bit machines with large file offsets, fwup uses doubles to represent
+        // offsets in libconfuse. Since doubles won't parse correctly when read back
+        // in by an integer version of fwup, cast them to int64_t's first. This is safe
+        // since fwup does not have any floating point options.
+        double v = cfg_opt_getnfloat(opt, index);
+        ssprintf(s, "%" PRId64, (int64_t) v);
         break;
-
+    }
     case CFGT_STR:
     {
         const char *str = cfg_opt_getnstr(opt, index);

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+#
+# Test that a >32 bit value in the length field doesn't
+# cause parse errors.
+#
+
+. ./common.sh
+
+cat >$WORK/meta.conf <<EOF
+file-resource "1K.bin" {
+length={0,17179869184,1024}
+blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+EOF
+
+# Manually construct the .fw file so that the massive sparse hole gets
+# into it for the test.
+mkdir -p $WORK/data
+cp $TESTFILE_1K $WORK/data/1K.bin
+cd $WORK
+zip -q $FWFILE meta.conf data/1K.bin
+cd -
+
+# Verify the file
+$FWUP_APPLY -V -i $FWFILE
+
