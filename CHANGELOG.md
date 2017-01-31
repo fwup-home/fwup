@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.13.0-dev
+## v0.13.0
 
   * New features
     * Add `require-path-on-device` as another way of detecting which partition
