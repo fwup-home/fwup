@@ -2,6 +2,11 @@
 
 ## v0.14.0-dev
 
+  * New features
+    * Add support for creating resources inside configuration files. This makes
+      it possible to create simple config files that have fwup variable
+      references in them without requiring a separate script.
+
 ## v0.13.0
 
   * New features
