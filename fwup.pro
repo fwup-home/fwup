@@ -192,4 +192,28 @@ DISTFILES += \
     tests/082_uboot_upgrade.test \
     tests/083_uboot_unsetenv.test \
     tests/084_corrupt_uboot.test \
-    tests/085_raw_memset.test
+    tests/085_raw_memset.test \
+    tests/100_easy_option.test \
+    tests/101_progress_range.test \
+    tests/102_multi_requires.test \
+    tests/103_error_msg.test \
+    tests/104_info_msg.test \
+    tests/105_require_path_on_device.test \
+    tests/106_large_length_field.test \
+    tests/107_string_resource.test \
+    tests/108_resource_order.test \
+    tests/109_includes.test \
+    tests/086_math.test \
+    tests/087_crypto_compat.test \
+    tests/088_missing_hash.test \
+    tests/089_dev_null.test \
+    tests/090_sparse_write.test \
+    tests/091_sparse_write2.test \
+    tests/092_sparse_write3.test \
+    tests/093_sparse_concat.test \
+    tests/094_sparse_concat2.test \
+    tests/095_sparse_apply.test \
+    tests/096_missing_resource.test \
+    tests/097_reproduceable.test \
+    tests/098_sparse_empty.test \
+    tests/099_sparse_lasthole.test

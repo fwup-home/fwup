@@ -158,5 +158,9 @@ diff $TESTFILE_1K $WORK/actual.2.bin
 diff $TESTFILE_150K $WORK/actual.3.bin
 diff $TESTFILE_1K $WORK/actual.4.bin
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

@@ -131,5 +131,9 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 dd if=$IMGFILE skip=2048 count=2 of=$WORK/upgrade-first-part.bin 2>/dev/null
 diff $TESTFILE_1K $WORK/upgrade-first-part.bin
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 count=1985 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

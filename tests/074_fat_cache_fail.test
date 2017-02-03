@@ -126,5 +126,9 @@ for FILE in  $FILES; do
     cmp $WORK/$FILE $WORK/$FILE.actual
 done
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

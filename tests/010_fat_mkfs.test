@@ -35,5 +35,9 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # the most fundamental of FAT checks, we're trying to leave it off.
 mdir -i $WORK/fwup.img@@32256
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

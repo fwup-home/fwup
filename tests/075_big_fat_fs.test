@@ -73,5 +73,9 @@ for i in 0 1; do
     diff $TESTFILE_15M $WORK/actual.${i}.bin
 done
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

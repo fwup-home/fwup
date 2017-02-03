@@ -8,6 +8,7 @@ export LC_ALL=C
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
 BASE64_DECODE=-d
+FSCK_FAT=fsck.fat
 
 if [ -d "/mnt/c/Users" ]; then
     # Windows 10 bash mode
@@ -29,6 +30,8 @@ case "$HOST_OS" in
         READLINK=/usr/local/bin/greadlink
         [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
+
+        FSCK_FAT=fsck_msdos
         ;;
     FreeBSD|NetBSD|OpenBSD|DragonFly)
 	# BSD stat

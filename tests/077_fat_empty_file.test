@@ -82,5 +82,9 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file
 mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE

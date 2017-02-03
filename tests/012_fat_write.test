@@ -63,5 +63,9 @@ diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 mcopy -n -i $WORK/fwup.img@@32256 ::/1K.bin $WORK/actual.1K.bin
 diff $TESTFILE_1K $WORK/actual.1K.bin
 
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
 # Check that the verify logic works on this file
 $FWUP_APPLY -V -i $FWFILE
