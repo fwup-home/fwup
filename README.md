@@ -180,7 +180,8 @@ firmware archives. During creation, `fwup` embeds a processed version of the
 configuration file into the archive that has been stripped of comments, has had
 all variables resolved, and has some additional useful metadata added.
 Configuration files are organized into scoped blocks and options are set using
-a `key = value` syntax.
+a `key = value` syntax. Additionally, configuration files may include configuration
+fragments and other files by calling `include("filename")`.
 
 ## Environment variables
 

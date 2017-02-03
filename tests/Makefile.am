@@ -104,7 +104,8 @@ TESTS = 001_simple_fw.test \
 	105_require_path_on_device.test \
 	106_large_length_field.test \
 	107_string_resource.test \
-	108_resource_order.test
+	108_resource_order.test \
+	109_includes.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \
