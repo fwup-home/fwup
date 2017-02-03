@@ -6,6 +6,9 @@
     * Add support for creating resources inside configuration files. This makes
       it possible to create simple config files that have fwup variable
       references in them without requiring a separate script.
+    * Add -1,-2,-3,...-9 to tune the compression. The default is -9, but on
+      massive archives, this is really slow, so you can pass a lower number
+      to speed up archive creation.
 
 ## v0.13.0
 
