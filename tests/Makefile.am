@@ -105,7 +105,8 @@ TESTS = 001_simple_fw.test \
 	106_large_length_field.test \
 	107_string_resource.test \
 	108_resource_order.test \
-	109_includes.test
+	109_includes.test \
+	110_compression_level.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

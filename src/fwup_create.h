@@ -17,6 +17,6 @@
 #ifndef FWUP_CREATE_H
 #define FWUP_CREATE_H
 
-int fwup_create(const char *configfile, const char *output_firmware, const unsigned char *signing_key);
+int fwup_create(const char *configfile, const char *output_firmware, const unsigned char *signing_key, int compression_level);
 
 #endif // FWUP_CREATE_H

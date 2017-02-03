@@ -290,7 +290,7 @@ cleanup:
     return rc;
 }
 
-static int create_archive(cfg_t *cfg, const char *filename, const unsigned char *signing_key)
+static int create_archive(cfg_t *cfg, const char *filename, const unsigned char *signing_key, int compression_level)
 {
     int rc = 0;
     struct archive *a = archive_write_new();
@@ -300,7 +300,8 @@ static int create_archive(cfg_t *cfg, const char *filename, const unsigned char 
 
     // Setting the compression-level is only supported on more recent versions
     // of libarchive, so don't check for errors.
-    archive_write_set_format_option(a, "zip", "compression-level", "9");
+    char compression_level_string[2] = { '0' + compression_level, 0 };
+    archive_write_set_format_option(a, "zip", "compression-level", compression_level_string);
 
     if (archive_write_open_filename(a, filename) != ARCHIVE_OK)
         ERR_CLEANUP_MSG("error creating archive '%s': %s", filename, archive_error_string(a));
@@ -316,7 +317,10 @@ cleanup:
     return rc;
 }
 
-int fwup_create(const char *configfile, const char *output_firmware, const unsigned char *signing_key)
+int fwup_create(const char *configfile,
+                const char *output_firmware,
+                const unsigned char *signing_key,
+                int compression_level)
 {
     cfg_t *cfg = NULL;
     int rc = 0;
@@ -332,7 +336,7 @@ int fwup_create(const char *configfile, const char *output_firmware, const unsig
     OK_OR_CLEANUP(compute_file_metadata(cfg));
 
     // Create the archive
-    OK_OR_CLEANUP(create_archive(cfg, output_firmware, signing_key));
+    OK_OR_CLEANUP(create_archive(cfg, output_firmware, signing_key, compression_level));
 
 cleanup:
     if (cfg)

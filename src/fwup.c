@@ -101,6 +101,8 @@ static void print_usage()
     printf("  --version Print out the version\n");
     printf("  -y   Accept automatically found memory card when applying a firmware update\n");
     printf("  -z   Print the memory card that would be automatically detected and exit\n");
+    printf("  -1   Fast compression (for create)\n");
+    printf("  -9   Best compression (default)\n");
     printf("\n");
     printf("Examples:\n");
     printf("\n");
@@ -282,6 +284,7 @@ int main(int argc, char **argv)
     bool numeric_progress = false;
     int progress_low = 0;    // 0%
     int progress_high = 100; // to 100%
+    int compression_level = 9; // 1 - 9
 
     if (argc == 1) {
         print_usage();
@@ -292,7 +295,7 @@ int main(int argc, char **argv)
     atexit(mmc_finalize);
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:DEf:Fgi:lmno:p:qSs:t:VvUuyz", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:Fgi:lmno:p:qSs:t:VvUuyz123456789", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -393,6 +396,17 @@ int main(int argc, char **argv)
             break;
         case '%': // progress-high
             progress_high = strtol(optarg, 0, 0);
+            break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            compression_level = opt - '0';
             break;
         default: /* '?' */
             print_usage();
@@ -514,7 +528,7 @@ int main(int argc, char **argv)
     }
 
     case CMD_CREATE:
-        if (fwup_create(configfile, output_firmware, signing_key) < 0)
+        if (fwup_create(configfile, output_firmware, signing_key, compression_level) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;

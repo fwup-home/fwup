@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Test that the compression level options work
+#
+
+. ./common.sh
+
+# Compress the fwup binary. While not deterministic, it is more
+# interesting than compressioning the randomly generated files
+# so if libarchive obeys the compression setting, then there will
+# be a difference. For the most part, we just looking that all of
+# the compression options work and the generated files aren't
+# corrupt or anything.
+cat >$CONFIG <<EOF
+file-resource file {
+        host-path = "${FWUP_CREATE}"
+}
+task complete {
+	on-resource file { raw_write(0) }
+}
+EOF
+
+# Create firmware files at each compression level
+$FWUP_CREATE -c -1 -f $CONFIG -o $FWFILE.1
+$FWUP_CREATE -c -2 -f $CONFIG -o $FWFILE.2
+$FWUP_CREATE -c -3 -f $CONFIG -o $FWFILE.3
+$FWUP_CREATE -c -4 -f $CONFIG -o $FWFILE.4
+$FWUP_CREATE -c -5 -f $CONFIG -o $FWFILE.5
+$FWUP_CREATE -c -6 -f $CONFIG -o $FWFILE.6
+$FWUP_CREATE -c -7 -f $CONFIG -o $FWFILE.7
+$FWUP_CREATE -c -8 -f $CONFIG -o $FWFILE.8
+$FWUP_CREATE -c -9 -f $CONFIG -o $FWFILE.9
+
+# Check that they all apply
+$FWUP_APPLY -a -d $IMGFILE.1 -i $FWFILE.1 -t complete
+$FWUP_APPLY -a -d $IMGFILE.2 -i $FWFILE.2 -t complete
+$FWUP_APPLY -a -d $IMGFILE.3 -i $FWFILE.3 -t complete
+$FWUP_APPLY -a -d $IMGFILE.4 -i $FWFILE.4 -t complete
+$FWUP_APPLY -a -d $IMGFILE.5 -i $FWFILE.5 -t complete
+$FWUP_APPLY -a -d $IMGFILE.6 -i $FWFILE.6 -t complete
+$FWUP_APPLY -a -d $IMGFILE.7 -i $FWFILE.7 -t complete
+$FWUP_APPLY -a -d $IMGFILE.8 -i $FWFILE.8 -t complete
+$FWUP_APPLY -a -d $IMGFILE.9 -i $FWFILE.9 -t complete
+
+# The firmware file is equivalent to the following dd call
+# (The conv=sync makes sure that the output is a multiple of 512 bytes)
+dd if=$FWUP_CREATE seek=0 of=$WORK/check.bin conv=sync 2>/dev/null
+cmp $WORK/check.bin $IMGFILE.1
+cmp $WORK/check.bin $IMGFILE.2
+cmp $WORK/check.bin $IMGFILE.3
+cmp $WORK/check.bin $IMGFILE.4
+cmp $WORK/check.bin $IMGFILE.5
+cmp $WORK/check.bin $IMGFILE.6
+cmp $WORK/check.bin $IMGFILE.7
+cmp $WORK/check.bin $IMGFILE.8
+cmp $WORK/check.bin $IMGFILE.9

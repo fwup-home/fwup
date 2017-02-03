@@ -143,6 +143,8 @@ Options:
   --version Print out the version
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit
+  -1   Fast compression (for create)
+  -9   Best compression (for create)
 
 Examples:
 
