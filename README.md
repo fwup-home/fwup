@@ -646,6 +646,19 @@ On the target device, you can retrieve the version by using `-m`. For example:
     meta-architecture = "arm"
     meta-creation-date = "2014-09-07T19:50:57Z"
 
+## What's something cool that you can do with fwup?
+
+Ok, this isn't really a FAQ, but for some reason people think this is cool. Many
+systems that I work on are network connected with ssh. Sometimes I update them
+by doing this:
+
+    $ cat mysoftware.fw | ssh root@192.168.1.20 \
+        'fwup -a -U -d /dev/mmcblk2 -t upgrade && reboot'
+
+The ability to pipe software updates through `fwup` comes in handy. This has
+also gotten me out of situations where, for whatever reason, I no longer had enough
+space to store the update on the device.
+
 ## How do I debug?
 
 I apply updates to regular files on my laptop (as opposed to eMMC or SDCards)
