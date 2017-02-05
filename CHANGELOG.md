@@ -10,6 +10,11 @@
       massive archives, this is really slow, so you can pass a lower number
       to speed up archive creation.
 
+  * Bug fixes
+    * When streaming, the input would always be read through to the end. This
+      meant that errors could take a long time to be reported and that was
+      annoying at best.
+
 ## v0.13.0
 
   * New features
