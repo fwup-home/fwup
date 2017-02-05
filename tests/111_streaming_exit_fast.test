@@ -24,7 +24,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 # Pipe the contents of the firmware file through fwup
 # Without the fix, this would go on forever if not for
 # the timeout.
-cat $FWFILE /dev/zero | timeout 10s $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+cat $FWFILE /dev/zero | $TIMEOUT 10s $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
 dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null

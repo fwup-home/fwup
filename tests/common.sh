@@ -9,6 +9,7 @@ export LC_ALL=C
 READLINK=readlink
 BASE64_DECODE=-d
 FSCK_FAT=fsck.fat
+TIMEOUT=timeout
 
 if [ -d "/mnt/c/Users" ]; then
     # Windows 10 bash mode
@@ -32,6 +33,7 @@ case "$HOST_OS" in
         [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
 
         FSCK_FAT=fsck_msdos
+        TIMEOUT=gtimeout
         ;;
     FreeBSD|NetBSD|OpenBSD|DragonFly)
 	# BSD stat
