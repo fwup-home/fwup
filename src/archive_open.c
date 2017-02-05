@@ -83,7 +83,6 @@ static ssize_t framed_stdin_read(struct archive *a, void *client_data, const voi
 static int framed_stdin_close(struct archive *a, void *client_data)
 {
     (void) a; // UNUSED
-
     free(client_data);
     return ARCHIVE_OK;
 }

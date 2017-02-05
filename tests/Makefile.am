@@ -106,7 +106,8 @@ TESTS = 001_simple_fw.test \
 	107_string_resource.test \
 	108_resource_order.test \
 	109_includes.test \
-	110_compression_level.test
+	110_compression_level.test \
+	111_streaming_exit_fast.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

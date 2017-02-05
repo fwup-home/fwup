@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#
+# Test streaming a firmware update through fwup and make sure
+# that fwup exits as soon as it's done without trying to read
+# all input. This makes things much faster especially when there
+# are errors, so we want to make sure that it works.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+task complete {
+	on-resource TEST { raw_write(1) }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Pipe the contents of the firmware file through fwup
+# Without the fix, this would go on forever if not for
+# the timeout.
+cat $FWFILE /dev/zero | timeout 10s $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
+diff $WORK/check.bin $IMGFILE
+

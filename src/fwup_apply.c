@@ -120,6 +120,7 @@ static int apply_event(struct fun_context *fctx, cfg_t *task, const char *event_
 struct fwup_data
 {
     struct archive *a;
+    bool reading_stdin;
 
     // Sparse file handling
     struct sparse_file_map sfm;
@@ -305,6 +306,8 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     fctx.cookie = &pd;
     pd.a = archive_read_new();
 
+    bool reading_stdin = (fw_filename == NULL || fw_filename[0] == '\0');
+
     archive_read_support_format_zip(pd.a);
     int arc = fwup_archive_open_filename(pd.a, fw_filename);
     if (arc != ARCHIVE_OK)
@@ -425,9 +428,18 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
 cleanup:
     sparse_file_free(&pd.sfm);
 
-    archive_read_free(pd.a);
     if (fctx.output_fd >= 0)
         close(fctx.output_fd);
+
+    // If reading stdin, signal that we're not going to read any more
+    // so that pipes can be terminated, etc. libarchive not only doesn't
+    // do this for us, it also reads the rest of the input in archive_read_free
+    // which if there's a lot left, it will take awhile.
+    if (reading_stdin)
+        close(STDIN_FILENO);
+
+    archive_read_free(pd.a);
+
     if (meta_conf_signature)
         free(meta_conf_signature);
 
