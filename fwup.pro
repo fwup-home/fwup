@@ -97,8 +97,7 @@ HEADERS += \
 
 OTHER_FILES += \
     fwupdate.conf \
-    README.md \
-    TODO.md
+    README.md
 
 DISTFILES += \
     tests/Makefile.am \
