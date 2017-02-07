@@ -1,0 +1,13 @@
+# Ebert configuration
+# See https://ebertapp.io/docs
+
+engines:
+    fixme:
+        enabled: true
+    gnu-complexity:
+        enabled: true
+
+exclude_paths:
+    - 3rdparty
+    - scripts
+    - test
