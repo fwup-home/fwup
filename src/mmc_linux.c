@@ -20,13 +20,15 @@
 #include "util.h"
 
 #include <sys/types.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mount.h>
 #include <unistd.h>
 
 static int readsysfs(const char *path, char *buffer, int maxlen)
@@ -259,6 +261,25 @@ static char *unescape_string(const char *input)
     return result;
 }
 
+static int fork_exec(const char *path, const char *arg)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        // child
+        execl(path, path, arg, NULL);
+
+        // Not supposed to reach here.
+        exit(EXIT_FAILURE);
+    } else {
+        // parent
+        int status;
+        if (waitpid(pid, &status, 0) != pid)
+            return -1;
+
+        return status;
+    }
+}
+
 int mmc_umount_all(const char *mmc_device)
 {
     FILE *fp = fopen("/proc/mounts", "r");
@@ -295,11 +316,9 @@ int mmc_umount_all(const char *mmc_device)
         if (mtab_exists) {
             // If /etc/mtab, then call umount(8) so that
             // gets updated correctly.
-            char cmdline[384];
-            snprintf(cmdline, sizeof(cmdline), "/bin/umount %s", todo[i]);
-            int rc = system(cmdline);
+            int rc = fork_exec("/bin/umount", todo[i]);
             if (rc != 0) {
-                fwup_warnx("%s", cmdline);
+                fwup_warnx("Error calling umount on '%s'", todo[i]);
                 ultimate_rc = -1;
             }
         } else {
