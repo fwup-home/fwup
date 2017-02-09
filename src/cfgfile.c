@@ -572,7 +572,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned
     archive_read_support_format_zip(a);
     rc = fwup_archive_open_filename(a, filename);
     if (rc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Error reading archive '%s': %s", filename, archive_error_string(a));
+        ERR_CLEANUP_MSG("%s", archive_error_string(a));
 
     struct archive_entry *ae;
     rc = archive_read_next_header(a, &ae);

@@ -311,12 +311,12 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     archive_read_support_format_zip(pd.a);
     int arc = fwup_archive_open_filename(pd.a, fw_filename);
     if (arc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Error reading archive '%s': %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
+        ERR_CLEANUP_MSG("%s", archive_error_string(pd.a));
 
     struct archive_entry *ae;
     arc = archive_read_next_header(pd.a, &ae);
     if (arc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Error reading archive (%s): %s", fw_filename ? fw_filename : "<stdin>", archive_error_string(pd.a));
+        ERR_CLEANUP_MSG("%s", archive_error_string(pd.a));
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
         off_t total_size;

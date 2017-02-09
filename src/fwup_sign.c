@@ -67,7 +67,7 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
 
     rc = fwup_archive_open_filename(in, input_filename);
     if (rc != ARCHIVE_OK)
-        ERR_CLEANUP_MSG("Error reading archive '%s': %s", input_filename, archive_error_string(in));
+        ERR_CLEANUP_MSG("%s", archive_error_string(in));
 
     if (archive_write_open_filename(out, temp_filename) != ARCHIVE_OK)
         ERR_CLEANUP_MSG("Error creating archive '%s'", temp_filename);
