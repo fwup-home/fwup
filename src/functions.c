@@ -63,6 +63,7 @@ struct fun_info {
 };
 
 #define FUN_INFO(FUN) {#FUN, FUN ## _validate, FUN ## _compute_progress, FUN ## _run}
+#define FUN_BANG_INFO(FUN) {#FUN "!", FUN ## _validate, FUN ## _compute_progress, FUN ## _run}
 static struct fun_info fun_table[] = {
     FUN_INFO(raw_write),
     FUN_INFO(raw_memset),
@@ -71,6 +72,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_write),
     FUN_INFO(fat_mv),
     FUN_INFO(fat_rm),
+    FUN_BANG_INFO(fat_rm),
     FUN_INFO(fat_cp),
     FUN_INFO(fat_mkdir),
     FUN_INFO(fat_setlabel),
@@ -495,7 +497,7 @@ int fat_write_run(struct fun_context *fctx)
         ERR_CLEANUP();
 
     // Enforce truncation semantics if the file exists
-    fatfs_rm(fc, fctx->argv[2]);
+    OK_OR_CLEANUP(fatfs_rm(fc, fctx->argv[0], fctx->argv[2], false));
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
     off_t expected_data_length = sparse_file_data_size(&sfm);
@@ -602,8 +604,8 @@ int fat_rm_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // TODO: Ignore the error code here??
-    fatfs_rm(fc, fctx->argv[2]);
+    bool file_must_exist = (fctx->argv[0][6] == '!');
+    OK_OR_RETURN(fatfs_rm(fc, fctx->argv[0], fctx->argv[2], file_must_exist));
 
     progress_report(fctx->progress, 1);
     return 0;

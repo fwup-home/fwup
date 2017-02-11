@@ -360,6 +360,7 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("fat_cp", CB), \
     CFG_FUNC("fat_mv", CB), \
     CFG_FUNC("fat_rm", CB), \
+    CFG_FUNC("fat_rm!", CB), \
     CFG_FUNC("fat_mkdir", CB), \
     CFG_FUNC("fat_setlabel", CB), \
     CFG_FUNC("fat_touch", CB), \

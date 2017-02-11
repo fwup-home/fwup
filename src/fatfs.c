@@ -153,15 +153,30 @@ int fatfs_setlabel(struct fat_cache *fc, const char *label)
 /**
  * @brief fatfs_rm Delete a file
  * @param fc the current FAT session
+ * @param cmd the command name for error messages
  * @param filename the name of the file
+ * @param file_must_exist true if the file must exist
  * @return 0 on success
  */
-int fatfs_rm(struct fat_cache *fc, const char *filename)
+int fatfs_rm(struct fat_cache *fc, const char *cmd, const char *filename, bool file_must_exist)
 {
     MAYBE_MOUNT(fc);
     close_open_files();
-    CHECK("fat_rm", filename, f_unlink(filename));
-    return 0;
+
+    FRESULT rc = f_unlink(filename);
+    switch (rc) {
+    case FR_OK:
+        return 0;
+
+    case FR_NO_FILE:
+        if (!file_must_exist)
+            return 0;
+
+        // fall through
+    default:
+        fatfs_error(cmd, filename, rc);
+        return -1;
+    }
 }
 
 /**
