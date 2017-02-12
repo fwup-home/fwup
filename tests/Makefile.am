@@ -110,7 +110,8 @@ TESTS = 001_simple_fw.test \
 	111_streaming_exit_fast.test \
 	112_fat_rm_missing_file.test \
 	113_fat_mv_error_cases.test \
-	114_fat_cp_error_cases.test
+	114_fat_cp_error_cases.test \
+	115_fat_mkdir_error_cases.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \

@@ -658,8 +658,7 @@ int fat_mkdir_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // TODO: Ignore the error code here??
-    fatfs_mkdir(fc, fctx->argv[2]);
+    OK_OR_RETURN(fatfs_mkdir(fc, fctx->argv[2]));
 
     progress_report(fctx->progress, 1);
     return 0;
