@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#
+# Test the failure conditions of fat_setlabel
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+task badlabel {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_setlabel(\${BOOT_PART_OFFSET}, "waytoolonglabel1234567890")
+    }
+}
+task corrupt_partition {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_setlabel(1, "myvolum")
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t badlabel $FWFILE; then
+    echo "Expected apply to fail due to a bad label, but it didn't."
+    exit 1
+fi
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition $FWFILE; then
+    echo "Expected apply to fail due to a corrupt filesystem, but it didn't."
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

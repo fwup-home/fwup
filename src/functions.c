@@ -684,8 +684,7 @@ int fat_setlabel_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // TODO: Ignore the error code here??
-    fatfs_setlabel(fc, fctx->argv[2]);
+    OK_OR_RETURN(fatfs_setlabel(fc, fctx->argv[2]));
 
     return 0;
 }
