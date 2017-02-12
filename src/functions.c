@@ -632,8 +632,7 @@ int fat_cp_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // TODO: Ignore the error code here??
-    fatfs_cp(fc, fctx->argv[2], fctx->argv[3]);
+    OK_OR_RETURN(fatfs_cp(fc, fctx->argv[2], fctx->argv[3]));
 
     progress_report(fctx->progress, 1);
     return 0;
