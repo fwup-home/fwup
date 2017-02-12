@@ -45,7 +45,7 @@ const char *fatfs_error_to_string(FRESULT err)
     case FR_NO_PATH: return "Could not find the path";
     case FR_INVALID_NAME: return "The path name format is invalid";
     case FR_DENIED: return "Access denied due to prohibited access or directory full";
-    case FR_EXIST: return "Access denied due to prohibited access";
+    case FR_EXIST: return "Destination file already exists";
     case FR_INVALID_OBJECT: return "The file/directory object is invalid";
     case FR_WRITE_PROTECTED: return "The physical drive is write protected";
     case FR_INVALID_DRIVE: return "The logical drive number is invalid";
@@ -182,15 +182,23 @@ int fatfs_rm(struct fat_cache *fc, const char *cmd, const char *filename, bool f
 /**
  * @brief fatfs_mv rename a file
  * @param fc the current FAT session
+ * @param cmd the command name for error messages
  * @param from_name original filename
  * @param to_name new filename
+ * @param force set to true to rename the file even if to_name exists
  * @return 0 on success
  */
-int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name)
+int fatfs_mv(struct fat_cache *fc, const char *cmd, const char *from_name, const char *to_name, bool force)
 {
     MAYBE_MOUNT(fc);
     close_open_files();
-    CHECK("fat_mv", from_name, f_rename(from_name, to_name));
+
+    // If forcing, remove the file first.
+    if (force && fatfs_rm(fc, cmd, to_name, false))
+        return -1;
+
+    CHECK(cmd, from_name, f_rename(from_name, to_name));
+
     return 0;
 }
 

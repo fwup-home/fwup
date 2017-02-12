@@ -30,7 +30,7 @@ int fatfs_mkfs(struct fat_cache *fc, int block_count);
 int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib);
 int fatfs_mkdir(struct fat_cache *fc, const char *dir);
 int fatfs_setlabel(struct fat_cache *fc, const char *label);
-int fatfs_mv(struct fat_cache *fc, const char *from_name, const char *to_name);
+int fatfs_mv(struct fat_cache *fc, const char *cmd, const char *from_name, const char *to_name, bool force);
 int fatfs_rm(struct fat_cache *fc, const char *cmd, const char *filename, bool file_must_exist);
 int fatfs_pwrite(struct fat_cache *fc, const char *filename, int offset, const char *buffer, off_t size);
 int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name);

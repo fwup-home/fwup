@@ -1,0 +1,101 @@
+#!/bin/sh
+
+#
+# Test the failure conditions of fat_mv
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task no_file {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_mv(\${BOOT_PART_OFFSET}, "doesntexist", "something")
+    }
+}
+task no_file2 {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_mv!(\${BOOT_PART_OFFSET}, "doesntexist", "something")
+    }
+}
+task mv_on_top {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+    }
+    on-resource 1K.bin {
+        fat_write(\${BOOT_PART_OFFSET}, "1k.bin")
+    }
+    on-finish {
+        fat_touch(\${BOOT_PART_OFFSET}, "exists")
+        fat_mv(\${BOOT_PART_OFFSET}, "1k.bin", "exists")
+    }
+}
+task mv_bang_on_top {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+    }
+    on-resource 1K.bin {
+        fat_write(\${BOOT_PART_OFFSET}, "1k.bin")
+    }
+    on-finish {
+        fat_touch(\${BOOT_PART_OFFSET}, "exists")
+        fat_mv!(\${BOOT_PART_OFFSET}, "1k.bin", "exists")
+    }
+}
+task corrupt_partition {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_mv(1, "1k.bin", "1k-new.bin")
+    }
+}
+task corrupt_partition2 {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_mv!(1, "1k.bin", "1k-new.bin")
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t no_file $FWFILE; then
+    echo "Expected apply to fail due to missing the file, but it didn't."
+    exit 1
+fi
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t no_file2 $FWFILE; then
+    echo "Expected apply to fail due to missing the file, but it didn't."
+    exit 1
+fi
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t mv_on_top $FWFILE; then
+    echo "Expected apply to fail due to the destination already being there, but it didn't."
+    exit 1
+fi
+
+# This one should work
+$FWUP_APPLY -q -d $IMGFILE -t mv_bang_on_top $FWFILE
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition $FWFILE; then
+    echo "Expected apply to fail due to a corrupt filesystem, but it didn't."
+    exit 1
+fi
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition2 $FWFILE; then
+    echo "Expected apply to fail due to a corrupt filesystem, but it didn't."
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

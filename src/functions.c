@@ -71,6 +71,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_mkfs),
     FUN_INFO(fat_write),
     FUN_INFO(fat_mv),
+    FUN_BANG_INFO(fat_mv),
     FUN_INFO(fat_rm),
     FUN_BANG_INFO(fat_rm),
     FUN_INFO(fat_cp),
@@ -577,8 +578,8 @@ int fat_mv_run(struct fun_context *fctx)
     if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
         return -1;
 
-    // TODO: Ignore the error code here??
-    fatfs_mv(fc, fctx->argv[2], fctx->argv[3]);
+    bool force = (fctx->argv[0][6] == '!');
+    OK_OR_RETURN(fatfs_mv(fc, fctx->argv[0], fctx->argv[2], fctx->argv[3], force));
 
     progress_report(fctx->progress, 1);
     return 0;

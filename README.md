@@ -481,25 +481,26 @@ on-resource <resource name>   | Sent as events occur. Currently, this is sent as
 The event scopes contain a list of actions. Actions can format file systems, copy files to file systems or
 write to raw locations on the destination.
 
-Action                                | Min fwup version | Description
---------------------------------------|------------------|------------
-error(message)                        | 0.12.0 | Immediately fail a firmware update with an error
-fat_mkfs(block_offset, block_count)   | 0.1.0 | Create a FAT file system at the specified block offset and count
-fat_write(block_offset, filename)     | 0.1.0 | Write the resource to the FAT file system at the specified block offset
+Action                                  | Min fwup version | Description
+----------------------------------------|------------------|------------
+error(message)                          | 0.12.0 | Immediately fail a firmware update with an error
+fat_mkfs(block_offset, block_count)     | 0.1.0 | Create a FAT file system at the specified block offset and count
+fat_write(block_offset, filename)       | 0.1.0 | Write the resource to the FAT file system at the specified block offset
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
-fat_mv(block_offset, oldname, newname) | 0.1.0 | Rename the specified file on a FAT file system
-fat_rm(block_offset, filename)        | 0.1.0 | Delete the specified file
-fat_rm!(block_offset, filename)       | 0.14.0 | Delete the specified file. Fail if the file doesn't exist.
-fat_mkdir(block_offset, filename)     | 0.2.0 | Create a directory on a FAT file system
-fat_setlabel(block_offset, label)     | 0.2.0 | Set the volume label on a FAT file system
-fat_touch(block_offset, filename)     | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
-info(message)                         | 0.13.0 | Print out an informational message
-mbr_write(mbr)                        | 0.1.0 | Write the specified mbr to the target
+fat_mv(block_offset, oldname, newname)  | 0.1.0 | Rename the specified file on a FAT file system
+fat_mv!(block_offset, oldname, newname) | 0.14.0 | Rename the specified file even if newname already exists.
+fat_rm(block_offset, filename)          | 0.1.0 | Delete the specified file
+fat_rm!(block_offset, filename)         | 0.14.0 | Delete the specified file. Fail if the file doesn't exist.
+fat_mkdir(block_offset, filename)       | 0.2.0 | Create a directory on a FAT file system
+fat_setlabel(block_offset, label)       | 0.2.0 | Set the volume label on a FAT file system
+fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
+info(message)                           | 0.13.0 | Print out an informational message
+mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the target
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
-raw_write(block_offset)               | 0.1.0 | Write the resource to the specified block offset
-uboot_clearenv(my_uboot_env)             | 0.10.0 | Initialize a clean, variable free U-boot environment
-uboot_setenv(my_uboot_env, name, value)  | 0.10.0 | Set the specified U-boot variable
-uboot_unsetenv(my_uboot_env, name, value)  | 0.10.0 | Unset the specified U-boot variable
+raw_write(block_offset)                 | 0.1.0 | Write the resource to the specified block offset
+uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
+uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
+uboot_unsetenv(my_uboot_env, name, value) | 0.10.0 | Unset the specified U-boot variable
 
 ## Sparse files
 
