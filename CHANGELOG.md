@@ -9,11 +9,17 @@
     * Add -1,-2,-3,...-9 to tune the compression. The default is -9, but on
       massive archives, this is really slow, so you can pass a lower number
       to speed up archive creation.
+    * on-error has finally been implemented. This allows fwup.conf files to
+      specify cleanup code should something go wrong. Cleanup is performed
+      best effort and fwup still returns an error on exit.
 
   * Bug fixes
     * When streaming, the input would always be read through to the end. This
       meant that errors could take a long time to be reported and that was
       annoying at best.
+    * FAT filesystem corruption wouldn't cause many of the fat_* commands to
+      fail. They do now and unit tests have been added to verify this going
+      forward.
 
 ## v0.13.0
 
