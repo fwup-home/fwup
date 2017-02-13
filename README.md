@@ -490,7 +490,6 @@ fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes.
 fat_mv(block_offset, oldname, newname)  | 0.1.0 | Rename the specified file on a FAT file system
 fat_mv!(block_offset, oldname, newname) | 0.14.0 | Rename the specified file even if newname already exists.
 fat_rm(block_offset, filename)          | 0.1.0 | Delete the specified file
-fat_rm!(block_offset, filename)         | 0.14.0 | Delete the specified file. Fail if the file doesn't exist.
 fat_mkdir(block_offset, filename)       | 0.2.0 | Create a directory on a FAT file system
 fat_setlabel(block_offset, label)       | 0.2.0 | Set the volume label on a FAT file system
 fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
