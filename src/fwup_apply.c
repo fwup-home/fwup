@@ -117,7 +117,7 @@ static int apply_event(struct fun_context *fctx, cfg_t *task, const char *event_
     return 0;
 }
 
-struct fwup_data
+struct fwup_apply_data
 {
     struct archive *a;
     bool reading_stdin;
@@ -138,7 +138,7 @@ struct fwup_data
 
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
 {
-    struct fwup_data *p = (struct fwup_data *) fctx->cookie;
+    struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
 
     // Even though libarchive's API supports sparse files, the ZIP file format
     // does not support them, so it can't be used. To workaround this, all of the data
@@ -233,7 +233,7 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
 
 static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc)
 {
-    struct fwup_data *p = (struct fwup_data *) fctx->cookie;
+    struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
 
     // Check if this is the first time or if block offset changed
     if (!p->using_fat_cache || block_offset != p->current_fatfs_block_offset) {
@@ -288,7 +288,106 @@ static int set_time_from_cfg(cfg_t *cfg)
     return 0;
 }
 
-int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, struct fwup_progress *progress, const unsigned char *public_key)
+static int compute_progress(struct fun_context *fctx)
+{
+    fctx->type = FUN_CONTEXT_INIT;
+    OK_OR_RETURN(apply_event(fctx, fctx->task, "on-init", NULL, fun_compute_progress));
+
+    fctx->type = FUN_CONTEXT_FILE;
+    cfg_t *sec;
+    int i = 0;
+    while ((sec = cfg_getnsec(fctx->task, "on-resource", i++)) != NULL) {
+        cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", sec->title);
+        if (!resource) {
+            // This really shouldn't happen, but failing to calculate
+            // progress for a missing file-resource seems harsh.
+            INFO("Can't find file-resource for %s", sec->title);
+            continue;
+        }
+
+        OK_OR_RETURN(apply_event(fctx, fctx->task, "on-resource", sec->title, fun_compute_progress));
+    }
+
+    fctx->type = FUN_CONTEXT_FINISH;
+    OK_OR_RETURN(apply_event(fctx, fctx->task, "on-finish", NULL, fun_compute_progress));
+
+    return 0;
+}
+
+static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
+{
+    int rc = 0;
+
+    fctx->type = FUN_CONTEXT_INIT;
+    OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-init", NULL, fun_run));
+
+    fctx->type = FUN_CONTEXT_FILE;
+    fctx->read = read_callback;
+    struct archive_entry *ae;
+    while (archive_read_next_header(pd->a, &ae) == ARCHIVE_OK) {
+        const char *filename = archive_entry_pathname(ae);
+        char resource_name[FWFILE_MAX_ARCHIVE_PATH];
+
+        OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
+
+        // Skip an empty filename. This is easy to get when you run 'zip'
+        // on the command line to create a firmware update file and include
+        // the 'data' directory. It's annoying when it creates an error
+        // (usually when debugging something else), so ignore it.
+        if (resource_name[0] == '\0')
+            continue;
+
+        OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx->cfg, resource_name, &pd->sfm));
+        pd->sparse_map_ix = 0;
+        pd->sparse_block_offset = 0;
+        pd->actual_offset = 0;
+        pd->sparse_leftover = NULL;
+        pd->sparse_leftover_len = 0;
+        if (pd->sfm.map[0] == 0) {
+            if (pd->sfm.map_len > 2) {
+                // This is the case where there's a hole at the beginning. Advance to
+                // the offset of the data.
+                pd->sparse_map_ix = 2;
+                pd->actual_offset = pd->sfm.map[1];
+            } else {
+                // sparse map has a 0 length data block and possibly a hole,
+                // but it doesn't have anoter data block. This means that it's
+                // either a 0-length file or it's all sparse. Signal EOF. This
+                // might be a bug, but I can't think of a real use case for a completely
+                // sparse file.
+                pd->sparse_map_ix = pd->sfm.map_len;
+            }
+        }
+
+        OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-resource", resource_name, fun_run));
+
+        sparse_file_free(&pd->sfm);
+    }
+
+    fctx->type = FUN_CONTEXT_FINISH;
+    OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-finish", NULL, fun_run));
+
+    // Flush the FATFS code in case it was used.
+    OK_OR_CLEANUP(fatfs_ptr_callback(fctx, -1, NULL));
+
+cleanup:
+    if (rc != 0) {
+        // Do a best attempt at running any error handling code
+        fctx->type = FUN_CONTEXT_ERROR;
+        if (apply_event(fctx, fctx->task, "on-error", NULL, fun_run) == 0) {
+            // If the error handler is successful, then we may need
+            // to flush the FATFS code again.
+            fatfs_ptr_callback(fctx, -1, NULL);
+        }
+    }
+    return rc;
+}
+
+int fwup_apply(const char *fw_filename,
+               const char *task_prefix,
+               int output_fd,
+               struct fwup_progress *progress,
+               const unsigned char *public_key)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
@@ -301,7 +400,7 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
     // Report 0 progress before doing anything
     progress_report(fctx.progress, 0);
 
-    struct fwup_data pd;
+    struct fwup_apply_data pd;
     memset(&pd, 0, sizeof(pd));
     fctx.cookie = &pd;
     pd.a = archive_read_new();
@@ -343,90 +442,21 @@ int fwup_apply(const char *fw_filename, const char *task_prefix, int output_fd, 
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
 
     // Compute the total progress units
-    fctx.type = FUN_CONTEXT_INIT;
-    OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_compute_progress));
-
-    fctx.type = FUN_CONTEXT_FILE;
-    cfg_t *sec;
-    int i = 0;
-    while ((sec = cfg_getnsec(fctx.task, "on-resource", i++)) != NULL) {
-        cfg_t *resource = cfg_gettsec(fctx.cfg, "file-resource", sec->title);
-        if (!resource) {
-            // This really shouldn't happen, but failing to calculate
-            // progress for a missing file-resource seems harsh.
-            INFO("Can't find file-resource for %s", sec->title);
-            continue;
-        }
-
-        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", sec->title, fun_compute_progress));
-    }
-
-    fctx.type = FUN_CONTEXT_FINISH;
-    OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_compute_progress));
+    OK_OR_CLEANUP(compute_progress(&fctx));
 
     // Run
-    {
-        fctx.type = FUN_CONTEXT_INIT;
-        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-init", NULL, fun_run));
+    OK_OR_CLEANUP(run_task(&fctx, &pd));
 
-        fctx.type = FUN_CONTEXT_FILE;
-        fctx.read = read_callback;
-        while (archive_read_next_header(pd.a, &ae) == ARCHIVE_OK) {
-            const char *filename = archive_entry_pathname(ae);
-            char resource_name[FWFILE_MAX_ARCHIVE_PATH];
-
-            OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
-
-            // Skip an empty filename. This is easy to get when you run 'zip'
-            // on the command line to create a firmware update file and include
-            // the 'data' directory. It's annoying when it creates an error
-            // (usually when debugging something else), so ignore it.
-            if (resource_name[0] == '\0')
-                continue;
-
-            OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx.cfg, resource_name, &pd.sfm));
-            pd.sparse_map_ix = 0;
-            pd.sparse_block_offset = 0;
-            pd.actual_offset = 0;
-            pd.sparse_leftover = NULL;
-            pd.sparse_leftover_len = 0;
-            if (pd.sfm.map[0] == 0) {
-                if (pd.sfm.map_len > 2) {
-                    // This is the case where there's a hole at the beginning. Advance to
-                    // the offset of the data.
-                    pd.sparse_map_ix = 2;
-                    pd.actual_offset = pd.sfm.map[1];
-                } else {
-                    // sparse map has a 0 length data block and possibly a hole,
-                    // but it doesn't have anoter data block. This means that it's
-                    // either a 0-length file or it's all sparse. Signal EOF. This
-                    // might be a bug, but I can't think of a real use case for a completely
-                    // sparse file.
-                    pd.sparse_map_ix = pd.sfm.map_len;
-                }
-            }
-
-            OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-resource", resource_name, fun_run));
-
-            sparse_file_free(&pd.sfm);
-        }
-
-        fctx.type = FUN_CONTEXT_FINISH;
-        OK_OR_CLEANUP(apply_event(&fctx, fctx.task, "on-finish", NULL, fun_run));
-    }
-
-    // Flush the FATFS code in case it was used.
-    OK_OR_CLEANUP(fatfs_ptr_callback(&fctx, -1, NULL));
-
+cleanup:
     // Close the file before we report 100% just in case that takes some time (Linux)
     close(fctx.output_fd);
     fctx.output_fd = -1;
 
-    // Report 100% to the user
-    progress_report_complete(fctx.progress);
-
-cleanup:
     sparse_file_free(&pd.sfm);
+
+    // Report 100% to the user if successful
+    if (rc == 0)
+        progress_report_complete(fctx.progress);
 
     if (fctx.output_fd >= 0)
         close(fctx.output_fd);

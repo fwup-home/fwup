@@ -112,7 +112,8 @@ TESTS = 001_simple_fw.test \
 	113_fat_mv_error_cases.test \
 	114_fat_cp_error_cases.test \
 	115_fat_mkdir_error_cases.test \
-	116_fat_setlabel_error_cases.test
+	116_fat_setlabel_error_cases.test \
+	117_on_error.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \
