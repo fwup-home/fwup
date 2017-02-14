@@ -1,0 +1,47 @@
+#!/bin/sh
+
+#
+# Test that an error is detected if a file is missing from the archive.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource a.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource b.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource a.bin {
+                raw_write(0)
+        }
+        on-resource b.bin {
+                raw_write(2)
+        }
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Now be sneaking and remove one of the data files
+unzip -q $FWFILE -d $UNZIPDIR
+cd $UNZIPDIR
+zip -q $WORK/imposter.fw meta.conf data/a.bin
+cd -
+
+echo Expecting error during verification...
+if $FWUP_APPLY -V -i $WORK/imposter.fw; then
+    echo "Verifying firmware with a missing file should have failed"
+    exit 1
+fi
+
+echo Expecting error during apply...
+if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+    echo "Applying firmware with a missing file should have failed"
+    exit 1
+fi
+

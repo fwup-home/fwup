@@ -90,15 +90,15 @@ int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *s
     // If this map was in use, free any memory associated with it.
     sparse_file_free(sfm);
 
-    int len = cfg_size(resource, "length");
-    if (len <= 0) {
+    int map_len = cfg_size(resource, "length");
+    if (map_len <= 0) {
         // If not found, then libconfuse supplies the default value of 0
         // for the first element. I.e., this is a 0 length file.
-        len = 1;
+        map_len = 1;
     }
 
-    off_t *map = (off_t *) malloc(len * sizeof(off_t));
-    for (int i = 0; i < len; i++) {
+    off_t *map = (off_t *) malloc(map_len * sizeof(off_t));
+    for (int i = 0; i < map_len; i++) {
 #if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
         // See comment in cfgfile.c to use of doubles to represent
         // file offsets on 32-bit platforms.
@@ -109,7 +109,7 @@ int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *s
     }
 
     sfm->map = map;
-    sfm->map_len = len;
+    sfm->map_len = map_len;
     return 0;
 }
 

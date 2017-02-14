@@ -1,0 +1,49 @@
+#!/bin/sh
+
+#
+# Test that an error is detected if a file is missing its metadata from the archive.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource a.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource a.bin {
+                raw_write(0)
+        }
+}
+EOF
+
+cat >$WORK/new-meta.conf <<EOF
+task "complete" {
+on-resource "a.bin" {
+funlist={"2","raw_write","0"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Now be sneaking and update the meta.conf
+unzip -q $FWFILE -d $UNZIPDIR
+cd $UNZIPDIR
+cp $WORK/new-meta.conf meta.conf
+zip -q $WORK/imposter.fw meta.conf data/a.bin
+cd -
+
+echo Expecting error during verification...
+if $FWUP_APPLY -V -i $WORK/imposter.fw; then
+    echo "Verifying firmware with a missing resource metadata should have failed"
+    exit 1
+fi
+
+echo Expecting error during apply...
+if $FWUP_APPLY -a -d $IMGFILE -i $WORK/imposter.fw -t complete; then
+    echo "Applying firmware with a missing resource metadata should have failed"
+    exit 1
+fi

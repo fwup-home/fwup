@@ -27,6 +27,7 @@ fwup_SOURCES=\
 	mmc_windows.c \
 	progress.c \
 	requirement.c \
+	resources.c \
 	simple_string.c \
 	sparse_file.c \
 	uboot_env.c \
@@ -52,6 +53,7 @@ fwup_SOURCES=\
 	mmc.h \
 	progress.h \
 	requirement.h \
+	resources.h \
 	simple_string.h \
 	sparse_file.h \
 	uboot_env.h \

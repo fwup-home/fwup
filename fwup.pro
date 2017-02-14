@@ -43,7 +43,8 @@ SOURCES += \
     src/eval_math.c \
     src/sparse_file.c \
     src/progress.c \
-    src/mmc_bsd.c
+    src/mmc_bsd.c \
+    src/resources.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -93,7 +94,8 @@ HEADERS += \
     src/crc32.h \
     src/eval_math.h \
     src/sparse_file.h \
-    src/progress.h
+    src/progress.h \
+    src/resources.h
 
 OTHER_FILES += \
     fwupdate.conf \
@@ -225,4 +227,5 @@ DISTFILES += \
     tests/116_fat_setlabel_error_cases.test \
     tests/117_on_error.test \
     tests/118_fat_touch_error_cases.test \
-    tests/119_require_fat_file_match.test
+    tests/119_require_fat_file_match.test \
+    tests/120_missing_file.test

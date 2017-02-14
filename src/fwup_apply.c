@@ -38,6 +38,7 @@
 #include "archive_open.h"
 #include "sparse_file.h"
 #include "progress.h"
+#include "resources.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
 {
@@ -318,6 +319,9 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
 {
     int rc = 0;
 
+    struct resource_list *resources = NULL;
+    OK_OR_CLEANUP(rlist_get_from_task(fctx->cfg, fctx->task, &resources));
+
     fctx->type = FUN_CONTEXT_INIT;
     OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-init", NULL, fun_run));
 
@@ -337,7 +341,16 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
         if (resource_name[0] == '\0')
             continue;
 
-        OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx->cfg, resource_name, &pd->sfm));
+        // See if this resource is used by this task
+        struct resource_list *item = rlist_find_by_name(resources, resource_name);
+        if (item == NULL)
+            continue;
+
+        // See if there's metadata associated with this resource
+        if (item->resource == NULL)
+            ERR_CLEANUP_MSG("Resource '%s' used, but metadata is missing. Archive is corrupt.", resource_name);
+
+        OK_OR_CLEANUP(sparse_file_get_map_from_resource(item->resource, &pd->sfm));
         pd->sparse_map_ix = 0;
         pd->sparse_block_offset = 0;
         pd->actual_offset = 0;
@@ -361,7 +374,14 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
 
         OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-resource", resource_name, fun_run));
 
+        item->processed = true;
         sparse_file_free(&pd->sfm);
+    }
+
+    // Make sure that all "on-resource" blocks have been run.
+    for (const struct resource_list *r = resources; r != NULL; r = r->next) {
+        if (!r->processed)
+            ERR_CLEANUP_MSG("Resource %s not found in archive", cfg_title(r->resource));
     }
 
     fctx->type = FUN_CONTEXT_FINISH;
@@ -380,6 +400,7 @@ cleanup:
             fatfs_ptr_callback(fctx, -1, NULL);
         }
     }
+    rlist_free(resources);
     return rc;
 }
 

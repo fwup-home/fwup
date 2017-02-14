@@ -116,7 +116,9 @@ TESTS = 001_simple_fw.test \
 	117_on_error.test \
 	118_fat_touch_error_cases.test \
 	119_require_fat_file_match.test \
-	120_corrupt_fat.test
+	120_corrupt_fat.test \
+	121_missing_file.test \
+	122_missing_file_metadata.test
 
 if HAVE_SPARSE_SEEK
 TESTS += \
