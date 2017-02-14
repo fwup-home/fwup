@@ -476,7 +476,7 @@ Event                         | Description
 on-init                       | First event sent when the task is applied
 on-finish                     | Final event sent assuming no errors are detected during event processing
 on-error                      | Sent if an error occurs so that intermediate files can be cleaned up
-on-resource <resource name>   | Sent as events occur. Currently, this is sent as `file-resources` are processed from the archive. If `verify-on-the-fly` is set, then this event is sent at the start of the file. Otherwise, it is sent when the file has been read and verified completely.
+on-resource <resource name>   | Sent as events occur. Currently, this is sent as `file-resources` are processed from the archive.
 
 The event scopes contain a list of actions. Actions can format file systems, copy files to file systems or
 write to raw locations on the destination.
