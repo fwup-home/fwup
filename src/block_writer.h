@@ -32,8 +32,10 @@ struct block_writer {
     size_t block_size;
     off_t block_size_mask;
 
+    char *unaligned_buffer;
     char *buffer;
     off_t write_offset;
+    off_t last_write_offset;
     size_t buffer_index;
     size_t added_bytes;
 };

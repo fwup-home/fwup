@@ -247,7 +247,7 @@ int raw_write_run(struct fun_context *fctx)
     off_t len_written = 0;
 
     struct block_writer writer;
-    OK_OR_CLEANUP(block_writer_init(&writer, fctx->output_fd, 128 * 1024, 9)); // 9 -> 512 byte blocks
+    OK_OR_CLEANUP(block_writer_init(&writer, fctx->output_fd, 64 * 1024, 9)); // 9 -> 512 byte blocks
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
@@ -349,7 +349,7 @@ int raw_memset_run(struct fun_context *fctx)
     memset(buffer, value, sizeof(buffer));
 
     struct block_writer writer;
-    OK_OR_RETURN(block_writer_init(&writer, fctx->output_fd, 128 * 1024, 9)); // 9 -> 512 byte blocks
+    OK_OR_RETURN(block_writer_init(&writer, fctx->output_fd, 64 * 1024, 9)); // 9 -> 512 byte blocks
 
     off_t len_written = 0;
     off_t offset;

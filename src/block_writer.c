@@ -35,14 +35,39 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->block_size = (1 << log2_block_size);
     bw->block_size_mask = ~((off_t) bw->block_size - 1);
     bw->buffer_size = (buffer_size + ~bw->block_size_mask) & bw->block_size_mask;
-    bw->buffer = (char *) malloc(bw->buffer_size);
-    if (bw->buffer == 0)
+    bw->unaligned_buffer = (char *) malloc(bw->buffer_size + 4095);
+    if (bw->unaligned_buffer == 0)
         ERR_RETURN("Cannot allocate write buffer of %d bytes.", bw->buffer_size);
-
+    bw->buffer = (char *) (((uint64_t) (bw->unaligned_buffer + 4095)) & ~4095);
     bw->write_offset = 0;
+    bw->last_write_offset = -1;
     bw->buffer_index = 0;
     bw->added_bytes = 0;
     return 0;
+}
+
+static ssize_t maybe_pwrite(struct block_writer *bw, const char *buf, size_t count)
+{
+    if (bw->write_offset != bw->last_write_offset) {
+        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0)
+            return -1;
+
+        bw->last_write_offset = bw->write_offset;
+    }
+
+    size_t amount_left = count;
+    while (amount_left > 0) {
+        size_t amount_to_write = (amount_left > bw->buffer_size ? bw->buffer_size : amount_left);
+        ssize_t rc = write(bw->fd, buf, amount_to_write);
+        if (rc <= 0)
+            return -1;
+
+        bw->last_write_offset += rc;
+        buf += rc;
+        amount_left -= rc;
+    }
+
+    return count;
 }
 
 static ssize_t flush_buffer(struct block_writer *bw)
@@ -61,7 +86,7 @@ static ssize_t flush_buffer(struct block_writer *bw)
         bw->buffer_index = block_boundary;
     }
 
-    ssize_t rc = pwrite(bw->fd, bw->buffer, bw->buffer_index, bw->write_offset);
+    ssize_t rc = maybe_pwrite(bw, bw->buffer, bw->buffer_index); // pwrite(bw->fd, bw->buffer, bw->buffer_index, bw->write_offset);
     if (rc != (ssize_t) bw->buffer_index)
         return -1;
 
@@ -153,7 +178,7 @@ empty_buffer:
             // Handle the block fragment
             size_t to_write = bw->block_size - padding;
             memcpy(&bw->buffer[padding], buf, to_write);
-            if (pwrite(bw->fd, bw->buffer, bw->block_size, bw->write_offset) < 0)
+            if (maybe_pwrite(bw, bw->buffer, bw->block_size) < 0) // pwrite(bw->fd, bw->buffer, bw->block_size, bw->write_offset);
                 return -1;
 
             bw->write_offset += bw->block_size;
@@ -175,9 +200,10 @@ empty_buffer:
 
     // If we have more than a buffer's worth, write all filled blocks
     // without even trying to buffer.
-    if (count > bw->buffer_size) {
-        size_t to_write = (count & bw->block_size_mask);
-        if (pwrite(bw->fd, buf, to_write, bw->write_offset) < 0)
+    while (count > bw->buffer_size) {
+        size_t to_write = bw->buffer_size;
+        memcpy(bw->buffer, buf, to_write); // copy to force alignment
+        if (maybe_pwrite(bw, bw->buffer, to_write) < 0) // pwrite(bw->fd, buf, to_write, bw->write_offset)
             return -1;
         bw->write_offset += to_write;
         amount_written += to_write - bw->added_bytes;
@@ -209,8 +235,9 @@ ssize_t block_writer_free(struct block_writer *bw)
         rc = flush_buffer(bw);
 
     // Free our buffer and clean up
-    free(bw->buffer);
+    free(bw->unaligned_buffer);
     bw->fd = -1;
+    bw->unaligned_buffer = 0;
     bw->buffer = 0;
     bw->buffer_index = 0;
     return rc;

@@ -16,6 +16,8 @@
 
 #ifdef __linux__
 
+#define _GNU_SOURCE // for O_DIRECT
+
 #include "mmc.h"
 #include "util.h"
 
@@ -351,7 +353,7 @@ int mmc_eject(const char *mmc_device)
 
 int mmc_open(const char *mmc_path)
 {
-    return open(mmc_path, O_RDWR);
+    return open(mmc_path, O_RDWR | O_DIRECT);
 }
 
 void mmc_init()
