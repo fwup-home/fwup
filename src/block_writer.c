@@ -10,7 +10,7 @@
 
 static pthread_t writer_thread;
 static pthread_mutex_t mutex;
-static pthread_cond_t condvar;
+static pthread_mutex_t mutex_back;
 
 static bool running = false;
 static char *async_buffer = NULL;
@@ -21,10 +21,8 @@ static void *writer_worker(void *void_bw)
 {
     struct block_writer *bw = (struct block_writer *) void_bw;
 
-    pthread_mutex_lock(&mutex);
-    do {
-        while (running && amount_to_write == 0)
-            pthread_cond_wait(&condvar, &mutex);
+    for (;;) {
+        pthread_mutex_lock(&mutex);
 
         while (amount_to_write > 0) {
             ssize_t rc = write(bw->fd, async_buffer, amount_to_write);
@@ -35,8 +33,12 @@ static void *writer_worker(void *void_bw)
             fprintf(stderr, "wrote %d\n", rc);
             amount_to_write -= rc;
         }
-    } while (running);
-    pthread_mutex_unlock(&mutex);
+
+        if (!running)
+            break;
+
+        pthread_mutex_unlock(&mutex_back);
+    }
     fprintf(stderr, "done %d\n", amount_to_write);
     return NULL;
 }
@@ -88,7 +90,8 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     running = true;
 
     pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&condvar, NULL);
+    pthread_mutex_lock(&mutex);
+    pthread_mutex_init(&mutex_back, NULL);
     if (pthread_create(&writer_thread, NULL, writer_worker, bw))
         fwup_errx(EXIT_FAILURE, "pthread_create");
 
@@ -97,11 +100,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
 
 static ssize_t maybe_pwrite(struct block_writer *bw, const char *buf, size_t count)
 {
-    pthread_mutex_lock(&mutex);
-    while (amount_to_write > 0) {
-        pthread_mutex_unlock(&mutex);
-        pthread_yield();
-    }
+    pthread_mutex_lock(&mutex_back);
     fprintf(stderr, "maybe_pwrite %d\n", amount_to_write);
     if (bw->write_offset != bw->last_write_offset) {
         if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0) {
@@ -127,7 +126,6 @@ static ssize_t maybe_pwrite(struct block_writer *bw, const char *buf, size_t cou
     memcpy(async_buffer, buf, amount_left);
     amount_to_write = amount_left;
     pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&condvar);
 
     return count;
 }
@@ -171,15 +169,16 @@ ssize_t block_writer_free(struct block_writer *bw)
     if (bw->buffer_index)
         rc = flush_buffer(bw);
 
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex_back);
     fprintf(stderr, "stopping %d\n", amount_to_write);
     running = false;
     pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&condvar);
 
     if (pthread_join(writer_thread, NULL))
         fwup_errx(EXIT_FAILURE, "pthread_join");
     free(unaligned_async_buffer);
+    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(&mutex_back);
 
     // Free our buffer and clean up
     free(bw->unaligned_buffer);
