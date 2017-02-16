@@ -85,11 +85,13 @@ endif
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \
-	      $(SODIUM_CFLAGS)
+	      $(SODIUM_CFLAGS) \
+	      $(PTHREAD_CFLAGS)
 
 fwup_LDADD = $(CONFUSE_LIBS) \
 	     $(ARCHIVE_LIBS) \
-	     $(SODIUM_LIBS)
+	     $(SODIUM_LIBS) \
+	     $(PTHREAD_LIBS)
 
 if ENABLE_GCOV
 fwup_CFLAGS += -fprofile-arcs -ftest-coverage

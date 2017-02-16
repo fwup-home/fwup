@@ -62,6 +62,9 @@ PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive
 PKG_CHECK_MODULES([CONFUSE], [libconfuse >= 2.8], [], AC_MSG_ERROR([Requires libconfuse v2.8 or later]))
 PKG_CHECK_MODULES([SODIUM], [libsodium], [], AC_MSG_ERROR([Requires libsodium]))
 
+# Pthreads are optional
+AX_PTHREAD()
+
 # Platform-specific additions
 AS_CASE([$host_os],
         [darwin*], [LIBS="$LIBS -framework CoreFoundation -framework DiskArbitration"]
