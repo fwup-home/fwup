@@ -6,6 +6,41 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <pthread.h>
+
+static pthread_t writer_thread;
+static pthread_mutex_t mutex;
+static pthread_cond_t condvar;
+
+static bool running = false;
+static char *async_buffer = NULL;
+static char *unaligned_async_buffer = NULL;
+static size_t amount_to_write = 0;
+
+static void *writer_worker(void *void_bw)
+{
+    struct block_writer *bw = (struct block_writer *) void_bw;
+
+    pthread_mutex_lock(&mutex);
+    do {
+        while (running && amount_to_write == 0)
+            pthread_cond_wait(&condvar, &mutex);
+
+        while (amount_to_write > 0) {
+            ssize_t rc = write(bw->fd, async_buffer, amount_to_write);
+            if (rc < 0) {
+                fwup_errx(EXIT_FAILURE, "Need to handle this");
+
+            }
+            fprintf(stderr, "wrote %d\n", rc);
+            amount_to_write -= rc;
+        }
+    } while (running);
+    pthread_mutex_unlock(&mutex);
+    fprintf(stderr, "done %d\n", amount_to_write);
+    return NULL;
+}
+
 /**
  * @brief Helper for buffering writes into block-sized pieces
  *
@@ -45,29 +80,54 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->last_write_offset = -1;
     bw->buffer_index = 0;
     bw->added_bytes = 0;
+
+    unaligned_async_buffer = (char *) malloc(bw->buffer_size + 4095);
+    if (unaligned_async_buffer == 0)
+        ERR_RETURN("Cannot allocate write buffer of %d bytes.", bw->buffer_size);
+    async_buffer = (char *) (((uint64_t) (unaligned_async_buffer + 4095)) & ~4095);
+    running = true;
+
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&condvar, NULL);
+    if (pthread_create(&writer_thread, NULL, writer_worker, bw))
+        fwup_errx(EXIT_FAILURE, "pthread_create");
+
     return 0;
 }
 
 static ssize_t maybe_pwrite(struct block_writer *bw, const char *buf, size_t count)
 {
+    pthread_mutex_lock(&mutex);
+    while (amount_to_write > 0) {
+        pthread_mutex_unlock(&mutex);
+        pthread_yield();
+    }
+    fprintf(stderr, "maybe_pwrite %d\n", amount_to_write);
     if (bw->write_offset != bw->last_write_offset) {
-        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0)
+        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0) {
+            pthread_mutex_unlock(&mutex);
             return -1;
+        }
 
         bw->last_write_offset = bw->write_offset;
     }
 
     size_t amount_left = count;
-    while (amount_left > 0) {
-        size_t amount_to_write = (amount_left > bw->buffer_size ? bw->buffer_size : amount_left);
-        ssize_t rc = write(bw->fd, buf, amount_to_write);
-        if (rc <= 0)
+    while (amount_left > bw->buffer_size) {
+        ssize_t rc = write(bw->fd, buf, bw->buffer_size);
+        if (rc <= 0) {
+            pthread_mutex_unlock(&mutex);
             return -1;
+        }
 
         bw->last_write_offset += rc;
         buf += rc;
         amount_left -= rc;
     }
+    memcpy(async_buffer, buf, amount_left);
+    amount_to_write = amount_left;
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_signal(&condvar);
 
     return count;
 }
@@ -97,6 +157,37 @@ static ssize_t flush_buffer(struct block_writer *bw)
     bw->buffer_index = 0;
     bw->added_bytes = 0;
     return rc - added_bytes;
+}
+
+/**
+ * @brief flush and free the aligned writer data structures
+ * @param bw
+ * @return number of bytes written or -1 if error
+ */
+ssize_t block_writer_free(struct block_writer *bw)
+{
+    // Write any data that's still in the buffer
+    ssize_t rc = 0;
+    if (bw->buffer_index)
+        rc = flush_buffer(bw);
+
+    pthread_mutex_lock(&mutex);
+    fprintf(stderr, "stopping %d\n", amount_to_write);
+    running = false;
+    pthread_mutex_unlock(&mutex);
+    pthread_cond_signal(&condvar);
+
+    if (pthread_join(writer_thread, NULL))
+        fwup_errx(EXIT_FAILURE, "pthread_join");
+    free(unaligned_async_buffer);
+
+    // Free our buffer and clean up
+    free(bw->unaligned_buffer);
+    bw->fd = -1;
+    bw->unaligned_buffer = 0;
+    bw->buffer = 0;
+    bw->buffer_index = 0;
+    return rc;
 }
 
 /**
@@ -222,25 +313,4 @@ empty_buffer:
     }
 
     return amount_written;
-}
-
-/**
- * @brief flush and free the aligned writer data structures
- * @param bw
- * @return number of bytes written or -1 if error
- */
-ssize_t block_writer_free(struct block_writer *bw)
-{
-    // Write any data that's still in the buffer
-    ssize_t rc = 0;
-    if (bw->buffer_index)
-        rc = flush_buffer(bw);
-
-    // Free our buffer and clean up
-    free(bw->unaligned_buffer);
-    bw->fd = -1;
-    bw->unaligned_buffer = 0;
-    bw->buffer = 0;
-    bw->buffer_index = 0;
-    return rc;
 }
