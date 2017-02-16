@@ -10,7 +10,7 @@
  * @brief Helper for buffering writes into block-sized pieces
  *
  * This is needed since the unzip process creates variable sized chunks that need
- * to be combined before being written. File I/O to Flash media works best in 128 KB+
+ * to be combined before being written. File I/O to Flash media works best in large
  * sized chunks, so cache the writes until they get to that size. Writes MUST be
  * monotically increasing in offset. Seeking backwards is NOT supported.
  *
@@ -21,7 +21,7 @@
  * was still very fast.
  *
  * This code also pads files out to block boundaries (512 bytes for all supported media now).
- * This appears to be needed on OSX when writing to /dev/rdiskN devices.
+ * This is needed on OSX when writing to /dev/rdiskN devices.
  *
  * @param aw
  * @param fd              the target file to write to
@@ -35,6 +35,8 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->block_size = (1 << log2_block_size);
     bw->block_size_mask = ~((off_t) bw->block_size - 1);
     bw->buffer_size = (buffer_size + ~bw->block_size_mask) & bw->block_size_mask;
+
+    // Buffer alignment required on Linux when files are opened with O_DIRECT.
     bw->unaligned_buffer = (char *) malloc(bw->buffer_size + 4095);
     if (bw->unaligned_buffer == 0)
         ERR_RETURN("Cannot allocate write buffer of %d bytes.", bw->buffer_size);
