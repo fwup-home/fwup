@@ -17,7 +17,14 @@
 #ifndef ALIGNED_WRITER_H
 #define ALIGNED_WRITER_H
 
+#include "config.h"
+
+#include <stdbool.h>
 #include <sys/types.h>
+
+#if HAVE_PTHREAD
+#include <pthread.h>
+#endif
 
 /*
  * The aligned_writer encapsulates the logic to write at raw disk
@@ -38,6 +45,17 @@ struct block_writer {
     off_t last_write_offset;
     size_t buffer_index;
     size_t added_bytes;
+
+#if HAVE_PTHREAD
+    pthread_t writer_thread;
+    pthread_mutex_t mutex_to;
+    pthread_mutex_t mutex_back;
+
+    bool running;
+    char *async_buffer;
+    char *unaligned_async_buffer;
+    size_t amount_to_write;
+#endif
 };
 
 int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2_block_size);
