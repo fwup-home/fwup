@@ -148,10 +148,10 @@ static struct option long_options[] = {
     {"create",   no_argument,       0, 'c'},
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
-    {"help",     no_argument,       0, 'h'},
     {"no-eject", no_argument,       0, '#'},
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
+    {"help",     no_argument,       0, 'h'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
     {"progress-low", required_argument, 0, '$'},
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
             command = CMD_GENERATE_KEYS;
             easy_mode = false;
             break;
-	case 'h':
+        case 'h':
             print_usage();
             exit(EXIT_SUCCESS);
             break;
