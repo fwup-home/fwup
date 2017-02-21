@@ -327,6 +327,8 @@ int mmc_eject(const char *mmc_device)
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
     // Not implemented - I don't think there's a use case for this on Mac.
+    (void) file_path;
+    (void) device_path;
     return -1;
 }
 #endif // __APPLE__
