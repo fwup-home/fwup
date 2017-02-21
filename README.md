@@ -38,6 +38,8 @@ repeatable way. The utility has the following features:
 
   10. Permissive license (Apache 2.0 License - see end of doc)
 
+  11. Extensively regression tested! Tests also provide lots of simple examples.
+
 This utility is based off of firmware update utilities I've written for various
 projects. It has already received a lot of use with the open source Nerves
 Project and other embedded projects.
