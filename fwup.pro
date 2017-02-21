@@ -215,4 +215,14 @@ DISTFILES += \
     tests/096_missing_resource.test \
     tests/097_reproduceable.test \
     tests/098_sparse_empty.test \
-    tests/099_sparse_lasthole.test
+    tests/099_sparse_lasthole.test \
+    tests/110_compression_level.test \
+    tests/111_streaming_exit_fast.test \
+    tests/112_fat_rm_missing_file.test \
+    tests/113_fat_mv_error_cases.test \
+    tests/114_fat_cp_error_cases.test \
+    tests/115_fat_mkdir_error_cases.test \
+    tests/116_fat_setlabel_error_cases.test \
+    tests/117_on_error.test \
+    tests/118_fat_touch_error_cases.test \
+    tests/119_require_fat_file_match.test

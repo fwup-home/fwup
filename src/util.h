@@ -117,6 +117,11 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 char *strndup(const char *s, size_t n);
 #endif
 
+#ifndef HAVE_MEMMEM
+void *memmem(const void *haystack, size_t haystacklen,
+             const void *needle, size_t needlelen);
+#endif
+
 // Getting and setting the environment
 
 // Ideally setenv() is available. If not, provide an implementation.

@@ -33,7 +33,7 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
 
 # Checks for library functions
-AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite])
+AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite memmem])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(

@@ -1,0 +1,77 @@
+#!/bin/sh
+
+#
+# Tests that the "require-fat-file-match" feature works.
+# This is used on systems where the contents of a config
+# or environment file determine which partition boots.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+file-resource envfile {
+    contents = "apple\nbanana\norange\npineapple\n"
+}
+
+task complete {
+    on-init {
+        fat_mkfs(0, 1985)
+    }
+    on-resource envfile {
+        fat_write(0, "envfile")
+    }
+}
+
+task testexact.nomatch {
+    require-fat-file-match(0, "envfile", "pear")
+    on-init { info("fail") }
+}
+task testexact.match {
+    require-fat-file-match(0, "envfile", "orange")
+    on-init { info("correct") }
+}
+
+task testnewline.nomatch {
+    require-fat-file-match(0, "envfile", "pear\n")
+    on-init { info("fail") }
+}
+task testnewline.match {
+    require-fat-file-match(0, "envfile", "banana\n")
+    on-init { info("correct") }
+}
+
+# Empty pattern should always match if the file exists
+task testempty.match {
+    require-fat-file-match(0, "envfile", "")
+    on-init { info("correct") }
+}
+
+# Test that the empty pattern fails when the file is missing
+task testempty2.fail {
+    require-fat-file-match(0, "notafile", "")
+    on-init { info("fail") }
+}
+task testempty2.match {
+    on-init { info("correct") }
+}
+
+EOF
+
+# Create the firmware file and the image the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+
+TESTS="testexact testnewline testempty testempty2"
+for TEST in $TESTS; do
+    echo "Trying $TEST"
+    $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t $TEST > $WORK/actual_output.txt
+    diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+done
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

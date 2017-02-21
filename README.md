@@ -455,6 +455,7 @@ architecture, etc. The following table lists the supported constraints:
 Constraint                                         | Min fwup version | Description
 ---------------------------------------------------|------------------|------------
 require-fat-file-exists(block_offset, filename)    | 0.7.0 | Require that a file exists in the specified FAT filesystem
+require-fat-file-match(block_offset, filename, pattern) | 0.14.0 | Require that filename exists and that pattern matches bytes inside of the file
 require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the block offset of a partition be the specified value
 require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified device (e.g., "/dev/mmcblk0p1")
 require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-boot environment

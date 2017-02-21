@@ -36,6 +36,7 @@ DECLARE_REQ(require_partition_offset);
 DECLARE_REQ(require_fat_file_exists);
 DECLARE_REQ(require_uboot_variable);
 DECLARE_REQ(require_path_on_device);
+DECLARE_REQ(require_fat_file_match);
 
 struct req_info {
     const char *name;
@@ -46,6 +47,7 @@ struct req_info {
 #define REQ_INFO(NAME, REQ) {NAME, REQ ## _validate, REQ ## _requirement_met}
 static struct req_info req_table[] = {
     REQ_INFO("require-fat-file-exists", require_fat_file_exists),
+    REQ_INFO("require-fat-file-match", require_fat_file_match),
     REQ_INFO("require-partition-offset", require_partition_offset),
     REQ_INFO("require-path-on-device", require_path_on_device),
     REQ_INFO("require-uboot-variable", require_uboot_variable)
@@ -194,6 +196,31 @@ int require_fat_file_exists_requirement_met(struct fun_context *fctx)
         return -1;
 
     if (fatfs_exists(fc, fctx->argv[2]) < 0)
+        return -1;
+
+    // No error -> the requirement has been met.
+    return 0;
+}
+
+int require_fat_file_match_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        ERR_RETURN("require-fat-file-match requires a FAT FS block offset, a filename, and a pattern");
+
+    CHECK_ARG_UINT64(fctx->argv[1], "require-fat-file-match requires a non-negative integer block offset");
+
+    return 0;
+}
+int require_fat_file_match_requirement_met(struct fun_context *fctx)
+{
+    if (fctx->argc != 4)
+        return -1;
+
+    struct fat_cache *fc;
+    if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
+        return -1;
+
+    if (fatfs_file_matches(fc, fctx->argv[2], fctx->argv[3]) < 0)
         return -1;
 
     // No error -> the requirement has been met.

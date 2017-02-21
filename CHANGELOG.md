@@ -12,6 +12,10 @@
     * on-error has finally been implemented. This allows fwup.conf files to
       specify cleanup code should something go wrong. Cleanup is performed
       best effort and fwup still returns an error on exit.
+    * Add support for matching strings in files on a FAT filesystem for whether
+      to apply upgrades. See `require-fat-file-match()`. Useful for bootloaders
+      that can modify a file, but not create/remove one (e.g., grub's grubenv
+      file)
 
   * Bug fixes
     * When streaming, the input would always be read through to the end. This

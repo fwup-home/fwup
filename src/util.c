@@ -359,7 +359,6 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
         return write(fd, buf, count);
     else
         return -1;
-
 }
 #endif
 
@@ -386,5 +385,19 @@ char *strndup(const char *s, size_t n)
         buf[n] = '\0';
     }
     return buf;
+}
+#endif
+
+#ifndef HAVE_MEMMEM
+void *memmem(const void *haystack, size_t haystacklen,
+             const void *needle, size_t needlelen)
+{
+    const char *p = (const char *) haystack;
+    const char *pend = p + haystacklen - needlelen;
+    for (;p != pend; p++) {
+        if (memcmp(p, needle, needlelen) == 0)
+            return (void *) p;
+    }
+    return NULL;
 }
 #endif

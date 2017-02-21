@@ -395,6 +395,7 @@ static cfg_opt_t task_opts[] = {
     CFG_FUNC("require-fat-file-exists", cb_task_require_func),
     CFG_FUNC("require-uboot-variable", cb_task_require_func),
     CFG_FUNC("require-path-on-device", cb_task_require_func),
+    CFG_FUNC("require-fat-file-match", cb_task_require_func),
 
     CFG_INT("require-partition1-offset", -1, CFGF_NONE), // Deprecated
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE), // Deprecated

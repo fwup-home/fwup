@@ -36,6 +36,7 @@ int fatfs_pwrite(struct fat_cache *fc, const char *filename, int offset, const c
 int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name);
 int fatfs_touch(struct fat_cache *fc, const char *filename);
 int fatfs_exists(struct fat_cache *fc, const char *filename);
+int fatfs_file_matches(struct fat_cache *fc, const char *filename, const char *pattern);
 void fatfs_closefs();
 
 #endif // FATFS_H

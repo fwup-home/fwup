@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE // for memmem in string.h
+
 #include "fatfs.h"
 
 #include "../3rdparty/fatfs/src/diskio.h"  /* FatFs lower layer API */
@@ -71,6 +73,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
 }
 
 #define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
+#define CHECK_CLEANUP(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) { rc = -1; goto cleanup; } } while (0)
 #define MAYBE_MOUNT(FATCACHE) do { if (fc_ != FATCACHE) { fc_ = FATCACHE; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
 
 /**
@@ -303,6 +306,63 @@ int fatfs_exists(struct fat_cache *fc, const char *filename)
     f_close(&fil);
 
     return 0;
+}
+
+/**
+ * @brief fatfs_file_matches check if the pattern can be found in filename
+ * @param fc the current FAT session
+ * @param filename the file to search through
+ * @param pattern the pattern to patch
+ * @return 0 if the file exists and the pattern is inside of it
+ */
+int fatfs_file_matches(struct fat_cache *fc, const char *filename, const char *pattern)
+{
+    MAYBE_MOUNT(fc);
+    close_open_files();
+
+    FIL fil;
+    CHECK("fatfs_file_matches can't open file", filename, f_open(&fil, filename, FA_READ));
+
+    char buffer[4096];
+    int rc = -1;
+    size_t pattern_len = strlen(pattern);
+    if (pattern_len >= sizeof(buffer))
+        goto cleanup;
+    if (pattern_len == 0) {
+        // 0-length patterns always match if the file exists.
+        rc = 0;
+        goto cleanup;
+    }
+    size_t offset = 0;
+    for (;;) {
+        UINT br;
+
+        CHECK_CLEANUP("fatfs_file_matches", filename, f_read(&fil, buffer + offset, sizeof(buffer) - offset, &br));
+        if (br == 0)
+            break;
+
+        if (memmem(buffer, br, pattern, pattern_len) != 0) {
+            // Found it.
+            rc = 0;
+            break;
+        }
+
+        // Handle pattern matches between this buffer and the next one.
+        if (br >= pattern_len) {
+            // Copy the last (pattern_len - 1) bytes to the beginning and read
+            // from there next time.
+            offset = pattern_len - 1;
+            memcpy(buffer, buffer + br - offset, offset);
+        } else {
+            // Read less than pattern_len, so read more from there next time
+            // assuming that there is a next time.
+            offset = br;
+        }
+    }
+cleanup:
+    f_close(&fil);
+
+    return rc;
 }
 
 int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const char *buffer, off_t size)
