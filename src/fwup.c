@@ -148,6 +148,7 @@ static struct option long_options[] = {
     {"create",   no_argument,       0, 'c'},
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
+    {"help",     no_argument,       0, 'h'},
     {"no-eject", no_argument,       0, '#'},
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
@@ -295,7 +296,7 @@ int main(int argc, char **argv)
     atexit(mmc_finalize);
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:DEf:Fgi:lmno:p:qSs:t:VvUuyz123456789", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:Fghi:lmno:p:qSs:t:VvUuyz123456789", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -326,6 +327,10 @@ int main(int argc, char **argv)
         case 'g': // --gen-keys
             command = CMD_GENERATE_KEYS;
             easy_mode = false;
+            break;
+	case 'h':
+            print_usage();
+            exit(EXIT_SUCCESS);
             break;
         case 'i':
             input_firmware = optarg;
