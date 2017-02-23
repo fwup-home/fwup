@@ -426,17 +426,17 @@ void fatfs_closefs()
 }
 
 // Implementation of callbacks
-DSTATUS disk_initialize(BYTE pdrv)				/* Physical drive nmuber (0..) */
+DSTATUS disk_initialize(BYTE pdrv)				/* Physical drive number (0..) */
 {
     return pdrv == 0 ? 0 : STA_NODISK;
 }
 
-DSTATUS disk_status(BYTE pdrv)		/* Physical drive nmuber (0..) */
+DSTATUS disk_status(BYTE pdrv)		/* Physical drive number (0..) */
 {
     return (pdrv == 0 && fc_) ? 0 : STA_NOINIT;
 }
 
-DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
+DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
                   BYTE *buff,		/* Data buffer to store read data */
                   DWORD sector,	/* Sector address (LBA) */
                   UINT count)		/* Number of sectors to read (1..128) */
@@ -450,7 +450,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive nmuber (0..) */
         return 0;
 }
 
-DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
+DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
                    const BYTE *buff,	/* Data to be written */
                    DWORD sector,		/* Sector address (LBA) */
                    UINT count)			/* Number of sectors to write (1..128) */
@@ -464,7 +464,7 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive nmuber (0..) */
         return 0;
 }
 
-DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive nmuber (0..) */
+DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive number (0..) */
                    BYTE cmd,		/* Control code */
                    void *buff)		/* Buffer to send/receive control data */
 {
