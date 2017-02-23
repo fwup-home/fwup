@@ -24,6 +24,8 @@
     * FAT filesystem corruption wouldn't cause many of the fat_* commands to
       fail. They do now and unit tests have been added to verify this going
       forward.
+    * Fix segfault when reading against a corrupt FAT filesystem due to a
+      signed/unsigned conversion. fwup errors out properly now.
 
 ## v0.13.0
 
