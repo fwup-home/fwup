@@ -53,7 +53,7 @@ const char *fatfs_error_to_string(FRESULT err)
     case FR_INVALID_DRIVE: return "The logical drive number is invalid";
     case FR_NOT_ENABLED: return "The volume has no work area";
     case FR_NO_FILESYSTEM: return "There is no valid FAT volume";
-    case FR_MKFS_ABORTED: return "f_mkfs() aborted due to any parameter error. Try adjusting the partition size.";
+    case FR_MKFS_ABORTED: return "f_mkfs() aborted due to a parameter error. Try adjusting the partition size.";
     case FR_TIMEOUT: return "Could not get a grant to access the volume within defined period";
     case FR_LOCKED: return "The operation is rejected according to the file sharing policy";
     case FR_NOT_ENOUGH_CORE: return "LFN working buffer could not be allocated";
