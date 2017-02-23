@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#
+# Test that fwup doesn't crash with this particular FAT header.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+task dontcrash {
+    on-init {
+        fat_touch(0, "testing")
+    }
+}
+EOF
+
+# Create the expected by running base64 on the expected binary image.
+base64_decode >$IMGFILE <<EOF
+61iQU1lTTElOVVgAAgAAAAAAAAAAAAAAPwD/AAAIAAAi+H8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+vwxyY7RvHZ7UgZXHlaOwbEmv3h786WO
+2bt4AA+0Nw+gViDSeBsxwLEGiT+JRwLzZKWKDhh8iE34UFBQUM0T62KLVaqLdajB7gQB8oP6T3Yx
+gfqyB3Mr9kW0f3UlOE24dCBmPSFHUFR1EIB9uO11Cmb/dexm/3Xo6w9RUWb/dbzrB1FRZv82HHy0
+COjpAHITIOR1D8HqCEKJFhp8g+E/iQ4YfPu7qlW0QejLAHIQgftVqnUK9sEBdAXGBkZ9AGa4AIA8
+AGa6AAAAALsAgOgOAGaBPhyAMD/FanV06fgCZgMGYHtmExZke7kQAOsrZlJmUAZTagFqEInmZmC0
+Quh3AGZhjWQQcgHDZmAxwOhoAGZh4trGBkZ9K2ZgZg+3Nhh8Zg+3Php8Zvf2McmHymb392Y9/wMA
+AHcXwOQGQQjhiMWI1rgBAugvAGZhcgHD4skx9o7WvGh7jt5mjwZ4AL7afawgwHQJtA67BwDNEOvy
+McDNFs0Z9Ov9ihZ0ewbNEwfDQm9vdCBlcnJvcg0KAAAAAAAAAAAAAAAAAAAAAAAA/gKyPhg3Vao=
+EOF
+
+# Create the firmware file, then try it
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+RC=0
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t dontcrash || RC=$?
+if [ $RC = 0 ]; then
+    echo "This shouldn't definitely have failed. Something is wrong"
+    exit 1
+fi
+if [ $RC != 1 ]; then
+    echo "Exit status of $RC makes me think this is a crash."
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_APPLY -V -i $FWFILE

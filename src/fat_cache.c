@@ -120,12 +120,12 @@ static ssize_t load_cache(struct fat_cache *fc, int block, int count)
  * @param buffer
  * @return
  */
-int fat_cache_read(struct fat_cache *fc, int block, int count, char *buffer)
+int fat_cache_read(struct fat_cache *fc, off_t block, size_t count, char *buffer)
 {
     // Fetch anything directly that's beyond what we cache
     if (block + count > fc->cache_size_blocks) {
-        int uncached_block = (block > fc->cache_size_blocks ? block : fc->cache_size_blocks);
-        int uncached_count = block + count - uncached_block;
+        off_t uncached_block = (block > (off_t) fc->cache_size_blocks ? block : (off_t) fc->cache_size_blocks);
+        off_t uncached_count = block + count - uncached_block;
         char *uncached_buffer = buffer + (uncached_block - block) * 512;
 
         off_t byte_offset = fc->partition_offset + uncached_block * 512;
@@ -144,7 +144,7 @@ int fat_cache_read(struct fat_cache *fc, int block, int count, char *buffer)
     // The common case is that the block will either be all valid or all invalid
     bool all_valid = true;
     bool all_invalid = true;
-    int i;
+    size_t i;
     for (i = 0; i < count; i++) {
         bool v = is_valid(fc, block + i);
         all_valid = all_valid && v;
@@ -153,7 +153,7 @@ int fat_cache_read(struct fat_cache *fc, int block, int count, char *buffer)
 
     if (all_invalid) {
         // If we have to read from Flash, see if we can read up to 128 KB (256 * 512 byte blocks)
-        int precache_count = count;
+        size_t precache_count = count;
         for (; precache_count < 256 && block + precache_count < fc->cache_size_blocks; precache_count++) {
             if (is_valid(fc, block + precache_count))
                 break;
@@ -189,11 +189,11 @@ int fat_cache_read(struct fat_cache *fc, int block, int count, char *buffer)
  * @return the number of bytes written to disk or -1 if error. Normally this is
  *         0 to indicate that everything was written to cache
  */
-ssize_t fat_cache_write(struct fat_cache *fc, int block, int count, const char *buffer)
+ssize_t fat_cache_write(struct fat_cache *fc, off_t block, size_t count, const char *buffer)
 {
     ssize_t rc = 0;
-    int last = block + count;
-    for (; block < last && block < fc->cache_size_blocks; block++) {
+    off_t last = block + count;
+    for (; block < last && block < (off_t) fc->cache_size_blocks; block++) {
         memcpy(&fc->cache[512 * block], buffer, 512);
         set_dirty(fc, block);
         buffer += 512;
@@ -241,8 +241,8 @@ ssize_t fat_cache_free(struct fat_cache *fc)
 {
     ssize_t amount_written = 0;
     int starting_block = -1;
-    int block;
-    for (block = 0; block < fc->cache_size_blocks; block++) {
+    off_t block;
+    for (block = 0; block < (off_t) fc->cache_size_blocks; block++) {
         if (is_dirty(fc, block)) {
             if (starting_block < 0)
                 starting_block = block;
