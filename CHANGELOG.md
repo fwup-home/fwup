@@ -16,6 +16,8 @@
       to apply upgrades. See `require-fat-file-match()`. Useful for bootloaders
       that can modify a file, but not create/remove one (e.g., grub's grubenv
       file)
+    * Verify that all on-resource handlers are run. This is the normal
+      expectation, and this change guarantees it.
 
   * Bug fixes
     * When streaming, the input would always be read through to the end. This
