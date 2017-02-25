@@ -22,7 +22,14 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+// Don't use pthreads on Windows yet.
+#ifndef _WIN32
 #if HAVE_PTHREAD
+#define USE_PTHREADS 1
+#endif
+#endif
+
+#if USE_PTHREADS
 #include <pthread.h>
 #endif
 
@@ -46,7 +53,7 @@ struct block_writer {
     size_t buffer_index;
     size_t added_bytes;
 
-#if HAVE_PTHREAD
+#if USE_PTHREADS
     pthread_t writer_thread;
     pthread_mutex_t mutex_to;
     pthread_mutex_t mutex_back;

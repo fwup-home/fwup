@@ -76,7 +76,9 @@ FRAMING_HELPER=$TESTS_DIR/framing-helper$EXEEXT
 # The syscall verification code only runs on Linux and
 # x86_64, but if it passes there, there should be high
 # confidence of it passing on other platforms.
-if [ "$HOST_OS" = "Linux" -a "$HOST_ARCH" = "x86_64" ]; then
+if [ "$HOST_OS" = "Linux" \
+     -a "$HOST_ARCH" = "x86_64" \
+     -a -e $TESTS_DIR/verify-syscalls ]; then
     export VERIFY_SYSCALLS_CMD=$FWUP_APPLY
     FWUP_APPLY=$TESTS_DIR/verify-syscalls
 fi

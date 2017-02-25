@@ -3,8 +3,10 @@ ACLOCAL_AMFLAGS=-I m4
 noinst_PROGRAMS=framing-helper
 framing_helper_SOURCES=framing-helper.c
 
+if HAS_PTRACE
 noinst_PROGRAMS+=verify-syscalls
 verify_syscalls_SOURCES=verify-syscalls.c
+endif
 
 TESTS = 001_simple_fw.test \
 	002_resource_subdir.test \

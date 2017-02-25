@@ -15,7 +15,7 @@ AC_PATH_PROG([HELP2MAN], help2man)
 AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 
 # Checks for header files
-AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h stdlib.h string.h unistd.h archive.h confuse.h])
+AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h stdlib.h string.h unistd.h archive.h confuse.h sys/ptrace.h])
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_TYPE_INT64_T
@@ -33,8 +33,9 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
 
 # Checks for library functions
-AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite memmem])
+AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup strtoul umount fcntl strptime setenv pread pwrite memmem ptrace])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_vc_func_strptime = x"yes"])
+AM_CONDITIONAL([HAS_PTRACE], [test x$ac_vc_func_ptrace = x"yes"])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
                    [[

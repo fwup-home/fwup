@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#if HAVE_PTHREAD
+#if USE_PTHREADS
 static void *writer_worker(void *void_bw)
 {
     struct block_writer *bw = (struct block_writer *) void_bw;
@@ -29,6 +29,67 @@ static void *writer_worker(void *void_bw)
         pthread_mutex_unlock(&bw->mutex_back);
     }
     return NULL;
+}
+static ssize_t do_write(struct block_writer *bw, const char *buf, size_t count)
+{
+    // Wait for the writer thread to complete the last set of writes
+    // before starting new ones.
+    pthread_mutex_lock(&bw->mutex_back);
+
+    // Only write up to bw->buffer_size asynchronously. Any more is
+    // done here.
+    size_t count_to_write_asynchronously = bw->buffer_size;
+
+    if (bw->write_offset != bw->last_write_offset) {
+        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0) {
+            pthread_mutex_unlock(&bw->mutex_back);
+            return -1;
+        }
+
+        bw->last_write_offset = bw->write_offset;
+    }
+
+    size_t amount_left = count;
+    while (amount_left > count_to_write_asynchronously) {
+        ssize_t rc = write(bw->fd, buf, bw->buffer_size);
+        if (rc <= 0) {
+            pthread_mutex_unlock(&bw->mutex_back);
+            return -1;
+        }
+
+        bw->last_write_offset += rc;
+        buf += rc;
+        amount_left -= rc;
+    }
+    memcpy(bw->async_buffer, buf, amount_left);
+    bw->amount_to_write = amount_left;
+    pthread_mutex_unlock(&bw->mutex_to);
+
+    return count;
+}
+#else
+// Single-threaded version
+static ssize_t do_write(struct block_writer *bw, const char *buf, size_t count)
+{
+    if (bw->write_offset != bw->last_write_offset) {
+        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0)
+            return -1;
+
+        bw->last_write_offset = bw->write_offset;
+    }
+
+    size_t amount_left = count;
+    while (amount_left) {
+        ssize_t rc = write(bw->fd, buf, amount_left);
+        if (rc <= 0)
+            return -1;
+
+        bw->last_write_offset += rc;
+        buf += rc;
+        amount_left -= rc;
+    }
+
+    return count;
 }
 #endif
 
@@ -84,7 +145,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->buffer_index = 0;
     bw->added_bytes = 0;
 
-#if HAVE_PTHREAD
+#if USE_PTHREADS
     if (aligned_malloc(bw->buffer_size, &bw->async_buffer, &bw->unaligned_async_buffer) < 0) {
         free(bw->unaligned_buffer);
         return -1;
@@ -99,55 +160,6 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
 #endif
 
     return 0;
-}
-
-static ssize_t do_write(struct block_writer *bw, const char *buf, size_t count)
-{
-#if HAVE_PTHREAD
-    // Wait for the writer thread to complete the last set of writes
-    // before starting new ones.
-    pthread_mutex_lock(&bw->mutex_back);
-
-    // Only write up to bw->buffer_size asynchronously. Any more is
-    // done here.
-    size_t count_to_write_asynchronously = bw->buffer_size;
-#else
-    // No pthreads -> no async writes.
-    size_t count_to_write_asynchronously = 0;
-#endif
-
-    if (bw->write_offset != bw->last_write_offset) {
-        if (lseek(bw->fd, bw->write_offset, SEEK_SET) < 0) {
-#if HAVE_PTHREAD
-            pthread_mutex_unlock(&bw->mutex_back);
-#endif
-            return -1;
-        }
-
-        bw->last_write_offset = bw->write_offset;
-    }
-
-    size_t amount_left = count;
-    while (amount_left > count_to_write_asynchronously) {
-        ssize_t rc = write(bw->fd, buf, bw->buffer_size);
-        if (rc <= 0) {
-#if HAVE_PTHREAD
-            pthread_mutex_unlock(&bw->mutex_back);
-#endif
-            return -1;
-        }
-
-        bw->last_write_offset += rc;
-        buf += rc;
-        amount_left -= rc;
-    }
-#if HAVE_PTHREAD
-    memcpy(bw->async_buffer, buf, amount_left);
-    bw->amount_to_write = amount_left;
-    pthread_mutex_unlock(&bw->mutex_to);
-#endif
-
-    return count;
 }
 
 static ssize_t flush_buffer(struct block_writer *bw)
@@ -189,7 +201,7 @@ ssize_t block_writer_free(struct block_writer *bw)
     if (bw->buffer_index)
         rc = flush_buffer(bw);
 
-#if HAVE_PTHREAD
+#if USE_PTHREADS
     pthread_mutex_lock(&bw->mutex_back);
     bw->running = false;
     pthread_mutex_unlock(&bw->mutex_to);
