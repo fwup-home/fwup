@@ -33,4 +33,4 @@ $FWUP_APPLY -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-ve
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

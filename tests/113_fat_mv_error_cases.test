@@ -98,4 +98,4 @@ if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition2 $FWFILE; then
 fi
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

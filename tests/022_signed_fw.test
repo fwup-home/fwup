@@ -43,10 +43,10 @@ check_meta_conf
 $FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verifying the firmware without checking signatures works
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 
 # Check that applying the firmware with checking signatures works
 $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verifying the firmware with checking signatures works
-$FWUP_APPLY -V -p $WORK/fwup-key.pub -i $FWFILE
+$FWUP_VERIFY -V -p $WORK/fwup-key.pub -i $FWFILE

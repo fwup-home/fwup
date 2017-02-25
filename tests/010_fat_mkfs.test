@@ -40,4 +40,4 @@ dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
 $FSCK_FAT $WORK/vfat.img
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

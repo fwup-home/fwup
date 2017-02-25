@@ -66,4 +66,4 @@ dd if=$TESTFILE_1K seek=8 of=$WORK/expected.bin
 diff $IMGFILE $WORK/expected.bin
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

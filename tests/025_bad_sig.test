@@ -37,7 +37,7 @@ if $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; t
     exit 1
 fi
 echo Expecting error from verify...
-if $FWUP_APPLY -V -p $WORK/fwup-key.pub -i $FWFILE; then
+if $FWUP_VERIFY -V -p $WORK/fwup-key.pub -i $FWFILE; then
     echo A bad signature should have been detected
     exit 1
 fi

@@ -72,7 +72,7 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-$FWUP_APPLY -a -d $IMGFILE.expected -i $FWFILE -t expected
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.expected $FWUP_APPLY -a -d $IMGFILE.expected -i $FWFILE -t expected
 
 # Now upgrade the IMGFILE file
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
@@ -81,4 +81,4 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 cmp $IMGFILE $IMGFILE.expected
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

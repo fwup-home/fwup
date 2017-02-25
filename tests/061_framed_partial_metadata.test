@@ -44,7 +44,7 @@ dd if=$FWFILE of=$FWFILE.truncated bs=1 count=512 2>/dev/null
 
 # Pipe the framed contents (in super small chunks) on the .fw file to fwup
 cat $FWFILE.truncated | $FRAMING_HELPER -n 50 -e \
-	| $FWUP_APPLY --metadata --framing > $ACTUAL_OUTPUT
+	| $FWUP_APPLY_NO_CHECK --metadata --framing > $ACTUAL_OUTPUT
 
 # Verify and removing framing
 cat $ACTUAL_OUTPUT | $FRAMING_HELPER -d > $ACTUAL_OUTPUT.noframing

@@ -46,5 +46,5 @@ EOF
 diff $WORK/expected_output.txt $WORK/actual_output.txt
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 

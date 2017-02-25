@@ -37,15 +37,17 @@ EOF
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
+export VERIFY_SYSCALLS_CHECKPATH=${IMGFILE}.1
 $FWUP_APPLY -a -d ${IMGFILE}.1 -i $FWFILE -t complete
 sleep 1
 
 # This should be bit identical even though it is done later.
 # By default, FAT stores timestamps. fwup is supposed to insure
 # that they are identical between runs.
+export VERIFY_SYSCALLS_CHECKPATH=${IMGFILE}.2
 $FWUP_APPLY -a -d ${IMGFILE}.2 -i $FWFILE -t complete
 
 diff ${IMGFILE}.1 ${IMGFILE}.2
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

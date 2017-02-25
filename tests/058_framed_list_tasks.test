@@ -32,7 +32,7 @@ OK
 EOF
 
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
-$FWUP_APPLY -i $FWFILE --list --framing > $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE --list --framing > $ACTUAL_OUTPUT
 
 # Verify and removing framing
 cat $ACTUAL_OUTPUT | $FRAMING_HELPER -d > $ACTUAL_OUTPUT.noframing

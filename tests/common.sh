@@ -68,13 +68,25 @@ fi
 
 if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
+if [ -z $FWUP_APPLY_NO_CHECK ]; then FWUP_APPLY_NO_CHECK=$FWUP_APPLY; fi
+if [ -z $FWUP_VERIFY ]; then FWUP_VERIFY=$FWUP_DEFAULT; fi
+
 FRAMING_HELPER=$TESTS_DIR/framing-helper$EXEEXT
+
+# The syscall verification code only runs on Linux and
+# x86_64, but if it passes there, there should be high
+# confidence of it passing on other platforms.
+if [ "$HOST_OS" = "Linux" -a "$HOST_ARCH" = "x86_64" ]; then
+    export VERIFY_SYSCALLS_CMD=$FWUP_APPLY
+    FWUP_APPLY=$TESTS_DIR/verify-syscalls
+fi
 
 WORK=$TESTS_DIR/work-$(basename "$0")
 RESULTS=$WORK/results
 
 [ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
 [ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
+[ -e $FWUP_VERIFY ] || ( echo "Can't find $FWUP_VERIFY"; exit 1 )
 [ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
 
 CONFIG=$WORK/fwup.conf

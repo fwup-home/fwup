@@ -61,4 +61,4 @@ if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition2 $FWFILE; then
     exit 1
 fi
 
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

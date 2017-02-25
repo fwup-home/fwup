@@ -41,4 +41,4 @@ if [ $RC != 1 ]; then
 fi
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

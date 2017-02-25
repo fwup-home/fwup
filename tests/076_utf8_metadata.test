@@ -30,4 +30,4 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 check_meta_conf
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

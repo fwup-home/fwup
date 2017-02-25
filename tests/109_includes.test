@@ -35,4 +35,4 @@ dd if=$TESTFILE_150K seek=0 of=$WORK/check.bin conv=sync 2>/dev/null
 diff $WORK/check.bin $IMGFILE
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

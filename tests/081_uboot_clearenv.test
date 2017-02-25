@@ -56,4 +56,4 @@ dd if=$IMGFILE of=$WORK/actual-env.img skip=32 count=2 2>/dev/null
 cmp $WORK/expected-env.img $WORK/actual-env.img
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

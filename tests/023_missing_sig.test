@@ -32,7 +32,7 @@ if $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete; t
 fi
 
 echo Expecting error from verify...
-if $FWUP_APPLY -V -p $WORK/fwup-key.pub -i $FWFILE; then
+if $FWUP_VERIFY -V -p $WORK/fwup-key.pub -i $FWFILE; then
     echo "Expecting an unsigned firmware to fail."
     exit 1
 fi

@@ -18,7 +18,7 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 
 # Check that it fails to apply
 if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then

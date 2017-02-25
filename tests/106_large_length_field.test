@@ -23,5 +23,5 @@ zip -q $FWFILE meta.conf data/1K.bin
 cd -
 
 # Verify the file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 

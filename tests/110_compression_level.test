@@ -33,15 +33,15 @@ $FWUP_CREATE -c -8 -f $CONFIG -o $FWFILE.8
 $FWUP_CREATE -c -9 -f $CONFIG -o $FWFILE.9
 
 # Check that they all apply
-$FWUP_APPLY -a -d $IMGFILE.1 -i $FWFILE.1 -t complete
-$FWUP_APPLY -a -d $IMGFILE.2 -i $FWFILE.2 -t complete
-$FWUP_APPLY -a -d $IMGFILE.3 -i $FWFILE.3 -t complete
-$FWUP_APPLY -a -d $IMGFILE.4 -i $FWFILE.4 -t complete
-$FWUP_APPLY -a -d $IMGFILE.5 -i $FWFILE.5 -t complete
-$FWUP_APPLY -a -d $IMGFILE.6 -i $FWFILE.6 -t complete
-$FWUP_APPLY -a -d $IMGFILE.7 -i $FWFILE.7 -t complete
-$FWUP_APPLY -a -d $IMGFILE.8 -i $FWFILE.8 -t complete
-$FWUP_APPLY -a -d $IMGFILE.9 -i $FWFILE.9 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.1 $FWUP_APPLY -a -d $IMGFILE.1 -i $FWFILE.1 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.2 $FWUP_APPLY -a -d $IMGFILE.2 -i $FWFILE.2 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.3 $FWUP_APPLY -a -d $IMGFILE.3 -i $FWFILE.3 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.4 $FWUP_APPLY -a -d $IMGFILE.4 -i $FWFILE.4 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.5 $FWUP_APPLY -a -d $IMGFILE.5 -i $FWFILE.5 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.6 $FWUP_APPLY -a -d $IMGFILE.6 -i $FWFILE.6 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.7 $FWUP_APPLY -a -d $IMGFILE.7 -i $FWFILE.7 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.8 $FWUP_APPLY -a -d $IMGFILE.8 -i $FWFILE.8 -t complete
+VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.9 $FWUP_APPLY -a -d $IMGFILE.9 -i $FWFILE.9 -t complete
 
 # The firmware file is equivalent to the following dd call
 # (The conv=sync makes sure that the output is a multiple of 512 bytes)

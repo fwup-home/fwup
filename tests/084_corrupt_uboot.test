@@ -38,4 +38,4 @@ if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
 fi
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

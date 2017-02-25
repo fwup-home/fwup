@@ -35,11 +35,11 @@ pAAAAG1ldGEuY29uZlVUBQAHAAAAAHV4AABQSwUGAAAAAAIAAgCQAAAAiwEAAAAA
 EOF
 
 # This signing check should pass
-$FWUP_APPLY -p $WORK/fwup-key.pub -i $FWFILE -m
+$FWUP_APPLY_NO_CHECK -p $WORK/fwup-key.pub -i $FWFILE -m
 
 # Check a failure just in case everything passes
 echo "Verification on next test should fail."
-if $FWUP_APPLY -p $WORK/bad-fwup-key.pub -i $FWFILE -m; then
+if $FWUP_APPLY_NO_CHECK -p $WORK/bad-fwup-key.pub -i $FWFILE -m; then
     echo "Verifying an old bad key was supposed to fail!"
     exit 1
 fi

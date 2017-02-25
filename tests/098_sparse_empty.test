@@ -48,7 +48,7 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Verify the file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 
 # Create the new "sparse" fw file
 NEW_FWFILE=$WORK/new.fw
@@ -59,7 +59,7 @@ zip -q $NEW_FWFILE meta.conf data/sparsefile
 cd -
 
 # It should still verify
-$FWUP_APPLY -V -i $NEW_FWFILE
+$FWUP_VERIFY -V -i $NEW_FWFILE
 
 # Check that raw_write works with the sparse file
 $FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t raw

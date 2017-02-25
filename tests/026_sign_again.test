@@ -37,4 +37,4 @@ diff $FWFILE $FWFILE.2
 $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that verification works
-$FWUP_APPLY -V -p $WORK/fwup-key.pub -i $FWFILE
+$FWUP_VERIFY -V -p $WORK/fwup-key.pub -i $FWFILE

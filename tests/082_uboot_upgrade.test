@@ -110,8 +110,8 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Create the U-boot environments using fwup
-$FWUP_APPLY -a -d $WORK/uboota.bin -i $FWFILE -t dump_uboot_a
-$FWUP_APPLY -a -d $WORK/ubootb.bin -i $FWFILE -t dump_uboot_b
+VERIFY_SYSCALLS_CHECKPATH=$WORK/uboota.bin $FWUP_APPLY -a -d $WORK/uboota.bin -i $FWFILE -t dump_uboot_a
+VERIFY_SYSCALLS_CHECKPATH=$WORK/ubootb.bin $FWUP_APPLY -a -d $WORK/ubootb.bin -i $FWFILE -t dump_uboot_b
 
 # The firmware file is equivalent to the following dd calls
 # Assume that previous tests make sure that the MBR is correct and just
@@ -137,4 +137,4 @@ dd if=$WORK/uboota.bin seek=4 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/
 cmp $WORK/check-upgraded2.bin $IMGFILE
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

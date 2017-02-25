@@ -24,4 +24,4 @@ dd if=/dev/zero count=512 2>/dev/zero | tr \\000 \\377 | dd seek=1 of=$WORK/chec
 diff $WORK/check.bin $IMGFILE
 
 # Check that the verify logic works on this file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

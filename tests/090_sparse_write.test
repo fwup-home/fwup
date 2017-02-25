@@ -62,7 +62,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 check_meta_conf
 
 # Verify the file
-$FWUP_APPLY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE
 
 
 # Create a file of all 0xff's so that it's easy to tell
