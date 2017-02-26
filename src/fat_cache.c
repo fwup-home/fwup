@@ -54,11 +54,11 @@ int fat_cache_init(struct fat_cache *fc, int fd, off_t partition_offset, size_t 
     fc->fd = fd;
     fc->partition_offset = partition_offset;
 
-    fc->cache = malloc(cache_size);
-    if (!fc->cache)
-        ERR_RETURN("Could not allocate FAT cache of %d bytes", cache_size);
-    fc->cache_size_blocks = cache_size / 512;
+    // Allocate FAT cache on a page boundary to avoid memcpy's
+    // when doing raw I/O on Linux.
+    OK_OR_RETURN_MSG(alloc_page_aligned((void**) &fc->cache, cache_size), "Could not allocate FAT cache of %d bytes", cache_size);
 
+    fc->cache_size_blocks = cache_size / 512;
     fc->flags = malloc(fc->cache_size_blocks / 4);
     if (!fc->flags)
         ERR_RETURN("Could not allocate FAT cache flags");
@@ -96,7 +96,7 @@ static ssize_t load_cache(struct fat_cache *fc, int block, int count)
     ssize_t rc = 0;
     if (fc->read_on_invalid) {
         off_t byte_offset = fc->partition_offset + block * 512;
-        rc = pread(fc->fd, &fc->cache[block * 512], byte_count, byte_offset);
+        rc = aligned_pread(fc->fd, &fc->cache[block * 512], byte_count, byte_offset);
         if (rc < 0)
             ERR_RETURN("Error reading FAT filesystem");
     } else {
@@ -131,7 +131,7 @@ int fat_cache_read(struct fat_cache *fc, off_t block, size_t count, char *buffer
         off_t byte_offset = fc->partition_offset + uncached_block * 512;
         size_t byte_count = uncached_count * 512;
 
-        ssize_t amount_read = pread(fc->fd, uncached_buffer, byte_count, byte_offset);
+        ssize_t amount_read = aligned_pread(fc->fd, uncached_buffer, byte_count, byte_offset);
         if (amount_read < 0)
             ERR_RETURN("Can't read block %d, count=%d", uncached_block, uncached_count);
 
@@ -201,7 +201,7 @@ ssize_t fat_cache_write(struct fat_cache *fc, off_t block, size_t count, const c
     if (block != last) {
         off_t byte_offset = fc->partition_offset + block * 512;
         size_t byte_count = (last - block) * 512;
-        rc = pwrite(fc->fd, buffer, byte_count, byte_offset);
+        rc = aligned_pwrite(fc->fd, buffer, byte_count, byte_offset);
     }
     return rc;
 }
@@ -219,7 +219,7 @@ static ssize_t flush_buffer(struct fat_cache *fc, int block, int count)
         if (to_write > byte_count)
             to_write = byte_count;
 
-        ssize_t rc = pwrite(fc->fd, &fc->cache[cache_index], to_write, byte_offset);
+        ssize_t rc = aligned_pwrite(fc->fd, &fc->cache[cache_index], to_write, byte_offset);
         if (rc < 0)
             ERR_RETURN("Error writing FAT filesystem");
 
@@ -264,7 +264,7 @@ ssize_t fat_cache_free(struct fat_cache *fc)
     }
 
     free(fc->flags);
-    free(fc->cache);
+    free_page_aligned(fc->cache);
 
     fc->cache_size_blocks = 0;
 

@@ -142,4 +142,10 @@ int set_environment(const char *key, const char *value);
 #define O_WIN32_BINARY 0
 #endif
 
+// Page aligned memory allocation
+int alloc_page_aligned(void **memptr, size_t size);
+void free_page_aligned(void *memptr);
+ssize_t aligned_pwrite(int fd, const void *buf, size_t count, off_t offset);
+ssize_t aligned_pread(int fd, void *buf, size_t count, off_t offset);
+
 #endif // UTIL_H

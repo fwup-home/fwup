@@ -93,19 +93,6 @@ static ssize_t do_write(struct block_writer *bw, const char *buf, size_t count)
 }
 #endif
 
-static int aligned_malloc(size_t size, char **aligned, char **unaligned)
-{
-    char *u = (char *) malloc(size + 4095);
-    if (u == NULL)
-        ERR_RETURN("Cannot allocate write buffer of %d bytes.", size);
-    char *a = (char *) (((uint64_t) (u + 4095)) & ~4095);
-
-    *unaligned = u;
-    *aligned = a;
-
-    return 0;
-}
-
 /**
  * @brief Helper for buffering writes into block-sized pieces
  *
@@ -137,7 +124,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->buffer_size = (buffer_size + ~bw->block_size_mask) & bw->block_size_mask;
 
     // Buffer alignment required on Linux when files are opened with O_DIRECT.
-    if (aligned_malloc(bw->buffer_size, &bw->buffer, &bw->unaligned_buffer) < 0)
+    if (alloc_page_aligned((void **) &bw->buffer, bw->buffer_size) < 0)
         return 1;
 
     bw->write_offset = 0;
@@ -146,8 +133,8 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->added_bytes = 0;
 
 #if USE_PTHREADS
-    if (aligned_malloc(bw->buffer_size, &bw->async_buffer, &bw->unaligned_async_buffer) < 0) {
-        free(bw->unaligned_buffer);
+    if (alloc_page_aligned((void **) &bw->async_buffer, bw->buffer_size) < 0) {
+        free(bw->buffer);
         return -1;
     }
     bw->running = true;
@@ -178,7 +165,7 @@ static ssize_t flush_buffer(struct block_writer *bw)
         bw->buffer_index = block_boundary;
     }
 
-    ssize_t rc = do_write(bw, bw->buffer, bw->buffer_index); // pwrite(bw->fd, bw->buffer, bw->buffer_index, bw->write_offset);
+    ssize_t rc = do_write(bw, bw->buffer, bw->buffer_index);
     if (rc != (ssize_t) bw->buffer_index)
         return -1;
 
@@ -208,15 +195,14 @@ ssize_t block_writer_free(struct block_writer *bw)
 
     if (pthread_join(bw->writer_thread, NULL))
         fwup_errx(EXIT_FAILURE, "pthread_join");
-    free(bw->unaligned_async_buffer);
+    free_page_aligned(bw->async_buffer);
     pthread_mutex_destroy(&bw->mutex_to);
     pthread_mutex_destroy(&bw->mutex_back);
 #endif
 
     // Free our buffer and clean up
-    free(bw->unaligned_buffer);
+    free_page_aligned(bw->buffer);
     bw->fd = -1;
-    bw->unaligned_buffer = 0;
     bw->buffer = 0;
     bw->buffer_index = 0;
     return rc;
@@ -303,7 +289,7 @@ empty_buffer:
             // Handle the block fragment
             size_t to_write = bw->block_size - padding;
             memcpy(&bw->buffer[padding], buf, to_write);
-            if (do_write(bw, bw->buffer, bw->block_size) < 0) // pwrite(bw->fd, bw->buffer, bw->block_size, bw->write_offset);
+            if (do_write(bw, bw->buffer, bw->block_size) < 0)
                 return -1;
 
             bw->write_offset += bw->block_size;
@@ -328,7 +314,7 @@ empty_buffer:
     while (count > bw->buffer_size) {
         size_t to_write = bw->buffer_size;
         memcpy(bw->buffer, buf, to_write); // copy to force alignment
-        if (do_write(bw, bw->buffer, to_write) < 0) // pwrite(bw->fd, buf, to_write, bw->write_offset)
+        if (do_write(bw, bw->buffer, to_write) < 0)
             return -1;
         bw->write_offset += to_write;
         amount_written += to_write - bw->added_bytes;

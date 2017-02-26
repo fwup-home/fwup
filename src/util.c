@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <sys/stat.h>
 
@@ -401,3 +402,122 @@ void *memmem(const void *haystack, size_t haystacklen,
     return NULL;
 }
 #endif
+
+/*
+ * Aligned buffer support
+ */
+#if HAVE_SYSCONF
+static size_t cached_pagesize = 0;
+#else
+// If no sysconf(), guess the page size
+static const size_t cached_pagesize = 4096;
+#endif
+
+static void *aligned_buffer = NULL;
+static size_t aligned_buffer_size = 0;
+
+static inline size_t get_pagesize()
+{
+#if HAVE_SYSCONF
+    // If sysconf() exists, then call it to find the system's page size
+    if (!cached_pagesize)
+        cached_pagesize = sysconf(_SC_PAGESIZE);
+#endif
+    return cached_pagesize;
+}
+
+static inline bool is_address_page_aligned(const void *memptr)
+{
+    uint64_t addr = (uint64_t) memptr;
+    return (addr & (get_pagesize() - 1)) == 0;
+}
+
+static void *get_alignment_buffer(size_t count)
+{
+    if (aligned_buffer) {
+        // Common case: buffer allocated and sufficient size
+        if (aligned_buffer_size > count)
+            return aligned_buffer;
+        else
+            free_page_aligned(aligned_buffer);
+    }
+
+    // Allocate buffer to new size
+    aligned_buffer_size = count;
+    if (alloc_page_aligned(&aligned_buffer, aligned_buffer_size) < 0)
+        fwup_errx(EXIT_FAILURE, "memory allocation error");
+
+    return aligned_buffer;
+}
+
+int alloc_page_aligned(void **memptr, size_t size)
+{
+    size_t pagesize = get_pagesize();
+
+#if HAVE_POSIX_MEMALIGN
+    return posix_memalign(memptr, pagesize, size);
+#else
+    // Slightly wasteful implementation of posix_memalign
+    size_t padding = pagesize + pagesize - 1;
+    uint8_t *original = (uint8_t *) malloc(size + padding);
+    if (original == NULL)
+        return -1;
+
+    // Store the original pointer right before the aligned pointer
+
+    uint8_t *aligned = (uint8_t *) (((uint64_t) (original + padding)) & ~(pagesize - 1));
+    void **savelocation = (void**) (aligned - sizeof(void*));
+    *savelocation = original;
+    *memptr = aligned;
+
+    return 0;
+#endif
+}
+
+void free_page_aligned(void *memptr)
+{
+#if HAVE_POSIX_MEMALIGN
+    free(memptr);
+#else
+    void **savelocation = ((void **) memptr) - 1;
+    void *original = *savelocation;
+    free(original);
+#endif
+}
+
+/*
+ * Run pwrite, but ensure that the buffer is aligned on a page boundary as
+ * is required on Linux for raw I/O.
+ *
+ *     *NOT REENTRANT**
+ *
+ */
+ssize_t aligned_pwrite(int fd, const void *buf, size_t count, off_t offset)
+{
+    if (!is_address_page_aligned(buf)) {
+        void *newbuf = get_alignment_buffer(count);
+        memcpy(newbuf, buf, count);
+        buf = newbuf;
+    }
+    return pwrite(fd, buf, count, offset);
+}
+
+/*
+ * Run pread, but ensure that the buffer is aligned on a page boundary as
+ * is required on Linux for raw I/O.
+ *
+ *     *NOT REENTRANT**
+ *
+ */
+ssize_t aligned_pread(int fd, void *buf, size_t count, off_t offset)
+{
+    if (!is_address_page_aligned(buf)) {
+        void *newbuf = get_alignment_buffer(count);
+        ssize_t rc = pread(fd, newbuf, count, offset);
+        if (rc > 0)
+            memcpy(buf, newbuf, rc);
+        return rc;
+    } else {
+        return pread(fd, buf, count, offset);
+    }
+}

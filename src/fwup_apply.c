@@ -49,7 +49,7 @@ static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
         // isn't seekable, but that's ok, since this constraint would
         // fail anyway.
         uint8_t buffer[512];
-        ssize_t amount_read = pread(output_fd, buffer, 512, 0);
+        ssize_t amount_read = aligned_pread(output_fd, buffer, 512, 0);
         if (amount_read != 512)
             return false;
 

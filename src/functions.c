@@ -739,10 +739,9 @@ int mbr_write_run(struct fun_context *fctx)
     cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
     uint8_t buffer[512];
 
-    if (mbr_create_cfg(mbrsec, buffer) < 0)
-        return -1;
+    OK_OR_RETURN(mbr_create_cfg(mbrsec, buffer));
 
-    ssize_t written = pwrite(fctx->output_fd, buffer, 512, 0);
+    ssize_t written = aligned_pwrite(fctx->output_fd, buffer, 512, 0);
     if (written != 512)
         ERR_RETURN("unexpected error writing mbr: %s", strerror(errno));
 
@@ -782,11 +781,11 @@ int uboot_clearenv_run(struct fun_context *fctx)
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL);
 
-    char *buffer = malloc(env.env_size);
-    if (uboot_env_write(&env, buffer) < 0)
-        ERR_CLEANUP();
+    char *buffer;
+    OK_OR_CLEANUP(alloc_page_aligned((void **) &buffer, env.env_size));
+    OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    ssize_t written = aligned_pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (written != (ssize_t) env.env_size)
         ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
 
@@ -794,7 +793,8 @@ int uboot_clearenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free(buffer);
+    if (buffer)
+        free_page_aligned(buffer);
     return rc;
 }
 
@@ -830,21 +830,20 @@ int uboot_setenv_run(struct fun_context *fctx)
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL);
 
-    char *buffer = malloc(env.env_size);
-    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    char *buffer;
+    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
+
+    ssize_t read = aligned_pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (read != (ssize_t) env.env_size)
         ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
 
-    if (uboot_env_read(&env, buffer) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 
-    if (uboot_env_setenv(&env, fctx->argv[2], fctx->argv[3]) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_setenv(&env, fctx->argv[2], fctx->argv[3]));
 
-    if (uboot_env_write(&env, buffer) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    ssize_t written = aligned_pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (written != (ssize_t) env.env_size)
         ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
 
@@ -852,7 +851,7 @@ int uboot_setenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free(buffer);
+    free_page_aligned(buffer);
     return rc;
 }
 
@@ -888,21 +887,19 @@ int uboot_unsetenv_run(struct fun_context *fctx)
     // that we flush any cached data.
     fctx->fatfs_ptr(fctx, -1, NULL);
 
-    char *buffer = malloc(env.env_size);
-    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    char *buffer;
+    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
+    ssize_t read = aligned_pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (read != (ssize_t) env.env_size)
         ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
 
-    if (uboot_env_read(&env, buffer) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 
-    if (uboot_env_unsetenv(&env, fctx->argv[2]) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_unsetenv(&env, fctx->argv[2]));
 
-    if (uboot_env_write(&env, buffer) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    ssize_t written = aligned_pwrite(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (written != (ssize_t) env.env_size)
         ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
 
@@ -910,7 +907,7 @@ int uboot_unsetenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free(buffer);
+    free_page_aligned(buffer);
     return rc;
 }
 

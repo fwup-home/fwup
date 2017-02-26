@@ -120,9 +120,18 @@ static void assert_offset_valid(const char *what, off_t offset)
 
 static void assert_buffer_valid(const char *what, long addr)
 {
-    long leftovers = addr & ~(4096 - 1);
+    static size_t pagesize = 0;
+    if (!pagesize)
+        pagesize = sysconf(_SC_PAGESIZE);
+
+    if (addr < pagesize)
+        errx(EXIT_FAILURE, "Buffer address strange: 0x%08lx", addr);
+
+    long leftovers = addr & (pagesize - 1);
     if (leftovers > 0)
-        warnx("Buffer passed to '%s' is not on a page boundary: 0x%08lx", what, addr);
+        errx(EXIT_FAILURE,
+             "Buffer passed to '%s' is not on a page boundary: 0x%08lx (leftover is 0x%08lx)",
+             what, addr, leftovers);
 }
 
 static void handle_read()

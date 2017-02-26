@@ -46,7 +46,6 @@ struct block_writer {
     size_t block_size;
     off_t block_size_mask;
 
-    char *unaligned_buffer;
     char *buffer;
     off_t write_offset;
     off_t last_write_offset;
@@ -60,7 +59,6 @@ struct block_writer {
 
     bool running;
     char *async_buffer;
-    char *unaligned_async_buffer;
     size_t amount_to_write;
 #endif
 };

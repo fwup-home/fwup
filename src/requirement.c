@@ -163,7 +163,7 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     // isn't seekable, but that's ok, since this constraint would
     // fail anyway.
     uint8_t buffer[512];
-    ssize_t amount_read = pread(fctx->output_fd, buffer, 512, 0);
+    ssize_t amount_read = aligned_pread(fctx->output_fd, buffer, 512, 0);
     if (amount_read != 512)
         return -1;
 
@@ -250,20 +250,18 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
 
-    if (uboot_env_create_cfg(ubootsec, &env) < 0)
-        return -1;
+    OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
 
-    char *buffer = malloc(env.env_size);
-    ssize_t read = pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    char *buffer;
+    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
+    ssize_t read = aligned_pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
     if (read != (ssize_t) env.env_size)
         ERR_CLEANUP();
 
-    if (uboot_env_read(&env, buffer) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 
     char *current_value;
-    if (uboot_env_getenv(&env, fctx->argv[2], &current_value) < 0)
-        ERR_CLEANUP();
+    OK_OR_CLEANUP(uboot_env_getenv(&env, fctx->argv[2], &current_value));
 
     if (strcmp(current_value, fctx->argv[3]) != 0)
         rc = -1;
@@ -272,7 +270,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free(buffer);
+    free_page_aligned(buffer);
     return rc;
 }
 
