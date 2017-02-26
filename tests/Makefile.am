@@ -3,9 +3,11 @@ ACLOCAL_AMFLAGS=-I m4
 noinst_PROGRAMS=framing-helper
 framing_helper_SOURCES=framing-helper.c
 
+if !IS_CROSSCOMPILING
 if HAS_PTRACE
 noinst_PROGRAMS+=verify-syscalls
 verify_syscalls_SOURCES=verify-syscalls.c
+endif
 endif
 
 TESTS = 001_simple_fw.test \
