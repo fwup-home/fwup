@@ -96,6 +96,7 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 
 # Ptrace checks in regression tests
 AM_CONDITIONAL([IS_CROSSCOMPILING], [test x$cross_compiling = x"yes"])
+AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu"])
 
 # Coverage tests
 AC_ARG_ENABLE(gcov,[AS_HELP_STRING([--enable-gcov], [enable coverage test])])
