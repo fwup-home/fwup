@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.1
+
+  * Bug fixes
+    * Patch libsodium 1.0.12 so that static mingw builds work.
+
 ## v0.14.0
 
   * New features
