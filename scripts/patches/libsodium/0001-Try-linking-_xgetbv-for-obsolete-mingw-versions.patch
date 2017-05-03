@@ -1,0 +1,49 @@
+From c9139f8db36837f73164a4bf4d67925d21889d76 Mon Sep 17 00:00:00 2001
+From: Frank Denis <github@pureftpd.org>
+Date: Fri, 14 Apr 2017 19:01:04 +0200
+Subject: [PATCH] Try linking _xgetbv() for obsolete mingw versions
+
+---
+ configure    | 5 +++--
+ configure.ac | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index 4969dc6..20c0569 100755
+--- a/configure
++++ b/configure
+@@ -16662,7 +16662,7 @@ main ()
+   return 0;
+ }
+ _ACEOF
+-if ac_fn_c_try_compile "$LINENO"; then :
++if ac_fn_c_try_link "$LINENO"; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+ $as_echo "yes" >&6; }
+ 
+@@ -16672,7 +16672,8 @@ else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+ $as_echo "no" >&6; }
+ fi
+-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++rm -f core conftest.err conftest.$ac_objext \
++    conftest$ac_exeext conftest.$ac_ext
+ 
+ 
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
+diff --git a/configure.ac b/configure.ac
+index c624b52..227e982 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -459,7 +459,7 @@ AC_SUBST(CFLAGS_PCLMUL)
+ AC_CHECK_HEADERS([sys/mman.h intrin.h])
+ 
+ AC_MSG_CHECKING([if _xgetbv() is available])
+-AC_COMPILE_IFELSE(
++AC_LINK_IFELSE(
+   [AC_LANG_PROGRAM([[ #include <intrin.h> ]], [[ (void) _xgetbv(0) ]])],
+   [AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE__XGETBV], [1], [_xgetbv() is available])],
+-- 
+2.7.4
+
