@@ -460,7 +460,7 @@ int fwup_apply(const char *fw_filename,
 
     fctx.task = find_task(&fctx, task_prefix);
     if (fctx.task == 0)
-        ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s", task_prefix, fw_filename);
+        ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s. If task is available, the task's requirements may not be met.", task_prefix, fw_filename);
 
     // Compute the total progress units
     OK_OR_CLEANUP(compute_progress(&fctx));
