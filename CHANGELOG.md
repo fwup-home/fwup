@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.14.0-dev
+## v0.14.0
 
   * New features
     * Add support for creating resources inside configuration files. This makes
