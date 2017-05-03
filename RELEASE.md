@@ -1,7 +1,7 @@
 # Release checklist
 
   1. Pre-release: Check version numbers on static link script
-     (`scripts/download_deps.sh`). There may be security updates! Verify that
+     (`scripts/third_party_versions.sh`). There may be security updates! Verify that
      they work.
   2. Run a coverity scan by changing to the coverity branch and fast forwarding
      it up to the latest master. Push and wait for travis-ci. Eventually the
