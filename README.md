@@ -614,7 +614,7 @@ The following types are defined:
 
 Type           | 2 byte value | Description
 ---------------|--------------|------------
-Success        | "OK"         | The command was executed successfully. The payload contains the result.
+Success        | "OK"         | The command was executed successfully. The payload is a 2 bytes result code (currently 0 for success) followed by an optional textual message.
 Error          | "ER"         | A failure occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
 Warning        | "WN"         | A warning occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
 Progress       | "PR"         | The next two bytes are the progress (0-100) as a big endian integer.
