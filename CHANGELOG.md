@@ -1,6 +1,15 @@
 # Changelog
 
-## v0.14.2-dev
+## v0.14.2
+
+  * Bug fixes
+    * Fixed fat_mkdir to not error if the directory already exists. This
+      preserves pre-v0.14.0 expectations in some fwup.conf scripts. Other
+      fat_mkdir errors will be reported and not ignored like in pre-v0.14.0
+      days.
+    * Changed warning code in framing to match specs. ("WA"->"WN"). Warnings
+      are so rarely used that this was unnoticed.
+    * Clarified framing docs
 
 ## v0.14.1
 
