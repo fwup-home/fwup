@@ -135,6 +135,14 @@ int fatfs_mkdir(struct fat_cache *fc, const char *dir)
 {
     MAYBE_MOUNT(fc);
     close_open_files();
+
+    // Check if the directory already exists and is a directory.
+    FILINFO info;
+    FRESULT rc = f_stat(dir, &info);
+    if (rc == FR_OK && info.fattrib & AM_DIR)
+        return 0;
+
+    // Try to make it if not.
     CHECK("fat_mkdir", dir, f_mkdir(dir));
     return 0;
 }

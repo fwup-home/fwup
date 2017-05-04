@@ -27,6 +27,9 @@ task complete {
                 fat_mkdir(\${BOOT_PART_OFFSET}, "areallylongfilenamedir")
                 fat_mkdir(\${BOOT_PART_OFFSET}, "deleteme")
                 fat_rm(\${BOOT_PART_OFFSET}, "deleteme")
+
+                # making a directory that's already a directory should still work
+                fat_mkdir(\${BOOT_PART_OFFSET}, "test_dir")
         }
 }
 EOF
