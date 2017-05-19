@@ -23,8 +23,10 @@
 #include "sparse_file.h"
 #include "util.h"
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 // Helper functions to determine whether a sparse map is a
@@ -337,4 +339,45 @@ int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int f
     *offset += rc;
     *len = rc;
     return 0;
+}
+
+/**
+ * @brief Check whether sparse files are supported on a filesystem
+ *
+ * @param testfile a path to a file to write/read on the desired filesystem to check
+ * @param min_hole_size the minimum hole size to check
+ * @return 0 if they are
+ */
+
+int sparse_file_is_supported(const char *testfile, size_t min_hole_size)
+{
+#if HAVE_SPARSE_SEEK
+    int fd = open(testfile, O_CREAT | O_RDWR | O_TRUNC, 0600);
+    if (fd < 0)
+        ERR_RETURN("Couldn't create sparse test file: %s", testfile);
+
+    // Write something (anything) in the middle of the file.
+    // If sparse files are supported, the beginning will be sparse.
+    int rc = pwrite(fd, &fd, sizeof(fd), min_hole_size);
+    if (rc != sizeof(fd))
+        ERR_CLEANUP_MSG("Sparse check write to offset %d failed.", min_hole_size);
+
+    lseek(fd, 0, SEEK_SET);
+    off_t offset = lseek(fd, 0, SEEK_DATA);
+    if (offset != min_hole_size)
+        ERR_CLEANUP_MSG("Hole of %d bytes not created on filesystem", min_hole_size);
+
+    // It worked.
+    rc = 0;
+
+cleanup:
+    close(fd);
+    unlink(testfile);
+    return rc;
+#else
+    (void) testfile;
+    (void) min_hole_size;
+    // If the OS doesn't support it, then don't bother trying.
+    ERR_RETURN("Sparse file supported not compiled into fwup.");
+#endif
 }

@@ -60,4 +60,6 @@ off_t sparse_ending_hole_size(const struct sparse_file_map *sfm);
 void sparse_file_start_read(const struct sparse_file_map *sfm, struct sparse_file_read_iterator *iterator);
 int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int fd, off_t *offset, void *buf, size_t buf_len, size_t *len);
 
+int sparse_file_is_supported(const char *testfile, size_t min_hole_size);
+
 #endif // SPARSE_FILE_H

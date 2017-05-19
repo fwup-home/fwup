@@ -9,14 +9,12 @@
 
 . ./common.sh
 
-case $HOST_OS in
-    Darwin|Windows|OpenBSD)
-        # No sparse file support on these OS's, so skip
-        exit 0
-        ;;
-    *)
-        ;;
-esac
+# Skip this test on systems that don't support sparse files (check for
+# at least 1 MB hole size support)
+if ! $FWUP_CREATE --sparse-check "$WORK/sparse.bin" --sparse-check-size 0x100000; then
+    echo "Skipping test since OS or filesystem lacks sparse file support"
+    exit 0
+fi
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {

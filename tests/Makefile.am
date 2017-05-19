@@ -91,6 +91,11 @@ TESTS = 001_simple_fw.test \
 	087_crypto_compat.test \
 	088_missing_hash.test \
 	089_dev_null.test \
+	090_sparse_write.test \
+	091_sparse_write2.test \
+	092_sparse_write3.test \
+	093_sparse_concat.test \
+	094_sparse_concat2.test \
 	095_sparse_apply.test \
 	096_missing_resource.test \
 	097_reproduceable.test \
@@ -119,14 +124,5 @@ TESTS = 001_simple_fw.test \
 	120_corrupt_fat.test \
 	121_missing_file.test \
 	122_missing_file_metadata.test
-
-if HAVE_SPARSE_SEEK
-TESTS += \
-	090_sparse_write.test \
-	091_sparse_write2.test \
-	092_sparse_write3.test \
-	093_sparse_concat.test \
-	094_sparse_concat2.test
-endif
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

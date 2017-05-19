@@ -38,6 +38,7 @@
 #include "fwup_verify.h"
 #include "progress.h"
 #include "simple_string.h"
+#include "sparse_file.h"
 #include "../config.h"
 
 // Global options
@@ -93,6 +94,8 @@ static void print_usage()
     printf("  -q, --quiet   Quiet\n");
     printf("  -s <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
+    printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
+    printf("  --sparse-check-size <bytes> Hole size to check for --sparce-check\n");
     printf("  -t, --task <task> Task to apply within the firmware update\n");
     printf("  -u, --unmount Unmount all partitions on device first\n");
     printf("  -U, --no-unmount Do not try to unmount partitions on device\n");
@@ -157,6 +160,8 @@ static struct option long_options[] = {
     {"progress-low", required_argument, 0, '$'},
     {"progress-high", required_argument, 0, '%'},
     {"quiet",    no_argument,       0, 'q'},
+    {"sparse-check", required_argument, 0, '&'},
+    {"sparse-check-size", required_argument, 0, '*'},
     {"sign",     no_argument,       0, 'S'},
     {"task",     required_argument, 0, 't'},
     {"unmount",  no_argument,       0, 'u'},
@@ -167,14 +172,15 @@ static struct option long_options[] = {
     {0,          0,                 0, 0 }
 };
 
-#define CMD_NONE    0
-#define CMD_APPLY   1
-#define CMD_CREATE  2
-#define CMD_LIST    3
-#define CMD_METADATA 4
+#define CMD_NONE          0
+#define CMD_APPLY         1
+#define CMD_CREATE        2
+#define CMD_LIST          3
+#define CMD_METADATA      4
 #define CMD_GENERATE_KEYS 5
-#define CMD_SIGN    6
-#define CMD_VERIFY  7
+#define CMD_SIGN          6
+#define CMD_VERIFY        7
+#define CMD_SPARSE_CHECK  8
 
 static unsigned char *load_public_key(const char *path)
 {
@@ -268,6 +274,8 @@ int main(int argc, char **argv)
     const char *input_firmware = NULL;
     const char *output_firmware = NULL;
     const char *task = NULL;
+    const char *sparse_check = NULL;
+    int sparse_check_size = 4096; // Arbitrary default.
     bool accept_found_device = false;
     unsigned char *signing_key = NULL;
     unsigned char *public_key = NULL;
@@ -412,6 +420,14 @@ int main(int argc, char **argv)
         case '8':
         case '9':
             compression_level = opt - '0';
+            break;
+        case '&': // --sparse-check
+            sparse_check = optarg;
+            command = CMD_SPARSE_CHECK;
+            easy_mode = false;
+            break;
+        case '*': // --sparse-check-size
+            sparse_check_size = strtol(optarg, 0, 0);
             break;
         default: /* '?' */
             print_usage();
@@ -567,6 +583,12 @@ int main(int argc, char **argv)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
+
+    case CMD_SPARSE_CHECK:
+        if (sparse_file_is_supported(sparse_check, sparse_check_size) < 0)
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
+        else
+            fwup_output(FRAMING_TYPE_SUCCESS, 0, "Sparse files supported\n");
     }
 
     return 0;
