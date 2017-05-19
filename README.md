@@ -532,6 +532,16 @@ holes in files. Those systems also benefit from not having to write as much to
 Flash devices. If you instead apply a firmware update to a normal file, though,
 the OS will likely fill in the gaps with zeros and thus offer no improvement.
 
+There is one VERY important caveat with the sparse file handling: Some zeros in
+files are important and some are not. If runs in zeros in a file are important
+and they are written to a file as a "hole", `fwup` will not write them back.
+This is catastrophic if the zeros represent things like free blocks on a
+filesystem. Luckily, the file system formatting utilities write the important
+zeros to the disk and the OS does not scan bytes to see which ones are runs on
+zeros and automatically create holes. Programs like `dd(1)` can do this, though,
+so it is crucial that you do not run files through `dd` to make then sparser
+before passing them to `fwup`.
+
 # Firmware authentication
 
 Firmware archives can be authenticated using a simple public/private key
