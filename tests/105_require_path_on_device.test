@@ -2,8 +2,8 @@
 
 #
 # Tests that the "require-path-on-device" feature works. This
-# allows one to update firmware images based on what where
-# the filesystem is mounted.
+# allows one to update firmware images based on where the filesystem is
+# mounted.
 #
 
 . ./common.sh
@@ -39,6 +39,10 @@ find_rdev() {
     done
 }
 RDEV=$(find_rdev)
+if [ -z $RDEV ]; then
+    echo "The root filesystem doesn't map to one device file, so can't test for rdev"
+    exit 0
+fi
 
 cat >$CONFIG <<EOF
 task upgrade.devnull {
