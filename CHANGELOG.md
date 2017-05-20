@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.14.3-dev
+## v0.14.3
+
+  * Bug fixes
+    * Fix regression tests to run on ZFS. Thanks to georgewhewell for finding
+      the issue and helping debug it.
 
 ## v0.14.2
 
