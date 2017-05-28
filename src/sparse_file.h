@@ -18,6 +18,7 @@
 #define SPARSE_FILE_H
 
 #include <confuse.h>
+#include <sys/types.h>
 
 struct sparse_file_map
 {
