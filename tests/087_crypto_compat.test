@@ -6,11 +6,14 @@
 
 . ./common.sh
 
-# To create the files for this test, run 024_metadata_sig.test,
-# run:
+# To create the files for this test, edit 024_metadata_sig.test so
+# that it exits with an error code. This will keep its work directory
+# around. Then run it.
 #
-# $ base64 fwup-key.pub
-# $ base64 work/fwup.fw
+# After that, base64 encode the public key and signed .fw file:
+#
+# $ base64 work-024_metadata_sig.test/fwup-key.pub
+# $ base64 work-024_metadata_sig.test/fwup.fw
 #
 # Save the results here.
 
