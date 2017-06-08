@@ -123,6 +123,7 @@ TESTS = 001_simple_fw.test \
 	119_require_fat_file_match.test \
 	120_corrupt_fat.test \
 	121_missing_file.test \
-	122_missing_file_metadata.test
+	122_missing_file_metadata.test \
+	123_double_fat_write.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

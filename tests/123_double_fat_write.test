@@ -1,0 +1,46 @@
+#!/bin/sh
+
+#
+# Test writing a resource twice to a FAT file system.
+# This won't work due to the streaming design of fwup. The
+# file should be copied instead, but this test is useful
+# for inspecting the error code.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "1K.bin")
+                fat_write(\${BOOT_PART_OFFSET}, "copythatwillfail.bin")
+        }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+echo "Call to fwup should fail due to double fat_write"
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "Second fat_write didn't fail. That's surprising."
+    exit 1
+fi
+
