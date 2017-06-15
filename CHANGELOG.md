@@ -2,6 +2,9 @@
 
 ## v0.14.4-dev
 
+  * Bug fixes
+    * Fix segfault if a bad value is specified in the u-boot environment block.
+
 ## v0.14.3
 
   * Bug fixes
