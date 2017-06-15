@@ -15,11 +15,11 @@ int uboot_env_verify_cfg(cfg_t *cfg)
 {
     int block_offset = cfg_getint(cfg, "block-offset");
     if (block_offset < 0)
-        ERR_RETURN("block-count must be specified and less than 2^31 - 1");
+        ERR_RETURN("block-offset must be specified and less than 2^31 - 1");
 
     int block_count = cfg_getint(cfg, "block-count");
-    if (block_count < 0 || block_count >= UINT16_MAX)
-        ERR_RETURN("block-count must be specified and less than 2^16 - 1");
+    if (block_count <= 0 || block_count >= UINT16_MAX)
+        ERR_RETURN("block-count must be specified, greater than 0 and less than 2^16 - 1");
 
     return 0;
 }
@@ -30,6 +30,13 @@ int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
     output->block_count = cfg_getint(cfg, "block-count");
     output->env_size = output->block_count * 512;
     output->vars = NULL;
+
+    // This condition should only be hit if the .fw file was manually
+    // modified, since the block-count should have been validated at
+    // .fw creation time.
+    if (output->block_count <= 0 || output->block_count >= UINT16_MAX)
+        ERR_RETURN("invalid u-boot environment block count");
+
     return 0;
 }
 
@@ -169,6 +176,9 @@ static void uboot_env_sort(struct uboot_env *env)
 
 int uboot_env_write(struct uboot_env *env, char *buffer)
 {
+    if (env->env_size < 8)
+        ERR_RETURN("u-boot environment block size too small");
+
     // U-boot environment blocks are filled by 0xff by default
     memset(buffer, 0xff, env->env_size);
 
