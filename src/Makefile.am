@@ -3,13 +3,13 @@ ACLOCAL_AMFLAGS=-I m4
 bin_PROGRAMS=fwup
 fwup_SOURCES=\
 	archive_open.c \
+	block_cache.c \
 	block_writer.c \
 	cfgfile.c \
 	cfgprint.c \
 	crc32.c \
 	eval_math.c \
 	fatfs.c \
-	fat_cache.c \
 	functions.c \
 	fwfile.c \
 	fwup_apply.c \
@@ -33,6 +33,7 @@ fwup_SOURCES=\
 	uboot_env.c \
 	util.c \
 	archive_open.h \
+	block_cache.h \
 	block_writer.h \
 	cfgfile.h \
 	cfgprint.h \
@@ -40,7 +41,6 @@ fwup_SOURCES=\
 	eval_math.h \
 	fatfs.h \
 	functions.h \
-	fat_cache.h \
 	fwfile.h \
 	fwup_apply.h \
 	fwup_create.h \

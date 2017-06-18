@@ -21,7 +21,7 @@
 #include "../3rdparty/fatfs/src/diskio.h"  /* FatFs lower layer API */
 #include "../3rdparty/fatfs/src/ff.h"
 #include "util.h"
-#include "fat_cache.h"
+#include "block_cache.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -29,7 +29,8 @@
 #include <unistd.h>
 
 // Globals since that's how the FatFS code likes to work.
-static struct fat_cache *fc_ = NULL;
+static struct block_cache *output_;
+static off_t block_offset_;
 static int block_count_ = 0;
 static char *current_file_ = NULL;
 static FATFS fs_;
@@ -74,25 +75,30 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
 
 #define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
 #define CHECK_CLEANUP(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) { rc = -1; goto cleanup; } } while (0)
-#define MAYBE_MOUNT(FATCACHE) do { if (fc_ != FATCACHE) { fc_ = FATCACHE; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
+#define MAYBE_MOUNT(BLOCK_CACHE, BLOCK_OFFSET) do { if (output_ != BLOCK_CACHE || block_offset_ != BLOCK_OFFSET) { output_ = BLOCK_CACHE; block_offset_ = BLOCK_OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
- * @param fatfp the file to contain the raw filesystem data
- * @param fatfp_offset the offset within fatfp for where to start
- * @param block_count how many 512 blocks
+ * @param block_writer the file to contain the raw filesystem data
+ * @param block_offset the offset within fatfp for where to start
+ * @param block_count how many 512 byte blocks
  * @return 0 on success
  */
-int fatfs_mkfs(struct fat_cache *fc, int block_count)
+int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_count)
 {
     // The block count is only used for f_mkfs according to the docs. Store
     // it here for the call to f_mkfs since there's no way to pass it through.
     block_count_ = block_count;
 
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
 
-    // Since we're going to format, clear out the cache
-    fat_cache_format(fc_);
+    // Since we're going to format, clear out all blocks in the cache
+    // in the formatted range. Additionally, mark these blocks so that
+    // they don't need to be written to disk. If the format code writes
+    // to them, they'll be marked dirty. However, if any code tries to
+    // read them, they'll get back zeros without any I/O. This is best
+    // effort.
+    block_cache_clear_valid(output, block_offset, block_count * BLOCK_SIZE);
 
     // The third parameter is the cluster size. We set it low so
     // that we have enough clusters to easily bump the cluster count
@@ -131,9 +137,9 @@ static void close_open_files()
  * @param dir the name of the directory
  * @return 0 on success
  */
-int fatfs_mkdir(struct fat_cache *fc, const char *dir)
+int fatfs_mkdir(struct block_cache *output, off_t block_offset, const char *dir)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     // Check if the directory already exists and is a directory.
@@ -153,9 +159,9 @@ int fatfs_mkdir(struct fat_cache *fc, const char *dir)
  * @param label the name of the filesystem
  * @return 0 on success
  */
-int fatfs_setlabel(struct fat_cache *fc, const char *label)
+int fatfs_setlabel(struct block_cache *output, off_t block_offset, const char *label)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
     CHECK("fat_setlabel", label, f_setlabel(label));
     return 0;
@@ -169,9 +175,9 @@ int fatfs_setlabel(struct fat_cache *fc, const char *label)
  * @param file_must_exist true if the file must exist
  * @return 0 on success
  */
-int fatfs_rm(struct fat_cache *fc, const char *cmd, const char *filename, bool file_must_exist)
+int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, const char *filename, bool file_must_exist)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     FRESULT rc = f_unlink(filename);
@@ -199,13 +205,13 @@ int fatfs_rm(struct fat_cache *fc, const char *cmd, const char *filename, bool f
  * @param force set to true to rename the file even if to_name exists
  * @return 0 on success
  */
-int fatfs_mv(struct fat_cache *fc, const char *cmd, const char *from_name, const char *to_name, bool force)
+int fatfs_mv(struct block_cache *output, off_t block_offset, const char *cmd, const char *from_name, const char *to_name, bool force)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     // If forcing, remove the file first.
-    if (force && fatfs_rm(fc, cmd, to_name, false))
+    if (force && fatfs_rm(output, block_offset, cmd, to_name, false))
         return -1;
 
     CHECK(cmd, from_name, f_rename(from_name, to_name));
@@ -220,9 +226,9 @@ int fatfs_mv(struct fat_cache *fc, const char *cmd, const char *from_name, const
  * @param to_name the name of the copy filename
  * @return 0 on success
  */
-int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name)
+int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_name, const char *to_name)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     FIL fromfil;
@@ -255,9 +261,9 @@ int fatfs_cp(struct fat_cache *fc, const char *from_name, const char *to_name)
  * @param attrib a string with the attributes. i.e., "RHS"
  * @return 0 on success
  */
-int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib)
+int fatfs_attrib(struct block_cache *output, off_t block_offset, const char *filename, const char *attrib)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
 
     BYTE mode = 0;
     while (*attrib) {
@@ -286,9 +292,9 @@ int fatfs_attrib(struct fat_cache *fc, const char *filename, const char *attrib)
  * @param filename the file to touch
  * @return 0 on success
  */
-int fatfs_touch(struct fat_cache *fc, const char *filename)
+int fatfs_touch(struct block_cache *output, off_t block_offset, const char *filename)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     FIL fil;
@@ -304,9 +310,9 @@ int fatfs_touch(struct fat_cache *fc, const char *filename)
  * @param filename the filename
  * @return 0 if it exists
  */
-int fatfs_exists(struct fat_cache *fc, const char *filename)
+int fatfs_exists(struct block_cache *output, off_t block_offset, const char *filename)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     FIL fil;
@@ -323,9 +329,9 @@ int fatfs_exists(struct fat_cache *fc, const char *filename)
  * @param pattern the pattern to patch
  * @return 0 if the file exists and the pattern is inside of it
  */
-int fatfs_file_matches(struct fat_cache *fc, const char *filename, const char *pattern)
+int fatfs_file_matches(struct block_cache *output, off_t block_offset, const char *filename, const char *pattern)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
     close_open_files();
 
     FIL fil;
@@ -373,9 +379,9 @@ cleanup:
     return rc;
 }
 
-int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const char *buffer, off_t size)
+int fatfs_pwrite(struct block_cache *output, off_t block_offset,const char *filename, int offset, const char *buffer, off_t size)
 {
-    MAYBE_MOUNT(fc);
+    MAYBE_MOUNT(output, block_offset);
 
     // Check if this is the same file as a previous pwrite call
     if (current_file_ && strcmp(current_file_, filename) != 0)
@@ -424,12 +430,12 @@ int fatfs_pwrite(struct fat_cache *fc,const char *filename, int offset, const ch
 
 void fatfs_closefs()
 {
-    if (fc_) {
+    if (output_) {
         close_open_files();
 
         // This unmounts. Don't check error.
         f_mount(NULL, "", 0);
-        fc_ = NULL;
+        output_ = NULL;
     }
 }
 
@@ -441,7 +447,7 @@ DSTATUS disk_initialize(BYTE pdrv)				/* Physical drive number (0..) */
 
 DSTATUS disk_status(BYTE pdrv)		/* Physical drive number (0..) */
 {
-    return (pdrv == 0 && fc_) ? 0 : STA_NOINIT;
+    return (pdrv == 0 && output_) ? 0 : STA_NOINIT;
 }
 
 DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
@@ -449,10 +455,10 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
                   DWORD sector,	/* Sector address (LBA) */
                   UINT count)		/* Number of sectors to read (1..128) */
 {
-    if (pdrv != 0 || fc_ == NULL)
+    if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (fat_cache_read(fc_, sector, count, (char *) buff) < 0)
+    if (block_cache_pread(output_, buff, BLOCK_SIZE * count, block_offset_ + BLOCK_SIZE * sector) < 0)
         return RES_ERROR;
     else
         return 0;
@@ -463,10 +469,10 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
                    DWORD sector,		/* Sector address (LBA) */
                    UINT count)			/* Number of sectors to write (1..128) */
 {
-    if (pdrv != 0 || fc_ == NULL)
+    if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (fat_cache_write(fc_, sector, count, (const char *) buff) < 0)
+    if (block_cache_pwrite(output_, buff, BLOCK_SIZE * count, block_offset_ + BLOCK_SIZE * sector, false) < 0)
         return RES_ERROR;
     else
         return 0;
@@ -476,7 +482,7 @@ DRESULT disk_ioctl(BYTE pdrv,		/* Physical drive number (0..) */
                    BYTE cmd,		/* Control code */
                    void *buff)		/* Buffer to send/receive control data */
 {
-    if (pdrv != 0 || !fc_)
+    if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
     switch (cmd) {

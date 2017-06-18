@@ -16,6 +16,7 @@
 
 #include "requirement.h"
 
+#include "block_cache.h"
 #include "fatfs.h"
 #include "mbr.h"
 #include "mmc.h"
@@ -163,7 +164,7 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     // isn't seekable, but that's ok, since this constraint would
     // fail anyway.
     uint8_t buffer[512];
-    ssize_t amount_read = aligned_pread(fctx->output_fd, buffer, 512, 0);
+    ssize_t amount_read = block_cache_pread(fctx->output, buffer, 512, 0);
     if (amount_read != 512)
         return -1;
 
@@ -191,11 +192,8 @@ int require_fat_file_exists_requirement_met(struct fun_context *fctx)
     if (fctx->argc != 3)
         return -1;
 
-    struct fat_cache *fc;
-    if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
-        return -1;
-
-    if (fatfs_exists(fc, fctx->argv[2]) < 0)
+    off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
+    if (fatfs_exists(fctx->output, block_offset, fctx->argv[2]) < 0)
         return -1;
 
     // No error -> the requirement has been met.
@@ -216,11 +214,8 @@ int require_fat_file_match_requirement_met(struct fun_context *fctx)
     if (fctx->argc != 4)
         return -1;
 
-    struct fat_cache *fc;
-    if (fctx->fatfs_ptr(fctx, strtoull(fctx->argv[1], NULL, 0), &fc) < 0)
-        return -1;
-
-    if (fatfs_file_matches(fc, fctx->argv[2], fctx->argv[3]) < 0)
+    off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
+    if (fatfs_file_matches(fctx->output, block_offset, fctx->argv[2], fctx->argv[3]) < 0)
         return -1;
 
     // No error -> the requirement has been met.
@@ -254,7 +249,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
     char *buffer;
     OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
-    ssize_t read = aligned_pread(fctx->output_fd, buffer, env.env_size, env.block_offset * 512);
+    ssize_t read = block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512);
     if (read != (ssize_t) env.env_size)
         ERR_CLEANUP();
 

@@ -31,8 +31,8 @@ enum fun_context_type {
 
 #define FUN_MAX_ARGS  (10)
 struct archive;
-struct fat_cache;
 struct fwup_progress;
+struct block_cache;
 
 struct fun_context {
     // Context of where the function is called
@@ -58,11 +58,8 @@ struct fun_context {
     // no more data is available. If <0, then there's an error.
     int (*read)(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset);
 
-    // Callback for getting a fat_cache handle for use with the fatfs code.
-    int (*fatfs_ptr)(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc);
-
-    // Output file descriptor. <= 0 if not opened. (stdin is never ok)
-    int output_fd;
+    // Output location (NULL if not opened yet.)
+    struct block_cache *output;
 
     void *cookie;
 };

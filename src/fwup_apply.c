@@ -39,8 +39,9 @@
 #include "sparse_file.h"
 #include "progress.h"
 #include "resources.h"
+#include "block_cache.h"
 
-static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
+static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *output)
 {
     // Handle legacy require-partition1-offset=x constraint
     int part1_offset = cfg_getint(task, "require-partition1-offset");
@@ -49,7 +50,7 @@ static bool deprecated_task_is_applicable(cfg_t *task, int output_fd)
         // isn't seekable, but that's ok, since this constraint would
         // fail anyway.
         uint8_t buffer[512];
-        ssize_t amount_read = aligned_pread(output_fd, buffer, 512, 0);
+        ssize_t amount_read = block_cache_pread(output, buffer, 512, 0);
         if (amount_read != 512)
             return false;
 
@@ -91,7 +92,7 @@ static cfg_t *find_task(struct fun_context *fctx, const char *task_prefix)
         const char *name = cfg_title(task);
         if (strlen(name) >= task_len &&
                 memcmp(task_prefix, name, task_len) == 0 &&
-                deprecated_task_is_applicable(task, fctx->output_fd) &&
+                deprecated_task_is_applicable(task, fctx->output) &&
                 task_is_applicable(fctx, task))
             return task;
     }
@@ -130,11 +131,6 @@ struct fwup_apply_data
     off_t actual_offset;
     const void *sparse_leftover;
     off_t sparse_leftover_len;
-
-    // FAT file system support
-    bool using_fat_cache;
-    struct fat_cache fc;
-    off_t current_fatfs_block_offset;
 };
 
 static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
@@ -228,38 +224,6 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
             p->sparse_map_ix++;
         }
     }
-
-    return 0;
-}
-
-static int fatfs_ptr_callback(struct fun_context *fctx, off_t block_offset, struct fat_cache **fc)
-{
-    struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
-
-    // Check if this is the first time or if block offset changed
-    if (!p->using_fat_cache || block_offset != p->current_fatfs_block_offset) {
-
-        // If the FATFS is being used, then flush it to disk
-        if (p->using_fat_cache) {
-            fatfs_closefs();
-            fat_cache_free(&p->fc);
-            p->using_fat_cache = false;
-        }
-
-        // Handle the case where a negative block offset is used to flush
-        // everything to disk, but not perform an operation.
-        if (block_offset >= 0) {
-            // TODO: Make cache size configurable
-            if (fat_cache_init(&p->fc, fctx->output_fd, block_offset * 512, 12 * 1024 *1024) < 0)
-                return -1;
-
-            p->using_fat_cache = true;
-            p->current_fatfs_block_offset = block_offset;
-        }
-    }
-
-    if (fc)
-        *fc = &p->fc;
 
     return 0;
 }
@@ -387,18 +351,13 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
     fctx->type = FUN_CONTEXT_FINISH;
     OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-finish", NULL, fun_run));
 
-    // Flush the FATFS code in case it was used.
-    OK_OR_CLEANUP(fatfs_ptr_callback(fctx, -1, NULL));
-
 cleanup:
     if (rc != 0) {
         // Do a best attempt at running any error handling code
         fctx->type = FUN_CONTEXT_ERROR;
-        if (apply_event(fctx, fctx->task, "on-error", NULL, fun_run) == 0) {
-            // If the error handler is successful, then we may need
-            // to flush the FATFS code again.
-            fatfs_ptr_callback(fctx, -1, NULL);
-        }
+
+        // Ignore errors from on-error
+        apply_event(fctx, fctx->task, "on-error", NULL, fun_run);
     }
     rlist_free(resources);
     return rc;
@@ -414,9 +373,9 @@ int fwup_apply(const char *fw_filename,
     unsigned char *meta_conf_signature = NULL;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
-    fctx.fatfs_ptr = fatfs_ptr_callback;
     fctx.progress = progress;
-    fctx.output_fd = output_fd;
+    fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
+    block_cache_init(fctx.output, output_fd);
 
     // Report 0 progress before doing anything
     progress_report(fctx.progress, 0);
@@ -470,17 +429,15 @@ int fwup_apply(const char *fw_filename,
 
 cleanup:
     // Close the file before we report 100% just in case that takes some time (Linux)
-    close(fctx.output_fd);
-    fctx.output_fd = -1;
+    block_cache_free(fctx.output);
+    free(fctx.output);
+    fctx.output = NULL;
 
     sparse_file_free(&pd.sfm);
 
     // Report 100% to the user if successful
     if (rc == 0)
         progress_report_complete(fctx.progress);
-
-    if (fctx.output_fd >= 0)
-        close(fctx.output_fd);
 
     // If reading stdin, signal that we're not going to read any more
     // so that pipes can be terminated, etc. libarchive not only doesn't

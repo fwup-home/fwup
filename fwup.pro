@@ -44,7 +44,8 @@ SOURCES += \
     src/sparse_file.c \
     src/progress.c \
     src/mmc_bsd.c \
-    src/resources.c
+    src/resources.c \
+    src/block_cache.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -95,7 +96,9 @@ HEADERS += \
     src/eval_math.h \
     src/sparse_file.h \
     src/progress.h \
-    src/resources.h
+    src/resources.h \
+    src/block_cache.h \
+    src/fatfs.h
 
 OTHER_FILES += \
     fwupdate.conf \
