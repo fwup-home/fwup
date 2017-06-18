@@ -92,15 +92,15 @@ task upgrade.a {
     # This task upgrades the A partition and runs when partition B
     # is being used.
     require-partition-offset(1, \${ROOTFS_B_PART_OFFSET})
-    on-init { mbr_write(mbr-a) }
     on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+    on-finish { mbr_write(mbr-a) }
 }
 task upgrade.b {
     # This task upgrades the B partition and runs when partition B
     # is being used.
     require-partition-offset(1, \${ROOTFS_A_PART_OFFSET})
-    on-init { mbr_write(mbr-b) }
     on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+    on-finish { mbr_write(mbr-b) }
 }
 
 # This task is just needed to help support the unit test
@@ -125,7 +125,8 @@ dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 diff $WORK/check.bin $IMGFILE
 
 # Now upgrade the IMGFILE file
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+# VERIFY_LAST_WRITE checks that MBR is written last
+VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 VERIFY_SYSCALLS_CHECKPATH=$WORK/mbr_b.bin $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
 cp $WORK/check.bin $WORK/check-upgraded.bin

@@ -123,7 +123,8 @@ dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 cmp $WORK/check.bin $IMGFILE
 
 # Now upgrade the IMGFILE file
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+# NOTE: The last write should be to the u-boot environment
+VERIFY_SYSCALLS_LAST_WRITE=5 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 cp $WORK/check.bin $WORK/check-upgraded.bin
 dd if=$WORK/ubootb.bin seek=4 of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
@@ -131,7 +132,7 @@ dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/
 cmp $WORK/check-upgraded.bin $IMGFILE
 
 # Upgrade the IMGFILE file again
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+VERIFY_SYSCALLS_LAST_WRITE=5 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 cp $WORK/check-upgraded.bin $WORK/check-upgraded2.bin
 dd if=$WORK/uboota.bin seek=4 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/dev/null
 cmp $WORK/check-upgraded2.bin $IMGFILE
