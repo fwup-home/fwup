@@ -364,7 +364,7 @@ int sparse_file_is_supported(const char *testfile, size_t min_hole_size)
 
     lseek(fd, 0, SEEK_SET);
     off_t offset = lseek(fd, 0, SEEK_DATA);
-    if (offset != min_hole_size)
+    if (offset != (off_t) min_hole_size)
         ERR_CLEANUP_MSG("Hole of %d bytes not created on filesystem", min_hole_size);
 
     // It worked.
