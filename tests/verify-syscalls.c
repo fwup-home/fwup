@@ -21,35 +21,42 @@
 // environment variable.
 //
 // Environment variables:
+//  VERIFY_SYSCALLS_DISABLE - if set, all checks are disabled
 //  VERIFY_SYSCALLS_CMD - which command to run
 //  VERIFY_SYSCALLS_CHECKPATH - which file to monitor (defaults to fwup.img)
+//  VERIFY_SYSCALLS_LAST_WRITE - verify that the last write went to the specified offset
+
+#define _GNU_SOURCE // for asprintf
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/reg.h>
 
 #include <err.h>
 #include <errno.h>
-#include <string.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include <limits.h>
+#include <string.h>
+#include <unistd.h>
 
 static pid_t child = -1;
 static int check_fd = -1;
 static off_t check_offset = -1;
 static const char *check_pathname = "fwup.img";
 
-static int check_block_size = 512;
+static const int check_block_size = 512;
 static int open_call_count = 0;
 static int write_call_count = 0;
 static int write_call_bytes = 0;
 static int read_call_count = 0;
 static int read_call_bytes = 0;
+
+static off_t last_offset_written = -1;
 
 static void exec_and_trace(char * const argv[])
 {
@@ -101,11 +108,32 @@ static void get_syscall_str(long addr, char *buffer, size_t len)
     buffer[len - 1] = '\0';
 }
 
+static void maybe_err(const char *fmt, ...)
+{
+    char *message;
+
+    va_list ap;
+    va_start(ap, fmt);
+    if (vasprintf(&message, fmt, ap) < 0)
+        err(EXIT_FAILURE, "asprintf");
+    va_end(ap);
+
+    if (getenv("VERIFY_SYSCALLS_DISABLE"))
+        warnx("(VERIFY_SYSCALLS_DISABLE) %s", message);
+    else
+        errx(EXIT_FAILURE, "%s", message);
+
+    free(message);
+}
+
 static void assert_size_valid(const char *what, size_t size)
 {
+    if (size > 100*1024*1024)
+        errx(EXIT_FAILURE, "size is almost certainly invalid: %lu", size);
+
     size_t leftovers = size % check_block_size;
     if (leftovers > 0)
-        errx(EXIT_FAILURE, "not block size (%d) number of bytes for '%s': %ld bytes", check_block_size, what, size);
+        maybe_err("not block size (%d) number of bytes for '%s': %lu bytes", check_block_size, what, size);
 }
 
 static void assert_offset_valid(const char *what, off_t offset)
@@ -115,7 +143,7 @@ static void assert_offset_valid(const char *what, off_t offset)
 
     size_t leftovers = offset % check_block_size;
     if (leftovers > 0)
-        errx(EXIT_FAILURE, "Not block size (%d) offset passed to '%s': %ld", check_block_size, what, offset);
+        maybe_err("Not block size (%d) offset passed to '%s': %ld", check_block_size, what, offset);
 }
 
 static void assert_buffer_valid(const char *what, long addr)
@@ -125,11 +153,11 @@ static void assert_buffer_valid(const char *what, long addr)
         pagesize = sysconf(_SC_PAGESIZE);
 
     if (addr < pagesize)
-        errx(EXIT_FAILURE, "Buffer address strange: 0x%08lx", addr);
+        maybe_err("Buffer address strange: 0x%08lx", addr);
 
     long leftovers = addr & (pagesize - 1);
     if (leftovers > 0)
-        errx(EXIT_FAILURE,
+        maybe_err(
              "Buffer passed to '%s' is not on a page boundary: 0x%08lx (leftover is 0x%08lx)",
              what, addr, leftovers);
 }
@@ -174,6 +202,8 @@ static void handle_write()
             write_call_bytes += rc;
             assert_size_valid("write result", rc);
 
+            last_offset_written = check_offset;
+
             check_offset += rc;
         }
     }
@@ -201,7 +231,7 @@ static void handle_open()
 
             open_call_count++;
             if (open_call_count != 1)
-                errx(EXIT_FAILURE, "open was called on '%s' more than once?", check_pathname);
+                maybe_err("open was called on '%s' more than once?", check_pathname);
         }
     }
 }
@@ -267,11 +297,12 @@ static void handle_pwrite64()
         assert_size_valid("pwrite64", params[2]);
         assert_offset_valid("pwrite64", params[3]);
         assert_buffer_valid("pwrite64", params[1]);
+
         if (rc >= 0) {
             write_call_bytes += rc;
             assert_size_valid("pwrite64 result", rc);
 
-            check_offset += rc;
+            last_offset_written = params[3];
         }
     }
 }
@@ -304,6 +335,11 @@ int main(int argc, char *argv[])
     char *override_path = getenv("VERIFY_SYSCALLS_CHECKPATH");
     if (override_path)
         check_pathname = override_path;
+
+    off_t verify_last_write = 0;
+    char *verify_last_write_str = getenv("VERIFY_SYSCALLS_LAST_WRITE");
+    if (verify_last_write_str)
+        verify_last_write = strtoull(verify_last_write_str, NULL, 0);
 
     // Wait for first signal
     int status;
@@ -375,6 +411,7 @@ int main(int argc, char *argv[])
     if (write_call_count > 0) {
         fprintf(stderr, "Bytes written: %d\n", write_call_bytes);
         fprintf(stderr, "Averate bytes written/call: %f bytes/call\n", ((double) write_call_bytes) / write_call_count);
+        fprintf(stderr, "Last offset written: %ld\n", last_offset_written);
     }
 
     fprintf(stderr, "Calls to read(): %d\n", read_call_count);
@@ -383,6 +420,13 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Averate bytes read/call: %f bytes/call\n", ((double) read_call_bytes) / read_call_count);
     }
 
+    if (verify_last_write_str && last_offset_written != verify_last_write)
+        maybe_err("last block written wasn't %lu. It was %lu", verify_last_write, last_offset_written);
+
+    int exit_status = WEXITSTATUS(status);
+    if (exit_status)
+        fprintf(stderr, "%s returned %d\n", check_pathname, exit_status);
+
     // Pass on the exit status.
-    return WEXITSTATUS(status);
+    return exit_status;
 }
