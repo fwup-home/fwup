@@ -56,7 +56,7 @@ int fat_cache_init(struct fat_cache *fc, int fd, off_t partition_offset, size_t 
 
     // Allocate FAT cache on a page boundary to avoid memcpy's
     // when doing raw I/O on Linux.
-    OK_OR_RETURN_MSG(alloc_page_aligned((void**) &fc->cache, cache_size), "Could not allocate FAT cache of %d bytes", cache_size);
+    alloc_page_aligned((void**) &fc->cache, cache_size);
 
     fc->cache_size_blocks = cache_size / 512;
     fc->flags = malloc(fc->cache_size_blocks / 4);

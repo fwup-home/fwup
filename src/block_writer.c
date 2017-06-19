@@ -124,8 +124,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->buffer_size = (buffer_size + ~bw->block_size_mask) & bw->block_size_mask;
 
     // Buffer alignment required on Linux when files are opened with O_DIRECT.
-    if (alloc_page_aligned((void **) &bw->buffer, bw->buffer_size) < 0)
-        return 1;
+    alloc_page_aligned((void **) &bw->buffer, bw->buffer_size);
 
     bw->write_offset = 0;
     bw->last_write_offset = -1;
@@ -133,10 +132,7 @@ int block_writer_init(struct block_writer *bw, int fd, int buffer_size, int log2
     bw->added_bytes = 0;
 
 #if USE_PTHREADS
-    if (alloc_page_aligned((void **) &bw->async_buffer, bw->buffer_size) < 0) {
-        free(bw->buffer);
-        return -1;
-    }
+    alloc_page_aligned((void **) &bw->async_buffer, bw->buffer_size);
     bw->running = true;
 
     pthread_mutex_init(&bw->mutex_to, NULL);

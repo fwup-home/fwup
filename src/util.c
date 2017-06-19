@@ -444,33 +444,30 @@ static void *get_alignment_buffer(size_t count)
 
     // Allocate buffer to new size
     aligned_buffer_size = count;
-    if (alloc_page_aligned(&aligned_buffer, aligned_buffer_size) < 0)
-        fwup_errx(EXIT_FAILURE, "memory allocation error");
+    alloc_page_aligned(&aligned_buffer, aligned_buffer_size);
 
     return aligned_buffer;
 }
 
-int alloc_page_aligned(void **memptr, size_t size)
+void alloc_page_aligned(void **memptr, size_t size)
 {
     size_t pagesize = get_pagesize();
 
 #if HAVE_POSIX_MEMALIGN
-    return posix_memalign(memptr, pagesize, size);
+    if (posix_memalign(memptr, pagesize, size) < 0)
+        fwup_err(EXIT_FAILURE, "posix_memalign %lu bytes", size);
 #else
     // Slightly wasteful implementation of posix_memalign
     size_t padding = pagesize + pagesize - 1;
     uint8_t *original = (uint8_t *) malloc(size + padding);
     if (original == NULL)
-        return -1;
+        fwup_err(EXIT_FAILURE, "malloc %u bytes", size + padding);
 
     // Store the original pointer right before the aligned pointer
-
     uint8_t *aligned = (uint8_t *) (((uint64_t) (original + padding)) & ~(pagesize - 1));
     void **savelocation = (void**) (aligned - sizeof(void*));
     *savelocation = original;
     *memptr = aligned;
-
-    return 0;
 #endif
 }
 
