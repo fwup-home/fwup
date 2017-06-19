@@ -22,7 +22,6 @@ test-driver
 *.log
 *.trs
 tests/work
-tests/work*
 fwup-key.priv
 fwup-key.pub
 *~

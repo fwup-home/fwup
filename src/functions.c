@@ -64,6 +64,7 @@ DECLARE_FUN(error);
 DECLARE_FUN(info);
 DECLARE_FUN(path_write);
 DECLARE_FUN(pipe_write);
+DECLARE_FUN(execute);
 
 struct fun_info {
     const char *name;
@@ -98,6 +99,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(info),
     FUN_INFO(path_write),
     FUN_INFO(pipe_write),
+    FUN_INFO(execute),
 };
 
 static struct fun_info *lookup(int argc, const char **argv)
@@ -1123,6 +1125,42 @@ int pipe_write_run(struct fun_context *fctx)
         ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
 
     rc = fd_write_run("pipe_write",fctx,output_fd);
+
+cleanup:
+    if(cmd_pipe) {
+        pclose(cmd_pipe);
+    }
+    return rc;
+}
+int execute_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("execute requires a command to execute");
+
+    return 0;
+}
+int execute_compute_progress(struct fun_context *fctx)
+{
+    (void) fctx; // UNUSED
+    return 0;
+}
+
+int execute_run(struct fun_context *fctx)
+{
+    assert(fctx->on_event);
+
+    int rc = 0;
+    
+    char const *cmd_name = fctx->argv[1];
+    FILE * cmd_pipe = popen(cmd_name,"r");
+    if(!cmd_pipe)
+        ERR_CLEANUP_MSG("execute can't run command %s", cmd_name);
+
+    char buffer[512];
+    
+    while(fread(buffer, 512, 1, cmd_pipe) == 512) {
+        fwup_warnx("%s", buffer);
+    }
 
 cleanup:
     if(cmd_pipe) {
