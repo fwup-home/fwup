@@ -1,0 +1,29 @@
+#!/bin/sh
+
+#
+# Test streaming a resource through an arbitrary command on the 
+# target system
+#
+
+. ./common.sh
+
+export OUTFILE=$WORK/output1k
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+task complete {
+	on-resource TEST { pipe_write("./dummy_cmd.sh ${OUTFILE}") }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Pipe the contents of the firmware file through fwup
+cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+
+# The firmware file is equivalent to the following dd call
+
+diff $TESTFILE_1K $OUTFILE
