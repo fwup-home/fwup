@@ -4,12 +4,21 @@
 #include "util.h"
 #include "block_writer.h"
 
-#define BLOCK_CACHE_MAX_SEGMENT_SIZE  (256*1024)
+// The segment size defines the minimum read/write size
+// actually made to the output. Additionally, all reads and
+// writes will be aligned to that size.
+#define BLOCK_CACHE_SEGMENT_SIZE       (128*1024) // This is also the read/write write size
+#define BLOCK_CACHE_NUM_SEGMENTS       64         // 8 MB cache
+#define BLOCK_CACHE_BLOCKS_PER_SEGMENT (BLOCK_CACHE_SEGMENT_SIZE / BLOCK_SIZE)
+#define BLOCK_CACHE_SEGMENT_MASK       (~(BLOCK_CACHE_SEGMENT_SIZE - 1))
 
 struct block_cache_segment {
-    struct block_cache_segment *next;
+    bool in_use;
 
-    // Where the segment is located
+    // The data in this segment.
+    uint8_t *data;
+
+    // Where this segment is located
     off_t offset;
 
     // "timestamp" for computing least recently used
@@ -21,29 +30,31 @@ struct block_cache_segment {
     // the actual writes can start.
     bool streamed;
 
-    // Bit fields for determining whether blocks inside the
-    // segment are valid (match what's on the target image) or
-    // dirty (need to be written back to the target image).
-    uint8_t valid[BLOCK_CACHE_MAX_SEGMENT_SIZE / BLOCK_SIZE];
-    uint8_t dirty[BLOCK_CACHE_MAX_SEGMENT_SIZE / BLOCK_SIZE];
+    // True if an asynchronous write is in progress
+    bool write_in_progress;
 
-    // The data in this segment.
-    uint8_t data[0];
+    // Bit fields for determining whether blocks inside the
+    // segment are valid (hold the most up-to-date data) and/or
+    // dirty (need to be written back to the target image).
+    // (2 bits of flags in a uint8_t)
+    uint8_t flags[BLOCK_CACHE_BLOCKS_PER_SEGMENT * 2 / 8];
 };
 
 struct block_cache {
     struct block_writer writer;
 
-    uint32_t max_segments;
-    uint32_t num_segments;
-
-    struct block_cache_segment *segments;
+    uint32_t timestamp;
 
     int fd;
+
+    struct block_cache_segment segments[BLOCK_CACHE_NUM_SEGMENTS];
+
+    // Temporary buffer for reading segments that are partially valid
+    uint8_t *temp;
 };
 
 int block_cache_init(struct block_cache *bc, int fd);
-ssize_t block_cache_clear_valid(struct block_cache *bc, off_t offset, size_t count);
+int block_cache_trim(struct block_cache *bc, off_t offset, size_t count);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
 int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
 int block_cache_flush(struct block_cache *bc);

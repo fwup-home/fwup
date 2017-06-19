@@ -98,7 +98,8 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     // to them, they'll be marked dirty. However, if any code tries to
     // read them, they'll get back zeros without any I/O. This is best
     // effort.
-    block_cache_clear_valid(output, block_offset, block_count * BLOCK_SIZE);
+    OK_OR_RETURN_MSG(block_cache_trim(output, block_offset, block_count * BLOCK_SIZE),
+                     "Error trimming blocks affacted by fat_mkfs");
 
     // The third parameter is the cluster size. We set it low so
     // that we have enough clusters to easily bump the cluster count
