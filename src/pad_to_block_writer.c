@@ -1,9 +1,10 @@
 #include "pad_to_block_writer.h"
 #include "block_cache.h"
 
+#include <assert.h>
+#include <err.h>
 #include <stdlib.h>
 #include <string.h>
-#include <err.h>
 
 /**
  * The pad to block writer takes bytes written to any offset/size and aligns them
@@ -36,7 +37,22 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
     // Check for leftovers
     if (ptbw->index != 0) {
         // Add to the leftovers
-        if (ptbw->offset + (off_t) ptbw->index == offset) {
+        off_t current_index = ptbw->offset + (off_t) ptbw->index;
+        off_t max_index = ptbw->offset + sizeof(ptbw->buffer);
+
+        assert(offset >= current_index); // Writing to previous locations isn't supposed to be possible
+
+        // Check if skipping bytes in a block.
+        if (offset > current_index && offset < max_index) {
+            // Fill skipped part with 0s
+            size_t to_skip = offset - current_index;
+            memset(&ptbw->buffer[ptbw->index], 0, to_skip);
+            current_index = offset;
+            ptbw->index += to_skip;
+        }
+
+        // Check if we're sync'd up.
+        if (current_index == offset) {
             size_t to_copy = min(sizeof(ptbw->buffer) - ptbw->index, count);
             memcpy(&ptbw->buffer[ptbw->index], buf, to_copy);
             buf = (const uint8_t *) buf + to_copy;
@@ -59,11 +75,15 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
         }
     }
 
-    // Verify that we're on a block boundary. That's an assumption that if broken will
-    // result in corruption, but it's easy to make since it's not possible to specify
-    // non-block boundaries in fwup.conf files and holes are multiple of block sizes.
-    if (offset & (sizeof(ptbw->buffer) - 1))
-        errx(EXIT_FAILURE, "unexpected non-block offset detected: %lu", offset);
+    // Verify that we're on a block boundary.
+    size_t index_from_block_boundary = offset & (sizeof(ptbw->buffer) - 1);
+    if (index_from_block_boundary != 0) {
+        // If not, pad, and try again.
+        memset(ptbw->buffer, 0, index_from_block_boundary);
+        ptbw->index = index_from_block_boundary;
+        ptbw->offset = offset - index_from_block_boundary;
+        return ptbw_pwrite(ptbw, buf, count, offset);
+    }
 
     if (count > sizeof(ptbw->buffer)) {
         // Write as many block size blocks as we can.
