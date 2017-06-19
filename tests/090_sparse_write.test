@@ -75,8 +75,6 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # The firmware file is equivalent to the following dd call
 cp $BASE_IMAGE $WORK/check.bin
 dd if=$TESTFILE_4K bs=1k seek=32 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-# This next line is needed since fwup pads small gaps with zeros.
-dd if=/dev/zero bs=1k seek=36 count=28 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_4K bs=1k seek=64 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_4K bs=1k seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 cmp $WORK/check.bin $IMGFILE
