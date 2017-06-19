@@ -50,8 +50,7 @@ static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *outpu
         // isn't seekable, but that's ok, since this constraint would
         // fail anyway.
         uint8_t buffer[512];
-        ssize_t amount_read = block_cache_pread(output, buffer, 512, 0);
-        if (amount_read != 512)
+        if (block_cache_pread(output, buffer, 512, 0) < 0)
             return false;
 
         struct mbr_partition partitions[4];

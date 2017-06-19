@@ -164,8 +164,7 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     // isn't seekable, but that's ok, since this constraint would
     // fail anyway.
     uint8_t buffer[512];
-    ssize_t amount_read = block_cache_pread(fctx->output, buffer, 512, 0);
-    if (amount_read != 512)
+    if (block_cache_pread(fctx->output, buffer, 512, 0) < 0)
         return -1;
 
     struct mbr_partition partitions[4];
@@ -249,9 +248,8 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
     char *buffer;
     OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
-    ssize_t read = block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512);
-    if (read != (ssize_t) env.env_size)
-        ERR_CLEANUP();
+
+    OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512));
 
     OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 

@@ -778,9 +778,8 @@ int uboot_setenv_run(struct fun_context *fctx)
     char *buffer;
     OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
 
-    ssize_t read = block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512);
-    if (read != (ssize_t) env.env_size)
-        ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512),
+                      "unexpected error reading uboot environment: %s", strerror(errno));
 
     OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 
@@ -829,9 +828,9 @@ int uboot_unsetenv_run(struct fun_context *fctx)
 
     char *buffer;
     OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
-    ssize_t read = block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512);
-    if (read != (ssize_t) env.env_size)
-        ERR_CLEANUP_MSG("unexpected error reading uboot environment: %s", strerror(errno));
+
+    OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512),
+                      "unexpected error reading uboot environment: %s", strerror(errno));
 
     OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 
