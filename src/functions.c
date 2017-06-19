@@ -23,6 +23,7 @@
 #include "uboot_env.h"
 #include "sparse_file.h"
 #include "progress.h"
+#include "pad_to_block_writer.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -219,6 +220,7 @@ int raw_write_compute_progress(struct fun_context *fctx)
 
     return 0;
 }
+
 int raw_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
@@ -244,6 +246,10 @@ int raw_write_run(struct fun_context *fctx)
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+
+    struct pad_to_block_writer ptbw;
+    ptbw_init(&ptbw, fctx->output);
+
     for (;;) {
         off_t offset;
         size_t len;
@@ -256,11 +262,10 @@ int raw_write_run(struct fun_context *fctx)
             break;
 
         crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
-//TODO - handle partial writes!!!
-        ssize_t written = block_cache_pwrite(fctx->output, buffer, len, dest_offset + offset, true);
-        if (written < 0)
-            ERR_CLEANUP_MSG("raw_write couldn't write %d bytes to offset %lld", len, dest_offset + offset);
-        len_written += written;
+
+        OK_OR_CLEANUP_MSG(ptbw_pwrite(&ptbw, buffer, len, dest_offset + offset),
+                          "raw_write couldn't write %d bytes to offset %lld", len, dest_offset + offset);
+        len_written += len;
         progress_report(fctx->progress, len);
     }
 
@@ -274,13 +279,11 @@ int raw_write_run(struct fun_context *fctx)
         if (ending_hole < to_write)
             to_write = ending_hole;
         off_t offset = sparse_file_size(&sfm) - to_write;
-        ssize_t written = block_cache_pwrite(fctx->output, zeros, to_write, dest_offset + offset, true);
-        if (written < 0)
-            ERR_CLEANUP_MSG("raw_write couldn't write to hole at offset %lld", dest_offset + offset);
-
-        // Unaccount for these bytes
-        len_written += written - to_write;
+        OK_OR_CLEANUP_MSG(ptbw_pwrite(&ptbw, zeros, to_write, dest_offset + offset),
+                          "raw_write couldn't write to hole at offset %lld", dest_offset + offset);
     }
+
+    OK_OR_CLEANUP_MSG(ptbw_flush(&ptbw), "raw_write couldn't write last block");
 
     if (len_written != expected_length) {
         if (len_written == 0)
@@ -335,16 +338,12 @@ int raw_memset_run(struct fun_context *fctx)
     off_t len_written = 0;
     off_t offset;
     for (offset = 0; offset < count; offset += block_size) {
-        ssize_t written = block_cache_pwrite(fctx->output, buffer, block_size, dest_offset + offset, true);
-        if (written < 0)
-            ERR_RETURN("raw_memset couldn't write %d bytes to offset %lld", block_size, dest_offset + offset);
+        OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, block_size, dest_offset + offset, true),
+                         "raw_memset couldn't write %d bytes to offset %lld", block_size, dest_offset + offset);
 
-        len_written += written;
-        progress_report(fctx->progress, written);
+        len_written += block_size;
+        progress_report(fctx->progress, block_size);
     }
-
-    if (len_written != count)
-        ERR_RETURN("raw_memset wrote %lld bytes, but should have written %lld", len_written, count);
 
     return 0;
 }
@@ -568,7 +567,6 @@ int fat_rm_compute_progress(struct fun_context *fctx)
 int fat_rm_run(struct fun_context *fctx)
 {
     off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
-        return -1;
 
     bool file_must_exist = (fctx->argv[0][6] == '!');
     OK_OR_RETURN(fatfs_rm(fctx->output, block_offset, fctx->argv[0], fctx->argv[2], file_must_exist));
@@ -698,9 +696,8 @@ int mbr_write_run(struct fun_context *fctx)
 
     OK_OR_RETURN(mbr_create_cfg(mbrsec, buffer));
 
-    ssize_t written = block_cache_pwrite(fctx->output, buffer, 512, 0, false);
-    if (written != 512)
-        ERR_RETURN("unexpected error writing mbr: %s", strerror(errno));
+    OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, 512, 0, false),
+                     "unexpected error writing mbr: %s", strerror(errno));
 
     progress_report(fctx->progress, 1);
     return 0;
@@ -738,9 +735,8 @@ int uboot_clearenv_run(struct fun_context *fctx)
     OK_OR_CLEANUP(alloc_page_aligned((void **) &buffer, env.env_size));
     OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false);
-    if (written != (ssize_t) env.env_size)
-        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false),
+                      "unexpected error writing uboot environment: %s", strerror(errno));
 
     progress_report(fctx->progress, 1);
 
@@ -792,9 +788,8 @@ int uboot_setenv_run(struct fun_context *fctx)
 
     OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false);
-    if (written != (ssize_t) env.env_size)
-        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false),
+                      "unexpected error writing uboot environment: %s", strerror(errno));
 
     progress_report(fctx->progress, 1);
 
@@ -844,9 +839,8 @@ int uboot_unsetenv_run(struct fun_context *fctx)
 
     OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
-    ssize_t written = block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false);
-    if (written != (ssize_t) env.env_size)
-        ERR_CLEANUP_MSG("unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false),
+                      "unexpected error writing uboot environment: %s", strerror(errno));
 
     progress_report(fctx->progress, 1);
 

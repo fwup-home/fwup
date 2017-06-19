@@ -348,6 +348,12 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
             ERR_CLEANUP_MSG("Resource %s not found in archive", cfg_title(r->resource));
     }
 
+    // Flush any filesystem updates before the on-finish. The on-finish
+    // generally has A/B partition swaps or other critical operations that
+    // assume the prior data has already been written.
+    fatfs_closefs();
+    OK_OR_CLEANUP(block_cache_flush(fctx->output));
+
     fctx->type = FUN_CONTEXT_FINISH;
     OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-finish", NULL, fun_run));
 
@@ -427,13 +433,15 @@ int fwup_apply(const char *fw_filename,
     // Run
     OK_OR_CLEANUP(run_task(&fctx, &pd));
 
+    // Flush everything
+    fatfs_closefs();
+    OK_OR_CLEANUP(block_cache_flush(fctx.output));
+
 cleanup:
-    // Close the file before we report 100% just in case that takes some time (Linux)
+    // Close the file before we report 100% "just in case"
     block_cache_free(fctx.output);
     free(fctx.output);
     fctx.output = NULL;
-
-    sparse_file_free(&pd.sfm);
 
     // Report 100% to the user if successful
     if (rc == 0)
@@ -446,6 +454,7 @@ cleanup:
     if (reading_stdin)
         close(STDIN_FILENO);
 
+    sparse_file_free(&pd.sfm);
     archive_read_free(pd.a);
 
     if (meta_conf_signature)

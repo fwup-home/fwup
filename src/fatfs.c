@@ -458,7 +458,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
     if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (block_cache_pread(output_, buff, BLOCK_SIZE * count, block_offset_ + BLOCK_SIZE * sector) < 0)
+    if (block_cache_pread(output_, buff, BLOCK_SIZE * count, BLOCK_SIZE * (block_offset_ + sector)) < 0)
         return RES_ERROR;
     else
         return 0;
@@ -472,7 +472,7 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
     if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (block_cache_pwrite(output_, buff, BLOCK_SIZE * count, block_offset_ + BLOCK_SIZE * sector, false) < 0)
+    if (block_cache_pwrite(output_, buff, BLOCK_SIZE * count, BLOCK_SIZE * (block_offset_ + sector), false) < 0)
         return RES_ERROR;
     else
         return 0;

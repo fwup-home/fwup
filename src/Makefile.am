@@ -25,6 +25,7 @@ fwup_SOURCES=\
 	mmc_linux.c \
 	mmc_osx.c \
 	mmc_windows.c \
+	pad_to_block_writer.c \
 	progress.c \
 	requirement.c \
 	resources.c \
@@ -51,6 +52,7 @@ fwup_SOURCES=\
 	fwup_verify.h \
 	mbr.h \
 	mmc.h \
+	pad_to_block_writer.h \
 	progress.h \
 	requirement.h \
 	resources.h \

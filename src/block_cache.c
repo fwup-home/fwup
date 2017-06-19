@@ -70,12 +70,18 @@ ssize_t block_cache_clear_valid(struct block_cache *bc, off_t offset, size_t cou
     return count;
 }
 
-ssize_t block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed)
+int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed)
 {
-    return pwrite(bc->fd, buf, count, offset);
+    if (pwrite(bc->fd, buf, count, offset) != count)
+        ERR_RETURN("pwrite");
+
+    return 0;
 }
 
-ssize_t block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset)
+int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset)
 {
-    return pread(bc->fd, buf, count, offset);
+    if (pread(bc->fd, buf, count, offset) != count)
+        ERR_RETURN("pread");
+
+    return 0;
 }

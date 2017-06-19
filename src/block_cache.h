@@ -44,8 +44,8 @@ struct block_cache {
 
 int block_cache_init(struct block_cache *bc, int fd);
 ssize_t block_cache_clear_valid(struct block_cache *bc, off_t offset, size_t count);
-ssize_t block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
-ssize_t block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
+int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
+int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
 int block_cache_flush(struct block_cache *bc);
 int block_cache_free(struct block_cache *bc);
 

@@ -45,7 +45,8 @@ SOURCES += \
     src/progress.c \
     src/mmc_bsd.c \
     src/resources.c \
-    src/block_cache.c
+    src/block_cache.c \
+    src/pad_to_block_writer.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -98,7 +99,8 @@ HEADERS += \
     src/progress.h \
     src/resources.h \
     src/block_cache.h \
-    src/fatfs.h
+    src/fatfs.h \
+    src/pad_to_block_writer.h
 
 OTHER_FILES += \
     fwupdate.conf \
