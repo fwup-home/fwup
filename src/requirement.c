@@ -246,9 +246,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
     OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
 
-    char *buffer;
-    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
-
+    char *buffer = (char *) malloc(env.env_size);
     OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512));
 
     OK_OR_CLEANUP(uboot_env_read(&env, buffer));
@@ -263,7 +261,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free_page_aligned(buffer);
+    free(buffer);
     return rc;
 }
 

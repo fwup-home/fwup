@@ -731,8 +731,7 @@ int uboot_clearenv_run(struct fun_context *fctx)
     if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
-    char *buffer;
-    OK_OR_CLEANUP(alloc_page_aligned((void **) &buffer, env.env_size));
+    char *buffer = (char *) malloc(env.env_size);
     OK_OR_CLEANUP(uboot_env_write(&env, buffer));
 
     OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * 512, false),
@@ -742,8 +741,7 @@ int uboot_clearenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    if (buffer)
-        free_page_aligned(buffer);
+    free(buffer);
     return rc;
 }
 
@@ -775,8 +773,7 @@ int uboot_setenv_run(struct fun_context *fctx)
     if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
-    char *buffer;
-    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
+    char *buffer = (char *) malloc(env.env_size);
 
     OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512),
                       "unexpected error reading uboot environment: %s", strerror(errno));
@@ -794,7 +791,7 @@ int uboot_setenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free_page_aligned(buffer);
+    free(buffer);
     return rc;
 }
 
@@ -826,9 +823,7 @@ int uboot_unsetenv_run(struct fun_context *fctx)
     if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
-    char *buffer;
-    OK_OR_CLEANUP(alloc_page_aligned((void**) &buffer, env.env_size));
-
+    char *buffer = (char *) malloc(env.env_size);
     OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512),
                       "unexpected error reading uboot environment: %s", strerror(errno));
 
@@ -845,7 +840,7 @@ int uboot_unsetenv_run(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
-    free_page_aligned(buffer);
+    free(buffer);
     return rc;
 }
 
