@@ -54,6 +54,7 @@ DECLARE_FUN(trim);
 DECLARE_FUN(uboot_clearenv);
 DECLARE_FUN(uboot_setenv);
 DECLARE_FUN(uboot_unsetenv);
+DECLARE_FUN(uboot_recover);
 DECLARE_FUN(error);
 DECLARE_FUN(info);
 
@@ -85,6 +86,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(uboot_clearenv),
     FUN_INFO(uboot_setenv),
     FUN_INFO(uboot_unsetenv),
+    FUN_INFO(uboot_recover),
     FUN_INFO(error),
     FUN_INFO(info)
 };
@@ -732,6 +734,58 @@ int trim_run(struct fun_context *fctx)
 
     progress_report(fctx->progress, count);
     return 0;
+}
+
+int uboot_recover_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("uboot_recover requires a uboot-environment reference");
+
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+
+    if (!ubootsec)
+        ERR_RETURN("uboot_recover can't find uboot-environment reference");
+
+    return 0;
+}
+int uboot_recover_compute_progress(struct fun_context *fctx)
+{
+    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    return 0;
+}
+int uboot_recover_run(struct fun_context *fctx)
+{
+    int rc = 0;
+    const char *uboot_env_name = fctx->argv[1];
+    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    struct uboot_env env;
+    struct uboot_env clean_env;
+
+    if (uboot_env_create_cfg(ubootsec, &env) < 0 ||
+        uboot_env_create_cfg(ubootsec, &clean_env) < 0)
+        return -1;
+
+    char *buffer = malloc(env.env_size);
+    OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE),
+                      "unexpected error reading uboot environment: %s", strerror(errno));
+
+    if (uboot_env_read(&env, buffer) < 0) {
+        // Corrupt, so make a clean environment and write it.
+
+        OK_OR_CLEANUP(uboot_env_write(&clean_env, buffer));
+
+        OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE, false),
+                      "unexpected error writing uboot environment: %s", strerror(errno));
+    }
+
+    progress_report(fctx->progress, 1);
+
+cleanup:
+    uboot_env_free(&env);
+    uboot_env_free(&clean_env);
+    free(buffer);
+    return rc;
 }
 
 int uboot_clearenv_validate(struct fun_context *fctx)

@@ -25,6 +25,9 @@
       writes.
     * `--enable-trim` option to enable the sending of hardware TRIM commands to
       devices that support them.
+    * Added uboot_recover command for optionally re-initialize corrupt or
+      uninitialized uboot environments. This is useful for adding u-boot
+      environment blocks to devices without them as is being done with Nerves.
 
   * Bug fixes
     * Fix segfault if a bad value is specified in the u-boot environment block.

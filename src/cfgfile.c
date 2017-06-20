@@ -368,6 +368,7 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("mbr_write", CB), \
     CFG_FUNC("trim", CB), \
     CFG_FUNC("uboot_clearenv", CB), \
+    CFG_FUNC("uboot_recover", CB), \
     CFG_FUNC("uboot_setenv", CB), \
     CFG_FUNC("uboot_unsetenv", CB), \
     CFG_FUNC("error", CB), \

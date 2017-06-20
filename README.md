@@ -419,10 +419,10 @@ mbr mbr-a {
 }
 ```
 
-## U-boot environment
+## U-Boot environment
 
-For systems using the U-boot bootloader, some support is included for modifying
-U-boot environment blocks. In order to take advantage of this, you must declare
+For systems using the U-Boot bootloader, some support is included for modifying
+U-Boot environment blocks. In order to take advantage of this, you must declare
 a `uboot-environment` section at the top level that describes how the
 environment block:
 
@@ -433,14 +433,14 @@ uboot-environment my_uboot_env {
 }
 ```
 
-See the functions in the task section for getting and setting U-boot variables.
+See the functions in the task section for getting and setting U-Boot variables.
 
-NOTE: Currently, I've only implemented support for U-boot environments that I
+NOTE: Currently, I've only implemented support for U-Boot environments that I
 use. Notably, this doesn't support redundant environments, big endian targets,
 and writes to raw NAND parts. Please consider contributing back support for
 these if you use them.
 
-If `fwup`'s U-boot support does not meet your needs, it is always possible to
+If `fwup`'s U-Boot support does not meet your needs, it is always possible to
 create environment images using the `mkenvimage` utility and `raw_write` them
 to the proper locations. This is probably more appropriate when setting lots of
 variables.
@@ -463,7 +463,7 @@ require-fat-file-exists(block_offset, filename)    | 0.7.0 | Require that a file
 require-fat-file-match(block_offset, filename, pattern) | 0.14.0 | Require that filename exists and that pattern matches bytes inside of the file
 require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the block offset of a partition be the specified value
 require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified device (e.g., "/dev/mmcblk0p1")
-require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-boot environment
+require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-Boot environment
 
 *More constraints to be added as needed*
 
@@ -504,6 +504,7 @@ mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset)                 | 0.1.0 | Write the resource to the specified block offset
 trim(block_offset, count)               | 0.15.0 | Discard any data previously written to the range. TRIM requests are issued to the device if --enable-trim is passed to fwup.
+uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is corrupt, reinitialize it. If not, then do nothing
 uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
 uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name, value) | 0.10.0 | Unset the specified U-boot variable
