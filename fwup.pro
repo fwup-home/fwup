@@ -30,7 +30,6 @@ SOURCES += \
     src/fwup_sign.c \
     src/fwup_verify.c \
     src/block_writer.c \
-    src/fat_cache.c \
     src/mmc_osx.c \
     src/mmc_linux.c \
     src/requirement.c \
@@ -87,7 +86,6 @@ HEADERS += \
     src/fwup_sign.h \
     src/fwup_verify.h \
     src/block_writer.h \
-    src/fat_cache.h \
     src/requirement.h \
     src/cfgprint.h \
     src/simple_string.h \

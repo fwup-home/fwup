@@ -146,7 +146,5 @@ int set_environment(const char *key, const char *value);
 // Page aligned memory allocation
 void alloc_page_aligned(void **memptr, size_t size);
 void free_page_aligned(void *memptr);
-ssize_t aligned_pwrite(int fd, const void *buf, size_t count, off_t offset);
-ssize_t aligned_pread(int fd, void *buf, size_t count, off_t offset);
 
 #endif // UTIL_H

@@ -413,9 +413,6 @@ static size_t cached_pagesize = 0;
 static const size_t cached_pagesize = 4096;
 #endif
 
-static void *aligned_buffer = NULL;
-static size_t aligned_buffer_size = 0;
-
 static inline size_t get_pagesize()
 {
 #if HAVE_SYSCONF
@@ -430,23 +427,6 @@ static inline bool is_address_page_aligned(const void *memptr)
 {
     uint64_t addr = (uint64_t) memptr;
     return (addr & (get_pagesize() - 1)) == 0;
-}
-
-static void *get_alignment_buffer(size_t count)
-{
-    if (aligned_buffer) {
-        // Common case: buffer allocated and sufficient size
-        if (aligned_buffer_size > count)
-            return aligned_buffer;
-        else
-            free_page_aligned(aligned_buffer);
-    }
-
-    // Allocate buffer to new size
-    aligned_buffer_size = count;
-    alloc_page_aligned(&aligned_buffer, aligned_buffer_size);
-
-    return aligned_buffer;
 }
 
 void alloc_page_aligned(void **memptr, size_t size)
@@ -480,41 +460,4 @@ void free_page_aligned(void *memptr)
     void *original = *savelocation;
     free(original);
 #endif
-}
-
-/*
- * Run pwrite, but ensure that the buffer is aligned on a page boundary as
- * is required on Linux for raw I/O.
- *
- *     *NOT REENTRANT**
- *
- */
-ssize_t aligned_pwrite(int fd, const void *buf, size_t count, off_t offset)
-{
-    if (!is_address_page_aligned(buf)) {
-        void *newbuf = get_alignment_buffer(count);
-        memcpy(newbuf, buf, count);
-        buf = newbuf;
-    }
-    return pwrite(fd, buf, count, offset);
-}
-
-/*
- * Run pread, but ensure that the buffer is aligned on a page boundary as
- * is required on Linux for raw I/O.
- *
- *     *NOT REENTRANT**
- *
- */
-ssize_t aligned_pread(int fd, void *buf, size_t count, off_t offset)
-{
-    if (!is_address_page_aligned(buf)) {
-        void *newbuf = get_alignment_buffer(count);
-        ssize_t rc = pread(fd, newbuf, count, offset);
-        if (rc > 0)
-            memcpy(buf, newbuf, rc);
-        return rc;
-    } else {
-        return pread(fd, buf, count, offset);
-    }
 }
