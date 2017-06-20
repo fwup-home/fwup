@@ -379,8 +379,6 @@ int fwup_apply(const char *fw_filename,
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.progress = progress;
-    fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
-    block_cache_init(fctx.output, output_fd);
 
     // Report 0 progress before doing anything
     progress_report(fctx.progress, 0);
@@ -422,6 +420,12 @@ int fwup_apply(const char *fw_filename,
 
     OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
 
+    // Initialize the output. Nothing should have been written before now
+    // and waiting to initialize the output until now forces the point.
+    fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
+    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd));
+
+    // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);
     if (fctx.task == 0)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s' in %s. If task is available, the task's requirements may not be met.", task_prefix, fw_filename);
@@ -436,15 +440,23 @@ int fwup_apply(const char *fw_filename,
     fatfs_closefs();
     OK_OR_CLEANUP(block_cache_flush(fctx.output));
 
-cleanup:
-    // Close the file before we report 100% "just in case"
-    block_cache_free(fctx.output);
-    free(fctx.output);
-    fctx.output = NULL;
+    // Success -> report 100%
+    progress_report_complete(fctx.progress);
 
-    // Report 100% to the user if successful
-    if (rc == 0)
-        progress_report_complete(fctx.progress);
+cleanup:
+    // Close the output
+    if (fctx.output) {
+        // Even in the case of an error, flush to disk
+        // This makes failures slightly more predictable in
+        // how they'll turn out since we don't need to think
+        // about the caching.
+        fatfs_closefs();
+        OK_OR_CLEANUP(block_cache_flush(fctx.output));
+
+        block_cache_free(fctx.output);
+        free(fctx.output);
+        fctx.output = NULL;
+    }
 
     // If reading stdin, signal that we're not going to read any more
     // so that pipes can be terminated, etc. libarchive not only doesn't

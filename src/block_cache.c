@@ -12,6 +12,53 @@ static size_t min(size_t a, size_t b)
         return b;
 }
 
+// Trim handling functions
+static void enlarge_trim_bitvector(struct block_cache *bc, size_t ix)
+{
+    // Round up the new length in 4K (aka 4GB chunks)
+    size_t oldlength = bc->trimmed_len;
+    size_t newlength = (ix + 4095) & ~4095;
+    bc->trimmed = realloc(bc->trimmed, newlength);
+    if (bc->trimmed == NULL)
+        fwup_err(EXIT_FAILURE, "realloc");
+    memset(bc->trimmed + oldlength,
+           bc->trimmed_remainder ? 0xff : 00,
+           newlength - oldlength);
+    bc->trimmed_len = newlength;
+}
+
+static bool is_trimmed(struct block_cache *bc, off_t offset)
+{
+    size_t segment_ix = offset / BLOCK_CACHE_SEGMENT_SIZE;
+    size_t bit_ix = segment_ix / 8;
+
+    if (bit_ix >= bc->trimmed_len)
+        return bc->trimmed_remainder;
+
+    int bit = segment_ix & 7;
+    return (bc->trimmed[bit_ix] & (1 << bit)) != 0;
+}
+
+static void clear_trimmed(struct block_cache *bc, off_t offset)
+{
+    size_t segment_ix = offset / BLOCK_CACHE_SEGMENT_SIZE;
+    size_t bit_ix = segment_ix / 8;
+
+    if (bit_ix >= bc->trimmed_len) {
+        // If we're clearing the trim on something that's already not trimmed, then
+        // we don't need to do anything.
+        if (!bc->trimmed_remainder)
+            return;
+
+        // Expand the bit area to hold the new value
+        enlarge_trim_bitvector(bc, bit_ix);
+    }
+
+
+    int bit = segment_ix & 7;
+    bc->trimmed[bit_ix] &= ~(1 << bit);
+}
+
 // Cache bit handling functions
 static inline void set_dirty(struct block_cache_segment *seg, int block)
 {
@@ -56,7 +103,7 @@ static void check_segment_validity(struct block_cache_segment *seg, bool *all_va
     for (size_t i = 0; i < sizeof(seg->flags); i++) {
         uint8_t flags = seg->flags[i];
         andflags = andflags & flags;
-        orflags = andflags | flags;
+        orflags = orflags | flags;
     }
 
     *all_valid = (andflags == 0xaa);
@@ -67,6 +114,10 @@ static inline void set_valid(struct block_cache_segment *seg, int block)
 {
     uint8_t *bits = &seg->flags[block / 4];
     *bits = *bits | (0x2 << (2 * (block & 0x3)));
+}
+static inline void set_all_valid(struct block_cache_segment *seg)
+{
+    memset(seg->flags, 0xaa, sizeof(seg->flags));
 }
 
 static inline bool is_valid(struct block_cache_segment *seg, int block)
@@ -89,6 +140,18 @@ static void init_segment(struct block_cache *bc, off_t offset, struct block_cach
     seg->streamed = true;
 }
 
+static int read_segment(struct block_cache *bc, struct block_cache_segment *seg, void *data)
+{
+    if (is_trimmed(bc, seg->offset)) {
+        // Trimmed, so we'd be reading uninitialized data (in theory), if we called pread.
+        memset(data, 0, BLOCK_CACHE_SEGMENT_SIZE);
+    } else {
+        if (pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
+            ERR_RETURN("pread of %d bytes at offset %llu", BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
+    }
+    return 0;
+}
+
 static int make_segment_valid(struct block_cache *bc, struct block_cache_segment *seg)
 {
     bool all_valid;
@@ -97,12 +160,11 @@ static int make_segment_valid(struct block_cache *bc, struct block_cache_segment
     check_segment_validity(seg, &all_valid, &all_invalid);
     if (all_invalid) {
         // If completely invalid, read it all in. No merging necessary
-        if (pread(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pread");
+        OK_OR_RETURN(read_segment(bc, seg, seg->data));
+        set_all_valid(seg);
     } else if (!all_valid) {
         // Mixed valid/invalid. Need to read to a temporary buffer and merge.
-        if (pread(bc->fd, bc->temp, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pread");
+        OK_OR_RETURN(read_segment(bc, seg, bc->temp));
 
         for (int i = 0; i < BLOCK_CACHE_BLOCKS_PER_SEGMENT; i++) {
             if (!is_valid(seg, i)) {
@@ -126,7 +188,9 @@ static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg
     if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
         ERR_RETURN("pwrite");
 
+    // Block isn't dirty and it's no longer trimmed if it was before.
     clear_all_dirty(seg);
+    clear_trimmed(bc, seg->offset);
 
     return 0;
 }
@@ -145,6 +209,24 @@ int block_cache_init(struct block_cache *bc, int fd)
 
     bc->fd = fd;
     alloc_page_aligned((void **) &bc->temp, BLOCK_CACHE_SEGMENT_SIZE);
+
+    // Initialized to nothing trimmed. I.e. every write that doesn't fall on a
+    // segment boundary is a read/modify/write.
+    bc->trimmed_remainder = false;
+    bc->trimmed_len = 16384; // 16K * 1M/byte = 16G start trimmed area tracking size
+    bc->trimmed = (uint8_t *) malloc(bc->trimmed_len);
+    if (bc->trimmed == NULL)
+        fwup_err(EXIT_FAILURE, "malloc");
+    memset(bc->trimmed, 0, bc->trimmed_len);
+
+    // Set the trim points based on the file size
+    off_t end_offset = lseek(fd, 0, SEEK_END);
+    if (end_offset < 0)
+        ERR_RETURN("lseek to end failed");
+    off_t aligned_end_offset = end_offset & BLOCK_CACHE_SEGMENT_MASK;
+    if (aligned_end_offset != end_offset)
+        fwup_warnx("Updating destination that's not a multiple of the fwup read/write size (%d). Final bytes may be lost.", BLOCK_CACHE_SEGMENT_SIZE);
+    OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset));
 
     return 0;
 }
@@ -233,7 +315,7 @@ static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_
  * @brief Clear out a range in the cache
  *
  * Additionally, mark these blocks so that they don't need to be written to
- * disk. If the format code writes * to them, they'll be marked dirty. However,
+ * disk. If the format code writes to them, they'll be marked dirty. However,
  * if any code tries to read them, they'll get back zeros without any I/O. This
  * is best effort.
  *
@@ -242,10 +324,111 @@ static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_
  * @param count
  * @return
  */
-int block_cache_trim(struct block_cache *bc, off_t offset, size_t count)
+int block_cache_trim(struct block_cache *bc, off_t offset, off_t count)
 {
+    // Force the offset and count to segment boundaries. Since
+    // trimming is best effort, ignore sub boundary areas.
+    // E.g., round the offset up and the count down.
+    off_t aligned_offset = (offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
+    count -= aligned_offset - offset;
+    count = count & BLOCK_CACHE_SEGMENT_MASK;
+    if (count == 0)
+        return 0;
+
+    // Unsigned 32-bits overflows when the offset is 512 TB due to using size_t
+    // below. Anyone who runs into this will enjoy boasting about this bug, so I'll
+    // leave it in.
+    size_t begin_segment_ix = aligned_offset / BLOCK_CACHE_SEGMENT_SIZE;
+    size_t begin_bit_ix = begin_segment_ix / 8;
+    size_t end_segment_ix = begin_segment_ix + count / BLOCK_CACHE_SEGMENT_SIZE;
+    size_t end_bit_ix = end_segment_ix / 8;
+
+    // Check if the trim region needs expanding
+    if (end_bit_ix > bc->trimmed_len) {
+        if (bc->trimmed_remainder) {
+            // If the end is already trimmed, then adjust the marking region
+            end_segment_ix = bc->trimmed_len * 8;
+            end_bit_ix = bc->trimmed_len;
+
+            // Check whether end got trimmed before the beginning.
+            if (begin_bit_ix > end_bit_ix)
+                return 0;
+        } else {
+            // If not, then expand the bit array.
+            enlarge_trim_bitvector(bc, end_bit_ix);
+        }
+    }
+
+    // Set bits
+    if (begin_bit_ix == end_bit_ix) {
+        // Only set a few bits
+        for (size_t bit = begin_segment_ix & 7;
+             bit < (end_segment_ix & 7);
+             bit++) {
+            bc->trimmed[begin_bit_ix] |= (1 << bit);
+        }
+    } else {
+        // Set bits in bulk.
+
+        // Handle the first byte
+        for (size_t bit = begin_segment_ix & 7;
+             bit < 8;
+             bit++) {
+            bc->trimmed[begin_bit_ix] |= (1 << bit);
+        }
+        begin_bit_ix++;
+
+        // Handle any middle bytes
+        if (end_bit_ix > begin_bit_ix)
+            memset(&bc->trimmed[begin_bit_ix], 0xff, end_bit_ix - begin_bit_ix);
+
+        // Handle the last byte
+        for (size_t bit = 0;
+             bit < (end_segment_ix & 7);
+             bit++)
+            bc->trimmed[end_bit_ix] |= (1 << bit);
+    }
+
+    // Trim out anything in the cache
+    for (size_t i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+        struct block_cache_segment *seg = &bc->segments[i];
+        if (seg->in_use && seg->offset >= aligned_offset && seg->offset < aligned_offset + (off_t) count) {
+            if (seg->write_in_progress)
+                ; // TODO wait!!!
+
+            // Return the segment
+            seg->in_use = false;
+        }
+    }
 
     return 0;
+}
+
+/**
+ * @brief Trim everything including and after the specified offset.
+ *
+ * @param bc
+ * @param offset
+ * @return
+ */
+int block_cache_trim_after(struct block_cache *bc, off_t offset)
+{
+    bc->trimmed_remainder = true;
+
+    // Trim out all blocks in the cache.
+    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+        struct block_cache_segment *seg = &bc->segments[i];
+        if (seg->in_use && seg->offset >= offset) {
+            if (seg->write_in_progress)
+                ; // TODO wait!!!
+
+            // Return the segment
+            seg->in_use = false;
+        }
+    }
+
+    // Handle setting the bits for
+    return block_cache_trim(bc, offset, ((off_t) bc->trimmed_len) * 8 * BLOCK_CACHE_SEGMENT_SIZE - offset);
 }
 
 static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segment *seg, const void *buf, size_t count, size_t offset_into_segment, bool streamed)
@@ -270,6 +453,8 @@ static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segme
         // Mark everything valid.
         for (size_t i = 0; i < sizeof(seg->flags); i++)
             seg->flags[i] = 0xaa;
+
+        clear_trimmed(bc, seg->offset);
     } else {
         if (!streamed)
             seg->streamed = false;

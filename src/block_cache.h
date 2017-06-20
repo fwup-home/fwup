@@ -51,10 +51,17 @@ struct block_cache {
 
     // Temporary buffer for reading segments that are partially valid
     uint8_t *temp;
+
+    // Track "trimmed" segments in a bitfield. One bit per segment.
+    // E.g., 128K/bit -> 1M takes represented in 1 byte -> 1G in 1 KB, etc.
+    size_t trimmed_len;
+    uint8_t *trimmed;
+    bool trimmed_remainder; // true if segments after end of bitfield are trimmed
 };
 
 int block_cache_init(struct block_cache *bc, int fd);
-int block_cache_trim(struct block_cache *bc, off_t offset, size_t count);
+int block_cache_trim(struct block_cache *bc, off_t offset, off_t count);
+int block_cache_trim_after(struct block_cache *bc, off_t offset);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
 int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
 int block_cache_flush(struct block_cache *bc);
