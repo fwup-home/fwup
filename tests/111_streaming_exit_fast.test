@@ -26,7 +26,6 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 # the timeout.
 cat $FWFILE /dev/zero | $TIMEOUT 10s $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
-# The firmware file is equivalent to the following dd call
-dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+# Check that the test file ends up in the right spot.
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 512
 

@@ -33,6 +33,7 @@ EOF
 # at the create stage since burning is always supposed to
 # be bit for bit identical.
 NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+echo $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
     echo "The fat_write should have failed."
     exit 1

@@ -14,7 +14,6 @@ create_file() {
 
     dd if=/dev/urandom of=$WORK/$NAME bs=1 count=$SIZE 2>/dev/null
 }
-
 create_file MLO 65572
 create_file u-boot.img 351052
 create_file boot.scr 2308

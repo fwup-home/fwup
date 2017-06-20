@@ -40,12 +40,8 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
-# The firmware file is equivalent to the following dd call
-dd if=$TESTFILE_150K seek=4300000000 of=$WORK/check.bin conv=sync 2>/dev/null
-
-# diffing the files takes too long, so skip to the end
-# where the interesting stuff is
-cmp $WORK/check.bin $IMGFILE 2200000000000 2200000000000
+# Check that the test file got put at the right location
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 2201600000000
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

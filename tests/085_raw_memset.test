@@ -21,7 +21,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # The firmware file is equivalent to the following dd call
 # (The tr translates the zeros from /dev/zero to 0xff bytes)
 dd if=/dev/zero count=512 2>/dev/zero | tr \\000 \\377 | dd seek=1 of=$WORK/check.bin 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+cmp --bytes 262656 $WORK/check.bin $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

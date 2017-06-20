@@ -44,8 +44,8 @@ VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.8 $FWUP_APPLY -a -d $IMGFILE.8 -i $FWFILE.8 -
 VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.9 $FWUP_APPLY -a -d $IMGFILE.9 -i $FWFILE.9 -t complete
 
 # The firmware file is equivalent to the following dd call
-# (The conv=sync makes sure that the output is a multiple of 512 bytes)
-dd if=$FWUP_CREATE seek=0 of=$WORK/check.bin conv=sync 2>/dev/null
+# (The conv=sync makes sure that the output is a multiple of 128K bytes)
+dd if=$FWUP_CREATE seek=0 of=$WORK/check.bin bs=128k conv=sync 2>/dev/null
 cmp $WORK/check.bin $IMGFILE.1
 cmp $WORK/check.bin $IMGFILE.2
 cmp $WORK/check.bin $IMGFILE.3

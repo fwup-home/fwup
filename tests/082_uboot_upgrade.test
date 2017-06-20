@@ -21,7 +21,7 @@ cat >$CONFIG <<EOF
 # | p2: Data (Simulated)        |
 # +-----------------------------+
 
-define(UBOOT_ENV_OFFSET, 4)
+define(UBOOT_ENV_OFFSET, 256)
 define(UBOOT_ENV_COUNT, 2)
 define(ROOTFS_A_PART_OFFSET, 1024)
 define(ROOTFS_A_PART_COUNT, 1024)
@@ -117,25 +117,25 @@ VERIFY_SYSCALLS_CHECKPATH=$WORK/ubootb.bin $FWUP_APPLY -a -d $WORK/ubootb.bin -i
 # Assume that previous tests make sure that the MBR is correct and just
 # copy it over.
 dd if=$IMGFILE of=$WORK/check.bin count=1 2>/dev/null
-dd if=$WORK/uboota.bin seek=4 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$WORK/uboota.bin seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-cmp $WORK/check.bin $IMGFILE
+cmp --bytes 2098176 $WORK/check.bin $IMGFILE
 
 # Now upgrade the IMGFILE file
 # NOTE: The last write should be to the u-boot environment
-VERIFY_SYSCALLS_LAST_WRITE=5 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+VERIFY_SYSCALLS_LAST_WRITE=131072 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 cp $WORK/check.bin $WORK/check-upgraded.bin
-dd if=$WORK/ubootb.bin seek=4 of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
+dd if=$WORK/ubootb.bin seek=256 of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
 dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
-cmp $WORK/check-upgraded.bin $IMGFILE
+cmp --bytes 2098176 $WORK/check-upgraded.bin $IMGFILE
 
 # Upgrade the IMGFILE file again
-VERIFY_SYSCALLS_LAST_WRITE=5 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+VERIFY_SYSCALLS_LAST_WRITE=131072 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 cp $WORK/check-upgraded.bin $WORK/check-upgraded2.bin
-dd if=$WORK/uboota.bin seek=4 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/dev/null
-cmp $WORK/check-upgraded2.bin $IMGFILE
+dd if=$WORK/uboota.bin seek=256 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/dev/null
+cmp --bytes 2098176 $WORK/check-upgraded2.bin $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

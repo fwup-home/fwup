@@ -115,24 +115,21 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
-# The firmware file is equivalent to the following dd calls
-# Assume that previous tests make sure that the MBR is correct and just
-# copy it over.
-dd if=$IMGFILE of=$WORK/check.bin count=1 2>/dev/null
-dd if=$TESTFILE_1K seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-dd if=$TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+# Check that the resources got copied to all of the right places
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152
 
 # Now upgrade the IMGFILE file
 # VERIFY_LAST_WRITE checks that MBR is written last
 VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 VERIFY_SYSCALLS_CHECKPATH=$WORK/mbr_b.bin $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
-cp $WORK/check.bin $WORK/check-upgraded.bin
-dd if=$WORK/mbr_b.bin of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
-dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
-diff $WORK/check-upgraded.bin $IMGFILE
+cmp --bytes 512 $WORK/mbr_b.bin $IMGFILE 0 0         # Updated
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072      # Same
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288  # Same
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 1048576 # Updated
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152     # Same
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

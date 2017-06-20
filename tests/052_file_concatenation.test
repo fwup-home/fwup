@@ -35,13 +35,9 @@ check_meta_conf
 cat $TESTFILE_1K $TESTFILE_150K $TESTFILE_1K_CORRUPT > $WORK/cat.bin
 cmp $WORK/cat.bin $UNZIPDIR/data/TEST
 
-# When checking the output, pad the test result image to a block
-# boundary, since fwup does this automatically.
-dd if=$WORK/cat.bin of=$WORK/cat-blockboundary.bin conv=sync 2>/dev/null
-
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-cmp $IMGFILE $WORK/cat-blockboundary.bin
+cmp --bytes 151024 $WORK/cat.bin $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

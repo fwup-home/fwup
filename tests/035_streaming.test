@@ -25,7 +25,7 @@ cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
 dd if=$TESTFILE_1K seek=1 of=$WORK/check.bin 2>/dev/null
-diff $WORK/check.bin $IMGFILE
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 512
 
 # Try it again, but redirect the input this time
 # NOTE: This fails on Windows due to an fstat call in libarchive

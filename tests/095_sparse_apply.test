@@ -44,11 +44,6 @@ while [ $i -lt 32 ]; do
 done
 SPARSE_MAP="$SPARSE_MAP}"
 
-# Make sure that the fake sparse file is block-sized since it will be used
-# to check fwup's output and fwup only outputs blocks.
-SPARSE_FILE_BLK=$WORK/sparse-blk.bin
-dd if=$SPARSE_FILE bs=512 of=$SPARSE_FILE_BLK conv=sync 2>/dev/null
-
 cat >$CONFIG <<EOF
 file-resource sparsefile {
         host-path = "${COMPACT_FILE}"
@@ -101,7 +96,7 @@ $FWUP_VERIFY -V -i $NEW_FWFILE
 
 # Check that raw_write works with the sparse file
 $FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t raw
-cmp $SPARSE_FILE_BLK $IMGFILE
+cmp --bytes 9234631 $SPARSE_FILE $IMGFILE
 
 # Check that fat_write works with the sparse file
 rm $IMGFILE

@@ -77,4 +77,4 @@ cp $BASE_IMAGE $WORK/check.bin
 dd if=$TESTFILE_4K bs=1k seek=32 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_4K bs=1k seek=64 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
 dd if=$TESTFILE_4K bs=1k seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
-cmp $WORK/check.bin $IMGFILE
+cmp --bytes 1052672 $WORK/check.bin $IMGFILE

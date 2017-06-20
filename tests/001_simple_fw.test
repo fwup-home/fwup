@@ -32,11 +32,11 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
-diff $TESTFILE_1K $UNZIPDIR/data/TEST
+cmp $TESTFILE_1K $UNZIPDIR/data/TEST
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-diff $IMGFILE $TESTFILE_1K
+cmp --bytes 1024 $IMGFILE $TESTFILE_1K
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

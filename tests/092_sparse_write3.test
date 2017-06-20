@@ -70,4 +70,4 @@ $FWUP_VERIFY -V -i $FWFILE
 
 # Apply it and check that the output compares the same as the input
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-cmp $SPARSE_FILE $IMGFILE
+cmp --bytes 28098560 $SPARSE_FILE $IMGFILE
