@@ -163,8 +163,8 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     // Try to read the MBR. This won't work if the output
     // isn't seekable, but that's ok, since this constraint would
     // fail anyway.
-    uint8_t buffer[512];
-    if (block_cache_pread(fctx->output, buffer, 512, 0) < 0)
+    uint8_t buffer[FWUP_BLOCK_SIZE];
+    if (block_cache_pread(fctx->output, buffer, FWUP_BLOCK_SIZE, 0) < 0)
         return -1;
 
     struct mbr_partition partitions[4];
@@ -247,7 +247,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
     OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
 
     char *buffer = (char *) malloc(env.env_size);
-    OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * 512));
+    OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE));
 
     OK_OR_CLEANUP(uboot_env_read(&env, buffer));
 

@@ -81,7 +81,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
  * @brief fatfs_mkfs Make a new FAT filesystem
  * @param block_writer the file to contain the raw filesystem data
  * @param block_offset the offset within fatfp for where to start
- * @param block_count how many 512 byte blocks
+ * @param block_count how many FWUP_BLOCK_SIZE blocks
  * @return 0 on success
  */
 int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_count)
@@ -98,7 +98,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     // to them, they'll be marked dirty. However, if any code tries to
     // read them, they'll get back zeros without any I/O. This is best
     // effort.
-    OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * BLOCK_SIZE, block_count * BLOCK_SIZE),
+    OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * FWUP_BLOCK_SIZE, block_count * FWUP_BLOCK_SIZE),
                      "Error trimming blocks affacted by fat_mkfs");
 
     // The third parameter is the cluster size. We set it low so
@@ -116,7 +116,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     // NOTE3: Specify FM_SFD (super-floppy disk) to avoid fatfs wanting to create
     // a master boot record.
     char buffer[_MAX_SS];
-    CHECK("fat_mkfs", NULL, f_mkfs("", FM_SFD|FM_FAT|FM_FAT32, 512, buffer, sizeof(buffer)));
+    CHECK("fat_mkfs", NULL, f_mkfs("", FM_SFD|FM_FAT|FM_FAT32, FWUP_BLOCK_SIZE, buffer, sizeof(buffer)));
 
     return 0;
 }
@@ -405,7 +405,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset,const char *file
 
             // Write zeros.
             DWORD zero_count = desired_offset - f_tell(&fil_);
-            char zero_buffer[512];
+            char zero_buffer[FWUP_BLOCK_SIZE];
             memset(zero_buffer, 0, sizeof(zero_buffer));
             while (zero_count) {
                 DWORD btw = (zero_count < sizeof(zero_buffer) ? zero_count : sizeof(zero_buffer));
@@ -459,7 +459,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
     if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (block_cache_pread(output_, buff, BLOCK_SIZE * count, BLOCK_SIZE * (block_offset_ + sector)) < 0)
+    if (block_cache_pread(output_, buff, FWUP_BLOCK_SIZE * count, FWUP_BLOCK_SIZE * (block_offset_ + sector)) < 0)
         return RES_ERROR;
     else
         return 0;
@@ -473,7 +473,7 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
     if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    if (block_cache_pwrite(output_, buff, BLOCK_SIZE * count, BLOCK_SIZE * (block_offset_ + sector), false) < 0)
+    if (block_cache_pwrite(output_, buff, FWUP_BLOCK_SIZE * count, FWUP_BLOCK_SIZE * (block_offset_ + sector), false) < 0)
         return RES_ERROR;
     else
         return 0;

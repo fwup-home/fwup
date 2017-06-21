@@ -168,8 +168,8 @@ static int make_segment_valid(struct block_cache *bc, struct block_cache_segment
 
         for (int i = 0; i < BLOCK_CACHE_BLOCKS_PER_SEGMENT; i++) {
             if (!is_valid(seg, i)) {
-                size_t offset = i * BLOCK_SIZE;
-                memcpy(seg->data + offset, bc->temp + offset, BLOCK_SIZE);
+                size_t offset = i * FWUP_BLOCK_SIZE;
+                memcpy(seg->data + offset, bc->temp + offset, FWUP_BLOCK_SIZE);
                 set_valid(seg, i);
             }
         }
@@ -539,8 +539,8 @@ static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segme
     memcpy(&seg->data[offset_into_segment], buf, count);
 
     // Mark everything that was written as dirty
-    int block_start = offset_into_segment / BLOCK_SIZE;
-    int block_end = block_start + count / BLOCK_SIZE;
+    int block_start = offset_into_segment / FWUP_BLOCK_SIZE;
+    int block_end = block_start + count / FWUP_BLOCK_SIZE;
     for (int i = block_start; i < block_end; i++)
         set_dirty(seg, i);
 

@@ -204,11 +204,11 @@ static int add_file_resource(struct archive *a,
         if (assertions->assert_gte >= 0 &&
                 !(total_len >= assertions->assert_gte))
             ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be >= %d bytes (%d blocks)",
-                            local_paths, total_len, assertions->assert_gte, assertions->assert_gte / 512);
+                            local_paths, total_len, assertions->assert_gte, assertions->assert_gte / FWUP_BLOCK_SIZE);
         if (assertions->assert_lte >= 0 &&
                 !(total_len <= assertions->assert_lte))
             ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be <= %d bytes (%d blocks)",
-                            local_paths, total_len, assertions->assert_lte, assertions->assert_lte / 512);
+                            local_paths, total_len, assertions->assert_lte, assertions->assert_lte / FWUP_BLOCK_SIZE);
     }
 
     char archive_path[FWFILE_MAX_ARCHIVE_PATH];
@@ -273,8 +273,8 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
         const char *hostpath = cfg_getstr(sec, "host-path");
         if (hostpath) {
             struct fwfile_assertions assertions;
-            assertions.assert_lte = cfg_getint(sec, "assert-size-lte") * 512;
-            assertions.assert_gte = cfg_getint(sec, "assert-size-gte") * 512;
+            assertions.assert_lte = cfg_getint(sec, "assert-size-lte") * FWUP_BLOCK_SIZE;
+            assertions.assert_gte = cfg_getint(sec, "assert-size-gte") * FWUP_BLOCK_SIZE;
 
             OK_OR_CLEANUP(sparse_file_get_map_from_resource(sec, &sfm));
 

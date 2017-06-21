@@ -28,7 +28,7 @@ int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
 {
     output->block_offset = cfg_getint(cfg, "block-offset");
     output->block_count = cfg_getint(cfg, "block-count");
-    output->env_size = output->block_count * 512;
+    output->env_size = output->block_count * FWUP_BLOCK_SIZE;
     output->vars = NULL;
 
     // This condition should only be hit if the .fw file was manually

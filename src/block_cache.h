@@ -20,7 +20,7 @@
 // writes will be aligned to that size.
 #define BLOCK_CACHE_SEGMENT_SIZE       (128*1024) // This is also the read/write write size
 #define BLOCK_CACHE_NUM_SEGMENTS       64         // 8 MB cache
-#define BLOCK_CACHE_BLOCKS_PER_SEGMENT (BLOCK_CACHE_SEGMENT_SIZE / BLOCK_SIZE)
+#define BLOCK_CACHE_BLOCKS_PER_SEGMENT (BLOCK_CACHE_SEGMENT_SIZE / FWUP_BLOCK_SIZE)
 #define BLOCK_CACHE_SEGMENT_MASK       (~(BLOCK_CACHE_SEGMENT_SIZE - 1))
 
 struct block_cache_segment {

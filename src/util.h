@@ -56,6 +56,8 @@ extern bool fwup_verbose;
 
 #define INFO(MSG, ...) do { if (fwup_verbose) fprintf(stderr, MSG, ## __VA_ARGS__); } while (0)
 
+#define FWUP_BLOCK_SIZE (512)
+
 #define ONE_KiB  (1024LL)
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)

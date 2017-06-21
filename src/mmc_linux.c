@@ -63,7 +63,7 @@ static off_t mmc_device_size_sysfs(const char *sysfspath)
     if (rc <= 0)
         return 0;
 
-    return strtoll(sizestr, NULL, 0) * 512;
+    return strtoll(sizestr, NULL, 0) * FWUP_BLOCK_SIZE;
 }
 
 /**
@@ -292,7 +292,7 @@ int mmc_umount_all(const char *mmc_device)
     int todo_ix = 0;
     int ultimate_rc = 0;
 
-    char line[512] = {0};
+    char line[FWUP_BLOCK_SIZE] = {0};
     while (!feof(fp) &&
             fgets(line, sizeof(line), fp)) {
         char devname[64];

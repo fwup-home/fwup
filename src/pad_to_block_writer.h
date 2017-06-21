@@ -9,7 +9,7 @@ struct pad_to_block_writer
 {
     struct block_cache *output;
 
-    uint8_t buffer[BLOCK_SIZE];
+    uint8_t buffer[FWUP_BLOCK_SIZE];
     size_t index;
     off_t offset;
 };

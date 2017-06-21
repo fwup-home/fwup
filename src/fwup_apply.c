@@ -49,8 +49,8 @@ static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *outpu
         // Try to read the MBR. This won't work if the output
         // isn't seekable, but that's ok, since this constraint would
         // fail anyway.
-        uint8_t buffer[512];
-        if (block_cache_pread(output, buffer, 512, 0) < 0)
+        uint8_t buffer[FWUP_BLOCK_SIZE];
+        if (block_cache_pread(output, buffer, FWUP_BLOCK_SIZE, 0) < 0)
             return false;
 
         struct mbr_partition partitions[4];
