@@ -177,6 +177,85 @@ static int make_segment_valid(struct block_cache *bc, struct block_cache_segment
     return 0;
 }
 
+#if USE_PTHREADS
+static void *writer_worker(void *void_bc)
+{
+    struct block_cache *bc = (struct block_cache *) void_bc;
+
+    for (;;) {
+        pthread_mutex_lock(&bc->mutex_to);
+
+        if (bc->seg_to_write) {
+            volatile struct block_cache_segment *seg = bc->seg_to_write;
+
+            if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
+                fwup_errx(EXIT_FAILURE, "Write failed at offset %lu and size %u", seg->offset, BLOCK_CACHE_SEGMENT_SIZE);
+
+            bc->seg_to_write = NULL;
+        }
+
+        if (!bc->running)
+            break;
+
+        pthread_mutex_unlock(&bc->mutex_back);
+    }
+    return NULL;
+}
+static int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    // Wait for the writer thread to complete the last set of writes
+    // before starting new ones.
+    pthread_mutex_lock(&bc->mutex_back);
+    bc->seg_to_write = seg;
+    pthread_mutex_unlock(&bc->mutex_to);
+
+    return 0;
+}
+static void wait_for_write_completion(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    if (bc->seg_to_write == seg) {
+        // Wait for write thread to finish
+        pthread_mutex_lock(&bc->mutex_back);
+
+        // Check that the write completed. Since only one write can be outstanding
+        // at a time, the thread has to be idle now.
+        if (bc->seg_to_write != NULL)
+            fwup_errx(EXIT_FAILURE, "Programming error with async writes. Please report");
+
+        pthread_mutex_unlock(&bc->mutex_back);
+    }
+}
+static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    if (bc->seg_to_write == seg) {
+        wait_for_write_completion(bc, seg);
+    } else {
+        if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
+            ERR_RETURN("pwrite");
+    }
+    return 0;
+}
+#else
+// Single-threaded version
+static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
+        ERR_RETURN("pwrite");
+
+    return 0;
+}
+static inline int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    return do_sync_write(bc, seg);
+}
+static inline void wait_for_write_completion(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    // Not async, so no waits.
+    (void) bc;
+    (void) seg;
+}
+#endif
+
 static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg)
 {
     // Make sure that there's something to do.
@@ -185,8 +264,7 @@ static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg
 
     OK_OR_RETURN(make_segment_valid(bc, seg));
 
-    if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-        ERR_RETURN("pwrite");
+    OK_OR_RETURN(do_sync_write(bc, seg));
 
     // Block isn't dirty and it's no longer trimmed if it was before.
     clear_all_dirty(seg);
@@ -204,8 +282,6 @@ static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg
 int block_cache_init(struct block_cache *bc, int fd)
 {
     memset(bc, 0, sizeof(struct block_cache));
-
-    OK_OR_RETURN(block_writer_init(&bc->writer, fd, 120 * 1024, BLOCK_SIZE_LOG2));
 
     bc->fd = fd;
     alloc_page_aligned((void **) &bc->temp, BLOCK_CACHE_SEGMENT_SIZE);
@@ -227,6 +303,17 @@ int block_cache_init(struct block_cache *bc, int fd)
     if (aligned_end_offset != end_offset)
         fwup_warnx("Updating destination that's not a multiple of the fwup read/write size (%d). Final bytes may be lost.", BLOCK_CACHE_SEGMENT_SIZE);
     OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset));
+
+    // Start async writer thread if available
+#if USE_PTHREADS
+    bc->running = true;
+
+    pthread_mutex_init(&bc->mutex_to, NULL);
+    pthread_mutex_lock(&bc->mutex_to);
+    pthread_mutex_init(&bc->mutex_back, NULL);
+    if (pthread_create(&bc->writer_thread, NULL, writer_worker, bc))
+        fwup_errx(EXIT_FAILURE, "pthread_create");
+#endif
 
     return 0;
 }
@@ -250,6 +337,19 @@ int block_cache_flush(struct block_cache *bc)
  */
 int block_cache_free(struct block_cache *bc)
 {
+#if USE_PTHREADS
+    // Wait for the most recent async write to complete and
+    // signal that the thread should exit.
+    pthread_mutex_lock(&bc->mutex_back);
+    bc->running = false;
+    pthread_mutex_unlock(&bc->mutex_to);
+
+    if (pthread_join(bc->writer_thread, NULL))
+        fwup_errx(EXIT_FAILURE, "pthread_join");
+    pthread_mutex_destroy(&bc->mutex_to);
+    pthread_mutex_destroy(&bc->mutex_back);
+#endif
+
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->data) {
@@ -259,7 +359,9 @@ int block_cache_free(struct block_cache *bc)
         }
     }
     free_page_aligned(bc->temp);
+
     bc->temp = NULL;
+    bc->fd = -1;
     return 0;
 }
 
@@ -278,8 +380,8 @@ static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use && seg->offset == offset) {
-            if (seg->write_in_progress)
-                ; // TODO!!!block_writer_wait_for_completion();
+            // Wait for async writes to complete on this segment before use.
+            wait_for_write_completion(bc, seg);
 
             seg->last_access = bc->timestamp++;
             *segment = seg;
@@ -393,8 +495,8 @@ int block_cache_trim(struct block_cache *bc, off_t offset, off_t count)
     for (size_t i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use && seg->offset >= aligned_offset && seg->offset < aligned_offset + (off_t) count) {
-            if (seg->write_in_progress)
-                ; // TODO wait!!!
+            // Wait for writes to complete on this segment before letting it be used again.
+            wait_for_write_completion(bc, seg);
 
             // Return the segment
             seg->in_use = false;
@@ -419,8 +521,8 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset)
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use && seg->offset >= offset) {
-            if (seg->write_in_progress)
-                ; // TODO wait!!!
+            // Wait for writes to complete on this segment before letting it be used again.
+            wait_for_write_completion(bc, seg);
 
             // Return the segment
             seg->in_use = false;
@@ -445,10 +547,7 @@ static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segme
     // Check for the whole block streaming case where the best
     // strategy is to write it to flash immediately
     if (streamed && seg->streamed && is_segment_completely_dirty(seg)) {
-        if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pwrite");
-
-        // TODO: handle async
+        OK_OR_RETURN(do_async_write(bc, seg));
 
         // Mark everything valid.
         for (size_t i = 0; i < sizeof(seg->flags); i++)

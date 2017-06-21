@@ -1,8 +1,19 @@
 #ifndef BLOCK_CACHE_H
 #define BLOCK_CACHE_H
 
+#include "config.h"
 #include "util.h"
-#include "block_writer.h"
+
+// Don't use pthreads on Windows yet.
+#ifndef _WIN32
+#if HAVE_PTHREAD
+#define USE_PTHREADS 1
+#endif
+#endif
+
+#if USE_PTHREADS
+#include <pthread.h>
+#endif
 
 // The segment size defines the minimum read/write size
 // actually made to the output. Additionally, all reads and
@@ -30,9 +41,6 @@ struct block_cache_segment {
     // the actual writes can start.
     bool streamed;
 
-    // True if an asynchronous write is in progress
-    bool write_in_progress;
-
     // Bit fields for determining whether blocks inside the
     // segment are valid (hold the most up-to-date data) and/or
     // dirty (need to be written back to the target image).
@@ -41,12 +49,12 @@ struct block_cache_segment {
 };
 
 struct block_cache {
-    struct block_writer writer;
-
-    uint32_t timestamp;
-
     int fd;
 
+    // Counter for maintaining LRU
+    uint32_t timestamp;
+
+    // All of the cached segments
     struct block_cache_segment segments[BLOCK_CACHE_NUM_SEGMENTS];
 
     // Temporary buffer for reading segments that are partially valid
@@ -57,6 +65,16 @@ struct block_cache {
     size_t trimmed_len;
     uint8_t *trimmed;
     bool trimmed_remainder; // true if segments after end of bitfield are trimmed
+
+    // Asynchronous writes
+#if USE_PTHREADS
+    pthread_t writer_thread;
+    pthread_mutex_t mutex_to;
+    pthread_mutex_t mutex_back;
+
+    volatile bool running;
+    volatile struct block_cache_segment *seg_to_write;
+#endif
 };
 
 int block_cache_init(struct block_cache *bc, int fd);

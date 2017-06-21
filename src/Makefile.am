@@ -4,7 +4,6 @@ bin_PROGRAMS=fwup
 fwup_SOURCES=\
 	archive_open.c \
 	block_cache.c \
-	block_writer.c \
 	cfgfile.c \
 	cfgprint.c \
 	crc32.c \
@@ -35,7 +34,6 @@ fwup_SOURCES=\
 	util.c \
 	archive_open.h \
 	block_cache.h \
-	block_writer.h \
 	cfgfile.h \
 	cfgprint.h \
 	crc32.h \
