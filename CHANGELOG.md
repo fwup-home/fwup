@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.14.4-dev
+## v0.15.0-dev
 
   * Bug fixes
     * Fix segfault if a bad value is specified in the u-boot environment block.
