@@ -33,6 +33,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <linux/fs.h>
+
+#ifndef BLKDISCARD
+#define BLKDISCARD _IO(0x12,119)
+#endif
+
 static int readsysfs(const char *path, char *buffer, int maxlen)
 {
     int fd = open(path, O_RDONLY);
@@ -363,5 +369,16 @@ void mmc_init()
 void mmc_finalize()
 {
 }
+
+int mmc_trim(int fd, off_t offset, off_t count)
+{
+    uint64_t range[2] = {offset, offset + count};
+
+    if (ioctl(fd, BLKDISCARD, &range))
+        fwup_warnx("BLKDISCARD (TRIM command) failed on range %lu to %lu (ignoring)", range[0], range[1]);
+
+    return 0;
+}
+
 
 #endif // __linux__

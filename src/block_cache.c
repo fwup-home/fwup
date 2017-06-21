@@ -1,4 +1,5 @@
 #include "block_cache.h"
+#include "mmc.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -276,10 +277,11 @@ static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg
 /**
  * @brief block_cache_init
  * @param bc
- * @param fd
+ * @param fd the file descriptor of the destination
+ * @param enable_trim true if allowed to issue TRIM commands to the device
  * @return
  */
-int block_cache_init(struct block_cache *bc, int fd)
+int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
 {
     memset(bc, 0, sizeof(struct block_cache));
 
@@ -294,6 +296,7 @@ int block_cache_init(struct block_cache *bc, int fd)
     if (bc->trimmed == NULL)
         fwup_err(EXIT_FAILURE, "malloc");
     memset(bc->trimmed, 0, bc->trimmed_len);
+    bc->hw_trim_enabled = enable_trim;
 
     // Set the trim points based on the file size
     off_t end_offset = lseek(fd, 0, SEEK_END);
@@ -302,7 +305,7 @@ int block_cache_init(struct block_cache *bc, int fd)
     off_t aligned_end_offset = end_offset & BLOCK_CACHE_SEGMENT_MASK;
     if (aligned_end_offset != end_offset)
         fwup_warnx("Updating destination that's not a multiple of the fwup read/write size (%d). Final bytes may be lost.", BLOCK_CACHE_SEGMENT_SIZE);
-    OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset));
+    OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
 
     // Start async writer thread if available
 #if USE_PTHREADS
@@ -422,11 +425,12 @@ static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_
  * is best effort.
  *
  * @param bc
- * @param offset
- * @param count
+ * @param offset the byte offset for where to start
+ * @param count how many bytes to trim
+ * @param hwtrim true to issue a trim command to the memory device
  * @return
  */
-int block_cache_trim(struct block_cache *bc, off_t offset, off_t count)
+int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim)
 {
     // Force the offset and count to segment boundaries. Since
     // trimming is best effort, ignore sub boundary areas.
@@ -503,6 +507,11 @@ int block_cache_trim(struct block_cache *bc, off_t offset, off_t count)
         }
     }
 
+    // Try to issue a trim to the storage device. This is best effort, so if
+    // not supported, it's no big deal.
+    if (bc->hw_trim_enabled && hwtrim)
+        mmc_trim(bc->fd, aligned_offset, count);
+
     return 0;
 }
 
@@ -513,7 +522,7 @@ int block_cache_trim(struct block_cache *bc, off_t offset, off_t count)
  * @param offset
  * @return
  */
-int block_cache_trim_after(struct block_cache *bc, off_t offset)
+int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim)
 {
     bc->trimmed_remainder = true;
 
@@ -530,7 +539,7 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset)
     }
 
     // Handle setting the bits for
-    return block_cache_trim(bc, offset, ((off_t) bc->trimmed_len) * 8 * BLOCK_CACHE_SEGMENT_SIZE - offset);
+    return block_cache_trim(bc, offset, ((off_t) bc->trimmed_len) * 8 * BLOCK_CACHE_SEGMENT_SIZE - offset, hwtrim);
 }
 
 static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segment *seg, const void *buf, size_t count, size_t offset_into_segment, bool streamed)

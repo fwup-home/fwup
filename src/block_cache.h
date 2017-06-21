@@ -65,6 +65,7 @@ struct block_cache {
     size_t trimmed_len;
     uint8_t *trimmed;
     bool trimmed_remainder; // true if segments after end of bitfield are trimmed
+    bool hw_trim_enabled;
 
     // Asynchronous writes
 #if USE_PTHREADS
@@ -77,9 +78,9 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd);
-int block_cache_trim(struct block_cache *bc, off_t offset, off_t count);
-int block_cache_trim_after(struct block_cache *bc, off_t offset);
+int block_cache_init(struct block_cache *bc, int fd, bool enable_trim);
+int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
+int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
 int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
 int block_cache_flush(struct block_cache *bc);

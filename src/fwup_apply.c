@@ -372,7 +372,8 @@ int fwup_apply(const char *fw_filename,
                const char *task_prefix,
                int output_fd,
                struct fwup_progress *progress,
-               const unsigned char *public_key)
+               const unsigned char *public_key,
+               bool enable_trim)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
@@ -423,7 +424,7 @@ int fwup_apply(const char *fw_filename,
     // Initialize the output. Nothing should have been written before now
     // and waiting to initialize the output until now forces the point.
     fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
-    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd));
+    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, enable_trim));
 
     // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);

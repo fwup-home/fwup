@@ -78,8 +78,9 @@ static void print_usage()
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
     printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");
-    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
+    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");    
     printf("  --no-eject Do not eject media after writing firmware\n");
+    printf("  --enable-trim Enable use of the hardware TRIM command\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
     printf("  -F, --framing Apply framing on stdin/stdout\n");
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
@@ -152,6 +153,7 @@ static struct option long_options[] = {
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
     {"no-eject", no_argument,       0, '#'},
+    {"enable-trim", no_argument,    0, '!'},
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"help",     no_argument,       0, 'h'},
@@ -235,7 +237,7 @@ static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const c
         fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, device.path);
         int response = fgetc(stdin);
         if (response != 'y' && response != 'Y')
-            fwup_errx(EXIT_FAILURE, "aborted");
+            fwup_errx(EXIT_FAILURE, "aborted by user");
     }
     return strdup(device.path);
 }
@@ -288,6 +290,7 @@ int main(int argc, char **argv)
 #else
     bool eject_on_success = false;
 #endif
+    bool enable_trim = false;
     bool unmount_first = true;
     bool easy_mode = true;
     bool numeric_progress = false;
@@ -397,6 +400,9 @@ int main(int argc, char **argv)
             print_selected_device();
             exit(EXIT_SUCCESS);
             break;
+        case '!': // --enable-trim
+            enable_trim = true;
+            break;
         case '@': // --version
             print_version();
             exit(EXIT_SUCCESS);
@@ -498,6 +504,11 @@ int main(int argc, char **argv)
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
+
+            if (enable_trim) {
+                fwup_warnx("ignoring --enable_trim since operating on a regular file");
+                enable_trim = false;
+            }
         } else {
             // Attempt to unmount everything using the device to avoid corrupting partitions.
             // For partial updates, this just unmounts everything that can be unmounted. Errors
@@ -533,7 +544,8 @@ int main(int argc, char **argv)
                        task,
                        output_fd,
                        &progress,
-                       public_key) < 0) {
+                       public_key,
+                       enable_trim) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
             fwup_errx(EXIT_FAILURE, "%s", last_error());

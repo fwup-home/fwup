@@ -81,4 +81,13 @@ int mmc_eject(const char *mmc_device);
  */
 int mmc_is_path_on_device(const char *file_path, const char *device_path);
 
+/**
+ * @brief Issue a trim command to the output filesystem
+ * @param fd
+ * @param offset
+ * @param count
+ * @return
+ */
+int mmc_trim(int fd, off_t offset, off_t count);
+
 #endif // MMC_H

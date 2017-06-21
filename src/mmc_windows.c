@@ -240,4 +240,14 @@ int mmc_is_path_on_device(const char *file_path, const char *device_path)
     // Not implemented - I don't think there's a use case for this on Windows.
     return -1;
 }
+
+int mmc_trim(int fd, off_t offset, off_t count)
+{
+    // Not implemented
+    fwup_warnx("TRIM command not implemented.");
+    (void) fd;
+    (void) offset;
+    (void) count;
+    return 0;
+}
 #endif // defined(_WIN32) || defined(__CYGWIN__)

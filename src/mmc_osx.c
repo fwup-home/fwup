@@ -336,4 +336,14 @@ int mmc_is_path_on_device(const char *file_path, const char *device_path)
     (void) device_path;
     return -1;
 }
+
+int mmc_trim(int fd, off_t offset, off_t count)
+{
+    // Not implemented
+    fwup_warnx("TRIM command not implemented.");
+    (void) fd;
+    (void) offset;
+    (void) count;
+    return 0;
+}
 #endif // __APPLE__
