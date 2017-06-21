@@ -406,26 +406,27 @@ int main(int argc, char *argv[])
         errx(EXIT_FAILURE, "open was never called on '%s'", check_pathname);
 
     // Dump statistics
-    fprintf(stderr, "verify-syscalls report\n");
+    fprintf(stderr, "-- verify-syscalls report --\n");
     fprintf(stderr, "Calls to write(): %d\n", write_call_count);
     if (write_call_count > 0) {
-        fprintf(stderr, "Bytes written: %d\n", write_call_bytes);
-        fprintf(stderr, "Averate bytes written/call: %.1f bytes/call\n", ((double) write_call_bytes) / write_call_count);
-        fprintf(stderr, "Last offset written: %ld\n", last_offset_written);
+        fprintf(stderr, " Bytes written: %d\n", write_call_bytes);
+        fprintf(stderr, " Averate bytes written/call: %.1f bytes/call\n", ((double) write_call_bytes) / write_call_count);
+        fprintf(stderr, " Last offset written: %ld\n", last_offset_written);
     }
 
     fprintf(stderr, "Calls to read(): %d\n", read_call_count);
     if (read_call_count > 0) {
-        fprintf(stderr, "Bytes read: %d\n", read_call_bytes);
-        fprintf(stderr, "Averate bytes read/call: %.1f bytes/call\n", ((double) read_call_bytes) / read_call_count);
+        fprintf(stderr, " Bytes read: %d\n", read_call_bytes);
+        fprintf(stderr, " Averate bytes read/call: %.1f bytes/call\n", ((double) read_call_bytes) / read_call_count);
     }
 
     if (verify_last_write_str && last_offset_written != verify_last_write)
-        maybe_err("last block written wasn't %lu. It was %lu", verify_last_write, last_offset_written);
+        maybe_err("Last block written wasn't at offset %lu. It was at %lu!", verify_last_write, last_offset_written);
 
     int exit_status = WEXITSTATUS(status);
     if (exit_status)
         fprintf(stderr, "%s returned %d\n", check_pathname, exit_status);
+    fprintf(stderr, "----------------------------\n");
 
     // Pass on the exit status.
     return exit_status;
