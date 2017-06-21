@@ -50,6 +50,7 @@ DECLARE_FUN(fat_mkdir);
 DECLARE_FUN(fat_setlabel);
 DECLARE_FUN(fat_touch);
 DECLARE_FUN(mbr_write);
+DECLARE_FUN(trim);
 DECLARE_FUN(uboot_clearenv);
 DECLARE_FUN(uboot_setenv);
 DECLARE_FUN(uboot_unsetenv);
@@ -80,6 +81,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_setlabel),
     FUN_INFO(fat_touch),
     FUN_INFO(mbr_write),
+    FUN_INFO(trim),
     FUN_INFO(uboot_clearenv),
     FUN_INFO(uboot_setenv),
     FUN_INFO(uboot_unsetenv),
@@ -327,7 +329,7 @@ int raw_memset_compute_progress(struct fun_context *fctx)
 }
 int raw_memset_run(struct fun_context *fctx)
 {
-    const int block_size = 512;
+    const size_t block_size = 512;
 
     off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * 512;
     int count = strtol(fctx->argv[2], NULL, 0) * 512;
@@ -700,6 +702,36 @@ int mbr_write_run(struct fun_context *fctx)
                      "unexpected error writing mbr: %s", strerror(errno));
 
     progress_report(fctx->progress, 1);
+    return 0;
+}
+
+int trim_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("trim requires a block offset and count");
+
+    CHECK_ARG_UINT64(fctx->argv[1], "trim requires a non-negative integer block offset");
+    CHECK_ARG_UINT64_MAX(fctx->argv[2], INT32_MAX / 512, "trim requires a non-negative integer block count");
+
+    return 0;
+}
+int trim_compute_progress(struct fun_context *fctx)
+{
+    int count = strtol(fctx->argv[2], NULL, 0);
+
+    // Count each byte as a progress unit
+    fctx->progress->total_units += count * 512;
+
+    return 0;
+}
+int trim_run(struct fun_context *fctx)
+{
+    off_t offset = strtoull(fctx->argv[1], NULL, 0) * 512;
+    int count = strtol(fctx->argv[2], NULL, 0) * 512;
+
+    OK_OR_RETURN(block_cache_trim(fctx->output, offset, count));
+
+    progress_report(fctx->progress, count);
     return 0;
 }
 

@@ -137,6 +137,7 @@ TESTS = 001_simple_fw.test \
 	121_missing_file.test \
 	122_missing_file_metadata.test \
 	123_double_fat_write.test \
-	124_uboot_bad_param.test
+	124_uboot_bad_param.test \
+	125_trimmed_upgrade.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

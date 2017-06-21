@@ -1,0 +1,143 @@
+#!/bin/sh
+
+#
+# Write a firmware image and then test upgrading it.
+# This is like test 039, but it has a bunch of trim
+# calls.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | p1: Boot (Simulated)        |
+# +-----------------------------+
+# | p2*: Rootfs A (Simulated)   |
+# +-----------------------------+
+# | p2*: Rootfs B (Simulated)   |
+# +-----------------------------+
+# | p3: Data (Simulated)        |
+# +-----------------------------+
+
+define(BOOT_PART_OFFSET, 256) # at offset 128K
+define(BOOT_PART_COUNT, 256)
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+define(APP_PART_OFFSET, 4096)
+define(APP_PART_COUNT, 1024)
+
+file-resource boot.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource data.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.stuff {
+        host-path = "${TESTFILE_150K}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+mbr mbr-b {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+
+        trim(\${APP_PART_OFFSET}, \${APP_PART_COUNT})
+        trim(\${ROOTFS_A_PART_OFFSET}, \${ROOTFS_A_PART_COUNT})
+        trim(\${ROOTFS_B_PART_OFFSET}, \${ROOTFS_B_PART_COUNT})
+    }
+    on-resource boot.stuff { raw_write(\${BOOT_PART_OFFSET}) }
+    on-resource data.stuff { raw_write(\${APP_PART_OFFSET}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_B_PART_OFFSET})
+    on-init { trim(\${ROOTFS_A_PART_OFFSET}, \${ROOTFS_A_PART_COUNT}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+    on-finish { mbr_write(mbr-a) }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_A_PART_OFFSET})
+    on-init { trim(\${ROOTFS_B_PART_OFFSET}, \${ROOTFS_B_PART_COUNT}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+    on-finish { mbr_write(mbr-b) }
+}
+
+# This task is just needed to help support the unit test
+task dump_mbr_b {
+    on-init {
+        mbr_write(mbr-b)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that the resources got copied to all of the right places
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152
+
+# Now upgrade the IMGFILE file
+# VERIFY_LAST_WRITE checks that MBR is written last
+VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+VERIFY_SYSCALLS_CHECKPATH=$WORK/mbr_b.bin $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
+cmp --bytes 512 $WORK/mbr_b.bin $IMGFILE 0 0         # Updated
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072      # Same
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288  # Same
+cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 1048576 # Updated
+cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152     # Same
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
