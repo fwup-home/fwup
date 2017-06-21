@@ -2,7 +2,6 @@
 #include "block_cache.h"
 
 #include <assert.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
