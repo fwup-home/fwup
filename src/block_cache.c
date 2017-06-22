@@ -72,12 +72,6 @@ static void clear_all_dirty(struct block_cache_segment *seg)
     for (size_t i = 0; i < sizeof(seg->flags); i++)
         seg->flags[i] &= 0xaa;
 }
-
-static inline bool is_dirty(struct block_cache_segment *seg, int block)
-{
-    return (seg->flags[block / 4] & (0x1 << (2 * (block & 0x3)))) != 0;
-}
-
 static bool is_segment_dirty(struct block_cache_segment *seg)
 {
     uint8_t orflags = 0;
@@ -87,7 +81,6 @@ static bool is_segment_dirty(struct block_cache_segment *seg)
     // Check if any dirty bit was set.
     return (orflags & 0x55) != 0;
 }
-
 static bool is_segment_completely_dirty(struct block_cache_segment *seg)
 {
     uint8_t andflags = 0x55;
