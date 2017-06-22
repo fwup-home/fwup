@@ -2,6 +2,30 @@
 
 ## v0.15.0-dev
 
+  * Completely rewritten caching layer. This has the following improvements;
+    * OS caching no longer used on Linux. Direct I/O is used now with the
+      caching internal to fwup. For large archives, this results in about
+      a 10% performance improvement. More importantly, fwup can provide more
+      confidence that the final write to swap A/B partitions actually happens
+      last.
+    * Flash erase block aligned writes - currently hardcoded to 128 KB. This may
+      be helpful for some devices even though it doesn't appear to improve
+      performance.
+    * One cache - previously there were limited ones for FAT operations and raw
+      writes. This removed some code and the new implementation is simpler.
+    * Support for discarding unused blocks and hardware TRIM
+    * Unit tests now validate read and write syscalls for alignment, size and
+      final order on Linux using ptrace.
+    * The progress indicator now moves more linearly rather than racing to 99%
+      and hanging for a while.
+
+  * New features
+    * trim() command to discard storage regions. This avoids read/modify/write
+      operations from being issued by fwup on smaller than erase-block sized
+      writes.
+    * `--enable-trim` option to enable the sending of hardware TRIM commands to
+      devices that support them.
+
   * Bug fixes
     * Fix segfault if a bad value is specified in the u-boot environment block.
     * Silence eject failure warning on OSX that appears to be harmless. Fixes
