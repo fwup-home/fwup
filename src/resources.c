@@ -66,6 +66,7 @@ int rlist_get_from_task(cfg_t *cfg, cfg_t *task, struct resource_list **resource
         const char *resource_name = cfg_title(onresource);
         cfg_t *resource = cfg_gettsec(cfg, "file-resource", resource_name);
         if (resource == NULL) {
+            free(new_node);
             rlist_free(list);
             ERR_RETURN("Resource '%s' used, but metadata is missing. Archive is corrupt.", resource_name);
         }
