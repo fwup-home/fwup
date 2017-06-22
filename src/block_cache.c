@@ -190,7 +190,7 @@ static void *writer_worker(void *void_bc)
             volatile struct block_cache_segment *seg = bc->seg_to_write;
 
             if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-                fwup_errx(EXIT_FAILURE, "Write failed at offset %lu and size %u", seg->offset, BLOCK_CACHE_SEGMENT_SIZE);
+                fwup_errx(EXIT_FAILURE, "Write failed at offset %llu and size %u", seg->offset, BLOCK_CACHE_SEGMENT_SIZE);
 
             bc->seg_to_write = NULL;
         }
