@@ -452,7 +452,7 @@ cleanup:
         // how they'll turn out since we don't need to think
         // about the caching.
         fatfs_closefs();
-        OK_OR_CLEANUP(block_cache_flush(fctx.output));
+        block_cache_flush(fctx.output); // Ignore errors
 
         block_cache_free(fctx.output);
         free(fctx.output);

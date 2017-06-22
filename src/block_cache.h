@@ -75,6 +75,7 @@ struct block_cache {
 
     volatile bool running;
     volatile struct block_cache_segment *seg_to_write;
+    volatile off_t bad_offset; // set if pwrite fails asynchronously
 #endif
 };
 

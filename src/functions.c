@@ -265,8 +265,8 @@ int raw_write_run(struct fun_context *fctx)
 
         crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
 
-        OK_OR_CLEANUP_MSG(ptbw_pwrite(&ptbw, buffer, len, dest_offset + offset),
-                          "raw_write couldn't write %d bytes to offset %lld", len, dest_offset + offset);
+        OK_OR_CLEANUP(ptbw_pwrite(&ptbw, buffer, len, dest_offset + offset));
+
         len_written += len;
         progress_report(fctx->progress, len);
     }
@@ -281,11 +281,10 @@ int raw_write_run(struct fun_context *fctx)
         if (ending_hole < to_write)
             to_write = ending_hole;
         off_t offset = sparse_file_size(&sfm) - to_write;
-        OK_OR_CLEANUP_MSG(ptbw_pwrite(&ptbw, zeros, to_write, dest_offset + offset),
-                          "raw_write couldn't write to hole at offset %lld", dest_offset + offset);
+        OK_OR_CLEANUP(ptbw_pwrite(&ptbw, zeros, to_write, dest_offset + offset));
     }
 
-    OK_OR_CLEANUP_MSG(ptbw_flush(&ptbw), "raw_write couldn't write last block");
+    OK_OR_CLEANUP(ptbw_flush(&ptbw));
 
     if (len_written != expected_length) {
         if (len_written == 0)

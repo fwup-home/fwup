@@ -190,7 +190,7 @@ static void *writer_worker(void *void_bc)
             volatile struct block_cache_segment *seg = bc->seg_to_write;
 
             if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-                fwup_errx(EXIT_FAILURE, "Write failed at offset %llu and size %u", seg->offset, BLOCK_CACHE_SEGMENT_SIZE);
+                bc->bad_offset = seg->offset;
 
             bc->seg_to_write = NULL;
         }
@@ -202,6 +202,15 @@ static void *writer_worker(void *void_bc)
     }
     return NULL;
 }
+static int check_async_error(struct block_cache *bc)
+{
+    if (bc->bad_offset >= 0) {
+        off_t bad_offset = bc->bad_offset;
+        bc->bad_offset = -1;
+        ERR_RETURN("write failed at offset %llu. Check media size.", bad_offset);
+    }
+    return 0;
+}
 static int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
     // Wait for the writer thread to complete the last set of writes
@@ -210,7 +219,9 @@ static int do_async_write(struct block_cache *bc, struct block_cache_segment *se
     bc->seg_to_write = seg;
     pthread_mutex_unlock(&bc->mutex_to);
 
-    return 0;
+    // NOTE: this check is best effort. If it catches something it will almost certainly
+    //       be a previous write.
+    return check_async_error(bc);
 }
 static void wait_for_write_completion(struct block_cache *bc, struct block_cache_segment *seg)
 {
@@ -232,16 +243,18 @@ static inline int do_sync_write(struct block_cache *bc, struct block_cache_segme
         wait_for_write_completion(bc, seg);
     } else {
         if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pwrite");
+            ERR_RETURN("write failed at offset %llu. Check media size.", seg->offset);
     }
-    return 0;
+
+    // Poll for a previous asynchronous error
+    return check_async_error(bc);
 }
 #else
 // Single-threaded version
 static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
     if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-        ERR_RETURN("pwrite");
+        ERR_RETURN("write failed at offset %llu. Check media size.", seg->offset);
 
     return 0;
 }
@@ -263,15 +276,20 @@ static int flush_segment(struct block_cache *bc, struct block_cache_segment *seg
     if (!seg->in_use || !is_segment_dirty(seg))
         return 0;
 
-    OK_OR_RETURN(make_segment_valid(bc, seg));
+    // Try to write the segment out. If it is partial, do a read/modify/write
+    int rc = 0;
+    OK_OR_CLEANUP(make_segment_valid(bc, seg));
+    OK_OR_CLEANUP(do_sync_write(bc, seg));
 
-    OK_OR_RETURN(do_sync_write(bc, seg));
-
-    // Block isn't dirty and it's no longer trimmed if it was before.
+cleanup:
+    // On success, the block isn't dirty and it's no longer trimmed.
+    // On error, the logic is to do the same thing since we don't want this
+    // block repeatedly stuck dirty and hopelessly retried. Hopefully the error
+    // gets handled by the caller of fwup to take appropriate action, though.
     clear_all_dirty(seg);
     clear_trimmed(bc, seg->offset);
 
-    return 0;
+    return rc;
 }
 
 /**
@@ -310,6 +328,7 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     // Start async writer thread if available
 #if USE_PTHREADS
     bc->running = true;
+    bc->bad_offset = -1;
 
     pthread_mutex_init(&bc->mutex_to, NULL);
     pthread_mutex_lock(&bc->mutex_to);
@@ -323,10 +342,17 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
 
 int block_cache_flush(struct block_cache *bc)
 {
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++)
-        OK_OR_RETURN(flush_segment(bc, &bc->segments[i]));
+    int rc = 0;
+    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+        // If one block has an error, attempt to flush the
+        // others. This is useful for the "too small media"
+        // issue where the on-error handling can do some
+        // recovery so long as it can run.
+        if (flush_segment(bc, &bc->segments[i]) < 0)
+            rc = -1;
+    }
 
-    return 0;
+    return rc;
 }
 
 /**
