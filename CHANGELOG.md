@@ -4,6 +4,8 @@
 
   * Bug fixes
     * Fix segfault if a bad value is specified in the u-boot environment block.
+    * Silence eject failure warning on OSX that appears to be harmless. Fixes
+      #29.
 
 ## v0.14.3
 
