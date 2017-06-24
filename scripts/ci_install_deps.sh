@@ -52,7 +52,7 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
             sudo apt-get update
             sudo apt-get install -qq gcc-mingw-w64-x86-64 wine
             ;;
-        dynamic)
+        singlethread|dynamic)
             sudo apt-get install -qq libarchive-dev
             install_confuse
             install_sodium
@@ -73,6 +73,7 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
 
     esac
 else
+    # OSX
     brew update
 
     # Fix "/usr/local/Library/ENV/4.3/sed: Not such file" errors

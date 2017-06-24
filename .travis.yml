@@ -27,6 +27,9 @@ matrix:
         - os: linux
           compiler: gcc
           env: MODE=dynamic
+        - os: linux
+          compiler: gcc
+          env: MODE=singlethread
         - os: osx
           compiler: clang
           env: MODE=static

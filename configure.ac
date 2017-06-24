@@ -67,8 +67,15 @@ PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive
 PKG_CHECK_MODULES([CONFUSE], [libconfuse >= 2.8], [], AC_MSG_ERROR([Requires libconfuse v2.8 or later]))
 PKG_CHECK_MODULES([SODIUM], [libsodium], [], AC_MSG_ERROR([Requires libsodium]))
 
-# Pthreads are optional
-AX_PTHREAD()
+AC_ARG_WITH([pthreads],
+            [AS_HELP_STRING([--with-pthreads],
+                            [Use pthreads to improve performance especially on slower systems. @<:@default=yes@:>@])],
+                            [],
+                            [with_pthreads=yes])
+AS_CASE(["$with_pthreads"],
+        [yes], [AX_PTHREAD()],
+        [no], [],
+        [AX_PTHREAD()])
 
 # Platform-specific additions
 AS_CASE([$host_os],

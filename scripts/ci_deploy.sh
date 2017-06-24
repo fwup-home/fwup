@@ -9,7 +9,7 @@
 #  TRAVIS_TAG          - The tag name if a tagged build
 #  TRAVIS_BRANCH       - The branch name
 #  TRAVIS_OS_NAME      - "linux" or "osx"
-#  MODE                - "static", "dynamic", or "windows"
+#  MODE                - "static", "dynamic", "singlethread", or "windows"
 #
 
 set -e
@@ -47,6 +47,9 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
         ;;
     linux-raspberrypi)
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+        ;;
+    linux-singlethread)
+        # This is just for testing
         ;;
 esac
 

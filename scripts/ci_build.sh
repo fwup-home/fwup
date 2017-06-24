@@ -26,6 +26,13 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
     linux-dynamic)
         ./configure --enable-gcov
         ;;
+    linux-singlethread)
+        # The verify-syscalls script can't follow threads, so
+        # single thread builds are the only way to verify that
+        # the issued read and write calls follow the expected
+        # alignment, size and order
+        ./configure --enable-gcov --without-pthreads
+        ;;
     osx-dynamic)
         PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
         ;;
