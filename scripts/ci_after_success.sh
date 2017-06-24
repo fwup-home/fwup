@@ -5,7 +5,7 @@
 #
 # Inputs:
 #    TRAVIS_OS_NAME - "linux" or "osx"
-#    BUILD_STATIC   - "true" or "false"
+#    MODE           - "dynamic", etc.
 #
 
 set -e
