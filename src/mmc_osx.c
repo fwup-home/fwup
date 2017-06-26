@@ -262,7 +262,6 @@ struct disk_op_context
 {
     const char *operation;
     bool succeeded;
-    bool warn_on_error;
 };
 
 static void disk_op_done_cb(DADiskRef disk, DADissenterRef dissenter, void *c)
@@ -271,14 +270,13 @@ static void disk_op_done_cb(DADiskRef disk, DADissenterRef dissenter, void *c)
 
     struct disk_op_context *context = (struct disk_op_context *) c;
     if (dissenter) {
-        if (context->warn_on_error) {
-            CFStringRef what = DADissenterGetStatusString(dissenter);
-            fwup_warnx("%s failed: 0x%x (%d) %s)",
-                       context->operation,
-                       DADissenterGetStatus(dissenter),
-                       DADissenterGetStatus(dissenter),
-                       CFStringGetCStringPtr(what, kCFStringEncodingMacRoman));
-        }
+        CFStringRef what = DADissenterGetStatusString(dissenter);
+        fwup_warnx("%s failed: 0x%x (%d) %s)",
+                   context->operation,
+                   DADissenterGetStatus(dissenter),
+                   DADissenterGetStatus(dissenter),
+                   CFStringGetCStringPtr(what, kCFStringEncodingMacRoman));
+
         context->succeeded = false;
     } else {
         context->succeeded = true;
@@ -294,7 +292,6 @@ int mmc_umount_all(const char *mmc_device)
     if (disk) {
         struct disk_op_context context;
         context.operation = "unmount";
-        context.warn_on_error = true;
         DADiskUnmount(disk, kDADiskUnmountOptionWhole, disk_op_done_cb, &context);
 
         // Wait for a while since unmounting sometimes takes time.
@@ -315,7 +312,6 @@ int mmc_eject(const char *mmc_device)
     if (disk) {
         struct disk_op_context context;
         context.operation = "eject";
-        context.warn_on_error = false; // It appears harmless when this fails.
         DADiskEject(disk, kDADiskEjectOptionDefault, disk_op_done_cb,  &context);
 
         if (run_loop_for_time(10) < 0)
