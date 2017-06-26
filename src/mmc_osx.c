@@ -319,7 +319,7 @@ int mmc_eject(const char *mmc_device)
         DADiskEject(disk, kDADiskEjectOptionDefault, disk_op_done_cb,  &context);
 
         if (run_loop_for_time(10) < 0)
-            fwup_warnx("unmount timed out");
+            fwup_warnx("eject timed out");
 
         if (context.succeeded)
             rc = 0;
