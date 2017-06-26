@@ -441,6 +441,12 @@ int fwup_apply(const char *fw_filename,
     fatfs_closefs();
     OK_OR_CLEANUP(block_cache_flush(fctx.output));
 
+    // Close everything before reporting 100% just in case the OS blocks on the close call.
+    block_cache_free(fctx.output);
+    free(fctx.output);
+    fctx.output = NULL;
+    close(output_fd);
+
     // Success -> report 100%
     progress_report_complete(fctx.progress);
 
@@ -457,6 +463,7 @@ cleanup:
         block_cache_free(fctx.output);
         free(fctx.output);
         fctx.output = NULL;
+        close(output_fd);
     }
 
     // If reading stdin, signal that we're not going to read any more

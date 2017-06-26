@@ -548,11 +548,8 @@ int main(int argc, char **argv)
                        enable_trim) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
-            close(output_fd);
             fwup_errx(EXIT_FAILURE, "%s", last_error());
         }
-
-        close(output_fd);
 
         if (!is_regular_file && eject_on_success) {
             // On OSX, at least, the system complains bitterly if you don't eject the device when done.
