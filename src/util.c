@@ -428,12 +428,6 @@ static inline size_t get_pagesize()
     return cached_pagesize;
 }
 
-static inline bool is_address_page_aligned(const void *memptr)
-{
-    uint64_t addr = (uint64_t) memptr;
-    return (addr & (get_pagesize() - 1)) == 0;
-}
-
 void alloc_page_aligned(void **memptr, size_t size)
 {
     size_t pagesize = get_pagesize();
