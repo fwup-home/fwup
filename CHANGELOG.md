@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.15.0-dev
+## v0.15.0
 
   * Completely rewritten caching layer. This has the following improvements;
     * OS caching no longer used on Linux. Direct I/O is used now with the
