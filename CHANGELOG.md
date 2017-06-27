@@ -1,6 +1,11 @@
 # Changelog
 
-## v0.15.1-dev
+## v0.15.1
+
+  * Bug fixes
+    * The OSX eject bug was finally found. It was due to the file handle still
+      being open on the SDCard at the time of the eject. For whatever reason, it
+      turned out to be 100% reproducable on v0.15.0 with a simple .fw file.
 
 ## v0.15.0
 
