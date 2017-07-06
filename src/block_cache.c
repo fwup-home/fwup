@@ -333,15 +333,46 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     return 0;
 }
 
+static int lrucompare(const void *pa, const void *pb)
+{
+    const struct block_cache_segment *a = *((const struct block_cache_segment **) pa);
+    const struct block_cache_segment *b = *((const struct block_cache_segment **) pb);
+
+    if (!a->in_use && !b->in_use)
+        return 0;
+
+    if (!a->in_use)
+        return 1;
+    if (!b->in_use)
+        return -1;
+
+    return a->last_access < b->last_access ? -1 : 1;
+}
+
 int block_cache_flush(struct block_cache *bc)
 {
+    // Blocks must be written back from oldest to newest. This has one important
+    // purpose:
+    //
+    // The ordering specified in the fwup.conf file is mostly preserved.
+    // E.g., if there's an A/B partition switch done last in the fwup.conf,
+    // it will be done last as part of the flush. This provides some
+    // confidence that if the system crashes before the final write, the
+    // A/B switch won't occur. I said "mostly" preserved, since cache hits
+    // remove writes by design.
+    //
+    // A related observation is that the write to a block has an error, the user
+    // can have confidence that the subsequent writes as sepecifed in the fwup.conf
+    // did not occur.
+
+    struct block_cache_segment *sorted_segments[BLOCK_CACHE_NUM_SEGMENTS];
+    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++)
+        sorted_segments[i] = &bc->segments[i];
+    qsort(sorted_segments, BLOCK_CACHE_NUM_SEGMENTS, sizeof(struct block_cache_segment *), lrucompare);
+
     int rc = 0;
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
-        // If one block has an error, attempt to flush the
-        // others. This is useful for the "too small media"
-        // issue where the on-error handling can do some
-        // recovery so long as it can run.
-        if (flush_segment(bc, &bc->segments[i]) < 0)
+        if (flush_segment(bc, sorted_segments[i]) < 0)
             rc = -1;
     }
 

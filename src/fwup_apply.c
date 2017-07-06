@@ -347,11 +347,12 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
             ERR_CLEANUP_MSG("Resource %s not found in archive", cfg_title(r->resource));
     }
 
-    // Flush any filesystem updates before the on-finish. The on-finish
+    // Flush any fatfs filesystem updates before the on-finish. The on-finish
     // generally has A/B partition swaps or other critical operations that
-    // assume the prior data has already been written.
+    // assume the prior data has already been written. The block_cache will
+    // write output in the right order, but fatfs's caching will not so it
+    // needs to be flushed here.
     fatfs_closefs();
-    OK_OR_CLEANUP(block_cache_flush(fctx->output));
 
     fctx->type = FUN_CONTEXT_FINISH;
     OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-finish", NULL, fun_run));
