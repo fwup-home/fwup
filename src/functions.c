@@ -718,21 +718,24 @@ int trim_validate(struct fun_context *fctx)
 }
 int trim_compute_progress(struct fun_context *fctx)
 {
-    int count = strtol(fctx->argv[2], NULL, 0);
+    off_t block_count = strtoull(fctx->argv[2], NULL, 0);
 
-    // Count each byte as a progress unit
-    fctx->progress->total_units += count * FWUP_BLOCK_SIZE;
+    // Use a heuristic for counting trim progress units -> 1 per 128KB
+    fctx->progress->total_units += block_count / 256;
 
     return 0;
 }
 int trim_run(struct fun_context *fctx)
 {
-    off_t offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
-    int count = strtol(fctx->argv[2], NULL, 0) * FWUP_BLOCK_SIZE;
+    off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
+    off_t block_count = strtoull(fctx->argv[2], NULL, 0);
+
+    off_t offset = block_offset * FWUP_BLOCK_SIZE;
+    off_t count = block_offset * FWUP_BLOCK_SIZE;
 
     OK_OR_RETURN(block_cache_trim(fctx->output, offset, count, true));
 
-    progress_report(fctx->progress, count);
+    progress_report(fctx->progress, block_count / 256);
     return 0;
 }
 
