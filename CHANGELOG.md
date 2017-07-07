@@ -2,6 +2,11 @@
 
 ## v0.15.2-dev
 
+  * New features
+    * Added meta-misc and meta-vcs-identifier metadata fields. This addition is
+      backwards compatible assuming you're using libconfuse 3.0 or later. If you
+      don't use these metadata fields in your fwup.conf files, there is no
+      compatibility issue.
 
 ## v0.15.1
 
