@@ -242,10 +242,12 @@ Key                  | Description
 require-fwup-version | Require a minimum version of fwup to apply this update (currently informational only)
 meta-product         | Product name
 meta-description     | Description of product or firmware update
-meta-version         | Firmware update version
+meta-version         | Firmware version
 meta-author          | Author or company behind the update
 meta-platform        | Platform that this update runs on (e.g., rpi or bbb)
 meta-architecture    | Platform architectures (e.g., arm)
+meta-vcs-identifier  | A version control identifier for use in reproducing this image
+meta-misc            | Miscellaneous additional data. Format and contents are up to the user
 meta-creation-date   | Timestamp when the update was created (automatically added). If you want to force the timestamp, set the `NOW` environment variable.
 meta-fwup-version    | Version of fwup used to create the update (automatically added)
 
