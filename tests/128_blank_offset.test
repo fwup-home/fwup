@@ -1,0 +1,26 @@
+#!/bin/sh
+
+#
+# Test writing to an offset that's an undefined variable
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource test {
+    host-path = "${TESTFILE_150K}"
+}
+
+task complete {
+    # The following results in an argument being passed to
+    # to raw_write. It's an empty string, though, so it
+    # should fail. Turns out that it didn't fail at one time.
+    on-resource test { raw_write(\${FOO}) }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "An error should have been detected."
+fi
+
