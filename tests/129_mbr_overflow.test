@@ -1,0 +1,29 @@
+#!/bin/sh
+
+#
+# Verify that an MBR referencing data beyond 2 TB returns an
+# error. This is the limit of MBRs and is easy to hit now
+# that big drives are common.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+mbr mbr-a {
+    partition 0 {
+        block-offset = 4300000000
+        block-count = 2048
+        type = 0xc # FAT32
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+        }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting error when creating MBR"
+fi
+
