@@ -63,7 +63,8 @@ int mbr_verify(const struct mbr_partition partitions[4])
 
             if ((ileft >= jleft && ileft < jright) ||
                 (iright > jleft && iright <= jright))
-                ERR_RETURN("partitions %d and %d overlap", i, j);
+                ERR_RETURN("partitions %d (blocks %u to %u) and %d (blocks %u to %u) overlap",
+                        i, ileft, iright, j, jleft, jright);
         }
     }
 
