@@ -1,12 +1,25 @@
 # Changelog
 
-## v0.15.2-dev
+## v0.15.2
 
   * New features
     * Added meta-misc and meta-vcs-identifier metadata fields. This addition is
       backwards compatible assuming you're using libconfuse 3.0 or later. If you
       don't use these metadata fields in your fwup.conf files, there is no
       compatibility issue.
+
+  * Bug fixes/Improvements
+    * Order block cache flush logic so that blocks get written in fwup.conf
+      order. This fixes an issue where the cache could write the A/B partition
+      swap before the new firmware was completely written. Given that the
+      cache is pretty small and there was an extra flush before on-final,
+      systems without the fix are likely fine.
+    * Improve the caching heuristics to reduce the number of writes to FAT
+      filesystems.
+    * Improve detection of typos in variable names and content. This catches
+      accidental writes to offset 0 when creating fwup.config files among other
+      annoyances.
+    * Improve MBR error messages
 
 ## v0.15.1
 
