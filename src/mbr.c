@@ -260,30 +260,34 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
             ERR_RETURN("partition must be numbered 0 through 3");
 
         if (found & (1 << partition_ix))
-            ERR_RETURN("invalid or duplicate partition number found");
+            ERR_RETURN("invalid or duplicate partition number found for %d", partition_ix);
         found = found | (1 << partition_ix);
 
         int unverified_type = cfg_getint(partition, "type");
         if (unverified_type < 0 || unverified_type > 0xff)
-            ERR_RETURN("partition type must be between 0 and 255");
+            ERR_RETURN("partition %d's type must be between 0 and 255", partition_ix);
 
         partitions[partition_ix].partition_type = unverified_type;
 
         const char *unverified_block_offset = cfg_getstr(partition, "block-offset");
-        if (!unverified_block_offset)
-            ERR_RETURN("partition's block_offset is required");
-        unsigned long block_offset = strtoul(unverified_block_offset, 0, 0);
+        if (!unverified_block_offset || *unverified_block_offset == '\0')
+            ERR_RETURN("partition %d's block_offset is required", partition_ix);
+        char *endptr;
+        unsigned long block_offset = strtoul(unverified_block_offset, &endptr, 0);
 
         // strtoul returns error by returning ULONG_MAX and setting errno.
         // Values bigger than 2^32-1 won't fit in the MBR, so report an
         // error for those too.
         if ((block_offset == ULONG_MAX && errno != 0) || block_offset >= UINT32_MAX)
-            ERR_RETURN("block_offset must be positive and less than 2^32 - 1: '%s'", unverified_block_offset);
+            ERR_RETURN("partition %d's block_offset must be positive and less than 2^32 - 1: '%s'", partition_ix, unverified_block_offset);
+        if (*endptr != '\0')
+            ERR_RETURN("error parsing partition %d's block offset", partition_ix);
+
         partitions[partition_ix].block_offset = block_offset;
 
         partitions[partition_ix].block_count = cfg_getint(partition, "block-count");
         if (partitions[partition_ix].block_count >= INT32_MAX)
-            ERR_RETURN("block-count must be specified and less than 2^31 - 1");
+            ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
 
         partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
     }
