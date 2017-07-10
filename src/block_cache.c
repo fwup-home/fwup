@@ -1,6 +1,7 @@
 #include "block_cache.h"
 #include "mmc.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -141,7 +142,7 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
         memset(data, 0, BLOCK_CACHE_SEGMENT_SIZE);
     } else {
         if (pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pread of %d bytes at offset %llu", BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
+            ERR_RETURN("pread of %d bytes at offset %" PRId64, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
     }
     return 0;
 }
@@ -200,7 +201,7 @@ static int check_async_error(struct block_cache *bc)
     if (bc->bad_offset >= 0) {
         off_t bad_offset = bc->bad_offset;
         bc->bad_offset = -1;
-        ERR_RETURN("write failed at offset %llu. Check media size.", bad_offset);
+        ERR_RETURN("write failed at offset %" PRId64". Check media size.", bad_offset);
     }
     return 0;
 }
@@ -236,7 +237,7 @@ static inline int do_sync_write(struct block_cache *bc, struct block_cache_segme
         wait_for_write_completion(bc, seg);
     } else {
         if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("write failed at offset %llu. Check media size.", seg->offset);
+            ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", seg->offset);
     }
 
     // Poll for a previous asynchronous error
@@ -247,7 +248,7 @@ static inline int do_sync_write(struct block_cache *bc, struct block_cache_segme
 static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
     if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-        ERR_RETURN("write failed at offset %llu. Check media size.", seg->offset);
+        ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", seg->offset);
 
     return 0;
 }

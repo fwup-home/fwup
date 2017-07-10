@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -262,7 +263,7 @@ static void print_detected_devices()
     struct simple_string s;
     simple_string_init(&s);
     for (int i = 0; i < found_devices; i++)
-        ssprintf(&s, "%s,%lld\n", devices[i].path, (long long int) devices[i].size);
+        ssprintf(&s, "%s,%" PRId64"\n", devices[i].path, devices[i].size);
     fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
     free(s.str);
 }

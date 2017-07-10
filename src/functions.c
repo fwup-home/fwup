@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -292,7 +293,7 @@ int raw_write_run(struct fun_context *fctx)
         if (len_written == 0)
             ERR_CLEANUP_MSG("raw_write didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->on_event->title);
         else
-            ERR_CLEANUP_MSG("raw_write wrote %lld bytes, but should have written %lld", len_written, expected_length);
+            ERR_CLEANUP_MSG("raw_write wrote %" PRId64" bytes, but should have written %" PRId64, len_written, expected_length);
     }
 
     // Verify hash
@@ -342,7 +343,7 @@ int raw_memset_run(struct fun_context *fctx)
     off_t offset;
     for (offset = 0; offset < count; offset += block_size) {
         OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, block_size, dest_offset + offset, true),
-                         "raw_memset couldn't write %d bytes to offset %lld", block_size, dest_offset + offset);
+                         "raw_memset couldn't write %d bytes to offset %" PRId64, block_size, dest_offset + offset);
 
         len_written += block_size;
         progress_report(fctx->progress, block_size);
