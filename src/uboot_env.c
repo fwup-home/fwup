@@ -2,6 +2,7 @@
 #include "util.h"
 #include "crc32.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,7 +48,7 @@ int uboot_env_read(struct uboot_env *env, const char *buffer)
     uint32_t expected_crc32 = ((uint8_t) buffer[0] | ((uint8_t) buffer[1] << 8) | ((uint8_t) buffer[2] << 16) | ((uint8_t) buffer[3] << 24));
     uint32_t actual_crc32 = crc32buf(buffer + 4, env->env_size - 4);
     if (expected_crc32 != actual_crc32)
-        ERR_RETURN("U-boot environment CRC32 mismatch (expected 0x%08x; got 0x%08x)", expected_crc32, actual_crc32);
+        ERR_RETURN("U-boot environment (block %" PRIu64 ") CRC32 mismatch (expected 0x%08x; got 0x%08x)", env->block_offset, expected_crc32, actual_crc32);
 
     const char *end = buffer + env->env_size;
     const char *name = buffer + 4;
