@@ -2,6 +2,10 @@
 
 ## v0.15.3-dev
 
+  * Bug fixes/Improvements
+    * Error message improvements for when FAT filesystems get corrupt and start
+      returning weird errors.
+
 ## v0.15.2
 
   * New features
