@@ -63,6 +63,7 @@ struct block_cache {
     // Track "trimmed" segments in a bitfield. One bit per segment.
     // E.g., 128K/bit -> 1M takes represented in 1 byte -> 1G in 1 KB, etc.
     size_t trimmed_len;
+    off_t trimmed_end_offset;
     uint8_t *trimmed;
     bool trimmed_remainder; // true if segments after end of bitfield are trimmed
     bool hw_trim_enabled;

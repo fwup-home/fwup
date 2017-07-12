@@ -1,0 +1,74 @@
+#!/bin/sh
+
+#
+# Test writing to "media" of various sizes.
+#
+# This is a weak test to verify the caching layer for various sized
+# destinations. It found a segfault once so that's why I keep it.
+#
+
+. ./common.sh
+
+# Don't create 1T temp files on systems that don't have sparse file
+# support.
+if ! $FWUP_CREATE --sparse-check "$IMGFILE" --sparse-check-size 4096; then
+    echo "Skipping sparse file tests since OS or filesystem lacks support"
+    exit 0
+fi
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_150K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(1) }
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
+
+# Sizes to check (minus 1K):
+# 4 GB (4*10^9 bytes) -> 3906249
+# 8 GB (8*10^9 bytes) -> 7812499
+# 16 GB (16*10^9 bytes) -> 15624999
+# 16 GiB-1K (16*2^10 bytes) -> 16777214
+# 16 GiB (16*2^10 bytes) -> 16777215
+# 16 GiB+1K (16*2^10 bytes) -> 16777216
+# 32 GB (32*10^9 bytes) -> 31249999
+# 64 GB (64*10^9 bytes) -> 62499999
+# 1 TB (10^12 bytes) -> 976562499
+# 2 TB (2*10^12 bytes) -> 1953124999
+# 4 TB (4*10^12 bytes) -> 3906249999
+# 8 TB (8*10^12 bytes) -> 7812499999
+SIZES_TO_CHECK="3906249 \
+    7812499 \
+    15624999 \
+    31249999 \
+    62499999 \
+    976562499 \
+    1953124999 \
+    3906249999 \
+    7812499999"
+
+for SZ in $SIZES_TO_CHECK; do
+    echo "Checking destination of size $SZ*1024"
+
+    rm -f $IMGFILE
+
+    # Check that this works on various sized "SDCards/eMMC"
+    # Create a 1T file (10^12 bytes)
+    dd if=$TESTFILE_1K bs=1k seek=$SZ of=$IMGFILE conv=sync,notrunc 2>/dev/null
+
+    # Write to the file
+    $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+    # Verify that the write updated the big file correctly.
+    # (The conv=sync makes sure that the output is a multiple of 512 bytes)
+    dd if=$TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
+    cmp --bytes 51712 $WORK/check.bin $IMGFILE
+done
