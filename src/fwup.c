@@ -97,7 +97,7 @@ static void print_usage()
     printf("  -s <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
     printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
-    printf("  --sparse-check-size <bytes> Hole size to check for --sparce-check\n");
+    printf("  --sparse-check-size <bytes> Hole size to check for --sparse-check\n");
     printf("  -t, --task <task> Task to apply within the firmware update\n");
     printf("  -u, --unmount Unmount all partitions on device first\n");
     printf("  -U, --no-unmount Do not try to unmount partitions on device\n");

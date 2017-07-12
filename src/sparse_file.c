@@ -274,7 +274,7 @@ void sparse_file_start_read(const struct sparse_file_map *sfm,
  * always (i.e. too many holes). Since the sparse_file_map is "truth", it
  * has to drive what gets read.
  *
- * @param iterator the sparce file map iterator
+ * @param iterator the sparse file map iterator
  * @param fd      a file descriptor
  * @param offset  where reading should start in fd; next offset is returned
  * @param buf     where to store the data

@@ -140,7 +140,7 @@ Options:
   -s <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)
   --sparse-check <path> Check if the OS and file system supports sparse files at path
-  --sparse-check-size <bytes> Hole size to check for --sparce-check
+  --sparse-check-size <bytes> Hole size to check for --sparse-check
   -t, --task <task> Task to apply within the firmware update
   -u, --unmount Unmount all partitions on device first
   -U, --no-unmount Do not try to unmount partitions on device

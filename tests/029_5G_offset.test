@@ -2,7 +2,7 @@
 
 #
 # Test writing to a 5 GB offset. This test shouldn't require
-# 5 GB of disk space to run, since the file should be sparce.
+# 5 GB of disk space to run, since the file should be sparse.
 # This tests whether basic large file support is enabled
 # internally.
 #

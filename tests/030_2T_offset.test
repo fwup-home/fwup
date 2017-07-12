@@ -3,7 +3,7 @@
 #
 # Test writing to a 2 TB offset to check that >4G numbers can be
 # used as offsets. This test shouldn't require
-# 2 TB of disk space to run, since the file should be sparce.
+# 2 TB of disk space to run, since the file should be sparse.
 #
 
 . ./common.sh
