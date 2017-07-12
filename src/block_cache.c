@@ -1,6 +1,7 @@
 #include "block_cache.h"
 #include "mmc.h"
 
+#include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -141,8 +142,15 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
         // Trimmed, so we'd be reading uninitialized data (in theory), if we called pread.
         memset(data, 0, BLOCK_CACHE_SEGMENT_SIZE);
     } else {
-        if (pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("pread of %d bytes at offset %" PRId64, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
+        ssize_t bytes_read = pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
+        if (bytes_read < 0) {
+            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s", BLOCK_CACHE_SEGMENT_SIZE, seg->offset, strerror(errno));
+        } else if (bytes_read < BLOCK_CACHE_SEGMENT_SIZE) {
+            // Didn't read enough bytes. This occurs if the destination media is
+            // not a multiple of the segment size. Fill the remainder with zeros
+            // and don't fail.
+            memset((uint8_t *) data + bytes_read, 0, BLOCK_CACHE_SEGMENT_SIZE - bytes_read);
+        }
     }
     return 0;
 }
@@ -314,9 +322,7 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     off_t end_offset = lseek(fd, 0, SEEK_END);
     if (end_offset < 0)
         ERR_RETURN("lseek to end failed");
-    off_t aligned_end_offset = end_offset & BLOCK_CACHE_SEGMENT_MASK;
-    if (aligned_end_offset != end_offset)
-        fwup_warnx("Updating destination that's not a multiple of the fwup read/write size (%d). Final bytes may be lost.", BLOCK_CACHE_SEGMENT_SIZE);
+    off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
     OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
 
     // Start async writer thread if available
