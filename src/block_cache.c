@@ -414,6 +414,9 @@ int block_cache_free(struct block_cache *bc)
     }
     free_page_aligned(bc->temp);
 
+    free(bc->trimmed);
+
+    bc->trimmed = NULL;
     bc->temp = NULL;
     bc->fd = -1;
     return 0;

@@ -480,5 +480,10 @@ cleanup:
     if (meta_conf_signature)
         free(meta_conf_signature);
 
+    if (fctx.cfg) {
+        cfg_free(fctx.cfg);
+        fctx.cfg = NULL;
+    }
+
     return rc;
 }
