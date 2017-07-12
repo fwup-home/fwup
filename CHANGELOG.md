@@ -1,10 +1,16 @@
 # Changelog
 
-## v0.15.3-dev
+## v0.15.3
 
   * Bug fixes/Improvements
-    * Error message improvements for when FAT filesystems get corrupt and start
+    * Fix segfault when using large media. This was found on a 1 TB SSD, but
+      should have affected much smaller media.
+    * Improved error messages for when FAT filesystems get corrupt and start
       returning weird errors.
+    * Fixed trimming on media that wasn't a multiple of 128K bytes. This could
+      have resulted in loss of data if anything was stored in the final bytes.
+    * Fixed memory leaks identified by valgrind (nothing affecting proper
+      operation)
 
 ## v0.15.2
 
