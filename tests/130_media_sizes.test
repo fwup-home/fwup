@@ -9,10 +9,10 @@
 
 . ./common.sh
 
-# Don't create 1T temp files on systems that don't have sparse file
-# support.
+# Don't create 1T and larger temp files on systems that don't have
+# sparse file support.
 if ! $FWUP_CREATE --sparse-check "$IMGFILE" --sparse-check-size 4096; then
-    echo "Skipping sparse file tests since OS or filesystem lacks support"
+    echo "Skipping media size tests since OS or filesystem lacks sparse file support"
     exit 0
 fi
 
@@ -60,8 +60,8 @@ for SZ in $SIZES_TO_CHECK; do
 
     rm -f $IMGFILE
 
-    # Check that this works on various sized "SDCards/eMMC"
-    # Create a 1T file (10^12 bytes)
+    # Create a file of 1K + the specified size to simulate a destination of that
+    # size.
     dd if=$TESTFILE_1K bs=1k seek=$SZ of=$IMGFILE conv=sync,notrunc 2>/dev/null
 
     # Write to the file
