@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.15.4-dev
+
+  * Bug fixes/Improvements
+    * Fix lseek seek_end issue on Mac when working with SDCards. This fixed an
+      issue where upgrade tasks didn't work on Macs. Not a common issue, but
+      confusing since you'd hit it while debugging.
+    * Make requirement checks report their result with `-v`.
+    * Fix verbose prints to use the fwup_warn helper instead of calling fprintf
+      directely. (Cleanup)
+
 ## v0.15.3
 
   * Bug fixes/Improvements
