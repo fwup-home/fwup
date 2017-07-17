@@ -311,7 +311,7 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     // Initialized to nothing trimmed. I.e. every write that doesn't fall on a
     // segment boundary is a read/modify/write.
     bc->trimmed_remainder = false;
-    bc->trimmed_len = 16384; // 16K * 8 bits/byte * 128K bytes/segment = 16G start trimmed area tracking size
+    bc->trimmed_len = 64 * 1024; // 64K * 8 bits/byte * 128K bytes/segment = 64G start trimmed area tracking size
     bc->trimmed_end_offset = ((off_t) bc->trimmed_len) * 8 * BLOCK_CACHE_SEGMENT_SIZE;
     bc->trimmed = (uint8_t *) malloc(bc->trimmed_len);
     if (bc->trimmed == NULL)
