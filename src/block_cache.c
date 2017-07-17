@@ -321,10 +321,16 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
 
     // Set the trim points based on the file size
     off_t end_offset = lseek(fd, 0, SEEK_END);
-    if (end_offset < 0)
-        ERR_RETURN("lseek to end failed");
-    off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
-    OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
+    if (end_offset > 0) {
+        // At least for special devices on OSX, lseek can fail to seek to the end.
+        // For these devices, don't try to initialize the trim bit vector to support
+        // to optimize reads past the end. This really only helps for regular files
+        // with partial segment writes at the end, so not a big deal.
+
+        // Mark the trim datastructure that everything past the end has been trimmed.
+        off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
+        OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
+    }
 
     // Start async writer thread if available
 #if USE_PTHREADS
