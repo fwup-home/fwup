@@ -103,7 +103,14 @@ int req_requirement_met(struct fun_context *fctx)
     if (!req)
         return -1;
 
-    return req->requirement_met(fctx);
+    int rc = req->requirement_met(fctx);
+    INFO("%s(%s%s%s) -> %s",
+         req->name,
+         fctx->argc >= 2 ? fctx->argv[1] : "",
+         fctx->argc >= 3 ? ", " : "",
+         fctx->argc >= 3 ? fctx->argv[2] : "",
+         rc == 0 ? "met" : "not met");
+    return rc;
 }
 
 
