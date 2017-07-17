@@ -136,7 +136,7 @@ static int check_param_count(cfg_t *cfg, cfg_opt_t *opt, int argc, int required)
 
 static int define_helper(cfg_t *cfg, const char *key, const char *value, bool override)
 {
-    INFO("Defining '%s'='%s'\n", key, value);
+    INFO("Defining '%s'='%s'", key, value);
 
     if (override || !get_environment(key)) {
         if (set_environment(key, value) < 0) {
@@ -144,7 +144,7 @@ static int define_helper(cfg_t *cfg, const char *key, const char *value, bool ov
             return -1;
         }
     } else {
-        INFO("Not defining '%s'. Already set to '%s'\n", key, getenv(key));
+        INFO("Not defining '%s'. Already set to '%s'", key, getenv(key));
     }
     return 0;
 }
@@ -441,9 +441,9 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
         extern char **environ;
         int e = 0;
 
-        INFO("Config environment:\n");
+        INFO("Config environment:");
         while (environ[e] != NULL) {
-            INFO(" %s\n", environ[e]);
+            INFO(" %s", environ[e]);
             e++;
         }
     }

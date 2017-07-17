@@ -54,7 +54,7 @@ extern bool fwup_verbose;
 #define OK_OR_RETURN(WORK) do { if ((WORK) < 0) return -1; } while (0)
 #define OK_OR_RETURN_MSG(WORK, MSG, ...) do { if ((WORK) < 0) ERR_RETURN(MSG, ## __VA_ARGS__); } while (0)
 
-#define INFO(MSG, ...) do { if (fwup_verbose) fprintf(stderr, MSG, ## __VA_ARGS__); } while (0)
+#define INFO(MSG, ...) do { if (fwup_verbose) fwup_warnx(MSG, ## __VA_ARGS__); } while (0)
 
 #define FWUP_BLOCK_SIZE (512)
 
