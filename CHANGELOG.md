@@ -9,6 +9,10 @@
     * Make requirement checks report their result with `-v`.
     * Fix verbose prints to use the fwup_warn helper instead of calling fprintf
       directely. (Cleanup)
+    * Enlarged trim cache for up to 64 GiB memory devices. Large ones will work,
+      but trim caching is ignored after 64 GiB. This should almost all known
+      uses of fwup now. The use of fwup on large SSDs still works, since fwup
+      is pretty much only used at lower offsets.
 
 ## v0.15.3
 
