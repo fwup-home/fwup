@@ -226,7 +226,7 @@ bool will_be_regular_file(const char *path)
 
 #ifdef _WIN32
     if (strncmp(path, "\\\\.\\", 4) == 0)
-        return 0;
+        return false;
 #endif
     struct stat st;
     int rc = stat(path, &st);
