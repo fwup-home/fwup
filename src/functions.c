@@ -1016,10 +1016,6 @@ int fd_write_run(char const * cmd_name, struct fun_context *fctx, int output_fd)
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
     off_t expected_length = sparse_file_data_size(&sfm);
 
-    // Just in case we're raw writing to a FAT partition, make sure
-    // that we flush any cached data.
-    fctx->fatfs_ptr(fctx, -1, NULL);
-
     off_t len_written = 0;
 
     crypto_generichash_state hash_state;
