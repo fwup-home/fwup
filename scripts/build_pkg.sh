@@ -57,6 +57,7 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     cp -f scripts/fwup.nuspec $FWUP_INSTALL_DIR/fwup/
     sed -i "s/%VERSION%/$FWUP_VERSION/" $FWUP_INSTALL_DIR/fwup/fwup.nuspec
     cp $FWUP_INSTALL_DIR/bin/fwup.exe $FWUP_INSTALL_DIR/fwup/tools/
+    cp -f scripts/fwup $FWUP_INSTALL_DIR/fwup/tools/
 
     cp -f scripts/VERIFICATION.txt $FWUP_INSTALL_DIR/fwup/tools/
     sed -i "s/%VERSION%/$FWUP_VERSION/" $FWUP_INSTALL_DIR/fwup/tools/VERIFICATION.txt
