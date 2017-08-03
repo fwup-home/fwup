@@ -121,10 +121,10 @@ Options:
   -a, --apply   Apply the firmware update
   -c, --create  Create the firmware update
   -d <file> Device file for the memory card
-  -D, --detect List attached SDCards or MMC devices
+  -D, --detect List attached SDCards or MMC devices and their sizes
   -E, --eject Eject removeable media after successfully writing firmware.
-  --enable-trim Enable use of the hardware TRIM command
   --no-eject Do not eject media after writing firmware
+  --enable-trim Enable use of the hardware TRIM command
   -f <fwupdate.conf> Specify the firmware update configuration file
   -F, --framing Apply framing on stdin/stdout
   -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
@@ -134,8 +134,10 @@ Options:
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -p <keyfile> A public key file for verifying firmware updates
+  --private-key <key> A private key for signing firmware updates
   --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%)
   --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%)
+  --public-key <key> A public key for verifying firmware updates
   -q, --quiet   Quiet
   -s <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)
@@ -150,7 +152,7 @@ Options:
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit
   -1   Fast compression (for create)
-  -9   Best compression (for create)
+  -9   Best compression (default)
 
 Examples:
 

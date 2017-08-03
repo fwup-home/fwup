@@ -92,8 +92,10 @@ static void print_usage()
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     printf("  -p <keyfile> A public key file for verifying firmware updates\n");
+    printf("  --private-key <key> A private key for signing firmware updates\n");
     printf("  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%%)\n");
     printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
+    printf("  --public-key <key> A public key for verifying firmware updates\n");
     printf("  -q, --quiet   Quiet\n");
     printf("  -s <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
@@ -161,6 +163,8 @@ static struct option long_options[] = {
     {"help",     no_argument,       0, 'h'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
+    {"private-key", required_argument, 0, '('},
+    {"public-key", required_argument, 0, ')'},
     {"progress-low", required_argument, 0, '$'},
     {"progress-high", required_argument, 0, '%'},
     {"quiet",    no_argument,       0, 'q'},
@@ -186,15 +190,16 @@ static struct option long_options[] = {
 #define CMD_VERIFY        7
 #define CMD_SPARSE_CHECK  8
 
-static int decode_key(const char *buffer,
-                      size_t buffer_len,
-                      unsigned char *key,
-                      size_t key_len)
+static unsigned char *decode_key(const char *buffer,
+                                 size_t buffer_len,
+                                 size_t key_len)
 {
+    unsigned char *key = (unsigned char *) malloc(key_len);
+
     // Check for raw key bytes
     if (buffer_len == key_len) {
         memcpy(key, buffer, buffer_len);
-        return 0;
+        return key;
     }
 
     // Check for Base64-encoded key (with or without padding)
@@ -203,29 +208,38 @@ static int decode_key(const char *buffer,
     if (buffer_len >= base64_key_len &&
         from_base64(key, &decoded_len, buffer) != NULL &&
         decoded_len == key_len) {
-        return 0;
+        return key;
     }
 
     // Unexpected length
-    return -1;
+    free(key);
+    return NULL;
 }
 
-static unsigned char *load_key(const char *path, const char *key_type, size_t len)
+static unsigned char *load_key(const char *path, const char *key_type, size_t key_len)
 {
     FILE *fp = fopen(path, "rb");
     if (!fp)
         fwup_err(EXIT_FAILURE, "Error opening %s key file '%s'", key_type, path);
 
-    size_t base64_size = base64_raw_to_encoded_count(len);
-    unsigned char *key = (unsigned char *) malloc(len);
+    size_t base64_size = base64_raw_to_encoded_count(key_len);
     char buffer[base64_size];
 
     size_t amount_read = fread(buffer, 1, base64_size, fp);
     fclose(fp);
 
-    if (decode_key(buffer, amount_read, key, len) < 0)
+    unsigned char *key = decode_key(buffer, amount_read, key_len);
+    if (key == NULL)
         fwup_errx(EXIT_FAILURE, "Error reading or decoding %s key from file '%s'", key_type, path);
 
+    return key;
+}
+
+static unsigned char *parse_key(const char *buffer, size_t buffer_len, const char *key_type, size_t key_len)
+{
+    unsigned char *key = decode_key(buffer, buffer_len, key_len);
+    if (key == NULL)
+        fwup_errx(EXIT_FAILURE, "Error decoding %s key", key_type);
     return key;
 }
 
@@ -238,6 +252,17 @@ static unsigned char *load_signing_key(const char *path)
 {
     return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
 }
+
+static unsigned char *parse_public_key(const char *buffer, size_t buffer_len)
+{
+    return parse_key(buffer, buffer_len, "public", crypto_sign_PUBLICKEYBYTES);
+}
+
+static unsigned char *parse_signing_key(const char *buffer, size_t buffer_len)
+{
+    return parse_key(buffer, buffer_len, "private", crypto_sign_SECRETKEYBYTES);
+}
+
 
 static void autoselect_mmc_device(struct mmc_device *device)
 {
@@ -469,6 +494,13 @@ int main(int argc, char **argv)
             break;
         case '*': // --sparse-check-size
             sparse_check_size = strtol(optarg, 0, 0);
+            break;
+        case '(': // --private-key
+            signing_key = parse_signing_key(optarg, strlen(optarg));
+            easy_mode = false;
+            break;
+        case ')': // --public-key
+            public_key = parse_public_key(optarg, strlen(optarg));
             break;
         default: /* '?' */
             print_usage();
