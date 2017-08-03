@@ -2,6 +2,14 @@
 
 ## v0.15.4-dev
 
+  * New features
+    * Changed signing keys to be base64 encoded so that they'd be easier to bake
+      into firmware and pass in environment variables on CI systems. The
+      previous raw binary format still works and will remain supported.
+    * Added commandline parameters for passing public and private keys via
+      commandline arguments. Along with the base64 change, this cleans up CI
+      build scripts.
+
   * Bug fixes/Improvements
     * Fix lseek seek_end issue on Mac when working with SDCards. This fixed an
       issue where upgrade tasks didn't work on Macs. Not a common issue, but
