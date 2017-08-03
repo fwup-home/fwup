@@ -58,6 +58,8 @@ fwup_SOURCES=\
 	sparse_file.h \
 	uboot_env.h \
 	util.h \
+	../3rdparty/base64.c \
+	../3rdparty/base64.h \
 	../3rdparty/fatfs/src/diskio.h \
 	../3rdparty/fatfs/src/integer.h \
 	../3rdparty/fatfs/src/ff.c \

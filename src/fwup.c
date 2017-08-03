@@ -28,6 +28,7 @@
 
 #include <sodium.h>
 
+#include "../3rdparty/base64.h"
 #include "mmc.h"
 #include "util.h"
 #include "fwup_apply.h"
@@ -185,24 +186,57 @@ static struct option long_options[] = {
 #define CMD_VERIFY        7
 #define CMD_SPARSE_CHECK  8
 
-static unsigned char *load_public_key(const char *path)
+static int decode_key(const char *buffer,
+                      size_t buffer_len,
+                      unsigned char *key,
+                      size_t key_len)
+{
+    // Check for raw key bytes
+    if (buffer_len == key_len) {
+        memcpy(key, buffer, buffer_len);
+        return 0;
+    }
+
+    // Check for Base64-encoded key (with or without padding)
+    size_t base64_key_len = base64_raw_to_unpadded_count(key_len);
+    size_t decoded_len = buffer_len;
+    if (buffer_len >= base64_key_len &&
+        from_base64(key, &decoded_len, buffer) != NULL &&
+        decoded_len == key_len) {
+        return 0;
+    }
+
+    // Unexpected length
+    return -1;
+}
+
+static unsigned char *load_key(const char *path, const char *key_type, size_t len)
 {
     FILE *fp = fopen(path, "rb");
-    unsigned char *public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
-    if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
-        fwup_err(EXIT_FAILURE, "Error reading public key from file '%s'", path);
+    if (!fp)
+        fwup_err(EXIT_FAILURE, "Error opening %s key file '%s'", key_type, path);
+
+    size_t base64_size = base64_raw_to_encoded_count(len);
+    unsigned char *key = (unsigned char *) malloc(len);
+    char buffer[base64_size];
+
+    size_t amount_read = fread(buffer, 1, base64_size, fp);
     fclose(fp);
-    return public_key;
+
+    if (decode_key(buffer, amount_read, key, len) < 0)
+        fwup_errx(EXIT_FAILURE, "Error reading or decoding %s key from file '%s'", key_type, path);
+
+    return key;
+}
+
+static unsigned char *load_public_key(const char *path)
+{
+    return load_key(path, "public", crypto_sign_PUBLICKEYBYTES);
 }
 
 static unsigned char *load_signing_key(const char *path)
 {
-    FILE *fp = fopen(path, "rb");
-    unsigned char *signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
-    if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
-        fwup_err(EXIT_FAILURE, "Error reading signing key from file '%s'", path);
-    fclose(fp);
-    return signing_key;
+    return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
 }
 
 static void autoselect_mmc_device(struct mmc_device *device)

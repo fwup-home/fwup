@@ -143,6 +143,7 @@ TESTS = 001_simple_fw.test \
 	127_extra_metadata.test \
 	128_blank_offset.test \
 	129_mbr_overflow.test \
-	130_media_sizes.test
+	130_media_sizes.test \
+	131_raw_key.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
