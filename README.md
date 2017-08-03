@@ -133,13 +133,13 @@ Options:
   -m, --metadata   Print metadata in the firmware update
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
-  -p <keyfile> A public key file for verifying firmware updates
+  -p, --public-key-file <keyfile> A public key file for verifying firmware updates
   --private-key <key> A private key for signing firmware updates
   --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%)
   --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%)
   --public-key <key> A public key for verifying firmware updates
   -q, --quiet   Quiet
-  -s <keyfile> A private key file for signing firmware updates
+  -s, --private-key-file <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)
   --sparse-check <path> Check if the OS and file system supports sparse files at path
   --sparse-check-size <bytes> Hole size to check for --sparse-check

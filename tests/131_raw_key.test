@@ -42,7 +42,7 @@ dd if=fwup-key.priv of=fwup-key.priv.unpadded bs=1 count=86
 cd -
 
 # Sign the firmware
-$FWUP_CREATE -s $WORK/fwup-key.priv.raw -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE --private-key-file $WORK/fwup-key.priv.raw -c -f $CONFIG -o $FWFILE
 
 # Check that the zip file was created as expected
 check_meta_conf
@@ -55,6 +55,7 @@ $FWUP_VERIFY -V -i $FWFILE
 
 # Check that applying the firmware with checking signatures works
 $FWUP_APPLY -q -p $WORK/fwup-key.pub.raw -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -q --public-key-file $WORK/fwup-key.pub.raw -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that using the base64-encoded key still works as well.
 $FWUP_APPLY -q -p $WORK/fwup-key.pub -a -d $IMGFILE -i $FWFILE -t complete

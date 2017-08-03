@@ -91,13 +91,13 @@ static void print_usage()
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
-    printf("  -p <keyfile> A public key file for verifying firmware updates\n");
+    printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates\n");
     printf("  --private-key <key> A private key for signing firmware updates\n");
     printf("  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%%)\n");
     printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
     printf("  --public-key <key> A public key for verifying firmware updates\n");
     printf("  -q, --quiet   Quiet\n");
-    printf("  -s <keyfile> A private key file for signing firmware updates\n");
+    printf("  -s, --private-key-file <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
     printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
     printf("  --sparse-check-size <bytes> Hole size to check for --sparse-check\n");
@@ -164,7 +164,9 @@ static struct option long_options[] = {
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
     {"private-key", required_argument, 0, '('},
+    {"private-key-file", required_argument, 0, 's'},
     {"public-key", required_argument, 0, ')'},
+    {"public-key-file ", required_argument, 0, 'p'},
     {"progress-low", required_argument, 0, '$'},
     {"progress-high", required_argument, 0, '%'},
     {"quiet",    no_argument,       0, 'q'},
