@@ -21,8 +21,13 @@ EOF
 # Create the firmware file like normal
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "No --unsafe:  The pipe_write should have failed."
+    exit 1
+fi
+
 # Pipe the contents of the firmware file through fwup
-cat $FWFILE | $FWUP_APPLY -a -d $IMGFILE -i - -t complete
+cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
 

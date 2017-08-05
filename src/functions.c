@@ -102,6 +102,8 @@ static struct fun_info fun_table[] = {
     FUN_INFO(execute),
 };
 
+extern bool fwup_unsafe;
+
 static struct fun_info *lookup(int argc, const char **argv)
 {
     if (argc < 1) {
@@ -1076,6 +1078,10 @@ int path_write_run(struct fun_context *fctx)
     assert(fctx->on_event);
 
     int rc = 0;
+
+    if(!fwup_unsafe)
+        ERR_CLEANUP_MSG("path_write requires --unsafe");
+
     char const* output_filename = fctx->argv[1];
    
     int output_fd = open(output_filename,O_WRONLY|O_CREAT,0644);
@@ -1111,7 +1117,10 @@ int pipe_write_run(struct fun_context *fctx)
     assert(fctx->on_event);
 
     int rc = 0;
-    
+
+    if(!fwup_unsafe)
+        ERR_CLEANUP_MSG("pipe_write requires --unsafe");
+
     char const *cmd_name = fctx->argv[1];
     FILE * cmd_pipe = popen(cmd_name,"w");
     if(!cmd_pipe)
@@ -1146,6 +1155,9 @@ int execute_run(struct fun_context *fctx)
     assert(fctx->on_event);
 
     int rc = 0;
+
+    if(!fwup_unsafe)
+        ERR_CLEANUP_MSG("pipe_write requires --unsafe");
     
     char const *cmd_name = fctx->argv[1];
     FILE * cmd_pipe = popen(cmd_name,"r");
