@@ -28,6 +28,7 @@
 
 #include <sodium.h>
 
+#include "../3rdparty/base64.h"
 #include "mmc.h"
 #include "util.h"
 #include "fwup_apply.h"
@@ -90,11 +91,13 @@ static void print_usage()
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
-    printf("  -p <keyfile> A public key file for verifying firmware updates\n");
+    printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates\n");
+    printf("  --private-key <key> A private key for signing firmware updates\n");
     printf("  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%%)\n");
     printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
+    printf("  --public-key <key> A public key for verifying firmware updates\n");
     printf("  -q, --quiet   Quiet\n");
-    printf("  -s <keyfile> A private key file for signing firmware updates\n");
+    printf("  -s, --private-key-file <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
     printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
     printf("  --sparse-check-size <bytes> Hole size to check for --sparse-check\n");
@@ -160,6 +163,10 @@ static struct option long_options[] = {
     {"help",     no_argument,       0, 'h'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
+    {"private-key", required_argument, 0, '('},
+    {"private-key-file", required_argument, 0, 's'},
+    {"public-key", required_argument, 0, ')'},
+    {"public-key-file ", required_argument, 0, 'p'},
     {"progress-low", required_argument, 0, '$'},
     {"progress-high", required_argument, 0, '%'},
     {"quiet",    no_argument,       0, 'q'},
@@ -185,25 +192,79 @@ static struct option long_options[] = {
 #define CMD_VERIFY        7
 #define CMD_SPARSE_CHECK  8
 
-static unsigned char *load_public_key(const char *path)
+static unsigned char *decode_key(const char *buffer,
+                                 size_t buffer_len,
+                                 size_t key_len)
+{
+    unsigned char *key = (unsigned char *) malloc(key_len);
+
+    // Check for raw key bytes
+    if (buffer_len == key_len) {
+        memcpy(key, buffer, buffer_len);
+        return key;
+    }
+
+    // Check for Base64-encoded key (with or without padding)
+    size_t base64_key_len = base64_raw_to_unpadded_count(key_len);
+    size_t decoded_len = buffer_len;
+    if (buffer_len >= base64_key_len &&
+        from_base64(key, &decoded_len, buffer) != NULL &&
+        decoded_len == key_len) {
+        return key;
+    }
+
+    // Unexpected length
+    free(key);
+    return NULL;
+}
+
+static unsigned char *load_key(const char *path, const char *key_type, size_t key_len)
 {
     FILE *fp = fopen(path, "rb");
-    unsigned char *public_key = (unsigned char *) malloc(crypto_sign_PUBLICKEYBYTES);
-    if (!fp || fread(public_key, 1, crypto_sign_PUBLICKEYBYTES, fp) != crypto_sign_PUBLICKEYBYTES)
-        fwup_err(EXIT_FAILURE, "Error reading public key from file '%s'", path);
+    if (!fp)
+        fwup_err(EXIT_FAILURE, "Error opening %s key file '%s'", key_type, path);
+
+    size_t base64_size = base64_raw_to_encoded_count(key_len);
+    char buffer[base64_size];
+
+    size_t amount_read = fread(buffer, 1, base64_size, fp);
     fclose(fp);
-    return public_key;
+
+    unsigned char *key = decode_key(buffer, amount_read, key_len);
+    if (key == NULL)
+        fwup_errx(EXIT_FAILURE, "Error reading or decoding %s key from file '%s'", key_type, path);
+
+    return key;
+}
+
+static unsigned char *parse_key(const char *buffer, size_t buffer_len, const char *key_type, size_t key_len)
+{
+    unsigned char *key = decode_key(buffer, buffer_len, key_len);
+    if (key == NULL)
+        fwup_errx(EXIT_FAILURE, "Error decoding %s key", key_type);
+    return key;
+}
+
+static unsigned char *load_public_key(const char *path)
+{
+    return load_key(path, "public", crypto_sign_PUBLICKEYBYTES);
 }
 
 static unsigned char *load_signing_key(const char *path)
 {
-    FILE *fp = fopen(path, "rb");
-    unsigned char *signing_key = (unsigned char *) malloc(crypto_sign_SECRETKEYBYTES);
-    if (!fp || fread(signing_key, 1, crypto_sign_SECRETKEYBYTES, fp) != crypto_sign_SECRETKEYBYTES)
-        fwup_err(EXIT_FAILURE, "Error reading signing key from file '%s'", path);
-    fclose(fp);
-    return signing_key;
+    return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
 }
+
+static unsigned char *parse_public_key(const char *buffer, size_t buffer_len)
+{
+    return parse_key(buffer, buffer_len, "public", crypto_sign_PUBLICKEYBYTES);
+}
+
+static unsigned char *parse_signing_key(const char *buffer, size_t buffer_len)
+{
+    return parse_key(buffer, buffer_len, "private", crypto_sign_SECRETKEYBYTES);
+}
+
 
 static void autoselect_mmc_device(struct mmc_device *device)
 {
@@ -435,6 +496,13 @@ int main(int argc, char **argv)
             break;
         case '*': // --sparse-check-size
             sparse_check_size = strtol(optarg, 0, 0);
+            break;
+        case '(': // --private-key
+            signing_key = parse_signing_key(optarg, strlen(optarg));
+            easy_mode = false;
+            break;
+        case ')': // --public-key
+            public_key = parse_public_key(optarg, strlen(optarg));
             break;
         default: /* '?' */
             print_usage();

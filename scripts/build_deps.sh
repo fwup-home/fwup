@@ -67,7 +67,6 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
     rm -fr libsodium-*
     tar xf $DOWNLOAD_DIR/libsodium-$LIBSODIUM_VERSION.tar.gz
     cd libsodium-$LIBSODIUM_VERSION
-    patch -p1 < $BASE_DIR/scripts/patches/libsodium/0001-Try-linking-_xgetbv-for-obsolete-mingw-versions.patch
     PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --enable-shared=no
     make $MAKE_FLAGS
     make install

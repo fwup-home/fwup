@@ -10,11 +10,26 @@ cd $WORK
 $FWUP_CREATE -g
 cd -
 
-if [ `wc -c $WORK/fwup-key.pub | awk '{print $1}'` -ne 32 ]; then
-    echo "fwup-key.pub isn't 32 bytes"
+# Check that the keys are the expected base64 length
+if [ `wc -c $WORK/fwup-key.pub | awk '{print $1}'` -ne 44 ]; then
+    echo "fwup-key.pub isn't 44 bytes"
     exit 1
 fi
-if [ `wc -c $WORK/fwup-key.priv | awk '{print $1}'` -ne 64 ]; then
-    echo "fwup-key.priv isn't 64 bytes"
+if [ `wc -c $WORK/fwup-key.priv | awk '{print $1}'` -ne 88 ]; then
+    echo "fwup-key.priv isn't 88 bytes"
+    exit 1
+fi
+
+# Check that the keys base64 decode to the right length
+# base64 will fail if the encoding messed up somehow.
+base64_decode < $WORK/fwup-key.pub > $WORK/fwup-key.pub.raw
+base64_decode < $WORK/fwup-key.priv > $WORK/fwup-key.priv.raw
+
+if [ `wc -c $WORK/fwup-key.pub.raw | awk '{print $1}'` -ne 32 ]; then
+    echo "base64 -d fwup-key.pub didn't produce 32 bytes"
+    exit 1
+fi
+if [ `wc -c $WORK/fwup-key.priv.raw | awk '{print $1}'` -ne 64 ]; then
+    echo "base64 -d fwup-key.priv didn't produce 64 bytes"
     exit 1
 fi

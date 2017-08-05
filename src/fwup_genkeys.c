@@ -20,15 +20,26 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../3rdparty/base64.h"
 #include "util.h"
 
-static int save_key(const char *name, unsigned char *c, size_t len)
+static int save_key(const char *name, unsigned char *key, size_t key_len)
 {
     FILE *fp = fopen(name, "wb");
     if (!fp)
         ERR_RETURN("Couldn't create '%s'", name);
 
-    if (fwrite(c, 1, len, fp) != len) {
+    size_t encoded_len = base64_raw_to_encoded_count(key_len);
+    char buffer[encoded_len + 1];
+    size_t unpadded_len = to_base64(buffer, encoded_len, key, key_len);
+
+    // The libsodium base64 code doesn't pad. This isn't a problem for
+    // fwup, but triggers decode errors when the output is run through
+    // base64. See https://tools.ietf.org/html/rfc4648#page-4.
+    while (unpadded_len < encoded_len)
+        buffer[unpadded_len++] = '=';
+
+    if (fwrite(buffer, 1, encoded_len, fp) != encoded_len) {
         fclose(fp);
         ERR_RETURN("Couldn't write to '%s'", name);
     }

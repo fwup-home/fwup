@@ -44,7 +44,8 @@ SOURCES += \
     src/mmc_bsd.c \
     src/resources.c \
     src/block_cache.c \
-    src/pad_to_block_writer.c
+    src/pad_to_block_writer.c \
+    3rdparty/base64.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -96,7 +97,8 @@ HEADERS += \
     src/resources.h \
     src/block_cache.h \
     src/fatfs.h \
-    src/pad_to_block_writer.h
+    src/pad_to_block_writer.h \
+    3rdparty/base64.h
 
 OTHER_FILES += \
     fwupdate.conf \

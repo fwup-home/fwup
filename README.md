@@ -69,9 +69,9 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.3/fwup_0.15.3_amd64.deb)
-  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.3/fwup_0.15.3_armhf.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.15.3/fwup-0.15.3-1.x86_64.rpm)
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup_0.15.4_amd64.deb)
+  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup_0.15.4_armhf.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup-0.15.4-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
   * Buildroot - Support is included upstream since the 2016.05 release
   * Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
@@ -80,11 +80,11 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
     choco install fwup
 
-Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.15.3/fwup.exe)
+Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.15.3/fwup-0.15.3.tar.gz) or clone this repository. Then read one of the following files:
+latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup-0.15.4.tar.gz) or clone this repository. Then read one of the following files:
 
   * [Linux build instructions](docs/build_linux.md)
   * [OSX build instructions](docs/build_osx.md)
@@ -121,10 +121,10 @@ Options:
   -a, --apply   Apply the firmware update
   -c, --create  Create the firmware update
   -d <file> Device file for the memory card
-  -D, --detect List attached SDCards or MMC devices
+  -D, --detect List attached SDCards or MMC devices and their sizes
   -E, --eject Eject removeable media after successfully writing firmware.
-  --enable-trim Enable use of the hardware TRIM command
   --no-eject Do not eject media after writing firmware
+  --enable-trim Enable use of the hardware TRIM command
   -f <fwupdate.conf> Specify the firmware update configuration file
   -F, --framing Apply framing on stdin/stdout
   -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
@@ -133,11 +133,13 @@ Options:
   -m, --metadata   Print metadata in the firmware update
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
-  -p <keyfile> A public key file for verifying firmware updates
+  -p, --public-key-file <keyfile> A public key file for verifying firmware updates
+  --private-key <key> A private key for signing firmware updates
   --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%)
   --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%)
+  --public-key <key> A public key for verifying firmware updates
   -q, --quiet   Quiet
-  -s <keyfile> A private key file for signing firmware updates
+  -s, --private-key-file <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)
   --sparse-check <path> Check if the OS and file system supports sparse files at path
   --sparse-check-size <bytes> Hole size to check for --sparse-check
@@ -150,7 +152,7 @@ Options:
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit
   -1   Fast compression (for create)
-  -9   Best compression (for create)
+  -9   Best compression (default)
 
 Examples:
 

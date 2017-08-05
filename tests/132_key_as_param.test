@@ -1,0 +1,77 @@
+#!/bin/sh
+
+#
+# Test that it's possible to pass keys around as commandline parameters
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "TEST" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "complete" {
+  on-resource "TEST" {
+    funlist = {"2", "raw_write", "0"}
+  }
+}
+EOF
+
+# Create new keys
+cd $WORK
+$FWUP_CREATE -g
+cd -
+
+PUBLIC_KEY=$(cat $WORK/fwup-key.pub)
+PRIVATE_KEY=$(cat $WORK/fwup-key.priv)
+
+# Sign the firmware
+$FWUP_CREATE --private-key $PRIVATE_KEY -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+
+# Check that applying the firmware with checking signatures works
+$FWUP_APPLY -q --public-key $PUBLIC_KEY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that verifying the firmware with checking signatures works
+$FWUP_VERIFY -V --public-key $PUBLIC_KEY -i $FWFILE
+
+# Swap the first three characters to test that passing bad keys fails
+# If the first 3 characters equals the second 3 characters, then this
+# test will fail. It is hoped that this will be exceedingly rare.
+CORRUPT_PUBLIC_KEY=$(cat $WORK/fwup-key.pub | sed 's/\(...\)\(...\)\(.*\)/\2\1\3/')
+CORRUPT_PRIVATE_KEY=$(cat $WORK/fwup-key.priv | sed 's/\(...\)\(...\)\(.*\)/\2\1\3/')
+
+# Truncate the keys for another set of failure tests
+TRUNCATED_PUBLIC_KEY=$(cat $WORK/fwup-key.pub | cut -b 3-)
+TRUNCATED_PRIVATE_KEY=$(cat $WORK/fwup-key.priv | cut -b 3-)
+
+# These verifications should fail since the public key is corrupt..
+if $FWUP_APPLY -q --public-key $CORRUPT_PUBLIC_KEY -a -d $IMGFILE -i $FWFILE -t complete; then echo "apply corrupt pub"; exit 1; fi
+if $FWUP_VERIFY -V --public-key $CORRUPT_PUBLIC_KEY -i $FWFILE; then echo "verify corrupt pub"; exit 1; fi
+if $FWUP_APPLY -q --public-key $TRUNCATED_PUBLIC_KEY -a -d $IMGFILE -i $FWFILE -t complete; then echo "apply truncated pub"; exit 1; fi
+if $FWUP_VERIFY -V --public-key $TRUNCATED_PUBLIC_KEY -i $FWFILE; then echo "verify truncated pub"; exit 1; fi
+
+# Passing a truncated private key should fail
+if $FWUP_CREATE --private-key $TRUNCATED_PRIVATE_KEY -c -f $CONFIG -o $FWFILE; then echo "create private truncated"; exit 1; fi
+
+# Passing a corrupt private key currently succeeds (not ideal, but...)
+$FWUP_CREATE --private-key $CORRUPT_PRIVATE_KEY -c -f $CONFIG -o $FWFILE
+
+# These verifications should fail, though.
+if $FWUP_APPLY -q --public-key $PUBLIC_KEY -a -d $IMGFILE -i $FWFILE -t complete; then echo "apply pub"; exit 1; fi
+if $FWUP_APPLY -q --public-key $CORRUPT_PUBLIC_KEY -a -d $IMGFILE -i $FWFILE -t complete; then echo "apply corrupt pub"; exit 1; fi
+if $FWUP_VERIFY -V --public-key $PUBLIC_KEY -i $FWFILE; then echo "verify pub"; exit 1; fi
+if $FWUP_VERIFY -V --public-key $CORRUPT_PUBLIC_KEY -i $FWFILE; then echo "verify corrupt pub"; exit 1; fi

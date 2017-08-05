@@ -147,5 +147,7 @@ TESTS = 001_simple_fw.test \
 	131_path_write_file.test \
 	132_pipe_write_file.test \
 	133_execute.test
+	131_raw_key.test \
+	132_key_as_param.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

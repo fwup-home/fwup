@@ -1,6 +1,16 @@
 # Changelog
 
-## v0.15.4-dev
+## v1.0.0-dev
+
+## v0.15.4
+
+  * New features
+    * Changed signing keys to be base64 encoded so that they'd be easier to bake
+      into firmware and pass in environment variables on CI systems. The
+      previous raw binary format still works and will remain supported.
+    * Added commandline parameters for passing public and private keys via
+      commandline arguments. Along with the base64 change, this cleans up CI
+      build scripts.
 
   * Bug fixes/Improvements
     * Fix lseek seek_end issue on Mac when working with SDCards. This fixed an
@@ -10,9 +20,9 @@
     * Fix verbose prints to use the fwup_warn helper instead of calling fprintf
       directely. (Cleanup)
     * Enlarged trim cache for up to 64 GiB memory devices. Large ones will work,
-      but trim caching is ignored after 64 GiB. This should almost all known
-      uses of fwup now. The use of fwup on large SSDs still works, since fwup
-      is pretty much only used at lower offsets.
+      but trim caching is ignored after 64 GiB. This should support almost all
+      known uses of fwup now. The use of fwup on large SSDs still works, since
+      fwup is pretty much only used at lower offsets.
 
 ## v0.15.3
 
