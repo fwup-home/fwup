@@ -62,6 +62,10 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     sed -i "s/%VERSION%/$FWUP_VERSION/" $FWUP_INSTALL_DIR/fwup/tools/VERIFICATION.txt
     cat scripts/LICENSE.txt LICENSE > $FWUP_INSTALL_DIR/fwup/tools/LICENSE.txt
 
+    cp -f scripts/fwup $FWUP_INSTALL_DIR/fwup/tools/
+    cp -f scripts/ChocolateyInstall.ps1 $FWUP_INSTALL_DIR/fwup/tools/
+    cp -f scripts/ChocolateyUninstall.ps1 $FWUP_INSTALL_DIR/fwup/tools/
+
     # Wait to the last minute to build and install chocolatey since it's
     # such a pain and kills Travis builds randomly and frequently.
     $BASE_DIR/scripts/ubuntu_install_chocolatey.sh
