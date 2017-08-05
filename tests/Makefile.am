@@ -144,10 +144,11 @@ TESTS = 001_simple_fw.test \
 	128_blank_offset.test \
 	129_mbr_overflow.test \
 	130_media_sizes.test \
-	131_path_write_file.test \
-	132_pipe_write_file.test \
-	133_execute.test
 	131_raw_key.test \
-	132_key_as_param.test
+	132_key_as_param.test \
+	133_path_write_file.test \
+	134_pipe_write_file.test \
+	135_execute.test
+	
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
