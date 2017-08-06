@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+FWUP_LOCATION="$(dirname "$(realpath "$0")")"
+"$FWUP_LOCATION/fwup.exe" "$@"
