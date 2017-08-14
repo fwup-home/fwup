@@ -33,3 +33,12 @@ if [ `wc -c $WORK/fwup-key.priv.raw | awk '{print $1}'` -ne 64 ]; then
     echo "base64 -d fwup-key.priv didn't produce 64 bytes"
     exit 1
 fi
+
+# Check that overwriting keys fails
+cd $WORK
+if $FWUP_CREATE -g; then
+    echo "Expected fwup to fail when it would have overwritten previously generated keys"
+    exit 1
+fi
+cd -
+

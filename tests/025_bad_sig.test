@@ -27,6 +27,8 @@ $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 # Create new keys and try to use them instead of the first ones
 # It should be insanely unlikely that we'll generate the same keys twice
 cd $WORK
+mv fwup-key.pub fwup-key-orig.pub
+mv fwup-key.priv fwup-key-orig.priv
 $FWUP_CREATE -g
 cd -
 

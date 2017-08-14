@@ -20,14 +20,23 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "../3rdparty/base64.h"
 #include "util.h"
 
 static int save_key(const char *name, unsigned char *key, size_t key_len)
 {
-    FILE *fp = fopen(name, "wb");
-    if (!fp)
-        ERR_RETURN("Couldn't create '%s'", name);
+    int rc = 0;
+
+    // O_EXCL -> make sure that file doesn't already exist when calling
+    //           open() so that we don't accidentally overwrite a file.
+    int fd = open(name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0)
+        ERR_RETURN("Couldn't create '%s': %s", name, strerror(errno));
 
     size_t encoded_len = base64_raw_to_encoded_count(key_len);
     char buffer[encoded_len + 1];
@@ -39,13 +48,13 @@ static int save_key(const char *name, unsigned char *key, size_t key_len)
     while (unpadded_len < encoded_len)
         buffer[unpadded_len++] = '=';
 
-    if (fwrite(buffer, 1, encoded_len, fp) != encoded_len) {
-        fclose(fp);
-        ERR_RETURN("Couldn't write to '%s'", name);
-    }
+    ssize_t written = write(fd, buffer, encoded_len);
+    if (written < 0 || (size_t) written != encoded_len)
+        ERR_CLEANUP_MSG("Couldn't write to '%s': %s", name, strerror(errno));
 
-    fclose(fp);
-    return 0;
+cleanup:
+    close(fd);
+    return rc;
 }
 
 int fwup_genkeys()
