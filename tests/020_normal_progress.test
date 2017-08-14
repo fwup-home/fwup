@@ -42,6 +42,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete \
 
 cat >$WORK/expected_output.txt <<EOF
 .  0%. 25%. 50%. 75%. 99%.100%
+Success!
 EOF
 diff $WORK/expected_output.txt $WORK/actual_output.txt
 
