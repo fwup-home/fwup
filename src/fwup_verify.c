@@ -145,6 +145,13 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
             ERR_CLEANUP_MSG("Resource %s not found in archive", cfg_title(r->resource));
     }
 
+    if (public_key && meta_conf_signature)
+        fwup_warnx("Signed archive '%s' passes signature verification and is not corrupt.", input_filename);
+    else if (!public_key && meta_conf_signature)
+        fwup_warnx("Signed archive '%s' is not corrupt. Pass a public key to verify the signature.", input_filename);
+    else
+        fwup_warnx("Unsigned archive '%s' is not corrupt.", input_filename);
+
 cleanup:
     rlist_free(all_resources);
     archive_read_close(a);
