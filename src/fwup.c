@@ -672,5 +672,10 @@ int main(int argc, char **argv)
             fwup_output(FRAMING_TYPE_SUCCESS, 0, "Sparse files supported\n");
     }
 
+    if (signing_key)
+        free(signing_key);
+    if (public_key)
+        free(public_key);
+
     return 0;
 }
