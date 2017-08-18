@@ -206,7 +206,7 @@ static unsigned char *decode_key(const char *buffer,
 
     // Check for Base64-encoded key (with or without padding)
     size_t base64_key_len = base64_raw_to_unpadded_count(key_len);
-    size_t decoded_len = buffer_len;
+    size_t decoded_len = key_len;
     if (buffer_len >= base64_key_len &&
         from_base64(key, &decoded_len, buffer) != NULL &&
         decoded_len == key_len) {
