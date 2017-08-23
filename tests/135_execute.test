@@ -19,7 +19,7 @@ file-resource TEST {
 	host-path = "${TESTFILE_1K}"
 }
 task complete {
-	on-finish { execute("cat ${DUMMY} > ${OUTFILE}") }
+	on-finish { execute("./write.sh ${OUTFILE} ${DUMMY}") }
 }
 EOF
 

@@ -151,4 +151,4 @@ TESTS = 001_simple_fw.test \
 	135_execute.test
 	
 
-EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin dummy_cmd.sh
+EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin dummy_cmd.sh write.sh

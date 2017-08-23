@@ -38,6 +38,15 @@
 
 #include <sodium.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+    const char *read_args = "rb";
+    const char *write_args = "wb";
+#else
+    const char *read_args = "r";
+    const char *write_args = "w";
+    #define O_BINARY 0
+#endif
+
 #define DECLARE_FUN(FUN) \
     static int FUN ## _validate(struct fun_context *fctx); \
     static int FUN ## _compute_progress(struct fun_context *fctx); \
@@ -1084,7 +1093,7 @@ int path_write_run(struct fun_context *fctx)
 
     char const* output_filename = fctx->argv[1];
    
-    int output_fd = open(output_filename,O_WRONLY|O_CREAT,0644);
+    int output_fd = open(output_filename,O_WRONLY|O_CREAT|O_BINARY,0644);
     if(!output_fd)
         ERR_CLEANUP_MSG("raw_write can't open output file %s", fctx->argv[2]);
 
@@ -1122,7 +1131,7 @@ int pipe_write_run(struct fun_context *fctx)
         ERR_CLEANUP_MSG("pipe_write requires --unsafe");
 
     char const *cmd_name = fctx->argv[1];
-    FILE * cmd_pipe = popen(cmd_name,"w");
+    FILE * cmd_pipe = popen(cmd_name,write_args);
     if(!cmd_pipe)
             ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
     int output_fd = fileno(cmd_pipe);
@@ -1160,7 +1169,7 @@ int execute_run(struct fun_context *fctx)
         ERR_CLEANUP_MSG("pipe_write requires --unsafe");
     
     char const *cmd_name = fctx->argv[1];
-    FILE * cmd_pipe = popen(cmd_name,"r");
+    FILE * cmd_pipe = popen(cmd_name,read_args);
     if(!cmd_pipe)
         ERR_CLEANUP_MSG("execute can't run command %s", cmd_name);
 
