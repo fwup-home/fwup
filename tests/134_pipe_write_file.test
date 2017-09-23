@@ -28,7 +28,4 @@ fi
 
 # Pipe the contents of the firmware file through fwup
 cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
-
-# The firmware file is equivalent to the following dd call
-
-diff $TESTFILE_1K $OUTFILE
+cmp $TESTFILE_1K $OUTFILE

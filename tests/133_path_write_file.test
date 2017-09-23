@@ -6,8 +6,9 @@
 
 . ./common.sh
 
-export OUTFILE1=$WORK/output1k
-export OUTFILE2=$WORK/output1k_2
+OUTFILE1=$WORK/output1k
+OUTFILE2=$WORK/output1k_2
+
 cat >$CONFIG <<EOF
 file-resource TEST1 {
 	host-path = "${TESTFILE_1K}"
@@ -33,5 +34,5 @@ fi
 cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
 
 # The firmware file is equivalent to the following dd call
-diff $TESTFILE_1K $OUTFILE1
-diff $TESTFILE_150K $OUTFILE2
+cmp $TESTFILE_1K $OUTFILE1
+cmp $TESTFILE_150K $OUTFILE2
