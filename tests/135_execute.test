@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test streaming a resource through an arbitrary command on the
+# target system
+#
+
+. ./common.sh
+
+export OUTFILE=$WORK/output.txt
+export LOCAL_FILE=$WORK/somefile.txt
+
+cat >$LOCAL_FILE <<EOF
+This is a test.  It is only a test
+EOF
+
+cat >$CONFIG <<EOF
+task complete {
+	on-finish { execute("dd if=${LOCAL_FILE} of=${OUTFILE}") }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that execute fails w/o --unsafe
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "No --unsafe:  The execute should have failed."
+    exit 1
+fi
+
+# Apply the firmware and verify that the local file was copied
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
+diff $LOCAL_FILE $OUTFILE
+
+# Try again, but pipe the firmware file through
+rm -f $OUTFILE
+cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
+diff $LOCAL_FILE $OUTFILE

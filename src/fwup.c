@@ -46,6 +46,7 @@
 // Global options
 bool fwup_verbose = false;
 bool fwup_framing = false;
+bool fwup_unsafe = false;
 enum fwup_progress_option fwup_progress_mode = PROGRESS_MODE_OFF;
 
 static bool quiet = false;
@@ -104,6 +105,7 @@ static void print_usage()
     printf("  -t, --task <task> Task to apply within the firmware update\n");
     printf("  -u, --unmount Unmount all partitions on device first\n");
     printf("  -U, --no-unmount Do not try to unmount partitions on device\n");
+    printf("  --unsafe Allow unsafe commands (consider applying only signed archives)\n");
     printf("  -v, --verbose   Verbose\n");
     printf("  -V, --verify  Verify an existing firmware file (specify -i)\n");
     printf("  --version Print out the version\n");
@@ -176,6 +178,7 @@ static struct option long_options[] = {
     {"task",     required_argument, 0, 't'},
     {"unmount",  no_argument,       0, 'u'},
     {"no-unmount", no_argument,     0, 'U'},
+    {"unsafe",   no_argument,       0, '+'},
     {"verbose",  no_argument,       0, 'v'},
     {"verify",   no_argument,       0, 'V'},
     {"version",  no_argument,       0, '@'},
@@ -454,6 +457,9 @@ int main(int argc, char **argv)
             break;
         case 'U': // --no-unmount
             unmount_first = false;
+            break;
+        case '+': // --unsafe
+            fwup_unsafe = true;
             break;
         case 'y':
             accept_found_device = true;
