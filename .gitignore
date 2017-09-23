@@ -50,3 +50,5 @@ tests/framing-helper
 *.exe
 *.nupkg
 .vscode
+/tests/work-*.test
+/tests/verify-syscalls
