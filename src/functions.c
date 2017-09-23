@@ -994,21 +994,7 @@ int info_run(struct fun_context *fctx)
     return 0;
 }
 
-int path_write_validate(struct fun_context *fctx)
-{
-    if (fctx->type != FUN_CONTEXT_FILE)
-        ERR_RETURN("path_write only usable in on-resource");
-
-    if (fctx->argc != 2)
-        ERR_RETURN("path_write requires a file path");
-
-    return 0;
-}
-int path_write_compute_progress(struct fun_context *fctx)
-{
-    return block_write_compute_progress(fctx);
-}
-int fd_write_run(char const * cmd_name, struct fun_context *fctx, int output_fd)
+static int fd_write_run(char const * cmd_name, struct fun_context *fctx, int output_fd)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
@@ -1082,30 +1068,50 @@ cleanup:
     sparse_file_free(&sfm);
     return rc;
 }
+
+static int check_unsafe(struct fun_context *fctx)
+{
+    if (!fwup_unsafe)
+        ERR_RETURN("%s requires --unsafe", fctx->argv[0]);
+    return 0;
+}
+
+int path_write_validate(struct fun_context *fctx)
+{
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("path_write only usable in on-resource");
+
+    if (fctx->argc != 2)
+        ERR_RETURN("path_write requires a file path");
+
+    return 0;
+}
+int path_write_compute_progress(struct fun_context *fctx)
+{
+    return block_write_compute_progress(fctx);
+}
 int path_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
+    OK_OR_RETURN(check_unsafe(fctx));
 
     int rc = 0;
-
-    if(!fwup_unsafe)
-        ERR_CLEANUP_MSG("path_write requires --unsafe");
-
     char const* output_filename = fctx->argv[1];
 
     int output_fd = open(output_filename,O_WRONLY|O_CREAT|O_BINARY,0644);
     if(!output_fd)
-        ERR_CLEANUP_MSG("raw_write can't open output file %s", fctx->argv[2]);
+        ERR_CLEANUP_MSG("path_write can't open output file %s", fctx->argv[2]);
 
     rc = fd_write_run("path_write",fctx,output_fd);
 
 cleanup:
-    if(output_fd) {
+    if (output_fd)
         close(output_fd);
-    }
+
     return rc;
 }
+
 int pipe_write_validate(struct fun_context *fctx)
 {
     if (fctx->type != FUN_CONTEXT_FILE)
@@ -1126,27 +1132,28 @@ int pipe_write_run(struct fun_context *fctx)
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
 
+    OK_OR_RETURN(check_unsafe(fctx));
+
     int rc = 0;
 
-    if(!fwup_unsafe)
-        ERR_CLEANUP_MSG("pipe_write requires --unsafe");
-
     char const *cmd_name = fctx->argv[1];
-    FILE * cmd_pipe = popen(cmd_name,write_args);
-    if(!cmd_pipe)
-            ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
-    int output_fd = fileno(cmd_pipe);
-    if(!output_fd)
+    FILE * cmd_pipe = popen(cmd_name, write_args);
+    if (!cmd_pipe)
         ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
 
-    rc = fd_write_run("pipe_write",fctx,output_fd);
+    int output_fd = fileno(cmd_pipe);
+    if (!output_fd)
+        ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
+
+    rc = fd_write_run("pipe_write", fctx, output_fd);
 
 cleanup:
-    if(cmd_pipe) {
+    if (cmd_pipe)
         pclose(cmd_pipe);
-    }
+
     return rc;
 }
+
 int execute_validate(struct fun_context *fctx)
 {
     if (fctx->argc != 2)
@@ -1159,30 +1166,25 @@ int execute_compute_progress(struct fun_context *fctx)
     (void) fctx; // UNUSED
     return 0;
 }
-
 int execute_run(struct fun_context *fctx)
 {
     assert(fctx->on_event);
+    OK_OR_RETURN(check_unsafe(fctx));
 
     int rc = 0;
-
-    if(!fwup_unsafe)
-        ERR_CLEANUP_MSG("pipe_write requires --unsafe");
-
     char const *cmd_name = fctx->argv[1];
-    FILE * cmd_pipe = popen(cmd_name,read_args);
+    FILE *cmd_pipe = popen(cmd_name,read_args);
     if(!cmd_pipe)
         ERR_CLEANUP_MSG("execute can't run command %s", cmd_name);
 
     char buffer[512];
-
-    while(fread(buffer, 512, 1, cmd_pipe) == 512) {
+    while(fread(buffer, sizeof(buffer), 1, cmd_pipe) == sizeof(buffer)) {
         fwup_warnx("%s", buffer);
     }
 
 cleanup:
-    if(cmd_pipe) {
+    if (cmd_pipe)
         pclose(cmd_pipe);
-    }
+
     return rc;
 }
