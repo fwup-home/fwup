@@ -38,7 +38,7 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
 
-void format_pretty_size(off_t amount, char *out, size_t out_size);
+int format_pretty_size10(off_t amount, char *out, size_t out_size);
 
 extern bool fwup_verbose;
 
@@ -58,9 +58,20 @@ extern bool fwup_verbose;
 
 #define FWUP_BLOCK_SIZE (512)
 
+// See wikipedia for the drama behind the IEC prefixes if this
+// bothers you.
+
+// Power of 2 units
 #define ONE_KiB  (1024LL)
 #define ONE_MiB  (1024 * ONE_KiB)
 #define ONE_GiB  (1024 * ONE_MiB)
+#define ONE_TiB  (1024 * ONE_GiB)
+
+// Power of 10 units
+#define ONE_KB  (1000LL)
+#define ONE_MB  (1000 * ONE_KB)
+#define ONE_GB  (1000 * ONE_MB)
+#define ONE_TB  (1000 * ONE_GB)
 
 // This checks that the argument can be converted to a uint. It handles
 // a few things:

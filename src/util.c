@@ -205,7 +205,7 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
     return 0;
 }
 
-/*
+/**
  * Return true if the file is already a regular
  * file or it will be one if it is opened without
  * any special flags.
@@ -234,7 +234,7 @@ bool will_be_regular_file(const char *path)
            (rc < 0 && errno == ENOENT && !is_in_dev); // Doesn't exist and not in /dev
 }
 
-/*
+/**
  * Return true if the file exists.
  */
 bool file_exists(const char *path)
@@ -244,17 +244,28 @@ bool file_exists(const char *path)
     return rc == 0;
 }
 
-
-void format_pretty_size(off_t amount, char *out, size_t out_size)
+/**
+ * Format the specified amount in a human readable way using
+ * power of 10 units.
+ *
+ * @param amount the numer
+ * @param out    an output buffer
+ * @param out_size the size of the output buffer
+ * @return the number of bytes written to out
+ */
+int format_pretty_size10(off_t amount, char *out, size_t out_size)
 {
-    if (amount >= ONE_GiB)
-        snprintf(out, out_size, "%.2f GiB", ((double) amount) / ONE_GiB);
-    else if (amount >= ONE_MiB)
-        snprintf(out, out_size, "%.2f MiB", ((double) amount) / ONE_MiB);
-    else if (amount >= ONE_KiB)
-        snprintf(out, out_size, "%d KiB", (int) (amount / ONE_KiB));
-    else
-        snprintf(out, out_size, "%d bytes", (int) amount);
+    double value;
+    const char *units;
+
+    if (amount >= ONE_TB) { value = ((double) amount) / ONE_TB; units = "TB"; }
+    else if (amount >= ONE_GB) { value = ((double) amount) / ONE_GB; units = "GB"; }
+    else if (amount >= ONE_MB) { value = ((double) amount) / ONE_MB; units = "MB"; }
+    else if (amount >= ONE_KB) { value = ((double) amount) / ONE_KB; units = "KB"; }
+    else if (amount == 1 ) { value = (double) amount; units = "byte"; }
+    else { value = (double) amount; units = "bytes"; }
+
+    return snprintf(out, out_size, "%.2f %s", value, units);
 }
 
 void fwup_err(int status, const char *format, ...)
@@ -440,7 +451,7 @@ void alloc_page_aligned(void **memptr, size_t size)
     size_t padding = pagesize + pagesize - 1;
     uint8_t *original = (uint8_t *) malloc(size + padding);
     if (original == NULL)
-        fwup_err(EXIT_FAILURE, "malloc %u bytes", size + padding);
+        fwup_err(EXIT_FAILURE, "malloc %d bytes", (int) (size + padding));
 
     // Store the original pointer right before the aligned pointer
     uint8_t *aligned = (uint8_t *) (((uint64_t) (original + padding)) & ~(pagesize - 1));
