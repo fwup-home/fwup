@@ -80,7 +80,7 @@ static void print_usage()
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
     printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");
-    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");    
+    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
     printf("  --no-eject Do not eject media after writing firmware\n");
     printf("  --enable-trim Enable use of the hardware TRIM command\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
