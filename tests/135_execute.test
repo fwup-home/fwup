@@ -1,0 +1,64 @@
+#!/bin/sh
+
+#
+# Test streaming a resource through an arbitrary command on the
+# target system
+#
+
+. ./common.sh
+
+OUTFILE=$WORK/output.txt
+LOCAL_FILE=$WORK/somefile.txt
+
+EXE_CMD="dd if=${LOCAL_FILE} of=${OUTFILE}"
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # dd usually isn't available on Windows
+    EXE_CMD="copy work-135_execute.test\\\\somefile.txt work-135_execute.test\\\\output.txt"
+fi
+
+cat >$LOCAL_FILE <<EOF
+This is a test.  It is only a test
+EOF
+
+cat >$CONFIG <<EOF
+task complete {
+	on-finish { execute("${EXE_CMD}") }
+}
+task bad_command {
+	on-finish { execute("badcommand1234") }
+}
+task failing_command {
+	on-finish { execute("false") }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that execute fails w/o --unsafe
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "No --unsafe:  The execute should have failed."
+    exit 1
+fi
+
+# Apply the firmware and verify that the local file was copied
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
+diff $LOCAL_FILE $OUTFILE
+
+# Try again, but pipe the firmware file through
+rm -f $OUTFILE
+cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
+diff $LOCAL_FILE $OUTFILE
+
+# Try applying the update to a bogus command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_command; then
+    echo "Expected execute to fail when invoking an unknown command."
+    exit 1
+fi
+
+# Try applying the update to a failing command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t failing_command; then
+    echo "Expected execute to fail when the command failed."
+    exit 1
+fi

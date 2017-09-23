@@ -1,0 +1,47 @@
+#!/bin/sh
+
+#
+# Test writing a resource to an arbitrary location on the target file system
+#
+
+. ./common.sh
+
+OUTFILE1=$WORK/output1k
+OUTFILE2=$WORK/output1k_2
+
+cat >$CONFIG <<EOF
+file-resource TEST1 {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource TEST2 {
+	host-path = "${TESTFILE_150K}"
+}
+task complete {
+	on-resource TEST1 { path_write("${OUTFILE1}") }
+	on-resource TEST2 { path_write("${OUTFILE2}") }
+}
+task bad_file {
+	on-resource TEST1 { path_write("${WORK}") }
+}
+EOF
+
+# Create the firmware file like normal
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "No --unsafe:  The path_write should have failed."
+    exit 1
+fi
+
+# Try applying the update
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that the files were updated
+cmp $TESTFILE_1K $OUTFILE1
+cmp $TESTFILE_150K $OUTFILE2
+
+# Try applying the update to a directory (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_file; then
+    echo "Expected path_write to an existing directory to fail."
+    exit 1
+fi

@@ -31,8 +31,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <sodium.h>
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+    const char *read_args = "rb";
+    const char *write_args = "wb";
+#else
+    const char *read_args = "r";
+    const char *write_args = "w";
+    #define O_BINARY 0
+#endif
 
 #define DECLARE_FUN(FUN) \
     static int FUN ## _validate(struct fun_context *fctx); \
@@ -58,6 +70,9 @@ DECLARE_FUN(uboot_unsetenv);
 DECLARE_FUN(uboot_recover);
 DECLARE_FUN(error);
 DECLARE_FUN(info);
+DECLARE_FUN(path_write);
+DECLARE_FUN(pipe_write);
+DECLARE_FUN(execute);
 
 struct fun_info {
     const char *name;
@@ -89,8 +104,13 @@ static struct fun_info fun_table[] = {
     FUN_INFO(uboot_unsetenv),
     FUN_INFO(uboot_recover),
     FUN_INFO(error),
-    FUN_INFO(info)
+    FUN_INFO(info),
+    FUN_INFO(path_write),
+    FUN_INFO(pipe_write),
+    FUN_INFO(execute),
 };
+
+extern bool fwup_unsafe;
 
 static struct fun_info *lookup(int argc, const char **argv)
 {
@@ -209,7 +229,7 @@ int raw_write_validate(struct fun_context *fctx)
 
     return 0;
 }
-int raw_write_compute_progress(struct fun_context *fctx)
+int block_write_compute_progress(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
@@ -226,6 +246,10 @@ int raw_write_compute_progress(struct fun_context *fctx)
     return 0;
 }
 
+int raw_write_compute_progress(struct fun_context *fctx)
+{
+    return block_write_compute_progress(fctx);
+}
 int raw_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
@@ -966,5 +990,197 @@ int info_compute_progress(struct fun_context *fctx)
 int info_run(struct fun_context *fctx)
 {
     fwup_warnx("%s", fctx->argv[1]);
+    return 0;
+}
+
+static int fd_write_run(char const *cmd_name,
+                        struct fun_context *fctx,
+                        int output_fd,
+                        const char *output_name)
+{
+    assert(fctx->type == FUN_CONTEXT_FILE);
+    assert(fctx->on_event);
+
+    int rc = 0;
+    struct sparse_file_map sfm;
+    sparse_file_init(&sfm);
+
+    cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
+    if (!resource)
+        ERR_CLEANUP_MSG("%s can't find matching file-resource",cmd_name);
+
+    char *expected_hash = cfg_getstr(resource, "blake2b-256");
+    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
+        ERR_CLEANUP_MSG("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
+
+    OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
+    off_t expected_length = sparse_file_data_size(&sfm);
+
+    off_t len_written = 0;
+
+    crypto_generichash_state hash_state;
+    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+    for (;;) {
+        off_t offset;
+        size_t len;
+        const void *buffer;
+
+        OK_OR_CLEANUP(fctx->read(fctx, &buffer, &len, &offset));
+
+        // Check if done.
+        if (len == 0)
+            break;
+
+        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
+
+        ssize_t written = write(output_fd, buffer, len);
+        if (written < 0)
+            ERR_CLEANUP_MSG("%s couldn't write %d bytes to %s", cmd_name, len, output_name);
+        len_written += written;
+        progress_report(fctx->progress, len);
+    }
+
+    off_t ending_hole = sparse_ending_hole_size(&sfm);
+    if (ending_hole > 0) {
+        // If this is a regular file, seeking is insufficient in making the file
+        // the right length, so write a block of zeros to the end.
+        char zeros[512];
+        memset(zeros, 0, sizeof(zeros));
+        off_t to_write = sizeof(zeros);
+        if (ending_hole < to_write)
+            to_write = ending_hole;
+        off_t offset = sparse_file_size(&sfm) - to_write;
+        ssize_t written = write(output_fd, zeros, to_write);
+        if (written < 0)
+            ERR_CLEANUP_MSG("%s couldn't write to hole at offset %lld", cmd_name, offset);
+
+        // Unaccount for these bytes
+        len_written += written - to_write;
+    }
+
+    // Verify hash
+    unsigned char hash[crypto_generichash_BYTES];
+    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+    char hash_str[sizeof(hash) * 2 + 1];
+    bytes_to_hex(hash, hash_str, sizeof(hash));
+    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+        ERR_CLEANUP_MSG("raw_write detected blake2b digest mismatch");
+
+cleanup:
+    sparse_file_free(&sfm);
+    return rc;
+}
+
+static int check_unsafe(struct fun_context *fctx)
+{
+    if (!fwup_unsafe)
+        ERR_RETURN("%s requires --unsafe", fctx->argv[0]);
+    return 0;
+}
+
+int path_write_validate(struct fun_context *fctx)
+{
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("path_write only usable in on-resource");
+
+    if (fctx->argc != 2)
+        ERR_RETURN("path_write requires a file path");
+
+    return 0;
+}
+int path_write_compute_progress(struct fun_context *fctx)
+{
+    return block_write_compute_progress(fctx);
+}
+int path_write_run(struct fun_context *fctx)
+{
+    assert(fctx->type == FUN_CONTEXT_FILE);
+    assert(fctx->on_event);
+    OK_OR_RETURN(check_unsafe(fctx));
+
+    int rc = 0;
+
+    char const *output_filename = fctx->argv[1];
+    int output_fd = open(output_filename, O_WRONLY|O_CREAT|O_BINARY, 0644);
+    if (!output_fd)
+        ERR_CLEANUP_MSG("path_write can't open output file %s", fctx->argv[2]);
+
+    rc = fd_write_run("path_write", fctx, output_fd, output_filename);
+
+cleanup:
+    if (output_fd)
+        close(output_fd);
+
+    return rc;
+}
+
+int pipe_write_validate(struct fun_context *fctx)
+{
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("pipe_write only usable in on-resource");
+
+    if (fctx->argc != 2)
+        ERR_RETURN("pipe_write requires a command to execute");
+
+    return 0;
+}
+int pipe_write_compute_progress(struct fun_context *fctx)
+{
+    return block_write_compute_progress(fctx);
+}
+int pipe_write_run(struct fun_context *fctx)
+{
+    assert(fctx->type == FUN_CONTEXT_FILE);
+    assert(fctx->on_event);
+
+    OK_OR_RETURN(check_unsafe(fctx));
+
+    int rc = 0;
+    char const *cmd_name = fctx->argv[1];
+    FILE *cmd_pipe = popen(cmd_name, write_args);
+    if (!cmd_pipe)
+        ERR_CLEANUP_MSG("pipe_write can't run '%s'", cmd_name);
+
+    int output_fd = fileno(cmd_pipe);
+    if (!output_fd)
+        ERR_CLEANUP_MSG("fileno");
+
+    OK_OR_CLEANUP(fd_write_run("pipe_write", fctx, output_fd, "pipe"));
+
+cleanup:
+    if (cmd_pipe) {
+        int exit_status = pclose(cmd_pipe);
+        if (exit_status != 0)
+            ERR_RETURN("command '%s' returned an error to pipe_write", cmd_name);
+    }
+
+    return rc;
+}
+
+int execute_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("execute requires a command to execute");
+
+    return 0;
+}
+int execute_compute_progress(struct fun_context *fctx)
+{
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    return 0;
+}
+int execute_run(struct fun_context *fctx)
+{
+    assert(fctx->on_event);
+    OK_OR_RETURN(check_unsafe(fctx));
+
+    char const *cmd_name = fctx->argv[1];
+    int status = system(cmd_name);
+    if (status < 0)
+        ERR_RETURN("execute couldn't run '%s'", cmd_name);
+    if (status != 0)
+        ERR_RETURN("'%s' failed with exit status %d", cmd_name, status);
+
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
