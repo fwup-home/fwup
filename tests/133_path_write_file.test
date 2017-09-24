@@ -20,6 +20,9 @@ task complete {
 	on-resource TEST1 { path_write("${OUTFILE1}") }
 	on-resource TEST2 { path_write("${OUTFILE2}") }
 }
+task bad_file {
+	on-resource TEST1 { path_write("${WORK}") }
+}
 EOF
 
 # Create the firmware file like normal
@@ -30,9 +33,15 @@ if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
     exit 1
 fi
 
-# Pipe the contents of the firmware file through fwup
-cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
+# Try applying the update
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
 
-# The firmware file is equivalent to the following dd call
+# Check that the files were updated
 cmp $TESTFILE_1K $OUTFILE1
 cmp $TESTFILE_150K $OUTFILE2
+
+# Try applying the update to a directory (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_file; then
+    echo "Expected path_write to an existing directory to fail."
+    exit 1
+fi

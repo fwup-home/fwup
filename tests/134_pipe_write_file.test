@@ -16,16 +16,44 @@ file-resource TEST {
 task complete {
 	on-resource TEST { pipe_write("dd of=${OUTFILE}") }
 }
+task bad_command {
+	on-resource TEST { pipe_write("badcommand1234") }
+}
+task failing_command {
+	on-resource TEST { pipe_write("false") }
+}
+task short_command {
+	on-resource TEST { pipe_write("dd of=${OUTFILE} count=1") }
+}
 EOF
 
 # Create the firmware file like normal
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
+# Check that pipe_write fails w/o --unsafe
 if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
     echo "No --unsafe:  The pipe_write should have failed."
     exit 1
 fi
 
 # Pipe the contents of the firmware file through fwup
-cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
 cmp $TESTFILE_1K $OUTFILE
+
+# Try applying the update to a bogus command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_command; then
+    echo "Expected pipe_write to fail when invoking an unknown command."
+    exit 1
+fi
+
+# Try applying the update to a failing command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t failing_command; then
+    echo "Expected pipe_write to fail when the command failed."
+    exit 1
+fi
+
+# Try applying the update to a command that doesn't accept all input (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t short_command; then
+    echo "Expected pipe_write to fail when the command doesn't take all input."
+    exit 1
+fi

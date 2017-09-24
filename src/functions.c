@@ -35,7 +35,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 #include <sodium.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -994,7 +993,10 @@ int info_run(struct fun_context *fctx)
     return 0;
 }
 
-static int fd_write_run(char const * cmd_name, struct fun_context *fctx, int output_fd)
+static int fd_write_run(char const *cmd_name,
+                        struct fun_context *fctx,
+                        int output_fd,
+                        const char *output_name)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
@@ -1033,7 +1035,7 @@ static int fd_write_run(char const * cmd_name, struct fun_context *fctx, int out
 
         ssize_t written = write(output_fd, buffer, len);
         if (written < 0)
-            ERR_CLEANUP_MSG("%s couldn't write %d bytes to offset %lld", cmd_name, len, offset);
+            ERR_CLEANUP_MSG("%s couldn't write %d bytes to %s", cmd_name, len, output_name);
         len_written += written;
         progress_report(fctx->progress, len);
     }
@@ -1097,13 +1099,13 @@ int path_write_run(struct fun_context *fctx)
     OK_OR_RETURN(check_unsafe(fctx));
 
     int rc = 0;
-    char const* output_filename = fctx->argv[1];
 
-    int output_fd = open(output_filename,O_WRONLY|O_CREAT|O_BINARY,0644);
-    if(!output_fd)
+    char const *output_filename = fctx->argv[1];
+    int output_fd = open(output_filename, O_WRONLY|O_CREAT|O_BINARY, 0644);
+    if (!output_fd)
         ERR_CLEANUP_MSG("path_write can't open output file %s", fctx->argv[2]);
 
-    rc = fd_write_run("path_write",fctx,output_fd);
+    rc = fd_write_run("path_write", fctx, output_fd, output_filename);
 
 cleanup:
     if (output_fd)
@@ -1126,7 +1128,6 @@ int pipe_write_compute_progress(struct fun_context *fctx)
 {
     return block_write_compute_progress(fctx);
 }
-
 int pipe_write_run(struct fun_context *fctx)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
@@ -1135,21 +1136,23 @@ int pipe_write_run(struct fun_context *fctx)
     OK_OR_RETURN(check_unsafe(fctx));
 
     int rc = 0;
-
     char const *cmd_name = fctx->argv[1];
-    FILE * cmd_pipe = popen(cmd_name, write_args);
+    FILE *cmd_pipe = popen(cmd_name, write_args);
     if (!cmd_pipe)
-        ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
+        ERR_CLEANUP_MSG("pipe_write can't run '%s'", cmd_name);
 
     int output_fd = fileno(cmd_pipe);
     if (!output_fd)
-        ERR_CLEANUP_MSG("pipe_write can't run command %s", cmd_name);
+        ERR_CLEANUP_MSG("fileno");
 
-    rc = fd_write_run("pipe_write", fctx, output_fd);
+    OK_OR_CLEANUP(fd_write_run("pipe_write", fctx, output_fd, "pipe"));
 
 cleanup:
-    if (cmd_pipe)
-        pclose(cmd_pipe);
+    if (cmd_pipe) {
+        int exit_status = pclose(cmd_pipe);
+        if (exit_status != 0)
+            ERR_RETURN("command '%s' returned an error to pipe_write", cmd_name);
+    }
 
     return rc;
 }
@@ -1171,20 +1174,12 @@ int execute_run(struct fun_context *fctx)
     assert(fctx->on_event);
     OK_OR_RETURN(check_unsafe(fctx));
 
-    int rc = 0;
     char const *cmd_name = fctx->argv[1];
-    FILE *cmd_pipe = popen(cmd_name,read_args);
-    if(!cmd_pipe)
-        ERR_CLEANUP_MSG("execute can't run command %s", cmd_name);
+    int status = system(cmd_name);
+    if (status < 0)
+        ERR_RETURN("execute couldn't run '%s'", cmd_name);
+    if (status != 0)
+        ERR_RETURN("'%s' failed with exit status %d", cmd_name, status);
 
-    char buffer[512];
-    while(fread(buffer, sizeof(buffer), 1, cmd_pipe) == sizeof(buffer)) {
-        fwup_warnx("%s", buffer);
-    }
-
-cleanup:
-    if (cmd_pipe)
-        pclose(cmd_pipe);
-
-    return rc;
+    return 0;
 }

@@ -18,6 +18,12 @@ cat >$CONFIG <<EOF
 task complete {
 	on-finish { execute("dd if=${LOCAL_FILE} of=${OUTFILE}") }
 }
+task bad_command {
+	on-finish { execute("badcommand1234") }
+}
+task failing_command {
+	on-finish { execute("false") }
+}
 EOF
 
 # Create the firmware file like normal
@@ -37,3 +43,15 @@ diff $LOCAL_FILE $OUTFILE
 rm -f $OUTFILE
 cat $FWFILE | $FWUP_APPLY --unsafe -a -d $IMGFILE -i - -t complete
 diff $LOCAL_FILE $OUTFILE
+
+# Try applying the update to a bogus command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_command; then
+    echo "Expected execute to fail when invoking an unknown command."
+    exit 1
+fi
+
+# Try applying the update to a failing command (should fail)
+if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t failing_command; then
+    echo "Expected execute to fail when the command failed."
+    exit 1
+fi
