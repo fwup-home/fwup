@@ -31,7 +31,8 @@ enum fwup_progress_option {
 
 struct fwup_progress {
     // If we're showing progress when applying, this is the number of progress_units that
-    // should be 100%.
+    // should be 100%. Each unit corresponds to about one byte of work. It's not intended
+    // as an exact measure of bytes written.
     int64_t total_units;
 
     // This counts up as we make progress.

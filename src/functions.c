@@ -364,7 +364,7 @@ int fat_mkfs_validate(struct fun_context *fctx)
 }
 int fat_mkfs_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_mkfs_run(struct fun_context *fctx)
@@ -375,7 +375,7 @@ int fat_mkfs_run(struct fun_context *fctx)
     if (fatfs_mkfs(fctx->output, block_offset, block_count) < 0)
         return -1;
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -406,7 +406,7 @@ int fat_attrib_validate(struct fun_context *fctx)
 }
 int fat_attrib_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_attrib_run(struct fun_context *fctx)
@@ -414,7 +414,7 @@ int fat_attrib_run(struct fun_context *fctx)
     if (fatfs_attrib(fctx->output, strtoull(fctx->argv[1], NULL, 0), fctx->argv[2], fctx->argv[3]) < 0)
         return 1;
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -540,7 +540,7 @@ int fat_mv_validate(struct fun_context *fctx)
 }
 int fat_mv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_mv_run(struct fun_context *fctx)
@@ -550,7 +550,7 @@ int fat_mv_run(struct fun_context *fctx)
     bool force = (fctx->argv[0][6] == '!');
     OK_OR_RETURN(fatfs_mv(fctx->output, block_offset, fctx->argv[0], fctx->argv[2], fctx->argv[3], force));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -565,7 +565,7 @@ int fat_rm_validate(struct fun_context *fctx)
 }
 int fat_rm_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_rm_run(struct fun_context *fctx)
@@ -575,7 +575,7 @@ int fat_rm_run(struct fun_context *fctx)
     bool file_must_exist = (fctx->argv[0][6] == '!');
     OK_OR_RETURN(fatfs_rm(fctx->output, block_offset, fctx->argv[0], fctx->argv[2], file_must_exist));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -590,7 +590,7 @@ int fat_cp_validate(struct fun_context *fctx)
 }
 int fat_cp_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_cp_run(struct fun_context *fctx)
@@ -599,7 +599,7 @@ int fat_cp_run(struct fun_context *fctx)
 
     OK_OR_RETURN(fatfs_cp(fctx->output, block_offset, fctx->argv[2], fctx->argv[3]));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -614,7 +614,7 @@ int fat_mkdir_validate(struct fun_context *fctx)
 }
 int fat_mkdir_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_mkdir_run(struct fun_context *fctx)
@@ -623,7 +623,7 @@ int fat_mkdir_run(struct fun_context *fctx)
 
     OK_OR_RETURN(fatfs_mkdir(fctx->output, block_offset, fctx->argv[2]));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -638,7 +638,7 @@ int fat_setlabel_validate(struct fun_context *fctx)
 }
 int fat_setlabel_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_setlabel_run(struct fun_context *fctx)
@@ -647,6 +647,7 @@ int fat_setlabel_run(struct fun_context *fctx)
 
     OK_OR_RETURN(fatfs_setlabel(fctx->output, block_offset, fctx->argv[2]));
 
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -661,7 +662,7 @@ int fat_touch_validate(struct fun_context *fctx)
 }
 int fat_touch_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int fat_touch_run(struct fun_context *fctx)
@@ -670,7 +671,7 @@ int fat_touch_run(struct fun_context *fctx)
 
     OK_OR_RETURN(fatfs_touch(fctx->output, block_offset, fctx->argv[2]));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -689,7 +690,7 @@ int mbr_write_validate(struct fun_context *fctx)
 }
 int mbr_write_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE;
     return 0;
 }
 int mbr_write_run(struct fun_context *fctx)
@@ -703,7 +704,7 @@ int mbr_write_run(struct fun_context *fctx)
     OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, FWUP_BLOCK_SIZE, 0, false),
                      "unexpected error writing mbr: %s", strerror(errno));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
 
@@ -755,7 +756,7 @@ int uboot_recover_validate(struct fun_context *fctx)
 }
 int uboot_recover_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int uboot_recover_run(struct fun_context *fctx)
@@ -783,7 +784,7 @@ int uboot_recover_run(struct fun_context *fctx)
                       "unexpected error writing uboot environment: %s", strerror(errno));
     }
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
@@ -807,7 +808,7 @@ int uboot_clearenv_validate(struct fun_context *fctx)
 }
 int uboot_clearenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int uboot_clearenv_run(struct fun_context *fctx)
@@ -826,7 +827,7 @@ int uboot_clearenv_run(struct fun_context *fctx)
     OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE, false),
                       "unexpected error writing uboot environment: %s", strerror(errno));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
@@ -849,7 +850,7 @@ int uboot_setenv_validate(struct fun_context *fctx)
 }
 int uboot_setenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int uboot_setenv_run(struct fun_context *fctx)
@@ -876,7 +877,7 @@ int uboot_setenv_run(struct fun_context *fctx)
     OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE, false),
                       "unexpected error writing uboot environment: %s", strerror(errno));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
@@ -899,7 +900,7 @@ int uboot_unsetenv_validate(struct fun_context *fctx)
 }
 int uboot_unsetenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units++; // Arbitarily count as 1 unit
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int uboot_unsetenv_run(struct fun_context *fctx)
@@ -925,7 +926,7 @@ int uboot_unsetenv_run(struct fun_context *fctx)
     OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE, false),
                       "unexpected error writing uboot environment: %s", strerror(errno));
 
-    progress_report(fctx->progress, 1);
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
