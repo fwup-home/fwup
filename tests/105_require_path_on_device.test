@@ -14,6 +14,10 @@ case $HOST_OS in
 	# expecting it to be needed.
         exit 0
         ;;
+    FreeBSD|NetBSD|OpenBSD|DragonFly)
+        # find_rdev doesn't work due to stat calls.
+        exit 0
+        ;;
     *)
         ;;
 esac
