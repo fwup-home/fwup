@@ -39,7 +39,7 @@ struct fwup_progress {
     int64_t current_units;
 
     // The most recent progress reported is cached to avoid unnecessary context switching/IO
-    int last_reported;
+    int last_reported_percent;
 
     // This is the starting progress value (normally 0 for 0%)
     int low;

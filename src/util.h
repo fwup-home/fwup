@@ -38,8 +38,6 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
 
-int format_pretty_size10(off_t amount, char *out, size_t out_size);
-
 extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
@@ -72,6 +70,12 @@ extern bool fwup_verbose;
 #define ONE_MB  (1000 * ONE_KB)
 #define ONE_GB  (1000 * ONE_MB)
 #define ONE_TB  (1000 * ONE_GB)
+
+// Pretty printing numbers
+int format_pretty_auto(off_t amount, char *out, size_t out_size);
+int format_pretty(off_t amount, off_t units, char *out, size_t out_size);
+const char *units_to_string(off_t units);
+off_t find_natural_units(off_t amount);
 
 // This checks that the argument can be converted to a uint. It handles
 // a few things:

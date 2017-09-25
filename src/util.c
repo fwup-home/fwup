@@ -245,27 +245,66 @@ bool file_exists(const char *path)
 }
 
 /**
- * Format the specified amount in a human readable way using
- * power of 10 units.
+ * Return a string that described the units.
+ */
+const char *units_to_string(off_t units)
+{
+    switch (units) {
+    case 1: return "bytes";
+    case ONE_KiB: return "KiB";
+    case ONE_MiB: return "MiB";
+    case ONE_GiB: return "GiB";
+    case ONE_TiB: return "TiB";
+    case ONE_KB: return "KB";
+    case ONE_MB: return "MB";
+    case ONE_GB: return "GB";
+    case ONE_TB: return "TB";
+    default: return "?";
+    }
+}
+
+/**
+ * Return the units that should be used for printing the specified
+ * amount;
+ */
+off_t find_natural_units(off_t amount)
+{
+    if (amount >= ONE_TB) return ONE_TB;
+    else if (amount >= ONE_GB) return ONE_GB;
+    else if (amount >= ONE_MB) return ONE_MB;
+    else if (amount >= ONE_KB) return ONE_KB;
+    else return 1;
+}
+
+/**
+ * Format the specified amount in a human readable way.
  *
  * @param amount the numer
  * @param out    an output buffer
  * @param out_size the size of the output buffer
  * @return the number of bytes written to out
  */
-int format_pretty_size10(off_t amount, char *out, size_t out_size)
+int format_pretty_auto(off_t amount, char *out, size_t out_size)
 {
-    double value;
-    const char *units;
+    return format_pretty(amount, find_natural_units(amount), out, out_size);
+}
 
-    if (amount >= ONE_TB) { value = ((double) amount) / ONE_TB; units = "TB"; }
-    else if (amount >= ONE_GB) { value = ((double) amount) / ONE_GB; units = "GB"; }
-    else if (amount >= ONE_MB) { value = ((double) amount) / ONE_MB; units = "MB"; }
-    else if (amount >= ONE_KB) { value = ((double) amount) / ONE_KB; units = "KB"; }
-    else if (amount == 1 ) { value = (double) amount; units = "byte"; }
-    else { value = (double) amount; units = "bytes"; }
+/**
+ * Format the specified amount in a human readable way using the
+ * specified units.
+ *
+ * @param amount the number
+ * @param units  the units to use for printing the value
+ * @param out    an output buffer
+ * @param out_size the size of the output buffer
+ * @return the number of bytes written to out
+ */
+int format_pretty(off_t amount, off_t units, char *out, size_t out_size)
+{
+    double value = ((double) amount) / units;
+    const char *units_string = units_to_string(units);
 
-    return snprintf(out, out_size, "%.2f %s", value, units);
+    return snprintf(out, out_size, "%.2f %s", value, units_string);
 }
 
 void fwup_err(int status, const char *format, ...)
@@ -341,8 +380,8 @@ void fwup_output(const char *type, uint16_t code, const char *str)
         fwrite(type, 2, 1, stdout);
         fwrite(&be_code, 2, 1, stdout);
     } else if (fwup_progress_mode == PROGRESS_MODE_NORMAL && len > 0) {
-        // Erase the current % and then print the message
-        fwrite("\r   \r", 5, 1, stdout);
+        // Skip a line to avoid the progress bar and then print the message
+        fwrite("\n", 1, 1, stdout);
     }
     if (len)
         fwrite(str, 1, len, stdout);

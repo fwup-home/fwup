@@ -33,26 +33,47 @@ static int current_time_ms()
     return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
 
-static void output_progress(struct fwup_progress *progress, int to_report)
+static void draw_progress_bar(struct fwup_progress *progress, int percent)
 {
-    if (to_report == progress->last_reported)
+    static const char fifty_equals[] = "==================================================";
+
+    // The progress bar looks something like this:
+    // |=====================                             | 43% (23 / 52) MB
+    if (progress->total_units <= 0) {
+        printf("\r|%-50.*s| %d%%",
+               percent / 2, fifty_equals,
+               percent);
+    } else {
+        off_t units = find_natural_units(progress->total_units);
+        printf("\r|%-50.*s| %d%% (%.2f / %.2f) %s",
+               percent / 2, fifty_equals,
+               percent,
+               ((double) progress->current_units) / units,
+               ((double) progress->total_units) / units,
+               units_to_string(units));
+    }
+}
+
+static void output_progress(struct fwup_progress *progress, int percent)
+{
+    if (percent == progress->last_reported_percent)
         return;
 
-    progress->last_reported = to_report;
+    progress->last_reported_percent = percent;
 
     switch (fwup_progress_mode) {
     case PROGRESS_MODE_NUMERIC:
-        printf("%d\n", to_report);
+        printf("%d\n", percent);
         fflush(stdout);
         break;
 
     case PROGRESS_MODE_NORMAL:
-        printf("\r%3d%%", to_report);
+        draw_progress_bar(progress, percent);
         fflush(stdout);
         break;
 
     case PROGRESS_MODE_FRAMING:
-        fwup_output(FRAMING_TYPE_PROGRESS, to_report, "");
+        fwup_output(FRAMING_TYPE_PROGRESS, percent, "");
         break;
 
     case PROGRESS_MODE_OFF:
@@ -75,7 +96,7 @@ void progress_init(struct fwup_progress *progress,
                    int progress_low,
                    int progress_high)
 {
-    progress->last_reported = -1;
+    progress->last_reported_percent = -1;
     progress->total_units = 0;
     progress->current_units = 0;
     progress->start_time = 0;

@@ -49,11 +49,15 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete \
     | grep -v '^Elapsed time' \
     > $WORK/actual_output.txt
 cat >$WORK/expected_output.txt <<EOF
-.  0%.   .fwup: 1.bin
-.   .fwup: 2.bin
-.   .fwup: 3.bin
-.   .fwup: 4.bin
-.100%
+.|                                                  | 0%
+fwup: 1.bin
+
+fwup: 2.bin
+
+fwup: 3.bin
+
+fwup: 4.bin
+.|==================================================| 100%
 EOF
 diff -w $WORK/expected_output.txt $WORK/actual_output.txt
 

@@ -278,7 +278,7 @@ static void autoselect_mmc_device(struct mmc_device *device)
         fprintf(stderr, "Too many possible memory cards found: \n");
         for (int i = 0; i < found_devices; i++) {
             char sizestr[16];
-            format_pretty_size10(devices[i].size, sizestr, sizeof(sizestr));
+            format_pretty_auto(devices[i].size, sizestr, sizeof(sizestr));
             fprintf(stderr, "  %s (%s)\n", devices[i].path, sizestr);
         }
         fprintf(stderr, "Automatic selection not possible. Specify one using the -d option.\n");
@@ -295,7 +295,7 @@ static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const c
             fwup_errx(EXIT_FAILURE, "Cannot confirm use of %s when using stdin.\nRerun with -y if location is correct.", device.path);
 
         char sizestr[16];
-        format_pretty_size10(device.size, sizestr, sizeof(sizestr));
+        format_pretty_auto(device.size, sizestr, sizeof(sizestr));
         fprintf(stderr, "Use %s memory card found at %s? [y/N] ", sizestr, device.path);
         int response = fgetc(stdin);
         if (response != 'y' && response != 'Y')
