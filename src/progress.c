@@ -24,7 +24,10 @@
 extern enum fwup_progress_option fwup_progress_mode;
 
 // Elapsed time measurement maxes out at 2^31 ms = 24 days
-#if defined(HAVE_CLOCK_GETTIME)
+// NOTE: Windows builds on Travis report clock_gettime but fail. Windows
+//       builds on my laptop don't report clock_gettime and succeed.
+//       Therefore, disable support on Windows.
+#if defined(HAVE_CLOCK_GETTIME) && !defined(_WIN32) && !defined(__CYGWIN__)
 #include <time.h>
 static int current_time_ms()
 {
