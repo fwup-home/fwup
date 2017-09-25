@@ -231,4 +231,15 @@ DISTFILES += \
     tests/117_on_error.test \
     tests/118_fat_touch_error_cases.test \
     tests/119_require_fat_file_match.test \
-    tests/120_missing_file.test
+    tests/120_corrupt_fat.test \
+    tests/121_missing_file.test \
+    tests/123_double_fat_write.test \
+    tests/124_uboot_bad_param.test \
+    tests/125_trimmed_upgrade.test \
+    tests/126_uboot_recover.test \
+    tests/127_extra_metadata.test \
+    tests/128_blank_offset.test \
+    tests/129_mbr_overflow.test \
+    tests/130_media_sizes.test \
+    tests/131_raw_key.test \
+    tests/132_key_as_param.test
