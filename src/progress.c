@@ -24,24 +24,23 @@
 extern enum fwup_progress_option fwup_progress_mode;
 
 // Elapsed time measurement maxes out at 2^31 ms = 24 days
-
-// NOTE: Windows builds on Travis report clock_gettime but fail. Windows
-//       builds on my laptop don't report clock_gettime and succeed.
-//       Therefore, disable support on Windows.
-#if defined(HAVE_CLOCK_GETTIME) && !defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(HAVE_CLOCK_GETTIME)
 #include <time.h>
 static int current_time_ms()
 {
     struct timespec tp;
 
-    if (clock_gettime(CLOCK_MONOTONIC, &tp) < 0)
+    // Prefer the monotonic clock, but fail back to the
+    // realtime clock.
+    if (clock_gettime(CLOCK_MONOTONIC, &tp) < 0 &&
+        clock_gettime(CLOCK_REALTIME, &tp) < 0)
         fwup_err(EXIT_FAILURE, "clock_gettime failed");
 
     return (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000);
 }
 #else
 #include <sys/time.h>
-// gettimeofday is not monotonic, but it's better than nothing.
+// gettimeofday isn't monotonic, but it's better than nothing.
 static int current_time_ms()
 {
     struct timeval tv;
