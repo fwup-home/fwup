@@ -38,6 +38,11 @@ case "$HOST_OS" in
     FreeBSD|NetBSD|OpenBSD|DragonFly)
 	# BSD stat
         STAT_FILESIZE_FLAGS="-f %z"
+
+        # fsck_msdosfs fails on BSD, but the failure doesn't look like a
+        # problem, so ignore.
+        #FSCK_FAT=fsck_msdosfs
+        FSCK_FAT=true
         ;;
     *)
 	# GNU stat
