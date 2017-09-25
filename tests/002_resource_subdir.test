@@ -63,7 +63,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 dd if=$TESTFILE_1K seek=0 of=$WORK/expected.bin
 dd if=$TESTFILE_1K seek=4 of=$WORK/expected.bin
 dd if=$TESTFILE_1K seek=8 of=$WORK/expected.bin
-cmp --bytes 5120 $IMGFILE $WORK/expected.bin
+cmp_bytes 5120 $IMGFILE $WORK/expected.bin
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

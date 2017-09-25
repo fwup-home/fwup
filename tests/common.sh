@@ -156,3 +156,29 @@ create_15M_file() {
     fi
 }
 TESTFILE_15M=$WORK/15M.bin
+
+# GNU and BSD friendly cmp --bytes
+# Invoke as: cmp_bytes <byte count> <file1> <file2> [offset1] [offset2]
+#
+# NOTE: This implementation has the unfortunate constraint that bytes and
+#       offsets need to be multiples of the block size. The block size
+#       could be set to 1, but that makes some large comparisons VERY slow.
+cmp_bytes() {
+    BYTE_COUNT=$1
+    FILE1=$2
+    FILE2=$3
+    BEGIN1=$4
+    BEGIN2=$5
+
+    if [ -z $BEGIN1 ]; then BEGIN1=0; fi
+    if [ -z $BEGIN2 ]; then BEGIN2=0; fi
+
+    BEGIN1=$(expr $BEGIN1 / 512) || true
+    BEGIN2=$(expr $BEGIN2 / 512) || true
+    BLOCK_COUNT=$(expr $BYTE_COUNT / 512)
+
+    dd if=$FILE1 of=$WORK/cmp_bytes1 count=$BLOCK_COUNT skip=$BEGIN1 2> /dev/null
+    dd if=$FILE2 of=$WORK/cmp_bytes2 count=$BLOCK_COUNT skip=$BEGIN2 2> /dev/null
+
+    cmp $WORK/cmp_bytes1 $WORK/cmp_bytes2
+}

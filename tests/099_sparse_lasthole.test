@@ -63,7 +63,7 @@ $FWUP_VERIFY -V -i $NEW_FWFILE
 
 # Check that raw_write works with the sparse file
 $FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t raw
-cmp --bytes 1536 $SPARSE_FILE $IMGFILE 0 2048
+cmp_bytes 1536 $SPARSE_FILE $IMGFILE 0 2048
 
 # Check that fat_write works with the sparse file
 rm $IMGFILE

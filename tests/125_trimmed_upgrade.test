@@ -124,20 +124,20 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that the resources got copied to all of the right places
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072
-cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 131072
+cmp_bytes 150000 $TESTFILE_150K $IMGFILE 0 524288
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152
 
 # Now upgrade the IMGFILE file
 # VERIFY_LAST_WRITE checks that MBR is written last
 VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
 
 VERIFY_SYSCALLS_CHECKPATH=$WORK/mbr_b.bin $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b
-cmp --bytes 512 $WORK/mbr_b.bin $IMGFILE 0 0         # Updated
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 131072      # Same
-cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 524288  # Same
-cmp --bytes 150000 $TESTFILE_150K $IMGFILE 0 1048576 # Updated
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152     # Same
+cmp_bytes 512 $WORK/mbr_b.bin $IMGFILE 0 0         # Updated
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 131072      # Same
+cmp_bytes 150000 $TESTFILE_150K $IMGFILE 0 524288  # Same
+cmp_bytes 150000 $TESTFILE_150K $IMGFILE 0 1048576 # Updated
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 2097152     # Same
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

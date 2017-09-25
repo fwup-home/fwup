@@ -30,7 +30,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that the test file made it
-cmp --bytes 150000 $TESTFILE_150K $IMGFILE
+cmp_bytes 150000 $TESTFILE_150K $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

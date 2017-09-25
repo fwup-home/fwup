@@ -88,6 +88,6 @@ check_meta_conf
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 0
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 2048
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 4096
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 0
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 2048
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 4096

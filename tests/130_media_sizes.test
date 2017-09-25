@@ -70,5 +70,5 @@ for SZ in $SIZES_TO_CHECK; do
     # Verify that the write updated the big file correctly.
     # (The conv=sync makes sure that the output is a multiple of 512 bytes)
     dd if=$TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
-    cmp --bytes 51712 $WORK/check.bin $IMGFILE
+    cmp_bytes 51712 $WORK/check.bin $IMGFILE
 done

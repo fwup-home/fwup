@@ -26,4 +26,4 @@ cat $FWFILE | $FRAMING_HELPER -n 50 -e \
     | $FWUP_APPLY -q --framing -a -d $IMGFILE -i - -t complete
 
 # Check that the test file ends up in the right place
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 512
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 512

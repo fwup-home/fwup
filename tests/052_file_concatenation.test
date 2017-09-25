@@ -37,7 +37,7 @@ cmp $WORK/cat.bin $UNZIPDIR/data/TEST
 
 # Check that applying the firmware does the expected thing
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-cmp --bytes 151024 $WORK/cat.bin $IMGFILE
+cmp_bytes 151024 $WORK/cat.bin $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

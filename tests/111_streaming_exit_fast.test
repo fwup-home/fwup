@@ -27,5 +27,5 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 cat $FWFILE /dev/zero | $TIMEOUT 10s $FWUP_APPLY -a -d $IMGFILE -i - -t complete
 
 # Check that the test file ends up in the right spot.
-cmp --bytes 1024 $TESTFILE_1K $IMGFILE 0 512
+cmp_bytes 1024 $TESTFILE_1K $IMGFILE 0 512
 

@@ -23,7 +23,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # The firmware file is equivalent to the following dd call
 # (The conv=sync makes sure that the output is a multiple of 512 bytes)
 dd if=$TESTFILE_150K seek=1 of=$WORK/check.bin conv=sync 2>/dev/null
-cmp --bytes 51712 $WORK/check.bin $IMGFILE
+cmp_bytes 51712 $WORK/check.bin $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE
