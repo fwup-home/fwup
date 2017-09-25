@@ -37,7 +37,8 @@ AC_CHECK_SIZEOF(off_t)
 # Check for library functions
 AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup \
                 strtoul umount fcntl strptime setenv pread \
-                pwrite memmem ptrace posix_memalign sysconf])
+                pwrite memmem ptrace posix_memalign sysconf \
+                clock_gettime])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_cv_func_strptime = x"yes"])
 AM_CONDITIONAL([HAS_PTRACE], [test x$ac_cv_func_ptrace = x"yes"])
 

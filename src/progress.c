@@ -19,19 +19,36 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <sys/time.h>
+#include <stdlib.h>
 
 extern enum fwup_progress_option fwup_progress_mode;
 
 // Elapsed time measurement maxes out at 2^31 ms = 24 days
-// Despite not being monotic, gettimeofday is more portable, and
-// getting the duration wrong is not the end of the world.
+
+// NOTE: Windows builds on Travis report clock_gettime but fail. Windows
+//       builds on my laptop don't report clock_gettime and succeed.
+//       Therefore, disable support on Windows.
+#if defined(HAVE_CLOCK_GETTIME) && !defined(_WIN32) && !defined(__CYGWIN__)
+#include <time.h>
+static int current_time_ms()
+{
+    struct timespec tp;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &tp) < 0)
+        fwup_err(EXIT_FAILURE, "clock_gettime failed");
+
+    return (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000);
+}
+#else
+#include <sys/time.h>
+// gettimeofday is not monotonic, but it's better than nothing.
 static int current_time_ms()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 }
+#endif
 
 static void draw_progress_bar(struct fwup_progress *progress, int percent)
 {
