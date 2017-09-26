@@ -138,8 +138,10 @@ static void print_usage()
     printf("Generate a public/private key pair:\n");
     printf("\n");
     printf("  $ %s -g\n", program_name);
+    printf("\n");
     printf("Store fwup-key.priv in a safe place and fwup-key.pub on the target. To sign\n");
     printf("an existing archive run:\n");
+    printf("\n");
     printf("  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", program_name);
     printf("\n");
     printf("Also see the unit tests that come with fwup source code for more examples.\n");
