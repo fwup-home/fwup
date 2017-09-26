@@ -235,7 +235,7 @@ int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_na
     FIL fromfil;
     FIL tofil;
     CHECK("fatfs_cp can't open file", from_name, f_open(&fromfil, from_name, FA_READ));
-    CHECK("fatfs_cp can't open file", to_name, f_open(&tofil, to_name, FA_CREATE_NEW | FA_WRITE));
+    CHECK("fatfs_cp can't open file", to_name, f_open(&tofil, to_name, FA_CREATE_ALWAYS | FA_WRITE));
 
     for (;;) {
         char buffer[4096];

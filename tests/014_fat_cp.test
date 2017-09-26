@@ -37,6 +37,9 @@ task complete {
                 fat_cp(\${BOOT_PART_OFFSET}, "4.bin", "5.bin")
                 fat_cp(\${BOOT_PART_OFFSET}, "5.bin", "6.bin")
                 fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "7.bin")
+
+                # test copying over an existing file
+                fat_cp(\${BOOT_PART_OFFSET}, "1.bin", "2.bin")
         }
 }
 EOF
