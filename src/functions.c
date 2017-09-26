@@ -261,14 +261,14 @@ int raw_write_run(struct fun_context *fctx)
 
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
-        ERR_CLEANUP_MSG("raw_write can't find matching file-resource");
+        ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
 
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_CLEANUP_MSG("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
+        ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
-    off_t expected_length = sparse_file_data_size(&sfm);
+    off_t expected_data_length = sparse_file_data_size(&sfm);
 
     off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
     off_t len_written = 0;
@@ -313,11 +313,11 @@ int raw_write_run(struct fun_context *fctx)
 
     OK_OR_CLEANUP(ptbw_flush(&ptbw));
 
-    if (len_written != expected_length) {
+    if (len_written != expected_data_length) {
         if (len_written == 0)
-            ERR_CLEANUP_MSG("raw_write didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->on_event->title);
+            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->argv[0], fctx->on_event->title);
         else
-            ERR_CLEANUP_MSG("raw_write wrote %" PRId64" bytes, but should have written %" PRId64, len_written, expected_length);
+            ERR_CLEANUP_MSG("%s wrote %" PRId64" bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_data_length);
     }
 
     // Verify hash
@@ -326,7 +326,7 @@ int raw_write_run(struct fun_context *fctx)
     char hash_str[sizeof(hash) * 2 + 1];
     bytes_to_hex(hash, hash_str, sizeof(hash));
     if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_CLEANUP_MSG("raw_write detected blake2b digest mismatch");
+        ERR_CLEANUP_MSG("%s detected blake2b mismatch on '%s'", fctx->argv[0], fctx->on_event->title);
 
 cleanup:
     sparse_file_free(&sfm);
@@ -476,18 +476,20 @@ int fat_write_compute_progress(struct fun_context *fctx)
 }
 int fat_write_run(struct fun_context *fctx)
 {
-    int rc = 0;
+    assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
 
+    int rc = 0;
     struct sparse_file_map sfm;
     sparse_file_init(&sfm);
 
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
-        ERR_CLEANUP_MSG("fat_write can't find file-resource '%s'", fctx->on_event->title);
+        ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
+
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_CLEANUP_MSG("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
+        ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
 
     off_t len_written = 0;
     off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
@@ -529,25 +531,26 @@ int fat_write_run(struct fun_context *fctx)
         progress_report(fctx->progress, len);
     }
 
-    size_t ending_hole = sparse_ending_hole_size(&sfm);
-    if (ending_hole) {
+    off_t ending_hole = sparse_ending_hole_size(&sfm);
+    if (ending_hole > 0) {
         // If the file ends in a hole, fatfs_pwrite can be used to grow it.
         OK_OR_CLEANUP(fatfs_pwrite(fctx->output, block_offset, fctx->argv[2], (int) expected_length, NULL, 0));
     }
 
     if (len_written != expected_data_length) {
         if (len_written == 0)
-            ERR_CLEANUP_MSG("fat_write didn't write anything. Was it called twice in an on-resource for '%s'? Try fat_cp instead.", fctx->on_event->title);
+            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'? Try fat_cp instead.", fctx->argv[0], fctx->on_event->title);
         else
-            ERR_CLEANUP_MSG("fat_write didn't write the expected amount for '%s'", fctx->on_event->title);
+            ERR_CLEANUP_MSG("%s wrote %" PRId64 " bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_length);
     }
 
+    // Verify hash
     unsigned char hash[crypto_generichash_BYTES];
     crypto_generichash_final(&hash_state, hash, sizeof(hash));
     char hash_str[sizeof(hash) * 2 + 1];
     bytes_to_hex(hash, hash_str, sizeof(hash));
     if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_CLEANUP_MSG("fat_write detected blake2b hash mismatch on '%s'", fctx->on_event->title);
+        ERR_CLEANUP_MSG("%s detected blake2b mismatch on '%s'", fctx->argv[0], fctx->on_event->title);
 
 cleanup:
     sparse_file_free(&sfm);
