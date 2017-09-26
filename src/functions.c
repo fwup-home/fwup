@@ -217,19 +217,15 @@ int fun_apply_funlist(struct fun_context *fctx, cfg_opt_t *funlist, int (*fun)(s
     return 0;
 }
 
-int raw_write_validate(struct fun_context *fctx)
-{
-    if (fctx->type != FUN_CONTEXT_FILE)
-        ERR_RETURN("raw_write only usable in on-resource");
-
-    if (fctx->argc != 2)
-        ERR_RETURN("raw_write requires a block offset");
-
-    CHECK_ARG_UINT64(fctx->argv[1], "raw_write requires a non-negative integer block offset");
-
-    return 0;
-}
-int block_write_compute_progress(struct fun_context *fctx)
+/**
+ * Helper function that is paired with process_resource() to compute
+ * progress.
+ *
+ * Set count_holes to true if holes in sparse files are manually written
+ * to the destination as zeros. E.g., holes can't be optimized out by the
+ * OS.
+ */
+static int process_resource_compute_progress(struct fun_context *fctx, bool count_holes)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
@@ -237,7 +233,7 @@ int block_write_compute_progress(struct fun_context *fctx)
     struct sparse_file_map sfm;
     sparse_file_init(&sfm);
     OK_OR_RETURN(sparse_file_get_map_from_config(fctx->cfg, fctx->on_event->title, &sfm));
-    off_t expected_length = sparse_file_data_size(&sfm);
+    off_t expected_length = count_holes ? sparse_file_size(&sfm) : sparse_file_data_size(&sfm);
     sparse_file_free(&sfm);
 
     // Count each byte as a progress unit
@@ -245,12 +241,23 @@ int block_write_compute_progress(struct fun_context *fctx)
 
     return 0;
 }
-
-int raw_write_compute_progress(struct fun_context *fctx)
-{
-    return block_write_compute_progress(fctx);
-}
-int raw_write_run(struct fun_context *fctx)
+/**
+ * This is a helper function for reading a resource out of a file and doing
+ * something with it. (Like write it somewhere)
+ *
+ * It handles the following:
+ *   1. Finds the resource
+ *   2. Verifies that the resource contents pass the checksums
+ *   3. Handles sparse reousrces
+ *   4. Checks nit-picky issues and returns errors when detected
+ *
+ * NOTE: count_holes must match the value passed to process_resource_compute_progress.
+ */
+static int process_resource(struct fun_context *fctx,
+                            bool count_holes,
+                            int (*pwrite_callback)(void *cookie, const void *buf, size_t count, off_t offset),
+                            int (*final_hole_callback)(void *cookie, off_t hole_size, off_t file_size),
+                            void *cookie)
 {
     assert(fctx->type == FUN_CONTEXT_FILE);
     assert(fctx->on_event);
@@ -270,15 +277,12 @@ int raw_write_run(struct fun_context *fctx)
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
     off_t expected_data_length = sparse_file_data_size(&sfm);
 
-    off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
-    off_t len_written = 0;
+    off_t total_data_read = 0;
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
 
-    struct pad_to_block_writer ptbw;
-    ptbw_init(&ptbw, fctx->output);
-
+    off_t last_offset = 0;
     for (;;) {
         off_t offset;
         size_t len;
@@ -292,32 +296,36 @@ int raw_write_run(struct fun_context *fctx)
 
         crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
 
-        OK_OR_CLEANUP(ptbw_pwrite(&ptbw, buffer, len, dest_offset + offset));
+        OK_OR_CLEANUP(pwrite_callback(cookie, buffer, len, offset));
 
-        len_written += len;
-        progress_report(fctx->progress, len);
+        total_data_read += len;
+        if (!count_holes) {
+            // If not counting holes for progress reporting, then report
+            // that we wrote exactly what was read.
+            progress_report(fctx->progress, len);
+        } else {
+            // If counting holes for progress reporting, then report
+            // everything since the last time.
+            off_t next_offset_to_write = offset + len;
+            progress_report(fctx->progress, next_offset_to_write - last_offset);
+            last_offset = next_offset_to_write;
+        }
     }
 
+    // Handle a final hole in a sparse file
     off_t ending_hole = sparse_ending_hole_size(&sfm);
     if (ending_hole > 0) {
-        // If this is a regular file, seeking is insufficient in making the file
-        // the right length, so write a block of zeros to the end.
-        char zeros[FWUP_BLOCK_SIZE];
-        memset(zeros, 0, sizeof(zeros));
-        off_t to_write = sizeof(zeros);
-        if (ending_hole < to_write)
-            to_write = ending_hole;
-        off_t offset = sparse_file_size(&sfm) - to_write;
-        OK_OR_CLEANUP(ptbw_pwrite(&ptbw, zeros, to_write, dest_offset + offset));
+        OK_OR_CLEANUP(final_hole_callback(cookie, ending_hole, sparse_file_size(&sfm)));
+
+        if (count_holes)
+            progress_report(fctx->progress, ending_hole);
     }
 
-    OK_OR_CLEANUP(ptbw_flush(&ptbw));
-
-    if (len_written != expected_data_length) {
-        if (len_written == 0)
-            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->argv[0], fctx->on_event->title);
+    if (total_data_read != expected_data_length) {
+        if (total_data_read == 0)
+            ERR_CLEANUP_MSG("%s didn't write anything and was likely called twice in an on-resource for '%s'. Try a \"cp\" function.", fctx->argv[0], fctx->on_event->title);
         else
-            ERR_CLEANUP_MSG("%s wrote %" PRId64" bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_data_length);
+            ERR_CLEANUP_MSG("%s wrote %" PRId64" bytes for '%s', but should have written %" PRId64, fctx->argv[0], total_data_read, fctx->on_event->title, expected_data_length);
     }
 
     // Verify hash
@@ -331,6 +339,64 @@ int raw_write_run(struct fun_context *fctx)
 cleanup:
     sparse_file_free(&sfm);
     return rc;
+}
+
+int raw_write_validate(struct fun_context *fctx)
+{
+    if (fctx->type != FUN_CONTEXT_FILE)
+        ERR_RETURN("raw_write only usable in on-resource");
+
+    if (fctx->argc != 2)
+        ERR_RETURN("raw_write requires a block offset");
+
+    CHECK_ARG_UINT64(fctx->argv[1], "raw_write requires a non-negative integer block offset");
+
+    return 0;
+}
+int raw_write_compute_progress(struct fun_context *fctx)
+{
+    return process_resource_compute_progress(fctx, false);
+}
+struct raw_write_cookie {
+    off_t dest_offset;
+    struct pad_to_block_writer ptbw;
+};
+static int raw_write_pwrite_callback(void *cookie, const void *buf, size_t count, off_t offset)
+{
+    struct raw_write_cookie *rwc = (struct raw_write_cookie *) cookie;
+    return ptbw_pwrite(&rwc->ptbw, buf, count, rwc->dest_offset + offset);
+}
+static int raw_write_final_hole_callback(void *cookie, off_t hole_size, off_t file_size)
+{
+    struct raw_write_cookie *rwc = (struct raw_write_cookie *) cookie;
+
+    // If this is a regular file, seeking is insufficient in making the file
+    // the right length, so write a block of zeros to the end.
+    char zeros[FWUP_BLOCK_SIZE];
+    memset(zeros, 0, sizeof(zeros));
+    off_t to_write = sizeof(zeros);
+    if (hole_size < to_write)
+        to_write = hole_size;
+    off_t offset = file_size - to_write;
+    return ptbw_pwrite(&rwc->ptbw, zeros, to_write, rwc->dest_offset + offset);
+}
+int raw_write_run(struct fun_context *fctx)
+{
+    // Raw write runs all writes through pad_to_block_writer to guarantee
+    // block size writes to the caching code no matter how the input resources
+    // get decompressed.
+
+    struct raw_write_cookie rwc;
+    rwc.dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
+    ptbw_init(&rwc.ptbw, fctx->output);
+
+    OK_OR_RETURN(process_resource(fctx,
+                                  false,
+                                  raw_write_pwrite_callback,
+                                  raw_write_final_hole_callback,
+                                  &rwc));
+
+    return ptbw_flush(&rwc.ptbw);
 }
 
 int raw_memset_validate(struct fun_context *fctx)
@@ -456,92 +522,43 @@ int fat_write_validate(struct fun_context *fctx)
 }
 int fat_write_compute_progress(struct fun_context *fctx)
 {
-    assert(fctx->type == FUN_CONTEXT_FILE);
-    assert(fctx->on_event);
+    return process_resource_compute_progress(fctx, true);
+}
+struct fat_write_cookie {
+    struct fun_context *fctx;
+    off_t block_offset;
+};
+static int fat_write_pwrite_callback(void *cookie, const void *buf, size_t count, off_t offset)
+{
+    struct fat_write_cookie *fwc = (struct fat_write_cookie *) cookie;
+    struct fun_context *fctx = fwc->fctx;
 
-    struct sparse_file_map sfm;
-    sparse_file_init(&sfm);
-    OK_OR_RETURN(sparse_file_get_map_from_config(fctx->cfg, fctx->on_event->title, &sfm));
-    off_t expected_length = sparse_file_data_size(&sfm);
-    sparse_file_free(&sfm);
+    return fatfs_pwrite(fctx->output, fwc->block_offset, fctx->argv[2], (int) offset, buf, count);
+}
+static int fat_write_final_hole_callback(void *cookie, off_t hole_size, off_t file_size)
+{
+    (void) hole_size;
 
-    // Count each byte as a progress unit
-    fctx->progress->total_units += expected_length;
+    struct fat_write_cookie *fwc = (struct fat_write_cookie *) cookie;
+    struct fun_context *fctx = fwc->fctx;
 
-    return 0;
+    // If the file ends in a hole, fatfs_pwrite can be used to grow it.
+    return fatfs_pwrite(fctx->output, fwc->block_offset, fctx->argv[2], (int) file_size, NULL, 0);
 }
 int fat_write_run(struct fun_context *fctx)
 {
-    assert(fctx->type == FUN_CONTEXT_FILE);
-    assert(fctx->on_event);
-
-    int rc = 0;
-    struct sparse_file_map sfm;
-    sparse_file_init(&sfm);
-
-    cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
-    if (!resource)
-        ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
-
-    char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
-
-    off_t len_written = 0;
-    off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
+    struct fat_write_cookie fwc;
+    fwc.fctx = fctx;
+    fwc.block_offset = strtoull(fctx->argv[1], NULL, 0);
 
     // Enforce truncation semantics if the file exists
-    OK_OR_CLEANUP(fatfs_truncate(fctx->output, block_offset, fctx->argv[2]));
+    OK_OR_RETURN(fatfs_truncate(fctx->output, fwc.block_offset, fctx->argv[2]));
 
-    OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
-    off_t expected_data_length = sparse_file_data_size(&sfm);
-    off_t expected_length = sparse_file_size(&sfm);
-
-    crypto_generichash_state hash_state;
-    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
-    for (;;) {
-        off_t offset;
-        size_t len;
-        const void *buffer;
-
-        OK_OR_CLEANUP(fctx->read(fctx, &buffer, &len, &offset));
-
-        // Check if done.
-        if (len == 0)
-            break;
-
-        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
-
-        OK_OR_CLEANUP(fatfs_pwrite(fctx->output, block_offset, fctx->argv[2], (int) offset, buffer, len));
-
-        len_written += len;
-        progress_report(fctx->progress, len);
-    }
-
-    off_t ending_hole = sparse_ending_hole_size(&sfm);
-    if (ending_hole > 0) {
-        // If the file ends in a hole, fatfs_pwrite can be used to grow it.
-        OK_OR_CLEANUP(fatfs_pwrite(fctx->output, block_offset, fctx->argv[2], (int) expected_length, NULL, 0));
-    }
-
-    if (len_written != expected_data_length) {
-        if (len_written == 0)
-            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'? Try fat_cp instead.", fctx->argv[0], fctx->on_event->title);
-        else
-            ERR_CLEANUP_MSG("%s wrote %" PRId64 " bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_length);
-    }
-
-    // Verify hash
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
-    char hash_str[sizeof(hash) * 2 + 1];
-    bytes_to_hex(hash, hash_str, sizeof(hash));
-    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_CLEANUP_MSG("%s detected blake2b mismatch on '%s'", fctx->argv[0], fctx->on_event->title);
-
-cleanup:
-    sparse_file_free(&sfm);
-    return rc;
+    return process_resource(fctx,
+                            true,
+                            fat_write_pwrite_callback,
+                            fat_write_final_hole_callback,
+                            &fwc);
 }
 
 int fat_mv_validate(struct fun_context *fctx)
@@ -1086,7 +1103,7 @@ int path_write_validate(struct fun_context *fctx)
 }
 int path_write_compute_progress(struct fun_context *fctx)
 {
-    return block_write_compute_progress(fctx);
+    return process_resource_compute_progress(fctx, false);
 }
 int path_write_run(struct fun_context *fctx)
 {
@@ -1122,7 +1139,7 @@ int pipe_write_validate(struct fun_context *fctx)
 }
 int pipe_write_compute_progress(struct fun_context *fctx)
 {
-    return block_write_compute_progress(fctx);
+    return process_resource_compute_progress(fctx, true);
 }
 int pipe_write_run(struct fun_context *fctx)
 {
