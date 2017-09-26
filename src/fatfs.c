@@ -380,7 +380,7 @@ cleanup:
     return rc;
 }
 
-int fatfs_pwrite(struct block_cache *output, off_t block_offset,const char *filename, int offset, const char *buffer, off_t size)
+int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *filename)
 {
     MAYBE_MOUNT(output, block_offset);
 
@@ -389,7 +389,31 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset,const char *file
         close_open_files();
 
     if (!current_file_) {
-        CHECK("fat_write can't open file", filename, f_open(&fil_, filename, FA_CREATE_NEW | FA_WRITE));
+        // FA_CREATE_ALWAYS truncates if the file exists
+        CHECK("Can't open file on FAT partition", filename, f_open(&fil_, filename, FA_CREATE_ALWAYS | FA_WRITE));
+
+        // Assuming it opens ok, cache the filename for future writes.
+        current_file_ = strdup(filename);
+    } else {
+        // Truncate an already open file
+        CHECK("Can't seek to the beginning", filename, f_lseek(&fil_, 0));
+        CHECK("Can't truncate file on FAT partition", filename, f_truncate(&fil_));
+    }
+
+    // Leave the file open since the main use case is to start writing to it afterwards.
+    return 0;
+}
+
+int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *filename, int offset, const char *buffer, off_t size)
+{
+    MAYBE_MOUNT(output, block_offset);
+
+    // Check if this is the same file as a previous pwrite call
+    if (current_file_ && strcmp(current_file_, filename) != 0)
+        close_open_files();
+
+    if (!current_file_) {
+        CHECK("fat_write can't open file", filename, f_open(&fil_, filename, FA_OPEN_ALWAYS | FA_WRITE));
 
         // Assuming it opens ok, cache the filename for future writes.
         current_file_ = strdup(filename);
