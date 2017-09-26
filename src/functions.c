@@ -467,7 +467,7 @@ int fat_write_compute_progress(struct fun_context *fctx)
 
     // Zero-length files still do something
     if (expected_length == 0)
-        expected_length = 1;
+        expected_length = FWUP_BLOCK_SIZE;
 
     // Count each byte as a progress unit
     fctx->progress->total_units += expected_length;
@@ -506,7 +506,7 @@ int fat_write_run(struct fun_context *fctx)
         OK_OR_CLEANUP(fatfs_touch(fctx->output, block_offset, fctx->argv[2]));
 
         sparse_file_free(&sfm);
-        progress_report(fctx->progress, 1);
+        progress_report(fctx->progress, FWUP_BLOCK_SIZE);
         goto cleanup;
     }
 
