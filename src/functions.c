@@ -465,10 +465,6 @@ int fat_write_compute_progress(struct fun_context *fctx)
     off_t expected_length = sparse_file_data_size(&sfm);
     sparse_file_free(&sfm);
 
-    // Zero-length files still do something
-    if (expected_length == 0)
-        expected_length = FWUP_BLOCK_SIZE;
-
     // Count each byte as a progress unit
     fctx->progress->total_units += expected_length;
 
@@ -495,20 +491,11 @@ int fat_write_run(struct fun_context *fctx)
     off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
 
     // Enforce truncation semantics if the file exists
-    OK_OR_CLEANUP(fatfs_rm(fctx->output, block_offset, fctx->argv[0], fctx->argv[2], false));
+    OK_OR_CLEANUP(fatfs_truncate(fctx->output, block_offset, fctx->argv[2]));
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
     off_t expected_data_length = sparse_file_data_size(&sfm);
     off_t expected_length = sparse_file_size(&sfm);
-
-    // Handle zero-length file
-    if (expected_length == 0) {
-        OK_OR_CLEANUP(fatfs_touch(fctx->output, block_offset, fctx->argv[2]));
-
-        sparse_file_free(&sfm);
-        progress_report(fctx->progress, FWUP_BLOCK_SIZE);
-        goto cleanup;
-    }
 
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);

@@ -49,6 +49,23 @@ task truncates-file {
                 fat_write(\${BOOT_PART_OFFSET}, "empty")
         }
 }
+task truncates-file2 {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_PART_OFFSET}, "empty")
+
+                # This internally closes the empty file and forces a
+                # separate code path for truncation.
+                fat_touch(\${BOOT_PART_OFFSET}, "something_else")
+                fat_rm(\${BOOT_PART_OFFSET}, "something_else")
+        }
+        on-resource empty {
+                fat_write(\${BOOT_PART_OFFSET}, "empty")
+        }
+}
 EOF
 
 # Create the firmware file, then "burn it"
@@ -85,6 +102,12 @@ diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 # Check the FAT file format using fsck
 dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
 $FSCK_FAT $WORK/vfat.img
+
+# Check that that the code path that truncates a file on
+# open works.
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file2
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE
