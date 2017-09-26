@@ -996,8 +996,7 @@ int info_run(struct fun_context *fctx)
     return 0;
 }
 
-static int fd_write_run(char const *cmd_name,
-                        struct fun_context *fctx,
+static int fd_write_run(struct fun_context *fctx,
                         int output_fd,
                         const char *output_name)
 {
@@ -1010,14 +1009,14 @@ static int fd_write_run(char const *cmd_name,
 
     cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
     if (!resource)
-        ERR_CLEANUP_MSG("%s can't find matching file-resource",cmd_name);
+        ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
 
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
     if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_CLEANUP_MSG("invalid blake2b-256 hash for '%s'", fctx->on_event->title);
+        ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
-    off_t expected_length = sparse_file_data_size(&sfm);
+    off_t expected_data_length = sparse_file_data_size(&sfm);
 
     off_t len_written = 0;
 
@@ -1038,7 +1037,7 @@ static int fd_write_run(char const *cmd_name,
 
         ssize_t written = write(output_fd, buffer, len);
         if (written < 0)
-            ERR_CLEANUP_MSG("%s couldn't write %d bytes to %s", cmd_name, len, output_name);
+            ERR_CLEANUP_MSG("%s couldn't write %d bytes to %s", fctx->argv[0], len, output_name);
         len_written += written;
         progress_report(fctx->progress, len);
     }
@@ -1047,7 +1046,7 @@ static int fd_write_run(char const *cmd_name,
     if (ending_hole > 0) {
         // If this is a regular file, seeking is insufficient in making the file
         // the right length, so write a block of zeros to the end.
-        char zeros[512];
+        char zeros[FWUP_BLOCK_SIZE];
         memset(zeros, 0, sizeof(zeros));
         off_t to_write = sizeof(zeros);
         if (ending_hole < to_write)
@@ -1055,10 +1054,17 @@ static int fd_write_run(char const *cmd_name,
         off_t offset = sparse_file_size(&sfm) - to_write;
         ssize_t written = write(output_fd, zeros, to_write);
         if (written < 0)
-            ERR_CLEANUP_MSG("%s couldn't write to hole at offset %lld", cmd_name, offset);
+            ERR_CLEANUP_MSG("%s couldn't write to hole at offset %" PRId64, fctx->argv[0], offset);
 
         // Unaccount for these bytes
         len_written += written - to_write;
+    }
+
+    if (len_written != expected_data_length) {
+        if (len_written == 0)
+            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->argv[0], fctx->on_event->title);
+        else
+            ERR_CLEANUP_MSG("%s wrote %" PRId64 " bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_data_length);
     }
 
     // Verify hash
@@ -1067,7 +1073,7 @@ static int fd_write_run(char const *cmd_name,
     char hash_str[sizeof(hash) * 2 + 1];
     bytes_to_hex(hash, hash_str, sizeof(hash));
     if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_CLEANUP_MSG("raw_write detected blake2b digest mismatch");
+        ERR_CLEANUP_MSG("%s detected blake2b mismatch on '%s'", fctx->argv[0], fctx->on_event->title);
 
 cleanup:
     sparse_file_free(&sfm);
@@ -1108,7 +1114,7 @@ int path_write_run(struct fun_context *fctx)
     if (!output_fd)
         ERR_CLEANUP_MSG("path_write can't open output file %s", fctx->argv[2]);
 
-    rc = fd_write_run("path_write", fctx, output_fd, output_filename);
+    rc = fd_write_run(fctx, output_fd, output_filename);
 
 cleanup:
     if (output_fd)
@@ -1148,7 +1154,7 @@ int pipe_write_run(struct fun_context *fctx)
     if (!output_fd)
         ERR_CLEANUP_MSG("fileno");
 
-    OK_OR_CLEANUP(fd_write_run("pipe_write", fctx, output_fd, "pipe"));
+    OK_OR_CLEANUP(fd_write_run(fctx, output_fd, "pipe"));
 
 cleanup:
     if (cmd_pipe) {
