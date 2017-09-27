@@ -1147,7 +1147,7 @@ int execute_validate(struct fun_context *fctx)
 }
 int execute_compute_progress(struct fun_context *fctx)
 {
-    (void) fctx; // UNUSED
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
     return 0;
 }
 int execute_run(struct fun_context *fctx)
@@ -1162,5 +1162,6 @@ int execute_run(struct fun_context *fctx)
     if (status != 0)
         ERR_RETURN("'%s' failed with exit status %d", cmd_name, status);
 
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
 }
