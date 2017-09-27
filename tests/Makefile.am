@@ -149,6 +149,8 @@ TESTS = 001_simple_fw.test \
 	133_path_write_file.test \
 	134_pipe_write_file.test \
 	135_execute.test \
-	136_fat_overwrite.test
+	136_fat_overwrite.test \
+	137_path_write_sparse.test \
+	138_pipe_write_sparse.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
