@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Manually create a .fw file that has a hole at the end.
+#
+
+. ./common.sh
+
+# Create the "sparse" resource.
+SPARSE_FILE=$WORK/sparse.bin
+dd seek=1 if=$TESTFILE_1K of=$SPARSE_FILE 2>/dev/null
+dd seek=3 count=1 if=/dev/zero of=$SPARSE_FILE 2>/dev/null
+
+OUTFILE=$WORK/output.bin
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${TESTFILE_1K}"
+}
+task complete {
+        on-resource sparsefile { pipe_write("dd of=${OUTFILE}") }
+}
+EOF
+
+NEW_META_CONF=$WORK/new-meta.conf
+cat >$NEW_META_CONF <<EOF
+file-resource "sparsefile" {
+length={0,512,1024,512}
+blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "complete" {
+on-resource "sparsefile" {
+funlist={"2","path_write","${OUTFILE}"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Verify the file
+$FWUP_VERIFY -V -i $FWFILE
+
+# Create the new "sparse" fw file
+NEW_FWFILE=$WORK/new.fw
+unzip -q $FWFILE -d $UNZIPDIR
+cp $NEW_META_CONF $UNZIPDIR/meta.conf
+cd $UNZIPDIR
+zip -q $NEW_FWFILE meta.conf data/sparsefile
+cd -
+
+# It should still verify
+$FWUP_VERIFY -V -i $NEW_FWFILE
+
+# Check that pipe_write works with the sparse file
+$FWUP_APPLY --unsafe -a -d $IMGFILE -i $NEW_FWFILE -t complete
+cmp $SPARSE_FILE $OUTFILE
