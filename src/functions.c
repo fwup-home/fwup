@@ -37,15 +37,6 @@
 
 #include <sodium.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-    const char *read_args = "rb";
-    const char *write_args = "wb";
-#else
-    const char *read_args = "r";
-    const char *write_args = "w";
-    #define O_BINARY 0
-#endif
-
 #define DECLARE_FUN(FUN) \
     static int FUN ## _validate(struct fun_context *fctx); \
     static int FUN ## _compute_progress(struct fun_context *fctx); \
@@ -1000,90 +991,6 @@ int info_run(struct fun_context *fctx)
     return 0;
 }
 
-static int fd_write_run(struct fun_context *fctx,
-                        int output_fd,
-                        const char *output_name)
-{
-    assert(fctx->type == FUN_CONTEXT_FILE);
-    assert(fctx->on_event);
-
-    int rc = 0;
-    struct sparse_file_map sfm;
-    sparse_file_init(&sfm);
-
-    cfg_t *resource = cfg_gettsec(fctx->cfg, "file-resource", fctx->on_event->title);
-    if (!resource)
-        ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
-
-    char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
-        ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
-
-    OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
-    off_t expected_data_length = sparse_file_data_size(&sfm);
-
-    off_t len_written = 0;
-
-    crypto_generichash_state hash_state;
-    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
-    for (;;) {
-        off_t offset;
-        size_t len;
-        const void *buffer;
-
-        OK_OR_CLEANUP(fctx->read(fctx, &buffer, &len, &offset));
-
-        // Check if done.
-        if (len == 0)
-            break;
-
-        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
-
-        ssize_t written = write(output_fd, buffer, len);
-        if (written < 0)
-            ERR_CLEANUP_MSG("%s couldn't write %d bytes to %s", fctx->argv[0], len, output_name);
-        len_written += written;
-        progress_report(fctx->progress, len);
-    }
-
-    off_t ending_hole = sparse_ending_hole_size(&sfm);
-    if (ending_hole > 0) {
-        // If this is a regular file, seeking is insufficient in making the file
-        // the right length, so write a block of zeros to the end.
-        char zeros[FWUP_BLOCK_SIZE];
-        memset(zeros, 0, sizeof(zeros));
-        off_t to_write = sizeof(zeros);
-        if (ending_hole < to_write)
-            to_write = ending_hole;
-        off_t offset = sparse_file_size(&sfm) - to_write;
-        ssize_t written = write(output_fd, zeros, to_write);
-        if (written < 0)
-            ERR_CLEANUP_MSG("%s couldn't write to hole at offset %" PRId64, fctx->argv[0], offset);
-
-        // Unaccount for these bytes
-        len_written += written - to_write;
-    }
-
-    if (len_written != expected_data_length) {
-        if (len_written == 0)
-            ERR_CLEANUP_MSG("%s didn't write anything. Was it called twice in an on-resource for '%s'?", fctx->argv[0], fctx->on_event->title);
-        else
-            ERR_CLEANUP_MSG("%s wrote %" PRId64 " bytes for '%s', but should have written %" PRId64, fctx->argv[0], len_written, fctx->on_event->title, expected_data_length);
-    }
-
-    // Verify hash
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
-    char hash_str[sizeof(hash) * 2 + 1];
-    bytes_to_hex(hash, hash_str, sizeof(hash));
-    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_CLEANUP_MSG("%s detected blake2b mismatch on '%s'", fctx->argv[0], fctx->on_event->title);
-
-cleanup:
-    sparse_file_free(&sfm);
-    return rc;
-}
-
 static int check_unsafe(struct fun_context *fctx)
 {
     if (!fwup_unsafe)
@@ -1105,25 +1012,48 @@ int path_write_compute_progress(struct fun_context *fctx)
 {
     return process_resource_compute_progress(fctx, false);
 }
+struct path_write_cookie {
+    const char *output_filename;
+    FILE *fp;
+};
+static int path_write_pwrite_callback(void *cookie, const void *buf, size_t count, off_t offset)
+{
+    struct path_write_cookie *fwc = (struct path_write_cookie *) cookie;
+
+    OK_OR_RETURN_MSG(fseek(fwc->fp, (long) offset, SEEK_SET), "seek to offset %ld failed on '%s'", (long) offset, fwc->output_filename);
+
+    size_t written = fwrite(buf, 1, count, fwc->fp);
+    if (written != count)
+        ERR_RETURN("path_write failed to write '%s'", fwc->output_filename);
+    return 0;
+}
+static int path_write_final_hole_callback(void *cookie, off_t hole_size, off_t file_size)
+{
+    (void) hole_size;
+
+    // Write a zero at the last offset to force the file to expand to the proper size
+    char zero = 0;
+    return path_write_pwrite_callback(cookie, &zero, 1, file_size - 1);
+}
 int path_write_run(struct fun_context *fctx)
 {
-    assert(fctx->type == FUN_CONTEXT_FILE);
-    assert(fctx->on_event);
     OK_OR_RETURN(check_unsafe(fctx));
 
+    struct path_write_cookie pwc;
+    pwc.output_filename = fctx->argv[1];
+    pwc.fp = fopen(pwc.output_filename, "wb");
+    if (pwc.fp == NULL)
+        ERR_RETURN("path_write can't open '%s'", pwc.output_filename);
+
     int rc = 0;
-
-    char const *output_filename = fctx->argv[1];
-    int output_fd = open(output_filename, O_WRONLY|O_CREAT|O_BINARY, 0644);
-    if (!output_fd)
-        ERR_CLEANUP_MSG("path_write can't open output file %s", fctx->argv[2]);
-
-    rc = fd_write_run(fctx, output_fd, output_filename);
+    OK_OR_CLEANUP(process_resource(fctx,
+                            false,
+                            path_write_pwrite_callback,
+                            path_write_final_hole_callback,
+                            &pwc));
 
 cleanup:
-    if (output_fd)
-        close(output_fd);
-
+    fclose(pwc.fp);
     return rc;
 }
 
@@ -1141,31 +1071,69 @@ int pipe_write_compute_progress(struct fun_context *fctx)
 {
     return process_resource_compute_progress(fctx, true);
 }
+struct pipe_write_cookie {
+    const char *pipe_command;
+    off_t last_offset;
+    FILE *fp;
+};
+static int pipe_write_pwrite_callback(void *cookie, const void *buf, size_t count, off_t offset)
+{
+    struct pipe_write_cookie *pwc = (struct pipe_write_cookie *) cookie;
+
+    if (pwc->last_offset != offset) {
+        // Fill in the gap with zeros
+        char zeros[FWUP_BLOCK_SIZE];
+        memset(zeros, 0, sizeof(zeros));
+
+        while (pwc->last_offset < offset) {
+            size_t to_write = offset - pwc->last_offset;
+            if (to_write > sizeof(zeros))
+                to_write = sizeof(zeros);
+            size_t written = fwrite(zeros, 1, to_write, pwc->fp);
+            if (written != count)
+                ERR_RETURN("pipe_write failed to write '%s'", pwc->pipe_command);
+            pwc->last_offset += to_write;
+        }
+    }
+    size_t written = fwrite(buf, 1, count, pwc->fp);
+    if (written != count)
+        ERR_RETURN("pipe_write failed to write '%s'", pwc->pipe_command);
+    pwc->last_offset += count;
+    return 0;
+}
+static int pipe_write_final_hole_callback(void *cookie, off_t hole_size, off_t file_size)
+{
+    (void) hole_size;
+
+    // Write a zero at the last offset to force the file to expand to the proper size
+    char zero = 0;
+    return pipe_write_pwrite_callback(cookie, &zero, 1, file_size - 1);
+}
 int pipe_write_run(struct fun_context *fctx)
 {
-    assert(fctx->type == FUN_CONTEXT_FILE);
-    assert(fctx->on_event);
-
     OK_OR_RETURN(check_unsafe(fctx));
 
+    struct pipe_write_cookie pwc;
+    pwc.pipe_command = fctx->argv[1];
+    pwc.last_offset = 0;
+#if defined(_WIN32) || defined(__CYGWIN__)
+    pwc.fp = popen(pwc.pipe_command, "wb");
+#else
+    pwc.fp = popen(pwc.pipe_command, "w");
+#endif
+    if (!pwc.fp)
+        ERR_RETURN("pipe_write can't run '%s'", pwc.pipe_command);
+
     int rc = 0;
-    char const *cmd_name = fctx->argv[1];
-    FILE *cmd_pipe = popen(cmd_name, write_args);
-    if (!cmd_pipe)
-        ERR_CLEANUP_MSG("pipe_write can't run '%s'", cmd_name);
-
-    int output_fd = fileno(cmd_pipe);
-    if (!output_fd)
-        ERR_CLEANUP_MSG("fileno");
-
-    OK_OR_CLEANUP(fd_write_run(fctx, output_fd, "pipe"));
+    OK_OR_CLEANUP(process_resource(fctx,
+                            true,
+                            pipe_write_pwrite_callback,
+                            pipe_write_final_hole_callback,
+                            &pwc));
 
 cleanup:
-    if (cmd_pipe) {
-        int exit_status = pclose(cmd_pipe);
-        if (exit_status != 0)
-            ERR_RETURN("command '%s' returned an error to pipe_write", cmd_name);
-    }
+    if (pclose(pwc.fp) != 0)
+        ERR_RETURN("command '%s' returned an error to pipe_write", pwc.pipe_command);
 
     return rc;
 }
