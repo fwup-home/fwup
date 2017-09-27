@@ -7,7 +7,7 @@
 
 . ./common.sh
 
-export OUTFILE=$WORK/output1k
+OUTFILE=$WORK/output1k
 
 cat >$CONFIG <<EOF
 file-resource TEST {
