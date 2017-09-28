@@ -9,9 +9,10 @@
 
 OUTFILE=$WORK/output1k
 
-
+# Handle Crossplatform-isms
 case $HOST_OS in
     Windows)
+        # Not many Windows executables read from STDIN
         exit 0
         ;;
     *)
