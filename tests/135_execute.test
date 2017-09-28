@@ -10,6 +10,13 @@
 export OUTFILE=$WORK/output.txt
 export LOCAL_FILE=$WORK/somefile.txt
 
+EXE_CMD="dd if=${LOCAL_FILE} of=${OUTFILE}"
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # dd usually isn't available on Windows
+    EXE_CMD="copy work-135_execute.test\\\\somefile.txt work-135_execute.test\\\\output.txt"
+fi
+
 cat >$LOCAL_FILE <<EOF
 This is a test.  It is only a test
 EOF
