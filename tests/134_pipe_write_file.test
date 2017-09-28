@@ -9,6 +9,15 @@
 
 OUTFILE=$WORK/output1k
 
+
+case $HOST_OS in
+    Windows)
+        exit 0
+        ;;
+    *)
+        ;;
+esac
+
 cat >$CONFIG <<EOF
 file-resource TEST {
 	host-path = "${TESTFILE_1K}"

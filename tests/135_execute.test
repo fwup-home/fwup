@@ -10,6 +10,15 @@
 export OUTFILE=$WORK/output.txt
 export LOCAL_FILE=$WORK/somefile.txt
 
+case $HOST_OS in
+    Windows)
+        # Has its own exes
+        exit 0
+        ;;
+    *)
+        ;;
+esac
+
 cat >$LOCAL_FILE <<EOF
 This is a test.  It is only a test
 EOF

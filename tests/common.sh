@@ -11,7 +11,7 @@ BASE64_DECODE=-d
 FSCK_FAT=fsck.fat
 TIMEOUT=timeout
 
-if [ -d "/mnt/c/Users" ]; then
+if [ -d "/mnt/c/Users" ] || [ "$MODE" = "windows" ]; then
     # Windows 10 bash mode
     HOST_OS=Windows
     HOST_ARCH=amd64
