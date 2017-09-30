@@ -12,7 +12,8 @@ OUTFILE=$WORK/output1k
 # Handle Crossplatform-isms
 case $HOST_OS in
     Windows)
-        # Not many Windows executables read from STDIN
+        # This test needs a Windows executable that reads from STDIN.  
+        # No sutable executables are currently on Travis CI Image
         exit 0
         ;;
     *)
