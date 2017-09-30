@@ -196,6 +196,23 @@ static int cb_define_eval_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
     return define_helper(cfg, argv[0], result_str, true);
 }
 
+static int cb_file_resource_size(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    struct stat st; 
+
+    // Overriding version of define_eval
+    if (check_param_count(cfg, opt, argc, 2) < 0)
+        return -1;
+
+    if (stat(argv[1], &st) != 0)
+        return -1;
+
+
+    char result_str[24]; // Large enough to hold 64 bit int
+    snprintf(result_str,24,"%d",st.st_size);
+
+    return define_helper(cfg, argv[0], result_str, true);
+}
 // libconfuse calls the validators every time an item is added
 // to a section. The idiom is to validate the most recently
 // added item each time. This one is also the last one in the list.
@@ -430,6 +447,7 @@ cfg_opt_t opts[] = {
     CFG_FUNC("define-eval", cb_define_eval),
     CFG_FUNC("define-eval!", cb_define_eval_bang),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_FUNC("file-resource-size", cb_file_resource_size),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("uboot-environment", uboot_environment_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),

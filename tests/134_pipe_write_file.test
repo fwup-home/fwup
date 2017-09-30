@@ -9,6 +9,17 @@
 
 OUTFILE=$WORK/output1k
 
+# Handle Crossplatform-isms
+case $HOST_OS in
+    Windows)
+        # This test needs a Windows executable that reads from STDIN.  
+        # No sutable executables are currently on Travis CI Image
+        exit 0
+        ;;
+    *)
+        ;;
+esac
+
 cat >$CONFIG <<EOF
 file-resource TEST {
 	host-path = "${TESTFILE_1K}"
