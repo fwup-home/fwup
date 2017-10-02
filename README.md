@@ -235,6 +235,15 @@ These two functions were added in release 0.10.0, but since
 they are evaluated at firmware creation time, .fw files created using them are
 compatible with older versions of `fwup`.
 
+Finally, `file-resource` will also define variable named `FWUP_SIZE_<resource_name>` with the size of the resource.  For example
+the following will create a variable named `FWUP_SIZE_zImage`:
+
+```
+file-resource zImage {
+        host-path = "output/images/zImage"
+}
+```
+
 ## Global scope
 
 At the global scope, the following options are available:
@@ -494,6 +503,7 @@ write to raw locations on the destination.
 Action                                  | Min fwup version | Description
 ----------------------------------------|------------------|------------
 error(message)                          | 0.12.0 | Immediately fail a firmware update with an error
+execute(command)                        | 1.0.0 | Execute a command (requires --unsafe)
 fat_mkfs(block_offset, block_count)     | 0.1.0 | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)       | 0.1.0 | Write the resource to the FAT file system at the specified block offset
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
@@ -505,6 +515,8 @@ fat_setlabel(block_offset, label)       | 0.2.0 | Set the volume label on a FAT 
 fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
 info(message)                           | 0.13.0 | Print out an informational message
 mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the target
+path_write(path)                        | 1.0.0 | Write resource to the designated path (requires --unsafe)
+pipe_write(command)                     | 1.0.0 | Write a resource to STDIN of the given command (requires --unsafe)
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset)                 | 0.1.0 | Write the resource to the specified block offset
 trim(block_offset, count)               | 0.15.0 | Discard any data previously written to the range. TRIM requests are issued to the device if --enable-trim is passed to fwup.
