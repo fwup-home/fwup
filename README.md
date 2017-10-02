@@ -198,7 +198,6 @@ protection against someone pulling power at a bad time. Also, `fwup`'s one pass
 over the archive feature means that firmware validation is mostly done on the
 fly, so you'll want to verify the archive first (see the `-V` option).
 
-
 # Configuration file format
 
 `fwup` uses the Unix configuration library,
@@ -252,6 +251,17 @@ Simple math calculations may also be performed using `define-eval()` and
 These two functions were added in release 0.10.0, but since
 they are evaluated at firmware creation time, .fw files created using them are
 compatible with older versions of `fwup`.
+
+Finally, `file-resource` will define a variable named `FWUP_SIZE_<resource_name>` with the size of the resource.  For example
+the following will create a variable named `FWUP_SIZE_zImage`:
+
+```
+file-resource zImage {
+        host-path = "output/images/zImage"
+}
+
+execute("echo zImage size is ${FWUP_SIZE_zImage}")
+```
 
 ## Global scope
 
