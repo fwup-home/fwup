@@ -204,6 +204,55 @@ static int cb_define_eval_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
 #define MOST_RECENTLY_ADDED_SECTION(opt) \
     cfg_opt_getnsec(opt, cfg_opt_size(opt) - 1)
 
+
+// Automatically add environment variables when we validate a file resource
+// 
+// Currently we generate:
+//   FWUP_SIZE_<resource_name> - The size of the resource
+static int add_file_resource_variables(const char * path, cfg_t *sec)
+{
+    // FWUP_SIZE_<resource_name>
+    if (path) {
+        // Create the Variable Name
+        //  strlen("FWUP_SIZE_") == 10
+        int key_len = strlen(cfg_title(sec)) + 10 + 1;
+        char *key = (char *) malloc( key_len );
+
+        snprintf(key,key_len,"FWUP_SIZE_%s", cfg_title(sec));
+
+        for (int i = 0; i < key_len; i++) {
+            switch(key[i]) {
+                case '-':
+                case '/':
+                case '.':
+                    key[i] = '_';
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        struct stat st;
+
+        // Special files may not have length
+        // Only return an error if we fail to set the variable
+        // after we know its size
+        if (stat(path, &st) == 0)
+        {
+
+            char size_str[24]; // Large enough to hold 64 bit int
+            snprintf(size_str,24,"%d",st.st_size);
+
+            INFO("Defining '%s'='%s'", key, size_str);
+
+            if (set_environment(key, size_str) < 0)
+                return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
 {
     cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
@@ -218,7 +267,7 @@ static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
         return -1;
     }
 
-    return 0;
+    return add_file_resource_variables(path, sec);
 }
 
 static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
