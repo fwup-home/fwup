@@ -140,6 +140,7 @@ static void print_usage()
     printf("Generate a public/private key pair:\n");
     printf("\n");
     printf("  $ %s -g\n", program_name);
+    printf("\n");
     printf("Store fwup-key.priv in a safe place and fwup-key.pub on the target. To sign\n");
     printf("an existing archive run:\n");
     printf("\n");

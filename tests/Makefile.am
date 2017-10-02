@@ -154,4 +154,5 @@ TESTS = 001_simple_fw.test \
 	138_pipe_write_sparse.test \
 	139_file_resource_size.test
 
+
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

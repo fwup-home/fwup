@@ -7,8 +7,8 @@
 
 . ./common.sh
 
-export OUTFILE=$WORK/output.txt
-export LOCAL_FILE=$WORK/somefile.txt
+OUTFILE=$WORK/output.txt
+LOCAL_FILE=$WORK/somefile.txt
 
 EXE_CMD="dd if=${LOCAL_FILE} of=${OUTFILE}"
 

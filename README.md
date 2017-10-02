@@ -146,6 +146,7 @@ Options:
   -t, --task <task> Task to apply within the firmware update
   -u, --unmount Unmount all partitions on device first
   -U, --no-unmount Do not try to unmount partitions on device
+  --unsafe Allow unsafe commands (consider applying only signed archives)
   -v, --verbose   Verbose
   -V, --verify  Verify an existing firmware file (specify -i)
   --version Print out the version
@@ -176,8 +177,10 @@ Create an image file from a .fw file for use with dd(1):
 Generate a public/private key pair:
 
   $ fwup -g
+
 Store fwup-key.priv in a safe place and fwup-key.pub on the target. To sign
 an existing archive run:
+
   $ fwup -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw
 ```
 
@@ -503,7 +506,7 @@ write to raw locations on the destination.
 Action                                  | Min fwup version | Description
 ----------------------------------------|------------------|------------
 error(message)                          | 0.12.0 | Immediately fail a firmware update with an error
-execute(command)                        | 1.0.0 | Execute a command (requires --unsafe)
+execute(command)                        | 0.16.0 | Execute a command on the host. Requires the `--unsafe` flag
 fat_mkfs(block_offset, block_count)     | 0.1.0 | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)       | 0.1.0 | Write the resource to the FAT file system at the specified block offset
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
@@ -515,8 +518,8 @@ fat_setlabel(block_offset, label)       | 0.2.0 | Set the volume label on a FAT 
 fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
 info(message)                           | 0.13.0 | Print out an informational message
 mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the target
-path_write(path)                        | 1.0.0 | Write resource to the designated path (requires --unsafe)
-pipe_write(command)                     | 1.0.0 | Write a resource to STDIN of the given command (requires --unsafe)
+path_write(destination_path)            | 0.16.0 | Write a resource to a path on the host. Requires the `--unsafe` flag
+pipe_write(command)                     | 0.16.0 | Pipe a resource through a command on the host. Requires the `--unsafe` flag
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset)                 | 0.1.0 | Write the resource to the specified block offset
 trim(block_offset, count)               | 0.15.0 | Discard any data previously written to the range. TRIM requests are issued to the device if --enable-trim is passed to fwup.
