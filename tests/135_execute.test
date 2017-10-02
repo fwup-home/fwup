@@ -23,7 +23,7 @@ EOF
 
 cat >$CONFIG <<EOF
 task complete {
-	on-finish { execute("dd if=${LOCAL_FILE} of=${OUTFILE}") }
+	on-finish { execute("${EXE_CMD}") }
 }
 task bad_command {
 	on-finish { execute("badcommand1234") }
