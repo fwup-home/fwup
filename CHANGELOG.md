@@ -1,6 +1,21 @@
 # Changelog
 
-## v1.0.0-dev
+## v0.16.0
+
+  * New features
+    * Added path_write, pipe_write, and execute commands. These are only usable
+      if the --unsafe flag is passed. They enable people using raw NAND to
+      invoke the ubi tools. People wanting fwup to upgrade other chips can also
+      use these commands. These commands are considered experimental, can create
+      platform-dependent .fw files, and open up some security issues. However,
+      assuming signed firmware updates, they can be very useful. Thanks to
+      Michael Schmidt for these additions.
+    * Progress bar now includes approximate bytes written.
+
+  * Bug fixes
+    * Support overwriting files in FAT partitions. Previously you had to remove
+      the files first.
+    * Fix tests to run on BSD systems again.
 
 ## v0.15.4
 
