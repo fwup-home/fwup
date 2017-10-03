@@ -105,6 +105,12 @@ OTHER_FILES += \
     README.md
 
 DISTFILES += \
+    CHANGELOG.md \
+    scripts/build_pkg.sh \
+    scripts/ci_build.sh \
+    scripts/ci_install_deps.sh \
+    scripts/download_deps.sh \
+    src/fwup.h2m \
     tests/Makefile.am \
     tests/common.sh \
     tests/001_simple_fw.test \
@@ -146,8 +152,6 @@ DISTFILES += \
     tests/037_streaming_bad_sig.test \
     tests/038_write_15M.test \
     tests/039_upgrade.test \
-    CHANGELOG.md \
-    src/fwup.h2m \
     tests/041_version.test \
     tests/042_fat_am335x.test \
     tests/043_fat_touch.test \
@@ -159,54 +163,40 @@ DISTFILES += \
     tests/049_assert_size_less_than_fail.test \
     tests/050_assert_size_greater_than_success.test \
     tests/051_assert_size_greater_than_fail.test \
-    scripts/build_pkg.sh \
-    scripts/ci_build.sh \
-    scripts/ci_install_deps.sh \
-    scripts/download_deps.sh \
-    tests/077_fat_empty_file.test \
-    tests/076_utf8_metadata.test \
-    tests/075_big_fat_fs.test \
-    tests/074_fat_cache_fail.test \
-    tests/073_multistep_fat.test \
-    tests/072_compression_works.test \
-    tests/071_big_mbr_offset.test \
-    tests/070_bad_mbr_offset.test \
-    tests/069_define_bang.test \
-    tests/068_readonly_output_error.test \
-    tests/067_usage.test \
-    tests/066_fat_attrib.test \
-    tests/065_fat_mkdir.test \
-    tests/064_mbr_bootcode.test \
-    tests/063_detect.test \
-    tests/062_long_meta_conf.test \
-    tests/061_framed_partial_metadata.test \
-    tests/060_framed_streaming.test \
-    tests/059_framed_error.test \
-    tests/058_framed_list_tasks.test \
-    tests/057_list_tasks_empty.test \
-    tests/056_list_tasks.test \
-    tests/055_metadata_partial_file.test \
-    tests/054_framed_metadata.test \
-    tests/053_framed_progress.test \
     tests/052_file_concatenation.test \
-    tests/079_uboot_setenv.test \
+    tests/053_framed_progress.test \
+    tests/054_framed_metadata.test \
+    tests/055_metadata_partial_file.test \
+    tests/056_list_tasks.test \
+    tests/057_list_tasks_empty.test \
+    tests/058_framed_list_tasks.test \
+    tests/059_framed_error.test \
+    tests/060_framed_streaming.test \
+    tests/061_framed_partial_metadata.test \
+    tests/062_long_meta_conf.test \
+    tests/063_detect.test \
+    tests/064_mbr_bootcode.test \
+    tests/065_fat_mkdir.test \
+    tests/066_fat_attrib.test \
+    tests/067_usage.test \
+    tests/068_readonly_output_error.test \
+    tests/069_define_bang.test \
+    tests/070_bad_mbr_offset.test \
+    tests/071_big_mbr_offset.test \
+    tests/072_compression_works.test \
+    tests/073_multistep_fat.test \
+    tests/074_fat_cache_fail.test \
+    tests/075_big_fat_fs.test \
+    tests/076_utf8_metadata.test \
+    tests/077_fat_empty_file.test \
     tests/078_partial_mbr2.test \
+    tests/079_uboot_setenv.test \
     tests/080_uboot_empty_env.test \
     tests/081_uboot_clearenv.test \
     tests/082_uboot_upgrade.test \
     tests/083_uboot_unsetenv.test \
     tests/084_corrupt_uboot.test \
     tests/085_raw_memset.test \
-    tests/100_easy_option.test \
-    tests/101_progress_range.test \
-    tests/102_multi_requires.test \
-    tests/103_error_msg.test \
-    tests/104_info_msg.test \
-    tests/105_require_path_on_device.test \
-    tests/106_large_length_field.test \
-    tests/107_string_resource.test \
-    tests/108_resource_order.test \
-    tests/109_includes.test \
     tests/086_math.test \
     tests/087_crypto_compat.test \
     tests/088_missing_hash.test \
@@ -221,6 +211,16 @@ DISTFILES += \
     tests/097_reproduceable.test \
     tests/098_sparse_empty.test \
     tests/099_sparse_lasthole.test \
+    tests/100_easy_option.test \
+    tests/101_progress_range.test \
+    tests/102_multi_requires.test \
+    tests/103_error_msg.test \
+    tests/104_info_msg.test \
+    tests/105_require_path_on_device.test \
+    tests/106_large_length_field.test \
+    tests/107_string_resource.test \
+    tests/108_resource_order.test \
+    tests/109_includes.test \
     tests/110_compression_level.test \
     tests/111_streaming_exit_fast.test \
     tests/112_fat_rm_missing_file.test \
@@ -242,4 +242,10 @@ DISTFILES += \
     tests/129_mbr_overflow.test \
     tests/130_media_sizes.test \
     tests/131_raw_key.test \
-    tests/132_key_as_param.test
+    tests/132_key_as_param.test \
+    tests/133_path_write_file.test \
+    tests/134_pipe_write_file.test \
+    tests/135_execute.test \
+    tests/136_fat_overwrite.test \
+    tests/137_path_write_sparse.test \
+    tests/138_pipe_write_sparse.test
