@@ -6,58 +6,52 @@
 [![Ebert](https://ebertapp.io/github/fhunleth/fwup.svg)](https://ebertapp.io/github/fhunleth/fwup)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
 
-The `fwup` utility is a configurable image-based firmware update utility for
-embedded Linux-based systems. It has two modes of operation. The first mode
-creates compressed archives containing root file system images, bootloaders,
-and other image material. These can be distributed via websites, email or
-update servers. The second mode applies the firmware images in a robust and
-repeatable way. The utility has the following features:
+`fwup` is a configurable image-based software update utility for embedded
+Linux-based systems. It primarily supports software upgrade strategies that
+update entire root filesystem images at once. This includes strategies like
+swapping back and forth between A and B partitions, recovery partitions, and
+various trial update/failback scenarios. All software update information is
+combined into a ZIP archive that may optionally be cryptographically signed.
+`fwup` has minimal dependencies and runtime requirements. Scripts are
+intentionally limited to make failure scenarios easier to reason about.
+Distribution of software update archives is not a feature. Users can call out to
+`fwup` to run upgrades from external media, stream them from the network, or
+script them using a tool like Ansible if so desired.
 
-  1. Uses standard ZIP archives to make debugging and transmission simple.
+Here's a full list of features:
 
-  2. Simple, but flexible configuration language to enable firmware
-  updates on various platforms and firmware update policies.
+1. Uses standard ZIP archives to make debugging and transmission simple.
 
-  3. Streaming firmware update processing to simplify target storage requirements.
+2. Simple, but flexible configuration language to enable firmware updates on
+   various platforms and firmware update policies.
 
-  4. Multiple firmware update task options per archive so that one
-  archive can upgrade varying target configurations
+3. Streaming firmware update processing to simplify target storage requirements.
 
-  5. Basic disk partitioning and FAT filesystem manipulation
+4. Multiple firmware update task options per archive so that one archive can
+   upgrade varying target configurations
 
-  6. Human and machine readable progress.
+5. Basic disk partitioning and FAT filesystem manipulation
 
-  7. Initialize or update SDCards on your development system whether you're
-     running Linux, OSX, BSD, or Windows. MMC and SDCards are automatically
-     detected and unmounted. No need to scan logs or manually unmount.
+6. Human and machine readable progress.
 
-  8. Firmware archive digital signature creation and verification (BETA!!)
+7. Initialize or update SDCards on your development system whether you're
+   running Linux, OSX, BSD, or Windows. MMC and SDCards are automatically
+   detected and unmounted. No need to scan logs or manually unmount.
 
-  9. Sparse file support to reduce number of bytes that need to be written when
-     initializing large filesystems (see section on sparse files)
+8. Firmware archive digital signature creation and verification
 
-  10. Permissive license (Apache 2.0 License - see end of doc)
+9. Sparse file support to reduce number of bytes that need to be written when
+   initializing large filesystems (see section on sparse files)
 
-  11. Extensively regression tested! Tests also provide lots of simple examples.
+10. Permissive license (Apache 2.0 License - see end of doc)
 
-This utility is based off of firmware update utilities I've written for various
-projects. It has already received a lot of use with the open source Nerves
-Project and other embedded projects.
+11. Extensively regression tested! Tests also provide simple examples of
+    functionality.
 
-# Examples!
-
-See [bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for
-firmware update examples for the BeagleBone Black and Raspberry Pi. The [Nerves
-Project](https://github.com/nerves-project/nerves_system_br) has more examples
-and is better maintained. The regression tests can also be helpful.
-
-My real world use of `fwup` involves writing the new firmware to a place on the
-Flash that's not in current use and then 'flipping' over to it at the very end.
-The examples tend to reflect that. `fwup` can also be used to overwrite an
-installation in place assuming you're using an initramfs, but that doesn't give
-protection against someone pulling power at a bad time. Also, `fwup`'s one pass
-over the archive feature means that firmware validation is mostly done on the
-fly, so you'll want to verify the archive first (see the `-V` option).
+Internally, `fwup` has many optimizations to speed up low level disk writes over
+what can easily be acheived with `dd(1)`. It orders, Flash erase block aligns,
+and can skip writing large unused sections to minimize write time. The goal has
+been to make updates fast enough that iterative development cycles.
 
 # Installing
 
@@ -69,9 +63,9 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup_0.15.4_amd64.deb)
-  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup_0.15.4_armhf.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup-0.15.4-1.x86_64.rpm)
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup_0.16.0_amd64.deb)
+  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup_0.16.0_armhf.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup-0.16.0-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
   * Buildroot - Support is included upstream since the 2016.05 release
   * Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
@@ -80,11 +74,11 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
     choco install fwup
 
-Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup.exe)
+Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.15.4/fwup-0.15.4.tar.gz) or clone this repository. Then read one of the following files:
+latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup-0.16.0.tar.gz) or clone this repository. Then read one of the following files:
 
   * [Linux build instructions](docs/build_linux.md)
   * [OSX build instructions](docs/build_osx.md)
@@ -183,6 +177,26 @@ an existing archive run:
 
   $ fwup -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw
 ```
+
+# Example usage
+
+The regression tests contain short examples for usage of various script
+elements and are likely the most helpful to read due to their small size.
+
+Other examples can be found in the
+[bbb-buildroot-fwup](https://github.com/fhunleth/bbb-buildroot-fwup) for project
+for the BeagleBone Black and Raspberry Pi. The [Nerves
+Project](https://github.com/nerves-project/nerves_system_br) has more examples
+and is better maintained.
+
+My real world use of `fwup` involves writing the new firmware to a place on the
+Flash that's not in current use and then 'flipping' over to it at the very end.
+The examples tend to reflect that. `fwup` can also be used to overwrite an
+installation in place assuming you're using an initramfs, but that doesn't give
+protection against someone pulling power at a bad time. Also, `fwup`'s one pass
+over the archive feature means that firmware validation is mostly done on the
+fly, so you'll want to verify the archive first (see the `-V` option).
+
 
 # Configuration file format
 
