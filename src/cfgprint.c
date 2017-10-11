@@ -92,6 +92,7 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
     case CFGT_SEC:
     case CFGT_FUNC:
     case CFGT_PTR:
+    default:
         break;
     }
 }
