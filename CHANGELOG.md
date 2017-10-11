@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.1
+
+  * New features
+    * Added support for setting the signature field in the MBR
+
 ## v0.16.0
 
   * New features

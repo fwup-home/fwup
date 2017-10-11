@@ -63,9 +63,9 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup_0.16.0_amd64.deb)
-  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup_0.16.0_armhf.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup-0.16.0-1.x86_64.rpm)
+  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.1/fwup_0.16.1_amd64.deb)
+  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.16.1/fwup_0.16.1_armhf.deb)
+  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.16.1/fwup-0.16.1-1.x86_64.rpm)
   * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
   * Buildroot - Support is included upstream since the 2016.05 release
   * Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
@@ -74,11 +74,11 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
     choco install fwup
 
-Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup.exe)
+Alternatively, download the [fwup executable](https://github.com/fhunleth/fwup/releases/download/v0.16.1/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.16.0/fwup-0.16.0.tar.gz) or clone this repository. Then read one of the following files:
+latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.16.1/fwup-0.16.1.tar.gz) or clone this repository. Then read one of the following files:
 
   * [Linux build instructions](docs/build_linux.md)
   * [OSX build instructions](docs/build_osx.md)
