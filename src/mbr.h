@@ -56,6 +56,7 @@ int mbr_create_cfg(cfg_t *cfg, uint8_t output[512]);
 int mbr_create(const struct mbr_partition partitions[4],
                const uint8_t *bootstrap,
                const struct osip_header *osip,
+               uint32_t signature,
                uint8_t output[512]);
 int mbr_verify(const struct mbr_partition partitions[4]);
 int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4]);

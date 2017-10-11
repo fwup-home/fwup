@@ -338,6 +338,7 @@ static cfg_opt_t mbr_opts[] = {
     CFG_INT("osip-major", 1, CFGF_NONE),
     CFG_INT("osip-minor", 0, CFGF_NONE),
     CFG_INT("osip-num-pointers", 1, CFGF_NONE),
+    CFG_STR("signature", 0, CFGF_NONE), // Special case: use a string to support unsigned 32-bit offsets on 32-bit machines
     CFG_SEC("partition", mbr_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("osii", mbr_osii_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_IGNORE_UNKNOWN

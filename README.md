@@ -382,6 +382,7 @@ potential mbr definition:
 ```
 mbr mbr-a {
         bootstrap-code-host-path = "path/to/bootstrap-data" # should be 440 bytes
+        signature = 0x01020304
 
         partition 0 {
                 block-offset = ${BOOT_PART_OFFSET}
@@ -715,6 +716,16 @@ and examine them with a hex editor. A few other routes might be useful too:
 3. Find an image that works and skip updating some sections. For example,
    some processors are very picky on the MBR contents and it's easier to
    get everything else working before tackling partition constraints.
+
+## How do I specify the root partition in Linux?
+
+There are a few options. Most people can specify `root=/dev/mmcblk0p1` or
+`root=/dev/sda1` or something similar on the kernel commandline and everything
+will work out fine. On systems with multiple drives and an unpredictable boot
+order, you can specify `root=PARTUUID=01234567-01` where the `-01` part
+corresponds to the 1-based partition index and `01234567` is any signature. In
+your `fwup.conf` file's MBR block, specify `signature = 0x01234567`. A third
+option is to use an initramfs and not worry about any of this.
 
 ## How do I get the best performance?
 

@@ -181,6 +181,7 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
 int mbr_create(const struct mbr_partition partitions[4],
                const uint8_t *bootstrap,
                const struct osip_header *osip,
+               uint32_t signature,
                uint8_t output[512])
 {
     if (bootstrap && osip->include_osip)
@@ -195,6 +196,8 @@ int mbr_create(const struct mbr_partition partitions[4],
 
     if (osip->include_osip && write_osip(osip, output) < 0)
         return -1;
+
+    copy_le32(&output[440], signature);
 
     int i;
     for (i = 0; i < 4; i++) {
@@ -388,5 +391,8 @@ int mbr_create_cfg(cfg_t *cfg, uint8_t output[512])
         (hex_to_bytes(bootstrap_hex, bootstrap, sizeof(bootstrap)) < 0))
         return -1;
 
-    return mbr_create(partitions, bootstrap_hex ? bootstrap : NULL, &osip, output);
+    const char *raw_signature = cfg_getstr(cfg, "signature");
+    uint32_t signature = !raw_signature ? 0 : strtoul(raw_signature, NULL, 0);
+
+    return mbr_create(partitions, bootstrap_hex ? bootstrap : NULL, &osip, signature, output);
 }
