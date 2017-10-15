@@ -131,7 +131,7 @@ void progress_init(struct fwup_progress *progress,
  * @param progress the progress info
  * @param units the number of "progress" units to increment
  */
-void progress_report(struct fwup_progress *progress, int units)
+void progress_report(struct fwup_progress *progress, uint64_t units)
 {
     // Start the timer once we start for real
     if (fwup_progress_mode == PROGRESS_MODE_NORMAL &&
