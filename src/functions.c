@@ -755,7 +755,7 @@ int trim_run(struct fun_context *fctx)
     off_t block_count = strtoull(fctx->argv[2], NULL, 0);
 
     off_t offset = block_offset * FWUP_BLOCK_SIZE;
-    off_t count = block_offset * FWUP_BLOCK_SIZE;
+    off_t count = block_count * FWUP_BLOCK_SIZE;
 
     OK_OR_RETURN(block_cache_trim(fctx->output, offset, count, true));
 
