@@ -17,7 +17,6 @@
 #include "progress.h"
 #include "util.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -140,7 +139,12 @@ void progress_report(struct fwup_progress *progress, uint64_t units)
         progress->start_time = current_time_ms();
 
     progress->current_units += units;
-    assert(progress->current_units <= progress->total_units);
+
+    // This should never happen. If it does, it definitely should be fixed, but
+    // don't throw an error or warning, since failing an update due to a progress
+    // calculation is hard to justify to anyone.
+    if (progress->current_units > progress->total_units)
+        progress->current_units = progress->total_units;
 
     int to_report = progress->low;
     if (progress->total_units) {
