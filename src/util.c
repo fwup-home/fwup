@@ -484,7 +484,7 @@ void alloc_page_aligned(void **memptr, size_t size)
 
 #if HAVE_POSIX_MEMALIGN
     if (posix_memalign(memptr, pagesize, size) < 0)
-        fwup_err(EXIT_FAILURE, "posix_memalign %lu bytes", size);
+        fwup_err(EXIT_FAILURE, "posix_memalign %u bytes", (unsigned int) size);
 #else
     // Slightly wasteful implementation of posix_memalign
     size_t padding = pagesize + pagesize - 1;
