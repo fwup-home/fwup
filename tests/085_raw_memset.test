@@ -14,6 +14,24 @@ task complete {
 }
 EOF
 
+cat >$CONFIG.bad <<EOF
+task complete {
+    on-init {
+        # Zero-length memsets are an error
+        raw_memset(1, 0, 0xff)
+    }
+}
+EOF
+
+cat >$CONFIG.bad2 <<EOF
+task complete {
+    on-init {
+        # > 8-bit values are an error
+        raw_memset(1, 100, 1024)
+    }
+}
+EOF
+
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
@@ -22,6 +40,17 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 # (The tr translates the zeros from /dev/zero to 0xff bytes)
 dd if=/dev/zero count=512 2>/dev/zero | tr \\000 \\377 | dd seek=1 of=$WORK/check.bin 2>/dev/null
 cmp_bytes 262656 $WORK/check.bin $IMGFILE
+
+# Check bad cases
+if $FWUP_CREATE -c -f $CONFIG.bad -o $FWFILE; then
+    echo "Expected raw_memset with bad parameter to fail"
+    exit 1
+fi
+
+if $FWUP_CREATE -c -f $CONFIG.bad2 -o $FWFILE; then
+    echo "Expected raw_memset with bad parameter to fail"
+    exit 1
+fi
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

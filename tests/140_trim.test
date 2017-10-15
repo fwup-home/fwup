@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#
+# Test running the trim command. Since we're not testing
+# on real media, the command doesn't actually get sent, but
+# we can verify some on the support.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+task complete {
+    on-init {
+        trim(0, 512)
+        trim(1, 512)
+        trim(10000000000, 512)
+        trim(1, 10000000000)
+    }
+}
+EOF
+
+cat >$CONFIG.bad <<EOF
+task complete {
+    on-init {
+        # Zero-length trims are an error
+        trim(1, 0)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check bad cases
+if $FWUP_CREATE -c -f $CONFIG.bad -o $FWFILE; then
+    echo "Expected trim with a bad parameter to fail"
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
