@@ -45,18 +45,15 @@ diff -w $WORK/expected_output.txt $WORK/actual_output.txt
 # Try info() with regular progress
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete \
     | tr '\r' '.' \
+    | tr '\033' '~' \
     | sed 's/\.$//g' \
     | grep -v '^Elapsed time' \
     > $WORK/actual_output.txt
 cat >$WORK/expected_output.txt <<EOF
-.|                                                  | 0%
-fwup: 1.bin
-
-fwup: 2.bin
-
-fwup: 3.bin
-
-fwup: 4.bin
+.|                                                  | 0%.~[Kfwup: 1.bin
+.~[Kfwup: 2.bin
+.~[Kfwup: 3.bin
+.~[Kfwup: 4.bin
 .|==================================================| 100%
 EOF
 diff -w $WORK/expected_output.txt $WORK/actual_output.txt

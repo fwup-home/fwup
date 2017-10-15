@@ -381,7 +381,7 @@ void fwup_output(const char *type, uint16_t code, const char *str)
         fwrite(&be_code, 2, 1, stdout);
     } else if (fwup_progress_mode == PROGRESS_MODE_NORMAL && len > 0) {
         // Skip a line to avoid the progress bar and then print the message
-        fwrite("\n", 1, 1, stdout);
+        fwrite("\r\033[K", 1, 4, stdout);
     }
     if (len)
         fwrite(str, 1, len, stdout);
