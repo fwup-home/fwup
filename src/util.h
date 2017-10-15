@@ -84,7 +84,7 @@ off_t find_natural_units(off_t amount);
 //   3. Did something cause strtoull set errno?
 //   4. It discards the return value without triggering a compiler warning.
 #define CHECK_ARG_UINT64(ARG, MSG) do { errno=0; const char *nptr = ARG; char *endptr; unsigned long long int _ = strtoull(nptr, &endptr, 0); (void) _; if (errno != 0 || *nptr == '\0' || *endptr != '\0') ERR_RETURN(MSG); } while (0)
-#define CHECK_ARG_UINT64_MAX(ARG, MAX_VAL, MSG) do { errno=0; const char *nptr = ARG; char *endptr; unsigned long long int val = strtoull(nptr, &endptr, 0); if (errno != 0 || val > (MAX_VAL) || *nptr == '\0' || *endptr != '\0') ERR_RETURN(MSG); } while (0)
+#define CHECK_ARG_UINT64_RANGE(ARG, MIN_VAL, MAX_VAL, MSG) do { errno=0; const char *nptr = ARG; char *endptr; unsigned long long int val = strtoull(nptr, &endptr, 0); if (errno != 0 || val > (MAX_VAL) || val < (MIN_VAL) || *nptr == '\0' || *endptr != '\0') ERR_RETURN(MSG); } while (0)
 
 #ifdef __GNUC__
 #define FWUP_ERR_ATTRS __attribute__ ((__noreturn__, __format__ (__printf__, 2, 3)))

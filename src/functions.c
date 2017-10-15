@@ -396,8 +396,11 @@ int raw_memset_validate(struct fun_context *fctx)
         ERR_RETURN("raw_memset requires a block offset, count, and value");
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_memset requires a non-negative integer block offset");
-    CHECK_ARG_UINT64_MAX(fctx->argv[2], INT32_MAX / FWUP_BLOCK_SIZE, "raw_memset requires a non-negative integer block count");
-    CHECK_ARG_UINT64_MAX(fctx->argv[3], 255, "raw_memset requires value to be between 0 and 255");
+    CHECK_ARG_UINT64_RANGE(fctx->argv[2], 1, INT32_MAX / FWUP_BLOCK_SIZE, "raw_memset requires a positive integer block count");
+
+    int value = strtol(fctx->argv[3], NULL, 0);
+    if (value < 0 || value > 255)
+        ERR_RETURN("raw_memset requires value to be between 0 and 255");
 
     return 0;
 }
@@ -415,7 +418,7 @@ int raw_memset_run(struct fun_context *fctx)
     const size_t block_size = FWUP_BLOCK_SIZE;
 
     off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
-    int count = strtol(fctx->argv[2], NULL, 0) * FWUP_BLOCK_SIZE;
+    off_t count = strtoull(fctx->argv[2], NULL, 0) * FWUP_BLOCK_SIZE;
     int value = strtol(fctx->argv[3], NULL, 0);
     char buffer[block_size];
     memset(buffer, value, sizeof(buffer));
@@ -736,7 +739,7 @@ int trim_validate(struct fun_context *fctx)
         ERR_RETURN("trim requires a block offset and count");
 
     CHECK_ARG_UINT64(fctx->argv[1], "trim requires a non-negative integer block offset");
-    CHECK_ARG_UINT64_MAX(fctx->argv[2], INT32_MAX / FWUP_BLOCK_SIZE, "trim requires a non-negative integer block count");
+    CHECK_ARG_UINT64_RANGE(fctx->argv[2], 1, INT64_MAX / FWUP_BLOCK_SIZE, "trim requires a block count >1");
 
     return 0;
 }
