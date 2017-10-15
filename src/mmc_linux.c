@@ -27,6 +27,7 @@
 #include <sys/wait.h>
 
 #include <fcntl.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -375,7 +376,7 @@ int mmc_trim(int fd, off_t offset, off_t count)
     uint64_t range[2] = {offset, offset + count};
 
     if (ioctl(fd, BLKDISCARD, &range))
-        fwup_warnx("BLKDISCARD (TRIM command) failed on range %lu to %lu (ignoring)", range[0], range[1]);
+        fwup_warnx("BLKDISCARD (TRIM command) failed on range %"PRIu64" to %"PRIu64" (ignoring)", range[0], range[1]);
 
     return 0;
 }
