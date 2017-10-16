@@ -467,16 +467,26 @@ cleanup:
         close(output_fd);
     }
 
-    // If reading stdin, signal that we're not going to read any more
-    // so that pipes can be terminated, etc. libarchive not only doesn't
-    // do this for us, it also reads the rest of the input in archive_read_free
-    // which if there's a lot left, it will take awhile.
-    if (reading_stdin)
-        close(STDIN_FILENO);
-
     sparse_file_free(&pd.sfm);
+
+    // If reading stdin, redirect it from file descriptor zero temporarily so
+    // that libarchive doesn't try to read any more from it. For whatever reason,
+    // libarchive will try to drain it completely when calling archive_read_free(),
+    // and this can take a long time. We don't want to close stdin completely,
+    // since that will break the pipe before we exit. This doesn't interact well
+    // with Erlang and maybe other programs.
+    int tmp_stdin = -1;
+    if (reading_stdin) {
+        tmp_stdin = dup(STDIN_FILENO);
+        close(STDIN_FILENO);
+    }
+
     archive_read_free(pd.a);
 
+    if (tmp_stdin) {
+        dup2(tmp_stdin, STDIN_FILENO);
+        close(tmp_stdin);
+    }
     if (meta_conf_signature)
         free(meta_conf_signature);
 
