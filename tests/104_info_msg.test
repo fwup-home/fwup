@@ -55,6 +55,7 @@ cat >$WORK/expected_output.txt <<EOF
 .~[Kfwup: 3.bin
 .~[Kfwup: 4.bin
 .|==================================================| 100%
+Success!
 EOF
 diff -w $WORK/expected_output.txt $WORK/actual_output.txt
 

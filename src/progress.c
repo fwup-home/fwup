@@ -172,9 +172,10 @@ void progress_report_complete(struct fwup_progress *progress)
 
     switch (fwup_progress_mode) {
     case PROGRESS_MODE_NORMAL:
+        printf("\nSuccess!\n");
         if (progress->start_time) {
             int elapsed = current_time_ms() - progress->start_time;
-            printf("\nSuccess!\nElapsed time: %d.%03ds\n",
+            printf("Elapsed time: %d.%03ds\n",
                elapsed / 1000,
                elapsed % 1000);
         }
