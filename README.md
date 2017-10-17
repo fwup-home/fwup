@@ -119,6 +119,7 @@ Options:
   -E, --eject Eject removeable media after successfully writing firmware.
   --no-eject Do not eject media after writing firmware
   --enable-trim Enable use of the hardware TRIM command
+  --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)
   -f <fwupdate.conf> Specify the firmware update configuration file
   -F, --framing Apply framing on stdin/stdout
   -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
@@ -658,6 +659,14 @@ Success        | "OK"         | The command was executed successfully. The paylo
 Error          | "ER"         | A failure occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
 Warning        | "WN"         | A warning occurred. The payload is a 2 byte error code (future use) followed by a textual error message.
 Progress       | "PR"         | The next two bytes are the progress (0-100) as a big endian integer.
+
+A related option is `--exit-handshake`. This option was specifically implemented
+for Erlang to support integration with its port process feature. It may be
+useful for other integrations where it's more convenient to wait for a final
+character coming from a subprocress rather than watching for an exit. The
+problem with Erlang is that it's easy for the message that the process exited to
+beat the final characters coming out stdout. When this option is enabled, `fwup`
+expects the calling process to close `stdin` when it's ready for `fwup` to exit.
 
 # FAQ
 

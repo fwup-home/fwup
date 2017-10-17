@@ -84,6 +84,7 @@ static void print_usage()
     printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
     printf("  --no-eject Do not eject media after writing firmware\n");
     printf("  --enable-trim Enable use of the hardware TRIM command\n");
+    printf("  --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
     printf("  -F, --framing Apply framing on stdin/stdout\n");
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
@@ -162,6 +163,7 @@ static struct option long_options[] = {
     {"eject",    no_argument,       0, 'E'},
     {"no-eject", no_argument,       0, '#'},
     {"enable-trim", no_argument,    0, '!'},
+    {"exit-handshake", no_argument, 0, '~'},
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"help",     no_argument,       0, 'h'},
@@ -511,6 +513,9 @@ int main(int argc, char **argv)
             break;
         case ')': // --public-key
             public_key = parse_public_key(optarg, strlen(optarg));
+            break;
+        case '~': // --exit-handshake
+            atexit(handshake_exit);
             break;
         default: /* '?' */
             print_usage();

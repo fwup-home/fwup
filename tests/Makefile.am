@@ -153,6 +153,7 @@ TESTS = 001_simple_fw.test \
 	137_path_write_sparse.test \
 	138_pipe_write_sparse.test \
 	139_mbr_signature.test \
-	140_trim.test
+	140_trim.test \
+	141_exit_handshake.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
