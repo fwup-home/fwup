@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.17.0
+
+  * New features
+    * Added `--exit-handshake` to reduce code needed to integrate with Erlang
+      and Elixir programs.
+
+  * Bug fixes
+    * Fixed the TRIM amount for manual trim() requests
+    * Don't close stdin early when streaming. This would cause an EPIPE in
+      programs that weren't expecting the pipe to half close. Previously, stdin
+      would be closed when done to workaround libarchive draining all input. A
+      different workaround is now in place.
+    * Make the progress bar 64-bit safe.
+    * Add out of bounds checks to trim() and memset() to catch a couple issues
+      at creation time (included uninitialized variables).
+    * Cleaned up old progress bar trails when updates printed out information.
+
 ## v0.16.1
 
   * New features
