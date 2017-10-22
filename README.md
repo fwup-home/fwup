@@ -771,6 +771,12 @@ unlock it, run:
 
     $ echo 0 > /sys/block/mmcblk0boot0/force_ro
 
+## How do I use "raw" NAND Flash?
+
+Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See
+the [UBI Example fwup.conf](docs/ubi_example/fwup.conf) for how to integrate
+fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
+
 ## How do you pronounce fwup?
 
 I used to pronounce it "eff-double-you-up", but then coworkers and others started calling
