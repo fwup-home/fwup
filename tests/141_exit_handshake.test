@@ -25,7 +25,7 @@ cat /dev/null | $FWUP_APPLY --exit-handshake -a -d $IMGFILE -i $FWFILE -t comple
     > $WORK/actual_output.txt
 
 cat >$WORK/expected_output.txt <<EOF
-.|                                                  | 0%.|==================================================| 100%
+.|                                    | 0%.|====================================| 100%
 Success!
 @
 EOF

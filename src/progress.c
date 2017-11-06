@@ -53,18 +53,29 @@ static int current_time_ms()
 
 static void draw_progress_bar(struct fwup_progress *progress, int percent)
 {
-    static const char fifty_equals[] = "==================================================";
-
     // The progress bar looks something like this:
     // |=====================                             | 43% (23 / 52) MB
+    //
+    // The #defines below calculate the number of equal sizes to use based
+    // on the terminal width. Since we can't query the terminal width, we have
+    // to guess something reasonable. 80 characters had previously been assumed,
+    // but it's quite common for people to run their upgrades in thin windows
+    // in tmux, so set lower. 50 equal signs works for 80 characters, so lower
+    // this number for thinner terminals.
+
+#define PROGRESS_BITS     36
+#define PROGRESS_BITS_STR "36"
+
+    static const char fifty_equals[] = "==================================================";
+
     if (progress->total_units <= 0) {
-        printf("\r|%-50.*s| %d%%",
-               percent / 2, fifty_equals,
+        printf("\r|%-" PROGRESS_BITS_STR ".*s| %d%%",
+               percent * PROGRESS_BITS / 100, fifty_equals,
                percent);
     } else {
         off_t units = find_natural_units(progress->total_units);
-        printf("\r|%-50.*s| %d%% (%.2f / %.2f) %s",
-               percent / 2, fifty_equals,
+        printf("\r|%-" PROGRESS_BITS_STR ".*s| %d%% (%.2f / %.2f) %s",
+               percent * PROGRESS_BITS / 100, fifty_equals,
                percent,
                ((double) progress->current_units) / units,
                ((double) progress->total_units) / units,
