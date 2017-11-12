@@ -3,13 +3,19 @@
 If you are using Homebrew as your packaging manager, building `fwup`
 should be straightforward. Just run the following from a shell prompt:
 
-    brew install confuse libarchive libsodium
+```shell
+# The following packages are needed to build
+$ brew install confuse libarchive libsodium pkg-config automake
 
-    cd fwup
-    ./autogen.sh
-    # This assumes that libarchive, libconfuse and libsodium were installed via
-    # homebrew.
-    PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure
-    make
-    sudo make install
+# The following packages are needed for the regression tests
+$ brew install coreutils mtools
 
+$ cd fwup
+$ ./autogen.sh
+$ PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure
+$ make
+$ sudo make install
+
+# Run the tests
+$ make check
+```
