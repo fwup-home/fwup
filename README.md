@@ -253,6 +253,18 @@ These two functions were added in release 0.10.0, but since
 they are evaluated at firmware creation time, .fw files created using them are
 compatible with older versions of `fwup`.
 
+Finally, `file-resource` will define a variable named `FWUP_SIZE_<resource_name>` with the size of the resource.  For example
+the following will create a variable named `FWUP_SIZE_zImage`:
+
+```
+file-resource zImage {
+        host-path = "output/images/zImage"
+}
+
+execute("echo zImage size is ${FWUP_SIZE_zImage}")
+```
+
+
 ## Global scope
 
 At the global scope, the following options are available:
@@ -760,6 +772,12 @@ Also, the `/dev/mmcblock0boot0` device is forced read-only by the kernel. To
 unlock it, run:
 
     $ echo 0 > /sys/block/mmcblk0boot0/force_ro
+
+## How do I use "raw" NAND Flash?
+
+Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See 
+the [UBI Example fwup.conf](docs/ubi_example/fwup.conf) for how to integrate
+fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
 
 ## How do you pronounce fwup?
 
