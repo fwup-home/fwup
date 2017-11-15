@@ -38,16 +38,16 @@ To build the dynamic version, install the shared library dependencies:
     pkg install libarchive libsodium
 
     ## OpenBSD
-    pkg_add libarchive libsodium
+    pkg_add libarchive libsodium curl
 
     ## NetBSD
     pkg_add confuse libarchive libsodium
 
     # The FreeBSD, DragonFlyBSD, and OpenBSD versions of libconfuse are very old (v2.7)
-    # 2.8 or later is needed and 3.0 is much preferred.
-    curl -O -L https://github.com/martinh/libconfuse/releases/download/v3.0/confuse-3.0.tar.gz
-    tar xzf confuse-3.0.tar.gz
-    cd confuse-3.0
+    # 2.8 or later is needed and >=3.0 is much preferred.
+    curl -O -L https://github.com/martinh/libconfuse/releases/download/v3.2.1/confuse-3.2.1.tar.gz
+    tar xzf confuse-3.2.1.tar.gz
+    cd confuse-3.2.1
     ./configure && make && sudo make install
 
 If you are building `fwup` from the git repository, you'll need to
@@ -70,5 +70,3 @@ Now you can build and install `fwup` using the normal Unix build recipe:
     make
     make check
     sudo make install
-
-
