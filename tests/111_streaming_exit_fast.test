@@ -9,6 +9,11 @@
 
 . ./common.sh
 
+if [ -z $TIMEOUT ]; then
+    echo "GNU coreutils' timeout command unavailable so skipping test."
+    exit 0
+fi
+
 cat >$CONFIG <<EOF
 file-resource TEST {
 	host-path = "${TESTFILE_1K}"

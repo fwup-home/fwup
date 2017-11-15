@@ -43,6 +43,9 @@ case "$HOST_OS" in
         # problem, so ignore.
         #FSCK_FAT=fsck_msdosfs
         FSCK_FAT=true
+
+        # The BSDs don't have the timeout command
+        TIMEOUT=
         ;;
     *)
 	# GNU stat
