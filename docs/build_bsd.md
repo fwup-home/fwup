@@ -62,7 +62,13 @@ Now you can build and install `fwup` using the normal Unix build recipe:
     ./configure
     # if ./configure fails to find libconfuse, try running:
     # export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+    # OpenBSD: export the following (if unsure, look for
+    # /usr/local/bin/autoconf-xyz, etc.: export AUTOCONF_VERSION=2.69
+    export AUTOMAKE_VERSION=1.15
+
     make
     make check
     sudo make install
+
 
