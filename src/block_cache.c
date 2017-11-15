@@ -201,23 +201,26 @@ static void *writer_worker(void *void_bc)
 {
     struct block_cache *bc = (struct block_cache *) void_bc;
 
+    OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     for (;;) {
-        pthread_mutex_lock(&bc->mutex_to);
-
         if (bc->seg_to_write) {
             volatile struct block_cache_segment *seg = bc->seg_to_write;
 
+            OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
             if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
                 bc->bad_offset = seg->offset;
+            OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
 
             bc->seg_to_write = NULL;
+            OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
         }
 
         if (!bc->running)
             break;
 
-        pthread_mutex_unlock(&bc->mutex_back);
+        OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     }
+    pthread_mutex_unlock(&bc->mutex);
     return NULL;
 }
 static int check_async_error(struct block_cache *bc)
@@ -233,9 +236,12 @@ static int do_async_write(struct block_cache *bc, struct block_cache_segment *se
 {
     // Wait for the writer thread to complete the last set of writes
     // before starting new ones.
-    pthread_mutex_lock(&bc->mutex_back);
+    OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
+    while (bc->seg_to_write != NULL)
+        OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     bc->seg_to_write = seg;
-    pthread_mutex_unlock(&bc->mutex_to);
+    OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
+    OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
 
     // NOTE: this check is best effort. If it catches something it will almost certainly
     //       be a previous write.
@@ -243,29 +249,27 @@ static int do_async_write(struct block_cache *bc, struct block_cache_segment *se
 }
 static void wait_for_write_completion(struct block_cache *bc, struct block_cache_segment *seg)
 {
-    if (bc->seg_to_write == seg) {
-        // Wait for write thread to finish
-        pthread_mutex_lock(&bc->mutex_back);
-
-        // Check that the write completed. Since only one write can be outstanding
-        // at a time, the thread has to be idle now.
-        if (bc->seg_to_write != NULL)
-            fwup_errx(EXIT_FAILURE, "Programming error with async writes. Please report");
-
-        pthread_mutex_unlock(&bc->mutex_back);
-    }
+    // Wait for write thread to finish
+    OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
+    while (bc->seg_to_write == seg)
+        OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
+    OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
 }
 static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
+    OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     if (bc->seg_to_write == seg) {
-        wait_for_write_completion(bc, seg);
+        while (bc->seg_to_write == seg)
+            OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
+
+        OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
+        return check_async_error(bc);
     } else {
+        OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
         if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
             ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", seg->offset);
+        return 0;
     }
-
-    // Poll for a previous asynchronous error
-    return check_async_error(bc);
 }
 #else
 // Single-threaded version
@@ -353,9 +357,8 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     bc->running = true;
     bc->bad_offset = -1;
 
-    pthread_mutex_init(&bc->mutex_to, NULL);
-    pthread_mutex_lock(&bc->mutex_to);
-    pthread_mutex_init(&bc->mutex_back, NULL);
+    pthread_mutex_init(&bc->mutex, NULL);
+    pthread_cond_init(&bc->cond, NULL);
     if (pthread_create(&bc->writer_thread, NULL, writer_worker, bc))
         fwup_errx(EXIT_FAILURE, "pthread_create");
 #endif
@@ -423,14 +426,15 @@ int block_cache_free(struct block_cache *bc)
 #if USE_PTHREADS
     // Wait for the most recent async write to complete and
     // signal that the thread should exit.
-    pthread_mutex_lock(&bc->mutex_back);
+    pthread_mutex_lock(&bc->mutex);
     bc->running = false;
-    pthread_mutex_unlock(&bc->mutex_to);
+    pthread_cond_broadcast(&bc->cond);
+    pthread_mutex_unlock(&bc->mutex);
 
     if (pthread_join(bc->writer_thread, NULL))
         fwup_errx(EXIT_FAILURE, "pthread_join");
-    pthread_mutex_destroy(&bc->mutex_to);
-    pthread_mutex_destroy(&bc->mutex_back);
+    pthread_mutex_destroy(&bc->mutex);
+    pthread_cond_destroy(&bc->cond);
 #endif
 
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {

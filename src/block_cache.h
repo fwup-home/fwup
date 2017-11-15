@@ -87,8 +87,8 @@ struct block_cache {
     // Asynchronous writes
 #if USE_PTHREADS
     pthread_t writer_thread;
-    pthread_mutex_t mutex_to;
-    pthread_mutex_t mutex_back;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
 
     volatile bool running;
     volatile struct block_cache_segment *seg_to_write;
