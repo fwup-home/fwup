@@ -232,9 +232,10 @@ static unsigned char *load_key(const char *path, const char *key_type, size_t ke
         fwup_err(EXIT_FAILURE, "Error opening %s key file '%s'", key_type, path);
 
     size_t base64_size = base64_raw_to_encoded_count(key_len);
-    char buffer[base64_size];
+    char buffer[base64_size + 1];
 
     size_t amount_read = fread(buffer, 1, base64_size, fp);
+    buffer[amount_read] = 0;
     fclose(fp);
 
     unsigned char *key = decode_key(buffer, amount_read, key_len);
