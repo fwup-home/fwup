@@ -112,6 +112,7 @@ static void print_usage()
     printf("  --version Print out the version\n");
     printf("  -y   Accept automatically found memory card when applying a firmware update\n");
     printf("  -z   Print the memory card that would be automatically detected and exit\n");
+    printf("  -Z   Print the device containing the root filesystem and exit\n");
     printf("  -1   Fast compression (for create)\n");
     printf("  -9   Best compression (default)\n");
     printf("\n");
@@ -312,6 +313,15 @@ static char *autoselect_and_confirm_mmc_device(bool accept_found_device, const c
     return strdup(device.path);
 }
 
+static char *autoselect_root_mmc_disk()
+{
+    struct mmc_device device;
+    if (mmc_find_root_drive(&device) < 0)
+        fwup_errx(EXIT_FAILURE, "Cannot determine root device automatically.\nSpecify explicitly with -d");
+
+    return strdup(device.path);
+}
+
 static void print_selected_device()
 {
     struct mmc_device device;
@@ -322,6 +332,18 @@ static void print_selected_device()
     ssprintf(&s, "%s\n", device.path);
     fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
     free(s.str);
+}
+
+static void print_root_filesystem_device()
+{
+    char *path = autoselect_root_mmc_disk();
+
+    struct simple_string s;
+    simple_string_init(&s);
+    ssprintf(&s, "%s\n", path);
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
+    free(s.str);
+    free(path);
 }
 
 static void print_detected_devices()
@@ -342,7 +364,7 @@ int main(int argc, char **argv)
     const char *configfile = "fwupdate.conf";
     int command = CMD_NONE;
 
-    const char *mmc_device_path = NULL;
+    char *mmc_device_path = NULL;
     const char *input_firmware = NULL;
     const char *output_firmware = NULL;
     const char *task = NULL;
@@ -377,7 +399,7 @@ int main(int argc, char **argv)
     atexit(mmc_finalize);
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:DEf:Fghi:lmno:p:qSs:t:VvUuyz123456789", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:Fghi:lmno:p:qSs:t:VvUuyZz123456789", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -471,6 +493,10 @@ int main(int argc, char **argv)
             break;
         case 'z':
             print_selected_device();
+            exit(EXIT_SUCCESS);
+            break;
+        case 'Z':
+            print_root_filesystem_device();
             exit(EXIT_SUCCESS);
             break;
         case '!': // --enable-trim
@@ -567,6 +593,15 @@ int main(int argc, char **argv)
 
         if (!mmc_device_path)
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
+
+        // This is currently a hack for setups that want to upgrade the running
+        // device, but for whatever reason can't figure it out themselves. This
+        // occurs on x86 w/o systemd or some other way to ensure deterministic
+        // device naming. **There should be a better way**
+        if (strcmp(mmc_device_path, "_fwup_root_disk") == 0) {
+            free(mmc_device_path);
+            mmc_device_path = autoselect_root_mmc_disk();
+        }
 
         if (quiet)
             fwup_progress_mode = PROGRESS_MODE_OFF;

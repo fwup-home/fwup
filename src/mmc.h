@@ -23,6 +23,7 @@
 #include <sys/types.h>
 
 #define MMC_DEVICE_PATH_LEN 64
+#define MMC_MAX_DEVICES 16
 
 struct mmc_device {
     char path[MMC_DEVICE_PATH_LEN];
@@ -46,6 +47,13 @@ void mmc_finalize();
  * @return the number of devices found
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices);
+
+/**
+ * @brief Find the drive's device information that contains the root partition
+ * @param device a device is returned on success
+ * @return <0 on error
+ */
+int mmc_find_root_drive(struct mmc_device *device);
 
 /**
  * @brief Open an SDCard/MMC device

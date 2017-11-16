@@ -141,6 +141,12 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     return device_count;
 }
 
+int mmc_find_root_drive(struct mmc_device *device)
+{
+    fwup_warnx("_fwup_root_disk and the -Z option not implemented on the BSDs");
+    return -1;
+}
+
 int mmc_umount_all(const char *mmc_device)
 {
     fwup_warnx("umount %s not implemented. Pass -U to avoid warning.", mmc_device);

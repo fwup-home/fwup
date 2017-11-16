@@ -40,6 +40,17 @@
 #define BLKDISCARD _IO(0x12,119)
 #endif
 
+struct mmc_device_info
+{
+    char devpath[16];
+
+    off_t device_size;
+    struct stat st;
+};
+
+static struct mmc_device_info mmc_devices[MMC_MAX_DEVICES];
+static int mmc_device_count = -1;
+
 static int readsysfs(const char *path, char *buffer, int maxlen)
 {
     int fd = open(path, O_RDONLY);
@@ -93,14 +104,6 @@ static off_t mmc_device_size_raw(const char *devpath)
     return len < 0 ? 0 : len;
 }
 
-struct mmc_device_info
-{
-    char devpath[16];
-
-    off_t device_size;
-    struct stat st;
-};
-
 static bool mmc_get_device_stats(const char *devpath_pattern,
                                  const char *sysfs_size_pattern,
                                  int instance,
@@ -120,16 +123,10 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
     return true;
 }
 
-static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, const struct stat *rootdev)
+static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, dev_t rootdev)
 {
     // Check 1: Not on the device containing the root fs
-    // NOTE: This check is an approximation to what we really want. We'd like
-    //       to know the root device for the root directory, but stat only
-    //       returns the partition device for the root directory. Since it
-    //       is often the case of 16 minor devices to support each real device,
-    //       assume that if we mask the root directory's device off that we'll get
-    //       its parent.
-    if (info->st.st_rdev == (rootdev->st_dev & 0xfff0))
+    if (info->st.st_rdev == rootdev)
         return false;
 
     // Check 2: Zero capacity devices
@@ -146,49 +143,87 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, con
     return true;
 }
 
-int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
+static void enumerate_mmc_devices()
 {
-    // Get the root device so that we can filter
-    // it's drive out of the autodetected list
-    struct stat rootdev;
-    if (stat("/", &rootdev) < 0) {
-        fwup_warnx("can't stat root directory");
-        rootdev.st_dev = 0;
-    }
+    if (mmc_device_count >= 0)
+        return;
 
-    int device_count = 0;
+    mmc_device_count = 0;
 
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
     for (char c = 'a'; c != 'z'; c++) {
-        struct mmc_device_info info;
         if (mmc_get_device_stats("/dev/sd%c",
                                  "/sys/block/sd%c/size",
                                  c,
-                                 &info) &&
-            is_autodetectable_mmc_device(&info, &rootdev) &&
-            device_count < max_devices) {
-            strcpy(devices[device_count].path, info.devpath);
-            devices[device_count].size = info.device_size;
-            device_count++;
+                                 &mmc_devices[mmc_device_count]) &&
+            mmc_device_count < MMC_MAX_DEVICES) {
+            mmc_device_count++;
         }
     }
 
     // Scan the mmcblk devices
     for (int i = 0; i < 16; i++) {
-        struct mmc_device_info info;
         if (mmc_get_device_stats("/dev/mmcblk%d",
                                  "/sys/block/mmcblk%d/size",
                                  i,
-                                 &info) &&
-            is_autodetectable_mmc_device(&info, &rootdev) &&
-            device_count < max_devices) {
-            strcpy(devices[device_count].path, info.devpath);
-            devices[device_count].size = info.device_size;
+                                 &mmc_devices[mmc_device_count]) &&
+            mmc_device_count < MMC_MAX_DEVICES) {
+            mmc_device_count++;
+        }
+    }
+}
+
+static dev_t root_disk_device()
+{
+    // NOTE: We'd like to know the root device for the root directory, but stat
+    //       only returns the partition device for the root directory. Since it
+    //       is often the case of 16 minor devices to support each real device,
+    //       assume that if we mask the root directory's device off that we'll
+    //       get its parent.
+    struct stat rootdev;
+    if (stat("/", &rootdev) >= 0) {
+        return (rootdev.st_dev & 0xfff0);
+    } else {
+        fwup_warnx("can't stat root directory");
+        return 0;
+    }
+}
+
+int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
+{
+    enumerate_mmc_devices();
+
+    // Get the root device so that we can filter
+    // it's drive out of the autodetected list
+    dev_t rootdev = root_disk_device();
+    int device_count = 0;
+
+    // Return everything that passes the is_autodetectable test.
+    for (int i = 0; i < mmc_device_count && device_count < max_devices; i++) {
+        if (is_autodetectable_mmc_device(&mmc_devices[i], rootdev)) {
+            strcpy(devices[device_count].path, mmc_devices[i].devpath);
+            devices[device_count].size = mmc_devices[i].device_size;
             device_count++;
         }
     }
 
     return device_count;
+}
+
+int mmc_find_root_drive(struct mmc_device *device)
+{
+    enumerate_mmc_devices();
+
+    dev_t rootdev = root_disk_device();
+    for (int i = 0; i < mmc_device_count; i++) {
+        if (mmc_devices[i].st.st_rdev == rootdev) {
+            strcpy(device->path, mmc_devices[i].devpath);
+            device->size = mmc_devices[i].device_size;
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
