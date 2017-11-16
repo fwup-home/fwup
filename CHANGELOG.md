@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.18.0
+
+  * New features
+    * Added FWUP_SIZE_<resource_name> feature to support use in UBI systems.
+      Thanks to Michael Schmidt for this feature.
+
+  * Fixes
+    * Fixed undefined use of pthreads. OpenBSD caught this and some other issues.
+    * Fixed regression issues when run on the new APFS in OSX High Sierra.
+    * Reduced progress bar width to avoid rendering issues on thin terminals.
+
 ## v0.17.0
 
   * New features
