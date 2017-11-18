@@ -49,13 +49,6 @@ void mmc_finalize();
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices);
 
 /**
- * @brief Find the drive's device information that contains the root partition
- * @param device a device is returned on success
- * @return <0 on error
- */
-int mmc_find_root_drive(struct mmc_device *device);
-
-/**
  * @brief Open an SDCard/MMC device
  * @param mmc_path the path
  * @return a filehandle or <0 on error

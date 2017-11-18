@@ -210,22 +210,6 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     return device_count;
 }
 
-int mmc_find_root_drive(struct mmc_device *device)
-{
-    enumerate_mmc_devices();
-
-    dev_t rootdev = root_disk_device();
-    for (int i = 0; i < mmc_device_count; i++) {
-        if (mmc_devices[i].st.st_rdev == rootdev) {
-            strcpy(device->path, mmc_devices[i].devpath);
-            device->size = mmc_devices[i].device_size;
-            return 0;
-        }
-    }
-
-    return -1;
-}
-
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
     // Stat both paths.

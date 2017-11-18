@@ -128,12 +128,6 @@ static int run_loop_for_time(double duration)
     return timed_out ? -1 : 0;
 }
 
-int mmc_find_root_drive(struct mmc_device *device)
-{
-    fwup_warnx("_fwup_root_disk and the -Z option not implemented on OSX");
-    return -1;
-}
-
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
     // Only look for removable media

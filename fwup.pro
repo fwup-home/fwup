@@ -253,4 +253,3 @@ DISTFILES += \
     tests/140_trim.test \
     tests/141_exit_handshake.test \
     tests/142_file_resource_size.test
-    tests/143_detect_root_disk.test \
