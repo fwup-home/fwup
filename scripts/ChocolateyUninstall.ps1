@@ -1,1 +1,0 @@
-Remove-Item "$($env:ChocolateyInstall)\bin\fwup" 

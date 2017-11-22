@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-# This script is only used on Windows installations to make invocations to fwup
-# from within the Windows Subsystem for Linux run fwup.exe. WSL doesn't allow
-# access to SDCards for Linux programs, but if fwup.exe is run, then the SDCard
-# programming part works.
-
-FWUP_LOCATION="$(dirname "$(realpath "$0")")"
-"$FWUP_LOCATION/fwup.exe" "$@"
