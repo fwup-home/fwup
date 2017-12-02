@@ -1,12 +1,19 @@
 # Changelog
 
+## v0.18.1
+
+  * Bug fixes
+    * Fix an error in the syscall validator that was triggered by glibc 2.26.
+      This cause many unit tests to incorrectly fail.
+    * Reverted Windows fwup script that broke the Chocolatey package
+
 ## v0.18.0
 
   * New features
     * Added FWUP_SIZE_<resource_name> feature to support use in UBI systems.
       Thanks to Michael Schmidt for this feature.
 
-  * Fixes
+  * Bug fixes
     * Fixed undefined use of pthreads. OpenBSD caught this and some other issues.
     * Fixed regression issues when run on the new APFS in OSX High Sierra.
     * Reduced progress bar width to avoid rendering issues on thin terminals.
