@@ -209,6 +209,26 @@ static void handle_write()
     }
 }
 
+static void handle_open_common(long open_rc, const char *path)
+{
+    // Did the call to open succeed?
+    if (open_rc >= 0) {
+        // Is this the file of interest (match on suffix)?
+        size_t check_pathname_len = strlen(check_pathname);
+        size_t path_len = strlen(path);
+        if (path_len >= check_pathname_len &&
+                strstr(path + path_len - check_pathname_len, check_pathname) != 0) {
+            //fprintf(stderr, "open(\"%s\") -> %ld\n", path, open_rc);
+            check_fd = open_rc;
+            check_offset = 0;
+
+            open_call_count++;
+            if (open_call_count != 1)
+                maybe_err("open was called on '%s' more than once?", check_pathname);
+        }
+    }
+}
+
 static void handle_open()
 {
     // fd = sys_open(const char *filename, int flags, int mode)
@@ -218,22 +238,19 @@ static void handle_open()
     char path[PATH_MAX];
     get_syscall_str(params[0], path, sizeof(path));
 
-    if (rc >= 0) {
-        // Check if the process successfully opened the file of interest.
-        // (match on suffix)
-        size_t check_pathname_len = strlen(check_pathname);
-        size_t path_len = strlen(path);
-        if (path_len >= check_pathname_len &&
-                strstr(path + path_len - check_pathname_len, check_pathname) != 0) {
-            //fprintf(stderr, "open(\"%s\") -> %ld\n", path, rc);
-            check_fd = rc;
-            check_offset = 0;
+    handle_open_common(rc, path);
+}
 
-            open_call_count++;
-            if (open_call_count != 1)
-                maybe_err("open was called on '%s' more than once?", check_pathname);
-        }
-    }
+static void handle_openat()
+{
+    // fd = sys_openat(int dirfd, const char *filename, int flags, int mode)
+    long params[4];
+    long rc = get_syscall_params(4, params);
+
+    char path[PATH_MAX];
+    get_syscall_str(params[1], path, sizeof(path));
+
+    handle_open_common(rc, path);
 }
 
 static void handle_close()
@@ -373,6 +390,12 @@ int main(int argc, char *argv[])
             break;
         case SYS_open:
             handle_open();
+            break;
+        case SYS_openat:
+            handle_openat();
+            break;
+        case SYS_open_by_handle_at:
+            warnx("open_by_handle_at() support not implemented!");
             break;
         case SYS_lseek:
             handle_lseek();
