@@ -1,6 +1,7 @@
 ﻿![The fwup pup](docs/fwup-pup.png)
 
 # Overview
+
 [![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup)
 [![Coverage Status](https://coveralls.io/repos/github/fhunleth/fwup/badge.svg)](https://coveralls.io/github/fhunleth/fwup)
 [![Ebert](https://ebertapp.io/github/fhunleth/fwup.svg)](https://ebertapp.io/github/fhunleth/fwup)
@@ -22,30 +23,30 @@ Here's a full list of features:
 
 1. Uses standard ZIP archives to make debugging and transmission simple.
 
-2. Simple, but flexible configuration language to enable firmware updates on
+1. Simple, but flexible configuration language to enable firmware updates on
    various platforms and firmware update policies.
 
-3. Streaming firmware update processing to simplify target storage requirements.
+1. Streaming firmware update processing to simplify target storage requirements.
 
-4. Multiple firmware update task options per archive so that one archive can
+1. Multiple firmware update task options per archive so that one archive can
    upgrade varying target configurations
 
-5. Basic disk partitioning and FAT filesystem manipulation
+1. Basic disk partitioning and FAT filesystem manipulation
 
-6. Human and machine readable progress.
+1. Human and machine readable progress.
 
-7. Initialize or update SDCards on your development system whether you're
+1. Initialize or update SDCards on your development system whether you're
    running Linux, OSX, BSD, or Windows. MMC and SDCards are automatically
    detected and unmounted. No need to scan logs or manually unmount.
 
-8. Firmware archive digital signature creation and verification
+1. Firmware archive digital signature creation and verification
 
-9. Sparse file support to reduce number of bytes that need to be written when
+1. Sparse file support to reduce number of bytes that need to be written when
    initializing large filesystems (see section on sparse files)
 
-10. Permissive license (Apache 2.0 License - see end of doc)
+1. Permissive license (Apache 2.0 License - see end of doc)
 
-11. Extensively regression tested! Tests also provide simple examples of
+1. Extensively regression tested! Tests also provide simple examples of
     functionality.
 
 Internally, `fwup` has many optimizations to speed up low level disk writes over
@@ -63,12 +64,12 @@ On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
 On Linux, download and install the appropriate package for your platform:
 
-  * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup_0.18.0_amd64.deb)
-  * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup_0.18.0_armhf.deb)
-  * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup-0.18.0-1.x86_64.rpm)
-  * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
-  * Buildroot - Support is included upstream since the 2016.05 release
-  * Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
+* [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup_0.18.0_amd64.deb)
+* [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup_0.18.0_armhf.deb)
+* [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup-0.18.0-1.x86_64.rpm)
+* Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
+* Buildroot - Support is included upstream since the 2016.05 release
+* Yocto - See [meta-fwup](https://github.com/fhunleth/meta-fwup)
 
 On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
@@ -80,11 +81,11 @@ and place it in your path.
 If you're using another platform or prefer to build it yourself, download the
 latest [source code release](https://github.com/fhunleth/fwup/releases/download/v0.18.0/fwup-0.18.0.tar.gz) or clone this repository. Then read one of the following files:
 
-  * [Linux build instructions](docs/build_linux.md)
-  * [OSX build instructions](docs/build_osx.md)
-  * [Windows build instructions](docs/build_windows.md)
-  * [Raspbian build instructions](docs/build_rpi.md)
-  * [FreeBSD/NetBSD/OpenBSD build instructions](docs/build_bsd.md)
+* [Linux build instructions](docs/build_linux.md)
+* [OSX build instructions](docs/build_osx.md)
+* [Windows build instructions](docs/build_windows.md)
+* [Raspbian build instructions](docs/build_rpi.md)
+* [FreeBSD/NetBSD/OpenBSD build instructions](docs/build_bsd.md)
 
 When building from source, please verify that the regression test pass
 on your system (run `make check`) before using `fwup` in production. While
@@ -95,12 +96,14 @@ past that really should be fixed.
 
 If you were given a `.fw` file and just want to install its contents on an
 SDCard, here's an example run on Linux:
-```
+
+```sh
 $ sudo fwup example.fw
 Use 14.92 GiB memory card found at /dev/sdc? [y/N] y
 100%
 Elapsed time: 2.736s
 ```
+
 If you're on OSX or Windows, leave off the call to `sudo`.
 
 IMPORTANT: If you're using an older version of `fwup`, you'll have to specify
@@ -108,7 +111,7 @@ more arguments. Run: `fwup -a -i example.fw -t complete`
 
 Here's a list of other options:
 
-```
+```plaintext
 Usage: fwup [OPTION]...
 
 Options:
@@ -255,7 +258,7 @@ compatible with older versions of `fwup`.
 Finally, `file-resource` will define a variable named `FWUP_SIZE_<resource_name>` with the size of the resource.  For example
 the following will create a variable named `FWUP_SIZE_zImage`:
 
-```
+```conf
 file-resource zImage {
         host-path = "output/images/zImage"
 }
@@ -299,7 +302,7 @@ automatically record the length and BLAKE2b-256 hash of the file in the
 archive. These fields are used internally to compute progress and verify the
 contents of the archive. A typical `file-resource` section looks like this:
 
-```
+```conf
 file-resource zImage {
         host-path = "output/images/zImage"
 }
@@ -311,7 +314,7 @@ interoperate with other software, it is sometimes useful to embed a file into
 the archive at another location. This can be done by specifying an absolute
 path resource as follows:
 
-```
+```conf
 file-resource "/my_custom_metadata" {
         host-path = "path/to/my_custom_metadata_file"
 }
@@ -327,7 +330,7 @@ files as a prep step to fwup. If that's inconvenient, `fwup` allows multiple
 paths to be specified in `host-path` that are separated by semicolons. They
 will be concatenated in the order they appear.
 
-```
+```conf
 file-resource kernel_and_rootfs {
         # Concatenate uImage and the rootfs. OpenWRT mtd splitter will
         # separate them back out at runtime.
@@ -357,7 +360,7 @@ Sizes are given in 512 byte blocks (like everything else in `fwup`).
 
 Here's an example:
 
-```
+```conf
 file-resource rootfs.img {
         host-path = "output/images/rootfs.squashfs"
         assert-size-lte = ${ROOTFS_A_PART_COUNT}
@@ -371,7 +374,7 @@ rather than referencing them. This can be accomplished using the `contents` key
 in a `file-resource`. Variable substitution works in the `contents` string just
 like any other string in the `fwup` configuration file.
 
-```
+```conf
 file-resource short-file.txt {
         contents = "You're looking at a short\n\
 file creating by fwup.\n\
@@ -390,7 +393,7 @@ used to determine the block offsets and sizes of partitions for the
 configuration file. Offsets and sizes are given in 512 byte blocks. Here's a
 potential mbr definition:
 
-```
+```conf
 mbr mbr-a {
         bootstrap-code-host-path = "path/to/bootstrap-data" # should be 440 bytes
         signature = 0x01020304
@@ -427,7 +430,7 @@ option names map directly to the header fields with the exception that length,
 checksum and image count fields are automatically calculated. The following is
 an example that shows all of the options:
 
-```
+```conf
 mbr mbr-a {
     include-osip = true
     osip-major = 1
@@ -459,7 +462,7 @@ U-Boot environment blocks. In order to take advantage of this, you must declare
 a `uboot-environment` section at the top level that describes how the
 environment block:
 
-```
+```conf
 uboot-environment my_uboot_env {
     block-offset = 2048
     block-count = 16
@@ -515,7 +518,7 @@ Event                         | Description
 on-init                       | First event sent when the task is applied
 on-finish                     | Final event sent assuming no errors are detected during event processing
 on-error                      | Sent if an error occurs so that intermediate files can be cleaned up
-on-resource <resource name>   | Sent as events occur. Currently, this is sent as `file-resources` are processed from the archive.
+on-resource &lt;resource name>   | Sent as events occur. Currently, this is sent as `file-resources` are processed from the archive.
 
 The event scopes contain a list of actions. Actions can format file systems, copy files to file systems or
 write to raw locations on the destination.
@@ -619,8 +622,8 @@ executable and parsing the text written to `stdout`. When applying firmware
 progress updates are delivered based on commandline options:
 
   1. Human readable - This is the default. Progress is updated from the text `0%` to `100%`.
-  2. Numeric (`-n`) - Progess is printed as `0\n` to `100\n`
-  3. Quiet (`-q`) - No progress is printed
+  1. Numeric (`-n`) - Progess is printed as `0\n` to `100\n`
+  1. Quiet (`-q`) - No progress is printed
 
 While the above works well for scripts and when errors can be seen by the
 operator, `fwup` supports a structured use of `stdin`/`stdout` as well. Specify
@@ -680,7 +683,7 @@ expects the calling process to close `stdin` when it's ready for `fwup` to exit.
 
 # FAQ
 
-## How do I include a file in the archive that isn't used by fwup?
+## How do I include a file in the archive that isn't used by fwup
 
 The scenario is that you need to store some metadata or some other information
 that is useful to another program. For example, you'd like to include some
@@ -689,7 +692,7 @@ destination device can pull out and present on a UI. To do this, just add
 `file-resource` blocks for each file. These blocks don't need to be referenced
 by an `on-resource` block.
 
-## How do I include the firmware version in the archive?
+## How do I include the firmware version in the archive
 
 If you are using git, you can invoke `fwup` as follows:
 
@@ -710,7 +713,7 @@ On the target device, you can retrieve the version by using `-m`. For example:
     meta-architecture = "arm"
     meta-creation-date = "2014-09-07T19:50:57Z"
 
-## What's something cool that you can do with fwup?
+## What's something cool that you can do with fwup
 
 Ok, this isn't really a FAQ, but for some reason people think this is cool. Many
 systems that I work on are network connected with ssh. Sometimes I update them
@@ -723,7 +726,7 @@ The ability to pipe software updates through `fwup` comes in handy. This has
 also gotten me out of situations where, for whatever reason, I no longer had enough
 space to store the update on the device.
 
-## How do I debug?
+## How do I debug
 
 I apply updates to regular files on my laptop (as opposed to eMMC or SDCards)
 and examine them with a hex editor. A few other routes might be useful too:
@@ -731,12 +734,12 @@ and examine them with a hex editor. A few other routes might be useful too:
 1. Unzip the .fw file to inspect the contents. It's a regular ZIP file and
    the `meta.conf` file inside it is the stripped down view of what your
    configuration looks like after variable substitution, etc.
-2. Add the `error()` function to do printf-style debugging.
-3. Find an image that works and skip updating some sections. For example,
+1. Add the `error()` function to do printf-style debugging.
+1. Find an image that works and skip updating some sections. For example,
    some processors are very picky on the MBR contents and it's easier to
    get everything else working before tackling partition constraints.
 
-## How do I specify the root partition in Linux?
+## How do I specify the root partition in Linux
 
 There are a few options. Most people can specify `root=/dev/mmcblk0p1` or
 `root=/dev/sda1` or something similar on the kernel commandline and everything
@@ -746,7 +749,7 @@ corresponds to the 1-based partition index and `01234567` is any signature. In
 your `fwup.conf` file's MBR block, specify `signature = 0x01234567`. A third
 option is to use an initramfs and not worry about any of this.
 
-## How do I get the best performance?
+## How do I get the best performance
 
 In general, `fwup` writes to Flash memory in large blocks so that the update
 can occur quickly. Obviously, reducing the amount that needs to get written
@@ -758,7 +761,7 @@ like only working with one FAT filesystem at a time can help. In this case,
 flush caches. OSX is also slow to unmount disks, so keep in mind that
 performance can only be so fast on some systems.
 
-## How do I update /dev/mmcblock0boot0?
+## How do I update /dev/mmcblock0boot0
 
 The special eMMC boot partitions are updateable the same way as the main
 partition. When I create .fw files for manufacturing, I create two targets, a
@@ -769,15 +772,15 @@ the `complete` target and then again for the `bootloader` target.
 Also, the `/dev/mmcblock0boot0` device is forced read-only by the kernel. To
 unlock it, run:
 
-    $ echo 0 > /sys/block/mmcblk0boot0/force_ro
+    echo 0 > /sys/block/mmcblk0boot0/force_ro
 
-## How do I use "raw" NAND Flash?
+## How do I use "raw" NAND Flash
 
 Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See
 the [UBI Example fwup.conf](docs/ubi_example/fwup.conf) for how to integrate
 fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
 
-## How do you pronounce fwup?
+## How do you pronounce fwup
 
 I used to pronounce it "eff-double-you-up", but then coworkers and others started calling
 it "fwup" (one syllable) and "fwup-dates" when referring to the `.fw` files.
@@ -794,7 +797,7 @@ All 3rd party source code can be found in the `3rdparty` directory.
 The FAT filesystem code (FatFs) comes from http://elm-chan.org/fsw/ff/00index_e.html
 and has the following license:
 
-```
+>>>
 FatFs module is a generic FAT file system module for small embedded systems.
 This is a free software that opened for education, research and commercial
 developments under license policy of following terms.
@@ -805,7 +808,7 @@ developments under license policy of following terms.
 * No restriction on use. You can use, modify and redistribute it for
   personal, non-profit or commercial products UNDER YOUR RESPONSIBILITY.
 * Redistributions of source code must retain the above copyright notice.
-```
+>>>
 
 On systems without the function strptime(), a version from Google is
 included that is distributed under the Apache 2.0 license.
