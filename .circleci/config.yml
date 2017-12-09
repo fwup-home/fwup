@@ -1,0 +1,136 @@
+version: 2.1
+build_workflow: &build_workflow
+  context: org-global
+  filters:
+    tags:
+      only: /.*/
+
+deploy_workflow: &deploy_workflow
+  context: org-global
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /v.*/
+
+defaults: &defaults
+  docker:
+    - image: ubuntu:16.04
+
+defaults_osx: &defaults_osx
+  macos:
+    xcode: "12.4.0"
+  environment:
+    HOMEBREW_NO_AUTO_UPDATE: 1
+
+build: &build
+  steps:
+    - checkout
+    - restore_cache:
+        key: dl-{{ .Branch }}
+    - run:
+        name: Install Deps
+        command: scripts/ci_install_deps.sh
+    - run:
+        name: Build
+        command: scripts/ci_build.sh
+    - store_artifacts:
+        path: tests
+        destination: tests
+    - store_artifacts:
+        path: artifacts
+        destination: artifacts
+    - save_cache:
+        key: dl-{{ .Branch }}
+        paths:
+          - dl
+
+build_osx: &build_osx
+  steps:
+    - checkout
+    - run:
+        name: Install Deps
+        command: scripts/ci_install_deps.sh
+    - run:
+        name: Build
+        command: scripts/ci_build.sh
+    - store_artifacts:
+        path: tests
+        destination: tests
+    - store_artifacts:
+        path: artifacts
+        destination: artifacts
+
+jobs:
+  linux_gcc_static:
+    <<: *defaults
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: static
+    <<: *build
+  linux_gcc_dynamic:
+    <<: *defaults
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: dynamic
+    <<: *build
+  linux_gcc_windows:
+    docker:
+      - image: ubuntu:20.04
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: windows
+      DEBIAN_FRONTEND: noninteractive
+      TZ: "America/New_York"
+    <<: *build
+  linux_gcc_raspberrypi:
+    <<: *defaults
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: raspberrypi
+    <<: *build
+  linux_gcc_singlethread:
+    <<: *defaults
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: singlethread
+    <<: *build
+  linux_gcc_minimal:
+    <<: *defaults
+    environment:
+      CIRCLE_OS_NAME: linux
+      MODE: minimal
+    <<: *build
+  osx_clang_dynamic:
+    <<: *defaults_osx
+    environment:
+      CIRCLE_OS_NAME: osx
+      MODE: dynamic
+    <<: *build
+  osx_clang_static:
+    <<: *defaults_osx
+    environment:
+      CIRCLE_OS_NAME: osx
+      MODE: static
+    <<: *build
+
+workflows:
+  version: 2
+  build_deploy:
+    jobs:
+      - linux_gcc_static:
+          <<: *build_workflow
+      - linux_gcc_dynamic:
+          <<: *build_workflow
+      - linux_gcc_windows:
+          <<: *build_workflow
+      - linux_gcc_raspberrypi:
+          <<: *build_workflow
+      - linux_gcc_singlethread:
+          <<: *build_workflow
+      - linux_gcc_minimal:
+          <<: *build_workflow
+      - osx_clang_dynamic:
+          <<: *build_workflow
+      - osx_clang_static:
+          <<: *build_workflow

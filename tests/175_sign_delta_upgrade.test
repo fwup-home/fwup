@@ -55,9 +55,10 @@ $FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch"
 # Now sign the unsigned patch and make sure that it's still valid
 $FWUP_VERIFY -V -i "$FWFILE.unsigned.patch" # Sanity check.
 $FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE.unsigned.patch" -o "$FWFILE.signed.patch2"
-if [[ "$TRAVIS_OS_NAME" != "linux" ]]; then
+if [[ "$CIRCLE_OS_NAME" != "linux" ]]; then
     # This test just won't work on Travis due to the old version of
     # zip or libarchive. Someone needs the central directory.
+    # NOTE: This was blindly disabled on CircleCI as well.
     $FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch2"
 fi
 

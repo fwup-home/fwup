@@ -2,8 +2,8 @@
 
 # Overview
 
-[![Build Status](https://travis-ci.org/fhunleth/fwup.svg?branch=master)](https://travis-ci.org/fhunleth/fwup)
-[![Coverage Status](https://coveralls.io/repos/github/fhunleth/fwup/badge.svg)](https://coveralls.io/github/fhunleth/fwup)
+[![CircleCI](https://circleci.com/gh/fwup-home/fwup.svg?style=svg)](https://circleci.com/gh/fwup-home/fwup)
+[![Coverage Status](https://coveralls.io/repos/github/fwup-home/fwup/badge.svg)](https://coveralls.io/github/fhunleth/fwup)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/4094/badge.svg)](https://scan.coverity.com/projects/4094)
 
 `fwup` is a configurable image-based software update utility for embedded

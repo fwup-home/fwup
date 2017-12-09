@@ -63,7 +63,7 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     cat scripts/LICENSE.txt LICENSE > $FWUP_INSTALL_DIR/fwup/tools/LICENSE.txt
 
     # Wait to the last minute to build and install chocolatey since it's
-    # such a pain and kills Travis builds randomly and frequently.
+    # such a pain and kills CircleCI builds randomly and frequently.
     $BASE_DIR/scripts/ubuntu_install_chocolatey.sh
 
     cd $FWUP_INSTALL_DIR/fwup/
