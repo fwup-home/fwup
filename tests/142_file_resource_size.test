@@ -6,8 +6,7 @@
 
 . ./common.sh
 
-export ACTUAL_SIZE_FILE=$WORK/actual_size.txt
-export EXPECTED_SIZE_FILE=$WORK/expected_size.txt
+EXPECTED_SIZE_FILE=$WORK/expected_size.txt
 
 cat >$EXPECTED_SIZE_FILE <<EOF
 1024
