@@ -151,25 +151,21 @@ static void enumerate_mmc_devices()
     mmc_device_count = 0;
 
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
-    for (char c = 'a'; c != 'z'; c++) {
+    for (char c = 'a'; c != 'z' && mmc_device_count < MMC_MAX_DEVICES; c++) {
         if (mmc_get_device_stats("/dev/sd%c",
                                  "/sys/block/sd%c/size",
                                  c,
-                                 &mmc_devices[mmc_device_count]) &&
-            mmc_device_count < MMC_MAX_DEVICES) {
+                                 &mmc_devices[mmc_device_count]))
             mmc_device_count++;
-        }
     }
 
     // Scan the mmcblk devices
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 16 && mmc_device_count < MMC_MAX_DEVICES; i++) {
         if (mmc_get_device_stats("/dev/mmcblk%d",
                                  "/sys/block/mmcblk%d/size",
                                  i,
-                                 &mmc_devices[mmc_device_count]) &&
-            mmc_device_count < MMC_MAX_DEVICES) {
+                                 &mmc_devices[mmc_device_count]))
             mmc_device_count++;
-        }
     }
 }
 
