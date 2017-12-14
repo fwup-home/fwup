@@ -171,4 +171,6 @@ int set_environment(const char *key, const char *value);
 void alloc_page_aligned(void **memptr, size_t size);
 void free_page_aligned(void *memptr);
 
+int update_relative_path(const char *from_file, const char *filename, char **newpath);
+
 #endif // UTIL_H

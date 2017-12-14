@@ -196,6 +196,23 @@ static int cb_define_eval_bang(cfg_t *cfg, cfg_opt_t *opt, int argc, const char 
     return define_helper(cfg, argv[0], result_str, true);
 }
 
+static int cb_include(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
+{
+    if (check_param_count(cfg, opt, argc, 1) < 0)
+        return -1;
+
+    char *updated_path;
+    update_relative_path(cfg->filename, argv[0], &updated_path);
+    const char *newargv[2];
+    newargv[0] = updated_path;
+    newargv[1] = NULL;
+
+    int rc = cfg_include(cfg, opt, 1, newargv);
+    free(updated_path);
+
+    return rc;
+}
+
 // libconfuse calls the validators every time an item is added
 // to a section. The idiom is to validate the most recently
 // added item each time. This one is also the last one in the list.
@@ -480,7 +497,7 @@ cfg_opt_t opts[] = {
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("uboot-environment", uboot_environment_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-    CFG_FUNC("include", &cfg_include),
+    CFG_FUNC("include", &cb_include),
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };

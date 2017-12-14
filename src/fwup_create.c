@@ -88,16 +88,19 @@ static int write_file_to_archive(int fd, void *cookie)
     return 0;
 }
 
-static int run_on_each_path(const char *file_resource, const char *paths, int (*func)(int, void*), void *cookie)
+static int run_on_each_path(cfg_t *sec, const char *paths, int (*func)(int, void*), void *cookie)
 {
     int rc = 0;
     char *paths_copy = strdup(paths);
     for (char *path = strtok(paths_copy, ";");
          path != NULL && rc == 0;
          path = strtok(NULL, ";")) {
-        int fd = open(path, O_RDONLY | O_WIN32_BINARY);
+        char *updated_path;
+        update_relative_path(sec->filename, path, &updated_path);
+        int fd = open(updated_path, O_RDONLY | O_WIN32_BINARY);
+        free(updated_path);
         if (fd < 0) {
-            set_last_error("can't open path '%s' in file-resource '%s'", path, file_resource);
+            set_last_error("can't open path '%s' in file-resource '%s'", path, cfg_title(sec));
             free(paths_copy);
             return -1;
         }
@@ -122,13 +125,13 @@ static int compute_file_metadata(cfg_t *cfg)
 
             // Compute the sparse file map
             sparse_file_init(&state.sfm);
-            OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, build_sparse_map, &state));
+            OK_OR_RETURN(run_on_each_path(sec, paths, build_sparse_map, &state));
             OK_OR_RETURN(sparse_file_set_map_in_resource(sec, &state.sfm));
 
             // Compute the hash across the files
             crypto_generichash_init(&state.hash_state, NULL, 0, crypto_generichash_BYTES);
             sparse_file_start_read(&state.sfm, &state.read_iterator);
-            OK_OR_RETURN(run_on_each_path(cfg_title(sec), paths, calc_hash, &state));
+            OK_OR_RETURN(run_on_each_path(sec, paths, calc_hash, &state));
 
             crypto_generichash_final(&state.hash_state, hash, sizeof(hash));
             sparse_file_free(&state.sfm);
@@ -186,17 +189,17 @@ static int resource_name_to_archive_path(const char *resource_name, char *archiv
     return 0;
 }
 
-static int add_file_resource(struct archive *a,
-                          const char *resource_name,
-                          const char *local_paths,
-                          const struct sparse_file_map *sfm,
-                          const struct fwfile_assertions *assertions)
+static int add_file_resource(cfg_t *sec,
+                             struct archive *a,
+                             const char *local_paths,
+                             const struct sparse_file_map *sfm,
+                             const struct fwfile_assertions *assertions)
 {
     int rc = 0;
     struct archive_entry *entry = archive_entry_new();
 
     if (*local_paths == '\0')
-        ERR_CLEANUP_MSG("must specify a host-path for resource '%s'", resource_name);
+        ERR_CLEANUP_MSG("must specify a host-path for resource '%s'", cfg_title(sec));
 
     off_t total_len = sparse_file_size(sfm);
 
@@ -212,7 +215,7 @@ static int add_file_resource(struct archive *a,
     }
 
     char archive_path[FWFILE_MAX_ARCHIVE_PATH];
-    OK_OR_CLEANUP(resource_name_to_archive_path(resource_name, archive_path));
+    OK_OR_CLEANUP(resource_name_to_archive_path(cfg_title(sec), archive_path));
 
     off_t data_len = sparse_file_data_size(sfm);
 
@@ -225,7 +228,7 @@ static int add_file_resource(struct archive *a,
     struct write_file_state state;
     state.a = a;
     sparse_file_start_read(sfm, &state.read_iterator);
-    OK_OR_CLEANUP(run_on_each_path(resource_name, local_paths, write_file_to_archive, &state));
+    OK_OR_CLEANUP(run_on_each_path(sec, local_paths, write_file_to_archive, &state));
 
 cleanup:
     archive_entry_free(entry);
@@ -278,7 +281,7 @@ static int add_file_resources(cfg_t *cfg, struct archive *a)
 
             OK_OR_CLEANUP(sparse_file_get_map_from_resource(sec, &sfm));
 
-            OK_OR_CLEANUP(add_file_resource(a, cfg_title(sec), hostpath, &sfm, &assertions));
+            OK_OR_CLEANUP(add_file_resource(sec, a, hostpath, &sfm, &assertions));
         } else {
             const char *contents = cfg_getstr(sec, "contents");
             OK_OR_CLEANUP(add_string_resource(a, cfg_title(sec), contents));

@@ -1,0 +1,50 @@
+#!/bin/sh
+
+#
+# Test that includes are relative to the current file's path.
+#
+
+. ./common.sh
+
+CONFIG_PATH1=$WORK/config1
+CONFIG_PATH2=$WORK/config2
+
+CONFIG1A=$CONFIG_PATH1/config1a.conf
+CONFIG1B=$CONFIG_PATH1/config1b.conf
+TESTFILE1=$CONFIG_PATH1/testfile
+CONFIG2=$CONFIG_PATH2/config2.conf
+
+mkdir -p $CONFIG_PATH1 $CONFIG_PATH2
+cp $TESTFILE_150K $TESTFILE1
+
+cat >$CONFIG1A <<EOF
+file-resource file {
+    # relative path to the file since it's in the same directory
+    host-path = "testfile"
+}
+EOF
+cat >$CONFIG1B <<EOF
+# Test that a relative path works here
+include("config1a.conf")
+EOF
+cat >$CONFIG2 <<EOF
+include("../config1/config1b.conf")
+task complete {
+	on-resource file { raw_write(0) }
+}
+EOF
+
+cat >$CONFIG <<EOF
+include(config2/config2.conf)
+EOF
+
+# Create the firmware file, then "burn it"
+echo $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that the test file made it
+cmp_bytes 150000 $TESTFILE_150K $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

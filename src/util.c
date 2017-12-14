@@ -19,6 +19,7 @@
 #include "progress.h"
 
 #include <errno.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -522,4 +523,22 @@ void free_page_aligned(void *memptr)
     void *original = *savelocation;
     free(original);
 #endif
+}
+
+int update_relative_path(const char *fromfile, const char *filename, char **newpath)
+{
+    if (filename[0] == '/' ||
+            filename[0] == '~') {
+        // If absolute then don't modify the path
+        *newpath = strdup(filename);
+    } else {
+        // If relative, make it relative to the specified file.
+        char *fromfile_copy = strdup(fromfile);
+        char *fromdir = dirname(fromfile_copy);
+        if (asprintf(newpath, "%s/%s", fromdir, filename) < 0)
+            fwup_err(EXIT_FAILURE, "asprintf");
+
+        free(fromfile_copy);
+    }
+    return 0;
 }

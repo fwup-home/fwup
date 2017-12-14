@@ -17,7 +17,7 @@ AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 # Check for header files
 AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h \
                   stdlib.h string.h unistd.h archive.h confuse.h \
-                  sys/ptrace.h])
+                  sys/ptrace.h libgen.h])
 
 # Check for typedefs, structures, and compiler characteristics
 AC_TYPE_INT64_T
@@ -38,7 +38,7 @@ AC_CHECK_SIZEOF(off_t)
 AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup \
                 strtoul umount fcntl strptime setenv pread \
                 pwrite memmem ptrace posix_memalign sysconf \
-                clock_gettime])
+                clock_gettime dirname])
 AM_CONDITIONAL([HAS_STRPTIME], [test x$ac_cv_func_strptime = x"yes"])
 AM_CONDITIONAL([HAS_PTRACE], [test x$ac_cv_func_ptrace = x"yes"])
 
