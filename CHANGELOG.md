@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.2
+
+  * Bug fixes
+    * Fix relative path inclusion to be relative to the .conf file rather than
+      relative to the current working directory.
+
 ## v0.18.1
 
   * Bug fixes
