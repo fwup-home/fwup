@@ -325,6 +325,14 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
 {
     memset(bc, 0, sizeof(struct block_cache));
 
+#if USE_PTHREADS
+    bc->running = true;
+    bc->bad_offset = -1;
+
+    pthread_mutex_init(&bc->mutex, NULL);
+    pthread_cond_init(&bc->cond, NULL);
+#endif
+
     bc->fd = fd;
     alloc_page_aligned((void **) &bc->temp, BLOCK_CACHE_SEGMENT_SIZE);
 
@@ -354,11 +362,6 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
 
     // Start async writer thread if available
 #if USE_PTHREADS
-    bc->running = true;
-    bc->bad_offset = -1;
-
-    pthread_mutex_init(&bc->mutex, NULL);
-    pthread_cond_init(&bc->cond, NULL);
     if (pthread_create(&bc->writer_thread, NULL, writer_worker, bc))
         fwup_errx(EXIT_FAILURE, "pthread_create");
 #endif
