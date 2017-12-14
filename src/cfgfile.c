@@ -228,6 +228,8 @@ static int cb_include(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 //   FWUP_SIZE_<resource_name> - The size of the resource
 static int add_file_resource_variables(const char *path, cfg_t *sec)
 {
+    int rc = 0;
+
     // FWUP_SIZE_<resource_name>
     if (path) {
         // Create the Variable Name
@@ -260,11 +262,12 @@ static int add_file_resource_variables(const char *path, cfg_t *sec)
             INFO("Defining '%s'='%s'", key, size_str);
 
             if (set_environment(key, size_str) < 0)
-                return -1;
+                rc = -1;
         }
+        free(key);
     }
 
-    return 0;
+    return rc;
 }
 
 static int cb_validate_file_resource(cfg_t *cfg, cfg_opt_t *opt)
