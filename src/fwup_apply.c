@@ -483,7 +483,7 @@ cleanup:
 
     archive_read_free(pd.a);
 
-    if (tmp_stdin) {
+    if (tmp_stdin >= 0) {
         dup2(tmp_stdin, STDIN_FILENO);
         close(tmp_stdin);
     }
