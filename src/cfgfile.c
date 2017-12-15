@@ -485,7 +485,7 @@ static cfg_opt_t task_on_error_opts[] = {
     CFG_END()
 };
 static cfg_opt_t task_on_resource_opts[] = {
-    CFG_STR("verify-on-the-fly", cfg_false, CFGF_NONE),
+    CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE), // Deprecated
     CFG_ON_EVENT_FUNCTIONS(cb_on_resource_func),
     CFG_END()
 };
@@ -500,7 +500,7 @@ static cfg_opt_t task_opts[] = {
 
     CFG_INT("require-partition1-offset", -1, CFGF_NONE), // Deprecated
     CFG_BOOL("require-unmounted-destination", cfg_false, CFGF_NONE), // Deprecated
-    CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE),
+    CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE), // Deprecated
     CFG_SEC("on-init", task_on_init_opts, CFGF_NONE),
     CFG_SEC("on-finish", task_on_finish_opts, CFGF_NONE),
     CFG_SEC("on-error", task_on_error_opts, CFGF_NONE),
