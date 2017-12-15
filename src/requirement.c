@@ -37,6 +37,7 @@ DECLARE_REQ(require_partition_offset);
 DECLARE_REQ(require_fat_file_exists);
 DECLARE_REQ(require_uboot_variable);
 DECLARE_REQ(require_path_on_device);
+DECLARE_REQ(require_path_at_offset);
 DECLARE_REQ(require_fat_file_match);
 
 struct req_info {
@@ -51,6 +52,7 @@ static struct req_info req_table[] = {
     REQ_INFO("require-fat-file-match", require_fat_file_match),
     REQ_INFO("require-partition-offset", require_partition_offset),
     REQ_INFO("require-path-on-device", require_path_on_device),
+    REQ_INFO("require-path-at-offset", require_path_at_offset),
     REQ_INFO("require-uboot-variable", require_uboot_variable)
 };
 
@@ -288,6 +290,29 @@ int require_path_on_device_requirement_met(struct fun_context *fctx)
     const char *device = fctx->argv[2];
 
     if (mmc_is_path_on_device(path, device) > 0)
+        return 0; // Requirement met
+    else
+        return -1; // Not met
+}
+
+int require_path_at_offset_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        ERR_RETURN("require-path-at-offset requires a path and a block offset");
+
+    CHECK_ARG_UINT64(fctx->argv[2], "require-path-at-offset requires a non-negative integer block offset");
+
+    return 0;
+}
+int require_path_at_offset_requirement_met(struct fun_context *fctx)
+{
+    if (fctx->argc != 3)
+        return -1;
+
+    const char *path = fctx->argv[1];
+    off_t block_offset = strtoull(fctx->argv[2], NULL, 0);
+
+    if (mmc_is_path_at_device_offset(path, block_offset) > 0)
         return 0; // Requirement met
     else
         return -1; // Not met

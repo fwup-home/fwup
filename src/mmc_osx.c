@@ -333,6 +333,14 @@ int mmc_is_path_on_device(const char *file_path, const char *device_path)
     return -1;
 }
 
+int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset)
+{
+    // Not implemented - I don't think there's a use case for this on Mac.
+    (void) file_path;
+    (void) block_offset;
+    return -1;
+}
+
 int mmc_trim(int fd, off_t offset, off_t count)
 {
     // Not implemented

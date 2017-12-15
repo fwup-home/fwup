@@ -498,10 +498,9 @@ Constraint                                         | Min fwup version | Descript
 require-fat-file-exists(block_offset, filename)    | 0.7.0 | Require that a file exists in the specified FAT filesystem
 require-fat-file-match(block_offset, filename, pattern) | 0.14.0 | Require that filename exists and that pattern matches bytes inside of the file
 require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the block offset of a partition be the specified value
-require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified device (e.g., "/dev/mmcblk0p1")
+require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified partition device (e.g., "/dev/mmcblk0p1")
+require-path-at-offset(path, offset)               | 0.19.0 | Require that the specified path (e.g., "/") is at the specified block offset (e.g., 1024). Combine with require-path-on-device.
 require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-Boot environment
-
-*More constraints to be added as needed*
 
 The remainder of the `task` section is a list of event handlers. Event handlers
 are organized as scopes. An event handler matches during the application of a

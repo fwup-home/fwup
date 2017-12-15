@@ -83,6 +83,20 @@ int mmc_eject(const char *mmc_device);
 int mmc_is_path_on_device(const char *file_path, const char *device_path);
 
 /**
+ * @brief Check if the specified file_path is mounted on the specified device and offfset
+ *
+ * This function doesn't try very hard. It only runs "stat(2)" or
+ * the equivalent to see whether the path's containing device
+ * is the same as device_path.
+ *
+ * @param file_path any path (e.g., "/")
+ * @param device_path the device path (e.g., "/dev/mmcblk0")
+ * @param block_offset the offset on the device
+ * @return 1 if yes, 0 if no, <0 on error
+ */
+int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset);
+
+/**
  * @brief Issue a trim command to the output filesystem
  * @param fd
  * @param offset

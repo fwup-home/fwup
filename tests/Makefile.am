@@ -157,6 +157,7 @@ TESTS = 001_simple_fw.test \
 	141_exit_handshake.test \
 	142_file_resource_size.test \
 	143_include_path.test \
-	144_require_version.test
+	144_require_version.test \
+        145_require_path_at_offset.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -222,6 +222,25 @@ int mmc_is_path_on_device(const char *file_path, const char *device_path)
     return device_st.st_rdev == file_st.st_dev ? 1 : 0;
 }
 
+int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset)
+{
+    struct stat file_st;
+    if (stat(file_path, &file_st) < 0)
+        return -1;
+
+    // Now check that the offset is in the right place by reading the sysfs file.
+    char start_path[64];
+    snprintf(start_path, sizeof(start_path), "/sys/dev/block/%d:%d/start", major(file_st.st_dev), minor(file_st.st_dev));
+
+    char start[16];
+    if (readsysfs(start_path, start, sizeof(start)) <= 0)
+        return -1;
+
+    off_t start_offset = strtoull(start, NULL, 0);
+
+    return start_offset == block_offset ? 1 : 0;
+}
+
 static char *unescape_string(const char *input)
 {
     char *result = (char *) malloc(strlen(input) + 1);

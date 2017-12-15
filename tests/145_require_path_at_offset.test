@@ -1,0 +1,86 @@
+#!/bin/sh
+
+
+# Tests that the "require-path-at-offset" feature works. This
+# allows one to update firmware images based on where the filesystem is
+# mounted AND at the specified block offset.
+#
+
+. ./common.sh
+
+case $HOST_OS in
+    Darwin|Windows)
+        # require-path-on-device not implemented due to not
+	# expecting it to be needed.
+        exit 0
+        ;;
+    FreeBSD|NetBSD|OpenBSD|DragonFly)
+        # find_rdev doesn't work due to stat calls.
+        exit 0
+        ;;
+    *)
+        ;;
+esac
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # Try to detect the cross-compile for Windows case since
+    # this really doesn't make sense for this test.
+    exit 0
+fi
+
+# Figure out where the root filesystem is. Sadly, we can't
+# depend on Busybox's rdev, since it's not compiled into
+# Busybox on Linux.
+find_rdev() {
+    WANT=$(stat / -c "%04D")
+    FILES=$(find /dev)
+    for FILE in $FILES; do
+        GOT=$(stat $FILE -c "%02t%02T")
+        if [ $WANT = $GOT ]; then
+            echo $FILE
+            break
+        fi
+    done
+}
+RDEV=$(find_rdev)
+if [ -z $RDEV ]; then
+    echo "The root filesystem doesn't map to one device file, so can't test for rdev"
+    exit 0
+fi
+
+# Get the major and minor number in decimal
+RDEV_MAJOR=$(printf "%d" $(stat $RDEV -c "%t"))
+RDEV_MINOR=$(printf "%d" $(stat $RDEV -c "%T"))
+
+# Get the start block offset
+RDEV_START=$(cat /sys/dev/block/$RDEV_MAJOR:$RDEV_MINOR/start)
+if [ "$RDEV_START" = "0" ]; then
+    echo "Didn't expect the start offset to be 0. That seems wrong, but it's possible so skipping this test"
+    echo 0
+fi
+
+cat >$CONFIG <<EOF
+task upgrade.zero {
+    require-path-at-offset("/", 0)
+    on-init { info("zero") }
+}
+task upgrade.right {
+    require-path-at-offset("/", "$RDEV_START")
+    on-init { info("correct") }
+}
+task upgrade.catchall {
+    on-init { info("catchall") }
+}
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
