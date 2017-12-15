@@ -254,4 +254,7 @@ DISTFILES += \
     tests/139_mbr_signature.test \
     tests/140_trim.test \
     tests/141_exit_handshake.test \
-    tests/142_file_resource_size.test
+    tests/142_file_resource_size.test \
+    tests/143_include_path.test \
+    tests/144_require_version.test \
+    tests/145_require_path_at_offset.test
