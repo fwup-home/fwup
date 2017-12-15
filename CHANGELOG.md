@@ -1,10 +1,13 @@
 # Changelog
 
-## v0.19.0-dev
+## v0.19.0
 
   * New features
     * Implement `require-fwup-version` so .conf files that require newer
       versions of fwup can force a nicer error message.
+    * Add `require-path-at-offset` to support matching off the block offset of a
+      partition. This is intended to be used with `require-path-on-device` to
+      figure out the actively running partition.
 
   * Bug fixes
     * Fix relative path inclusion to be relative to the .conf file rather than
