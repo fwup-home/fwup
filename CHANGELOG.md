@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.18.2
+## v0.19.0-dev
+
+  * New features
+    * Implement `require-fwup-version` so .conf files that require newer
+      versions of fwup can force a nicer error message.
 
   * Bug fixes
     * Fix relative path inclusion to be relative to the .conf file rather than
