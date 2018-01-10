@@ -25,6 +25,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/sysmacros.h>
 
 #include <fcntl.h>
 #include <inttypes.h>
