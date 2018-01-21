@@ -49,8 +49,8 @@ if [ -z $RDEV ]; then
 fi
 
 # Get the major and minor number in decimal
-RDEV_MAJOR=$(printf "%d" $(stat $RDEV -c "%t"))
-RDEV_MINOR=$(printf "%d" $(stat $RDEV -c "%T"))
+RDEV_MAJOR=$(printf "%d" 0x$(stat $RDEV -c "%t"))
+RDEV_MINOR=$(printf "%d" 0x$(stat $RDEV -c "%T"))
 
 # Get the start block offset
 RDEV_START=$(cat /sys/dev/block/$RDEV_MAJOR:$RDEV_MINOR/start)
