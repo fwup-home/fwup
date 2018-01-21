@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0-dev
+
+  * Bug fixes:
+    * Add include due to change in new versions of glibc
+    * Disable failing test on Arch Linux (appears to be due to root filesystem
+      options and not specifically Arch. Luckily test is irrelevent to archive
+      creation which is what is how fwup is used on Arch.)
+
 ## v0.19.0
 
   * New features
