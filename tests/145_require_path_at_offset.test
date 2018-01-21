@@ -52,8 +52,14 @@ fi
 RDEV_MAJOR=$(printf "%d" 0x$(stat $RDEV -c "%t"))
 RDEV_MINOR=$(printf "%d" 0x$(stat $RDEV -c "%T"))
 
+RDEV_START_FILE=/sys/dev/block/$RDEV_MAJOR:$RDEV_MINOR/start
+if [ ! -e "$RDEV_START_FILE" ]; then
+    echo "Couldn't open $RDEV_START_FILE so likely non-trivial rootfs. Skipping test"
+    exit 0
+fi
+
 # Get the start block offset
-RDEV_START=$(cat /sys/dev/block/$RDEV_MAJOR:$RDEV_MINOR/start)
+RDEV_START=$(cat $RDEV_START_FILE)
 if [ "$RDEV_START" = "0" ]; then
     echo "Didn't expect the start offset to be 0. That seems wrong, but it's possible so skipping this test"
     echo 0
