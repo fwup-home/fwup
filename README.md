@@ -201,6 +201,16 @@ protection against someone pulling power at a bad time. Also, `fwup`'s one pass
 over the archive feature means that firmware validation is mostly done on the
 fly, so you'll want to verify the archive first (see the `-V` option).
 
+# Versioning
+
+`fwup` uses [semver](https://semver.org) for versioning. For example, if you are
+using 1.0.0, that means no breaking changes until 2.0.0 or new features until
+1.1.0. I highly recommend a conservative approach to upgrading `fwup` once you
+have devices in the field. For example, if you have 1.0.0 devices in the field,
+it's ok to update to 1.1.0, but be very careful about using 1.1.0 features in
+your `fwup.conf` files. They will be ignored by 1.0.0 devices and that may or
+may not be what you want.
+
 # Configuration file format
 
 `fwup` uses the Unix configuration library,
