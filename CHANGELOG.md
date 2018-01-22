@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0-dev
+## v1.0.0
 
   * Bug fixes:
     * Add include due to change in new versions of glibc
