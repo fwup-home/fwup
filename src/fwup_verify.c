@@ -82,14 +82,13 @@ static int check_resource(struct resource_list *list, const char *file_resource_
     return 0;
 }
 
-
 /**
  * @brief Verify that the firmware archive is ok
  * @param input_filename the firmware update filename
- * @param public_key the public key or NULL if no authentication check
+ * @param public_keys the public keys if authentication check
  * @return 0 if successful
  */
-int fwup_verify(const char *input_filename, const unsigned char *public_key)
+int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
 {
     unsigned char *meta_conf_signature = NULL;
     struct resource_list *all_resources = NULL;
@@ -127,7 +126,7 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
         ERR_CLEANUP_MSG("Expecting meta.conf to be at the beginning of %s", input_filename);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, &cfg, meta_conf_signature, public_key));
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, &cfg, meta_conf_signature, public_keys));
 
     OK_OR_CLEANUP(rlist_get_all(cfg, &all_resources));
 
@@ -145,9 +144,9 @@ int fwup_verify(const char *input_filename, const unsigned char *public_key)
             ERR_CLEANUP_MSG("Resource %s not found in archive", cfg_title(r->resource));
     }
 
-    if (public_key && meta_conf_signature)
+    if (*public_keys && meta_conf_signature)
         fwup_warnx("Signed archive '%s' passes signature verification and is not corrupt.", input_filename);
-    else if (!public_key && meta_conf_signature)
+    else if (!*public_keys && meta_conf_signature)
         fwup_warnx("Signed archive '%s' is not corrupt. Pass a public key to verify the signature.", input_filename);
     else
         fwup_warnx("Unsigned archive '%s' is not corrupt.", input_filename);

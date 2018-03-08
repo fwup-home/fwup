@@ -93,11 +93,11 @@ static void print_usage()
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
-    printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates\n");
+    printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates (can specify multiple times)\n");
     printf("  --private-key <key> A private key for signing firmware updates\n");
     printf("  --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%%)\n");
     printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
-    printf("  --public-key <key> A public key for verifying firmware updates\n");
+    printf("  --public-key <key> A public key for verifying firmware updates (can specify multiple times)\n");
     printf("  -q, --quiet   Quiet\n");
     printf("  -s, --private-key-file <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
@@ -350,7 +350,8 @@ int main(int argc, char **argv)
     int sparse_check_size = 4096; // Arbitrary default.
     bool accept_found_device = false;
     unsigned char *signing_key = NULL;
-    unsigned char *public_key = NULL;
+    unsigned char *public_keys[FWUP_MAX_PUBLIC_KEYS + 1] = {NULL};
+    int num_public_keys = 0;
 #if __APPLE__
     // On hosts, the right behavior for almost all use cases is to eject
     // so that the user can plug the SDCard into their board. Detecting
@@ -430,7 +431,8 @@ int main(int argc, char **argv)
             easy_mode = false;
             break;
         case 'p':
-            public_key = load_public_key(optarg);
+            public_keys[num_public_keys] = load_public_key(optarg);
+            num_public_keys++;
             easy_mode = false;
             break;
         case 'n':
@@ -513,7 +515,8 @@ int main(int argc, char **argv)
             easy_mode = false;
             break;
         case ')': // --public-key
-            public_key = parse_public_key(optarg, strlen(optarg));
+            public_keys[num_public_keys] = parse_public_key(optarg, strlen(optarg));
+            num_public_keys++;
             break;
         case '~': // --exit-handshake
             atexit(handshake_exit);
@@ -627,7 +630,7 @@ int main(int argc, char **argv)
                        task,
                        output_fd,
                        &progress,
-                       public_key,
+                       public_keys,
                        enable_trim) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
@@ -650,13 +653,13 @@ int main(int argc, char **argv)
         break;
 
     case CMD_LIST:
-        if (fwup_list(input_firmware, public_key) < 0)
+        if (fwup_list(input_firmware, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_METADATA:
-        if (fwup_metadata(input_firmware, public_key) < 0)
+        if (fwup_metadata(input_firmware, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
@@ -674,7 +677,7 @@ int main(int argc, char **argv)
         break;
 
     case CMD_VERIFY:
-        if (fwup_verify(input_firmware, public_key) < 0)
+        if (fwup_verify(input_firmware, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
@@ -688,8 +691,8 @@ int main(int argc, char **argv)
 
     if (signing_key)
         free(signing_key);
-    if (public_key)
-        free(public_key);
+    for (int i = 0; i < num_public_keys; i++)
+        free(public_keys[i]);
 
     return 0;
 }

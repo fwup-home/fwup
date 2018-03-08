@@ -21,6 +21,6 @@
 
 struct fwup_progress;
 
-int fwup_apply(const char *fw_filename, const char *task, int output_fd, struct fwup_progress *progress, const unsigned char *public_key, bool enable_trim);
+int fwup_apply(const char *fw_filename, const char *task, int output_fd, struct fwup_progress *progress, unsigned char *const* public_keys, bool enable_trim);
 
 #endif // FWUP_APPLY_H

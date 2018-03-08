@@ -102,6 +102,8 @@ void fwup_err(int status, const char *format, ...) FWUP_ERR_ATTRS;
 void fwup_errx(int status, const char *format, ...) FWUP_ERR_ATTRS;
 void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
 
+#define FWUP_MAX_PUBLIC_KEYS 10
+
 #ifndef HAVE_STRPTIME
 // Provide a prototype for strptime if using the version in the 3rdparty directory.
 char* strptime(const char *buf, const char *fmt, struct tm *tm);

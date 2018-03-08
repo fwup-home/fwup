@@ -1,0 +1,79 @@
+#!/bin/sh
+
+#
+# Test that signing firmware does the expected thing
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create several new key pairs
+cd $WORK
+$FWUP_CREATE -g
+mv fwup-key.priv fwup-key1.priv
+mv fwup-key.pub  fwup-key1.pub
+$FWUP_CREATE -g
+mv fwup-key.priv fwup-key2.priv
+mv fwup-key.pub  fwup-key2.pub
+$FWUP_CREATE -g
+mv fwup-key.priv fwup-key3.priv
+mv fwup-key.pub  fwup-key3.pub
+cd -
+
+# Sign the firmware with each key
+$FWUP_CREATE -s $WORK/fwup-key1.priv -c -f $CONFIG -o $FWFILE.1
+$FWUP_CREATE -s $WORK/fwup-key2.priv -c -f $CONFIG -o $FWFILE.2
+$FWUP_CREATE -s $WORK/fwup-key3.priv -c -f $CONFIG -o $FWFILE.3
+
+# Check that applying the firmware with checking signatures works
+$FWUP_APPLY -q -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -a -d $IMGFILE -i $FWFILE.1 -t complete
+$FWUP_APPLY -q -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -a -d $IMGFILE -i $FWFILE.2 -t complete
+$FWUP_APPLY -q -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -a -d $IMGFILE -i $FWFILE.3 -t complete
+
+# Check that verifying the firmware with checking signatures works
+$FWUP_VERIFY -V -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+$FWUP_VERIFY -V -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+$FWUP_VERIFY -V -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.3
+
+# Check that listing metadata with checking signatures works
+$FWUP_VERIFY -m -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+$FWUP_VERIFY -m -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+$FWUP_VERIFY -m -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.3
+
+# Check that listing tasks with checking signatures works
+$FWUP_VERIFY -l -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+$FWUP_VERIFY -l -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+$FWUP_VERIFY -l -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.3
+
+expect_fail() {
+    if eval $*; then
+        echo "Expected this to fail: $*"
+        exit 1
+    fi
+}
+
+# Sanity check that bad signatures still fail
+expect_fail $FWUP_VERIFY -V  -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+expect_fail $FWUP_VERIFY -V  -p $WORK/fwup-key1.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+expect_fail $FWUP_VERIFY -V  -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -i $FWFILE.3
+
+expect_fail $FWUP_VERIFY -m  -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+expect_fail $FWUP_VERIFY -m  -p $WORK/fwup-key1.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+expect_fail $FWUP_VERIFY -m  -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -i $FWFILE.3
+
+expect_fail $FWUP_VERIFY -l  -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -i $FWFILE.1
+expect_fail $FWUP_VERIFY -l  -p $WORK/fwup-key1.pub -p $WORK/fwup-key3.pub -i $FWFILE.2
+expect_fail $FWUP_VERIFY -l  -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -i $FWFILE.3
+
+expect_fail $FWUP_APPLY -q -p $WORK/fwup-key2.pub -p $WORK/fwup-key3.pub -a -d $IMGFILE -i $FWFILE.1 -t complete
+expect_fail $FWUP_APPLY -q -p $WORK/fwup-key1.pub -p $WORK/fwup-key3.pub -a -d $IMGFILE -i $FWFILE.2 -t complete
+expect_fail $FWUP_APPLY -q -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -a -d $IMGFILE -i $FWFILE.3 -t complete

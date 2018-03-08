@@ -58,12 +58,12 @@ static int list_tasks(cfg_t *cfg)
  * @param public_key an option public key if checking signatures
  * @return 0 if successful
  */
-int fwup_list(const char *fw_filename, const unsigned char *public_key)
+int fwup_list(const char *fw_filename, unsigned char * const *public_keys)
 {
     cfg_t *cfg = NULL;
     int rc = 0;
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_key));
+    OK_OR_CLEANUP(cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_keys));
 
     OK_OR_CLEANUP(list_tasks(cfg));
 

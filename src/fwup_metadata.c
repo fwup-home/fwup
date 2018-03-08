@@ -44,13 +44,13 @@ static void list_metadata(cfg_t *cfg, struct simple_string *s)
 /**
  * @brief Dump the metadata in a firmware update file
  * @param fw_filename the firmware update filename
- * @param public_key an option public key if checking signatures
+ * @param public_keys a list of public keys
  * @return 0 if successful
  */
-int fwup_metadata(const char *fw_filename, const unsigned char *public_key)
+int fwup_metadata(const char *fw_filename, unsigned char * const *public_keys)
 {
     cfg_t *cfg;
-    if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_key) < 0)
+    if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_keys) < 0)
         return -1;
 
     struct simple_string s;

@@ -735,6 +735,20 @@ The ability to pipe software updates through `fwup` comes in handy. This has
 also gotten me out of situations where, for whatever reason, I no longer had enough
 space to store the update on the device.
 
+## How should I implement multiple signing keys
+
+There are several use cases where it's necessary to have multiple signing keys
+in use at a time. For example, you could want to enforce that all firmware
+updates are signed in your infrastructure, but not force everyone to go though
+the official secure path for QA builds. You may also want to only use each key
+for a limited amount of signings.
+
+Currently, each firmware file can only have one signature. However, the
+verifier (device) can specify multiple public keys (repeated -p options). While
+it is possible to call `fwup` for each key, specifying multiples keys is
+recommended to run the verification through fwup to support streamed updates
+and also to simplify this critical code path.
+
 ## How do I debug
 
 I apply updates to regular files on my laptop (as opposed to eMMC or SDCards)

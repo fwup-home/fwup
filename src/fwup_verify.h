@@ -17,6 +17,6 @@
 #ifndef FWUP_VERIFY_H
 #define FWUP_VERIFY_H
 
-int fwup_verify(const char *fw_filename, const unsigned char *public_key);
+int fwup_verify(const char *fw_filename, unsigned char * const *public_keys);
 
 #endif // FWUP_VERIFY_H

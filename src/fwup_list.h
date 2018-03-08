@@ -17,6 +17,6 @@
 #ifndef FWUP_LIST_H
 #define FWUP_LIST_H
 
-int fwup_list(const char *fw_filename, const unsigned char *public_key);
+int fwup_list(const char *fw_filename, unsigned char * const *public_keys);
 
 #endif // FWUP_LIST_H

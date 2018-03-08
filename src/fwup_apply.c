@@ -373,7 +373,7 @@ int fwup_apply(const char *fw_filename,
                const char *task_prefix,
                int output_fd,
                struct fwup_progress *progress,
-               const unsigned char *public_key,
+               unsigned char *const*public_keys,
                bool enable_trim)
 {
     int rc = 0;
@@ -418,7 +418,7 @@ int fwup_apply(const char *fw_filename,
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
         ERR_CLEANUP_MSG("Expecting meta.conf to be at the beginning of %s", fw_filename);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, public_key));
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, public_keys));
 
     OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
 

@@ -26,8 +26,8 @@ struct archive_entry;
 int archive_read_all_data(struct archive *a, struct archive_entry *ae, char **buffer, off_t max_size, off_t *size_read);
 
 int cfgfile_parse_file(const char *filename, cfg_t **cfg);
-int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg, unsigned char *meta_conf_signature, const unsigned char *public_key);
-int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned char *public_key);
+int cfgfile_parse_fw_ae(struct archive *a, struct archive_entry *ae, cfg_t **cfg, unsigned char *meta_conf_signature, unsigned char * const *public_keys);
+int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, unsigned char * const *public_keys);
 void cfgfile_free(cfg_t *cfg);
 
 #endif // CFGFILE_H

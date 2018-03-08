@@ -622,7 +622,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
                         struct archive_entry *ae,
                         cfg_t **cfg,
                         unsigned char *meta_conf_signature,
-                        const unsigned char *public_key)
+                        unsigned char * const *public_keys)
 {
     int rc = 0;
     char *meta_conf = NULL;
@@ -635,11 +635,19 @@ int cfgfile_parse_fw_ae(struct archive *a,
         ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
 
     // Check the signature on meta.conf if it has been signed
-    if (public_key) {
+    if (*public_keys) {
         if (!meta_conf_signature)
             ERR_CLEANUP_MSG("Expecting signed firmware archive.");
 
-        if (crypto_sign_verify_detached(meta_conf_signature, (unsigned char *) meta_conf, total_size, public_key) != 0)
+        bool worked = false;
+        while (*public_keys) {
+            if (crypto_sign_verify_detached(meta_conf_signature, (unsigned char *) meta_conf, total_size, *public_keys) == 0) {
+                worked = true;
+                break;
+            }
+            public_keys++;
+        }
+        if (!worked)
             ERR_CLEANUP_MSG("Firmware archive's meta.conf fails digital signature verification.");
     } else if (meta_conf_signature) {
         INFO("Firmware archive is signed, but signature verification is off.");
@@ -672,7 +680,7 @@ cleanup:
     return rc;
 }
 
-int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned char *public_key)
+int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, unsigned char * const *public_keys)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
@@ -703,7 +711,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, const unsigned
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
         ERR_CLEANUP_MSG("Expecting meta.conf to be at beginning of %s", filename);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, cfg, meta_conf_signature, public_key));
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(a, ae, cfg, meta_conf_signature, public_keys));
 
 cleanup:
     archive_read_free(a);
