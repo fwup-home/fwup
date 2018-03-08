@@ -115,7 +115,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     //
     // NOTE3: Specify FM_SFD (super-floppy disk) to avoid fatfs wanting to create
     // a master boot record.
-    char buffer[_MAX_SS];
+    char buffer[FF_MAX_SS];
     CHECK("fat_mkfs", NULL, f_mkfs("", FM_SFD|FM_FAT|FM_FAT32, FWUP_BLOCK_SIZE, buffer, sizeof(buffer)));
 
     return 0;

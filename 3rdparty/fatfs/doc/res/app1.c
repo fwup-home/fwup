@@ -1,6 +1,6 @@
 /*------------------------------------------------------------/
 / Open or create a file in append mode
-/ (This function was sperseded by FA_OPEN_APPEND at FatFs R0.12a)
+/ (This function was sperseded by FA_OPEN_APPEND flag at FatFs R0.12a)
 /------------------------------------------------------------*/
 
 FRESULT open_append (

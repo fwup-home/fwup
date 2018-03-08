@@ -67,18 +67,12 @@ fwup_SOURCES=\
 	../3rdparty/fatfs/src/ff.c \
 	../3rdparty/fatfs/src/ff.h \
 	../3rdparty/fatfs/src/ffconf.h \
-	../3rdparty/fatfs/src/option/unicode.c
+	../3rdparty/fatfs/src/ffunicode.c
 
 EXTRA_DIST= \
 	../3rdparty/fatfs/src/00history.txt \
 	../3rdparty/fatfs/src/00readme.txt \
 	../3rdparty/fatfs/src/diskio.c \
-	../3rdparty/fatfs/src/option/cc932.c \
-	../3rdparty/fatfs/src/option/cc936.c \
-	../3rdparty/fatfs/src/option/cc949.c \
-	../3rdparty/fatfs/src/option/cc950.c \
-	../3rdparty/fatfs/src/option/ccsbcs.c \
-	../3rdparty/fatfs/src/option/syscall.c \
 	../3rdparty/semver.c/README.md \
 	../3rdparty/semver.c/LICENSE \
 	../3rdparty/semver.c/Makefile \

@@ -1,18 +1,18 @@
 /*----------------------------------------------------------------------/
-/ Low level disk I/O module function checker
+/ Low level disk I/O module function checker                            /
 /-----------------------------------------------------------------------/
 / WARNING: The data on the target drive will be lost!
 */
 
 #include <stdio.h>
 #include <string.h>
-#include "ff.h"
-#include "diskio.h"
+#include "ff.h"         /* Declarations of sector size */
+#include "diskio.h"     /* Declarations of disk functions */
 
 
 static
-DWORD pn (
-    DWORD pns
+DWORD pn (		/* Pseudo random number generator */
+    DWORD pns	/* 0:Initialize, !0:Read */
 )
 {
     static DWORD lfsr;
@@ -41,8 +41,8 @@ int test_diskio (
 )
 {
     UINT n, cc, ns;
-    DWORD sz_drv, lba, lba2, pns = 1;
-    WORD sz_sect, sz_eblk;
+    DWORD sz_drv, lba, lba2, sz_eblk, pns = 1;
+    WORD sz_sect;
     BYTE *pbuff = (BYTE*)buff;
     DSTATUS ds;
     DRESULT dr;
@@ -51,14 +51,13 @@ int test_diskio (
     printf("test_diskio(%u, %u, 0x%08X, 0x%08X)\n", pdrv, ncyc, (UINT)buff, sz_buff);
 
     if (sz_buff < _MAX_SS + 4) {
-        printf("Insufficient work area to test.\n");
+        printf("Insufficient work area to run program.\n");
         return 1;
     }
 
     for (cc = 1; cc <= ncyc; cc++) {
         printf("**** Test cycle %u of %u start ****\n", cc, ncyc);
 
-        /* Initialization */
         printf(" disk_initalize(%u)", pdrv);
         ds = disk_initialize(pdrv);
         if (ds & STA_NOINIT) {
@@ -68,7 +67,6 @@ int test_diskio (
             printf(" - ok.\n");
         }
 
-        /* Get drive size */
         printf("**** Get drive size ****\n");
         printf(" disk_ioctl(%u, GET_SECTOR_COUNT, 0x%08X)", pdrv, (UINT)&sz_drv);
         sz_drv = 0;
@@ -85,8 +83,7 @@ int test_diskio (
         }
         printf(" Number of sectors on the drive %u is %lu.\n", pdrv, sz_drv);
 
-#if _MAX_SS != _MIN_SS
-        /* Get sector size */
+#if FF_MAX_SS != FF_MIN_SS
         printf("**** Get sector size ****\n");
         printf(" disk_ioctl(%u, GET_SECTOR_SIZE, 0x%X)", pdrv, (UINT)&sz_sect);
         sz_sect = 0;
@@ -99,10 +96,9 @@ int test_diskio (
         }
         printf(" Size of sector is %u bytes.\n", sz_sect);
 #else
-        sz_sect = _MAX_SS;
+        sz_sect = FF_MAX_SS;
 #endif
 
-        /* Get erase block size */
         printf("**** Get block size ****\n");
         printf(" disk_ioctl(%u, GET_BLOCK_SIZE, 0x%X)", pdrv, (UINT)&sz_eblk);
         sz_eblk = 0;
@@ -113,7 +109,7 @@ int test_diskio (
             printf(" - failed.\n");
         }
         if (dr == RES_OK || sz_eblk >= 2) {
-            printf(" Size of the erase block is %u sectors.\n", sz_eblk);
+            printf(" Size of the erase block is %lu sectors.\n", sz_eblk);
         } else {
             printf(" Size of the erase block is unknown.\n");
         }
@@ -156,7 +152,6 @@ int test_diskio (
         }
         pns++;
 
-        /* Multiple sector write test */
         printf("**** Multiple sector write test ****\n");
         lba = 1; ns = sz_buff / sz_sect;
         if (ns > 4) ns = 4;
@@ -195,8 +190,7 @@ int test_diskio (
         }
         pns++;
 
-        /* Single sector write test (misaligned memory address) */
-        printf("**** Single sector write test 2 ****\n");
+        printf("**** Single sector write test (misaligned address) ****\n");
         lba = 5;
         for (n = 0, pn(pns); n < sz_sect; n++) pbuff[n+3] = (BYTE)pn(0);
         printf(" disk_write(%u, 0x%X, %lu, 1)", pdrv, (UINT)(pbuff+3), lba);
@@ -233,7 +227,6 @@ int test_diskio (
         }
         pns++;
 
-        /* 4GB barrier test */
         printf("**** 4GB barrier test ****\n");
         if (sz_drv >= 128 + 0x80000000 / (sz_sect / 2)) {
             lba = 6; lba2 = lba + 0x80000000 / (sz_sect / 2);
@@ -302,12 +295,13 @@ int test_diskio (
 int main (int argc, char* argv[])
 {
     int rc;
-    DWORD buff[512];  /* 2048 byte working buffer */
+    DWORD buff[FF_MAX_SS];  /* Working buffer (4 sector in size) */
 
     /* Check function/compatibility of the physical drive #0 */
     rc = test_diskio(0, 3, buff, sizeof buff);
+
     if (rc) {
-        printf("Sorry the function/compatibility test failed. (rc=%d)\nFatFs will not work on this disk driver.\n", rc);
+        printf("Sorry the function/compatibility test failed. (rc=%d)\nFatFs will not work with this disk driver.\n", rc);
     } else {
         printf("Congratulations! The disk driver works well.\n");
     }

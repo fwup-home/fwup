@@ -98,7 +98,7 @@ int main (void)
         return 1;
     }
 
-    /* Now you can read/write the file without file system layer. */
+    /* Now you can read/write the file without filesystem layer. */
     ...
     dr = disk_write(fil.fs->drv, Buff, org, 1024);   /* Write 512KiB from top of the file */
     ...

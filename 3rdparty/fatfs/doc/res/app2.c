@@ -1,8 +1,10 @@
 /*------------------------------------------------------------/
 / Remove all contents of a directory
-/ This function works regardless of _FS_RPATH.
+/ This function works regardless of FF_FS_RPATH.
 /------------------------------------------------------------*/
 
+
+FILINFO fno;
 
 FRESULT empty_directory (
     char* path      /* Working buffer filled with start directory */
@@ -11,11 +13,7 @@ FRESULT empty_directory (
     UINT i, j;
     FRESULT fr;
     DIR dir;
-    FILINFO fno;
 
-#if _USE_LFN
-    fno.lfname = 0; /* Disable LFN output */
-#endif
     fr = f_opendir(&dir, path);
     if (fr == FR_OK) {
         for (i = 0; path[i]; i++) ;
@@ -48,7 +46,7 @@ int main (void)
 {
     FRESULT fr;
     FATFS fs;
-    char buff[64];    /* Working buffer */
+    char buff[256];    /* Working buffer */
 
 
 
