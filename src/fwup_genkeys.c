@@ -69,9 +69,10 @@ int fwup_genkeys()
     OK_OR_CLEANUP(save_key("fwup-key.pub", pk, sizeof(pk)));
     OK_OR_CLEANUP(save_key("fwup-key.priv", sk, sizeof(sk)));
 
-    printf("Firmware signing keys created and saved to fwup-key.pub and fwup-key.priv\n\n");
-    printf("Distribute fwup-key.pub with your system so that firmware updates can be\n");
-    printf("authenticated. Keep fwup-key.priv in a safe location.\n");
+    fwup_output(FRAMING_TYPE_SUCCESS, 0,
+        "Firmware signing keys created and saved to fwup-key.pub and fwup-key.priv\n\n"
+        "Distribute fwup-key.pub with your system so that firmware updates can be\n"
+        "authenticated. Keep fwup-key.priv in a safe location.\n");
 
     return 0;
 

@@ -138,6 +138,8 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
     free(temp_filename);
     temp_filename = NULL;
 
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, "");
+
 cleanup:
     // Close the files if they're still open.
     if (out) {
