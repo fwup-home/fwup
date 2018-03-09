@@ -431,9 +431,13 @@ int main(int argc, char **argv)
             easy_mode = false;
             break;
         case 'p':
-            public_keys[num_public_keys] = load_public_key(optarg);
-            num_public_keys++;
-            easy_mode = false;
+            if (num_public_keys < FWUP_MAX_PUBLIC_KEYS) {
+                public_keys[num_public_keys] = load_public_key(optarg);
+                num_public_keys++;
+                easy_mode = false;
+            } else
+                fwup_warnx("Ignoring public key since only %d supported", FWUP_MAX_PUBLIC_KEYS);
+
             break;
         case 'n':
             numeric_progress = true;
@@ -515,8 +519,11 @@ int main(int argc, char **argv)
             easy_mode = false;
             break;
         case ')': // --public-key
-            public_keys[num_public_keys] = parse_public_key(optarg, strlen(optarg));
-            num_public_keys++;
+            if (num_public_keys < FWUP_MAX_PUBLIC_KEYS) {
+                public_keys[num_public_keys] = parse_public_key(optarg, strlen(optarg));
+                num_public_keys++;
+            } else
+                fwup_warnx("Ignoring public key since only %d supported", FWUP_MAX_PUBLIC_KEYS);
             break;
         case '~': // --exit-handshake
             atexit(handshake_exit);
