@@ -2,9 +2,16 @@
 
 ## v1.1.0
 
+* New features
+  * Support passing more than one public key for archive verification
+
+* Bug fixes
+  * Fixed framed mode output for archive verifcation and a couple other
+    commands.
+
 ## v1.0.0
 
-* Bug fixes:
+* Bug fixes
   * Add include due to change in new versions of glibc
   * Disable failing test on Arch Linux (appears to be due to root filesystem
     options and not specifically Arch. Luckily test is irrelevent to archive
