@@ -146,11 +146,11 @@ int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
 
     const char *success_message;
     if (*public_keys && meta_conf_signature)
-        success_message = "Valid archive with a good signature";
+        success_message = "Valid archive with a good signature\n";
     else if (!*public_keys && meta_conf_signature)
-        success_message = "Valid archive with an unverified signature. Pass a public key to authenticate.";
+        success_message = "Valid archive with an unverified signature. Specify a public key to authenticate.\n";
     else
-        success_message = "Valid archive without a signature";
+        success_message = "Valid archive without a signature\n";
 
     fwup_output(FRAMING_TYPE_SUCCESS, 0, success_message);
 
