@@ -186,9 +186,16 @@ void progress_report_complete(struct fwup_progress *progress)
         printf("\nSuccess!\n");
         if (progress->start_time) {
             int elapsed = current_time_ms() - progress->start_time;
-            printf("Elapsed time: %d.%03ds\n",
-               elapsed / 1000,
-               elapsed % 1000);
+            if (elapsed > 60000) {
+                int seconds = elapsed / 1000;
+                printf("Elapsed time: %d min %02d s\n",
+                   seconds / 60,
+                   seconds % 60);
+            } else {
+                printf("Elapsed time: %d.%03d s\n",
+                   elapsed / 1000,
+                   elapsed % 1000);
+            }
         }
         break;
 
