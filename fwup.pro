@@ -257,4 +257,8 @@ DISTFILES += \
     tests/142_file_resource_size.test \
     tests/143_include_path.test \
     tests/144_require_version.test \
-    tests/145_require_path_at_offset.test
+    tests/145_require_path_at_offset.test \
+    tests/146_deploy_variables.test \
+    tests/147_multiple_keys.test \
+    tests/148_config_from_stdin.test \
+    tests/149_too_many_keys.test

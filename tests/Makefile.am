@@ -161,6 +161,7 @@ TESTS = 001_simple_fw.test \
         145_require_path_at_offset.test \
 	146_deploy_variables.test \
 	147_multiple_keys.test \
-	148_config_from_stdin.test
+	148_config_from_stdin.test \
+	149_too_many_keys.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

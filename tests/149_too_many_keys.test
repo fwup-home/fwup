@@ -1,0 +1,50 @@
+#!/bin/sh
+
+#
+# Test that passing too many public keys ignores the extra ones
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create several new key pairs
+cd $WORK
+$FWUP_CREATE -g
+mv fwup-key.priv fwup-key1.priv
+mv fwup-key.pub  fwup-key1.pub
+$FWUP_CREATE -g
+mv fwup-key.priv fwup-key2.priv
+mv fwup-key.pub  fwup-key2.pub
+cd -
+
+# Create a test firmware file that's signed by key2
+$FWUP_CREATE -s $WORK/fwup-key2.priv -c -f $CONFIG -o $FWFILE
+
+expect_fail() {
+    if eval $*; then
+        echo "Expected this to fail: $*"
+        exit 1
+    fi
+}
+
+# This shouldn't verify since the 11th key is key2. If
+# the max number of keys increases, then this will pass.
+expect_fail $FWUP_VERIFY -V -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key1.pub -p $WORK/fwup-key2.pub -i $FWFILE
+
+KEY1=$(cat $WORK/fwup-key1.pub)
+KEY2=$(cat $WORK/fwup-key2.pub)
+
+expect_fail $FWUP_VERIFY -V --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY1" --public-key "$KEY2" -i $FWFILE
+
+# Sanity checks
+$FWUP_VERIFY -V -p $WORK/fwup-key2.pub -i $FWFILE
+$FWUP_VERIFY -V --public-key "$KEY2" -i $FWFILE
