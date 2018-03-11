@@ -11,6 +11,8 @@
 * Bug fixes
   * Fixed framed mode output for archive verifcation and a couple other
     commands.
+  * Bumped fatfs version from 0.12b to 0.13a. Changes appear to be minor in
+    regards to fwup usage.
 
 ## v1.0.0
 
