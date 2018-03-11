@@ -33,7 +33,7 @@ fi
 # Busybox on Linux.
 find_rdev() {
     WANT=$(stat / -c "%04D")
-    FILES=$(find /dev)
+    FILES=$(find /dev 2>/dev/null || true)
     for FILE in $FILES; do
         GOT=$(stat $FILE -c "%02t%02T")
         if [ $WANT = $GOT ]; then
