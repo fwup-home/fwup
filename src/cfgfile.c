@@ -561,14 +561,19 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     cfg_set_validate_func(toplevel_cfg, "uboot-environment", cb_validate_uboot);
     cfg_set_validate_func(toplevel_cfg, "task|on-resource", cb_validate_on_resource);
 
-    switch (cfg_parse(toplevel_cfg, filename)) {
-    case CFG_SUCCESS:
-        break;
-    case CFG_FILE_ERROR:
-        ERR_CLEANUP_MSG("Error opening configuration file '%s'", filename);
-    default:
-    case CFG_PARSE_ERROR:
-        ERR_CLEANUP_MSG("Error parsing configuration file '%s'", filename);
+    if (strcmp(filename, "-") == 0) {
+        if (cfg_parse_fp(toplevel_cfg, stdin) != 0)
+            ERR_CLEANUP_MSG("Error parsing configuration from stdin");
+    } else {
+        switch (cfg_parse(toplevel_cfg, filename)) {
+        case CFG_SUCCESS:
+            break;
+        case CFG_FILE_ERROR:
+            ERR_CLEANUP_MSG("Error opening configuration file '%s'", filename);
+        default:
+        case CFG_PARSE_ERROR:
+            ERR_CLEANUP_MSG("Error parsing configuration file '%s'", filename);
+        }
     }
     *cfg = toplevel_cfg;
     return 0;

@@ -4,6 +4,9 @@
 
 * New features
   * Support passing more than one public key for archive verification
+  * Support passing fwup configs in via stdin
+  * Add img2fwup script to make it easier to create .fw archives from
+    regular SDCard image files
 
 * Bug fixes
   * Fixed framed mode output for archive verifcation and a couple other

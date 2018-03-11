@@ -1,10 +1,13 @@
 ACLOCAL_AMFLAGS=-I m4
 
+bin_SCRIPTS = img2fwup
+
 SUBDIRS=src tests docs
 EXTRA_DIST=README.md \
 	   VERSION \
 	   CHANGELOG.md \
 	   LICENSE \
+	   img2fwup \
 	   scripts/build_pkg.sh \
 	   scripts/build_deps.sh \
 	   scripts/ci_after_success.sh \

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e
+
+IMGFILE=$1
+FWFILE=$2
+
+if [[ -z "$IMGFILE" ]]; then
+    echo "Compress an image file into a .fw archive so that it can be written to a"
+    echo "MicroSD card using fwup."
+    echo
+    echo "Usage: img2fwup <imgfile> [output .fw file]"
+    exit 1
+fi
+
+if [ -z "$FWFILE" ]; then
+    FWFILE=${IMGFILE%.img}.fw
+fi
+
+echo "Compressing '$IMGFILE' to '$FWFILE'..."
+
+fwup -c -o "$FWFILE" -f - <<EOF
+meta-product = ""
+meta-description = "$(basename "$IMGFILE")"
+meta-version = ""
+meta-platform = ""
+meta-architecture = ""
+meta-author = "$USER"
+file-resource img {
+        host-path = "${IMGFILE}"
+}
+task complete {
+	on-resource img { raw_write(0) }
+}
+EOF
+
+echo "Done."
