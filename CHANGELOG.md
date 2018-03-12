@@ -13,6 +13,8 @@
     commands.
   * Bumped fatfs version from 0.12b to 0.13a. Changes appear to be minor in
     regards to fwup usage.
+  * Regression tests failed if a file in /dev wasn't accessible. This was due to
+    a call to `find` and the inaccessible files could be safely skipped.
 
 ## v1.0.0
 
