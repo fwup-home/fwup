@@ -220,6 +220,8 @@ While not the original use of `fwup`, it can be convenient to convert other
 files to  `.fw` files. `fwup` comes with the following shell script helper:
 
 * `img2fwup` - convert a raw image file to a `.fw` file
+* `dir2fwup` - convert a directory of files to a `.fw` file that creates a
+  FAT-formatted filesystem with them
 
 A use case for the `img2fwup` script is to convert a large SDCard image file
 to one that is compressed and checksummed by `fwup` for distribution.

@@ -1,0 +1,106 @@
+#!/bin/bash
+
+set -e
+
+DIR=$1
+FWFILE=$2
+
+if [[ ! -d "$DIR" ]]; then
+    echo "Create a .fw archive that creates a FAT partition and fills it with"
+    echo "contents of the specified directory."
+    echo
+    echo "Usage: dir2fwup <dir> [output .fw file]"
+    exit 1
+fi
+
+if [ -z "$FWFILE" ]; then
+    FWFILE=$DIR.fw
+fi
+
+echo "Compressing the files in '$DIR' to '$FWFILE'..."
+
+# "readlink -f" implementation for BSD
+# This code was extracted from the Elixir shell scripts
+readlink_f () {
+    cd "$(dirname "$1")" > /dev/null
+    filename="$(basename "$1")"
+    if [[ -h "$filename" ]]; then
+        readlink_f "$(readlink "$filename")"
+    else
+        echo "`pwd -P`/$filename"
+    fi
+}
+ABSDIR=$(readlink_f $DIR)
+BASEDIR=$(basename $DIR)
+
+TMPFILE=$(mktemp /tmp/dir2fwup.XXXXXX)
+
+cat > $TMPFILE <<EOF
+define(FAT_PART_OFFSET, 2048)
+define(FAT_PART_COUNT, 2097144)
+
+meta-product = ""
+meta-description = "$DIR"
+meta-version = ""
+meta-platform = ""
+meta-architecture = ""
+meta-author = "$USER"
+
+mbr mbr {
+    partition 0 {
+       block-offset = \${FAT_PART_OFFSET}
+       block-count = \${FAT_PART_COUNT}
+       type = 0xc
+    }
+}
+EOF
+
+FILES=$(cd $ABSDIR && find . -type f | sed 's/^\.\///')
+DIRS=$(cd $ABSDIR && find . -type d | sed 's/^\.\///')
+
+IFS=$(echo -en "\n\b")
+
+for FILE in $FILES; do
+    cat >> $TMPFILE << EOF
+file-resource "$FILE" {
+    host-path = "$ABSDIR/$FILE"
+}
+EOF
+done
+
+cat >> $TMPFILE << EOF
+task complete {
+    on-init {
+        mbr_write(mbr)
+        fat_mkfs(\${FAT_PART_OFFSET}, \${FAT_PART_COUNT})
+        fat_setlabel(\${FAT_PART_OFFSET}, "$BASEDIR")
+EOF
+for DIR in $DIRS; do
+    if [[ "$DIR" != "." ]]; then
+        cat >> $TMPFILE << EOF
+        fat_mkdir(\${FAT_PART_OFFSET}, "$DIR")
+EOF
+    fi
+done
+cat >> $TMPFILE << EOF
+    }
+EOF
+
+for FILE in $FILES; do
+    if [[ -f "$ABSDIR/$FILE" ]]; then
+        cat >> $TMPFILE << EOF
+    on-resource "$FILE" {
+        fat_write(\${FAT_PART_OFFSET}, "$FILE")
+    }
+EOF
+    fi
+done
+
+cat >> $TMPFILE << EOF
+}
+EOF
+
+fwup -c -o "$FWFILE" -f $TMPFILE
+
+rm "$TMPFILE"
+echo "Done."

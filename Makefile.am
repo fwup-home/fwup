@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS=-I m4
 
 if ENABLE_SCRIPTS
-bin_SCRIPTS = img2fwup
+bin_SCRIPTS = img2fwup dir2fwup
 endif
 
 SUBDIRS=src tests docs
@@ -10,6 +10,7 @@ EXTRA_DIST=README.md \
 	   CHANGELOG.md \
 	   LICENSE \
 	   img2fwup \
+	   dir2fwup \
 	   scripts/build_pkg.sh \
 	   scripts/build_deps.sh \
 	   scripts/ci_after_success.sh \
