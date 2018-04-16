@@ -204,6 +204,16 @@ protection against someone pulling power at a bad time. Also, `fwup`'s one pass
 over the archive feature means that firmware validation is mostly done on the
 fly, so you'll want to verify the archive first (see the `-V` option).
 
+# Helper scripts
+
+While not the original use of `fwup`, it can be convenient to convert other
+files to  `.fw` files. `fwup` comes with the following shell script helper:
+
+* `img2fwup` - convert a raw image file to a `.fw` file
+
+A use case for the `img2fwup` script is to convert a large SDCard image file
+to one that is compressed and checksumed by `fwup` for distribution.
+
 # Versioning
 
 `fwup` uses [semver](https://semver.org) for versioning. For example, if you are
