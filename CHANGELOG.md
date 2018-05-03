@@ -1,5 +1,7 @@
 # Changelog
 
+## v1.1.1-dev
+
 ## v1.1.0
 
 * New features
