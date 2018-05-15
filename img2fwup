@@ -29,8 +29,12 @@ meta-author = "$USER"
 file-resource img {
         host-path = "${IMGFILE}"
 }
+define-eval(IMG_BLOCKS, "(\${FWUP_SIZE_img} + 511) / 512")
 task complete {
-	on-resource img { raw_write(0) }
+    on-resource img {
+        trim(0, \${IMG_BLOCKS})
+        raw_write(0)
+    }
 }
 EOF
 
