@@ -13,7 +13,8 @@ TEMPLATE = app
 
 SOURCES += \
     3rdparty/fatfs/src/ff.c \
-    3rdparty/fatfs/src/option/unicode.c \
+    3rdparty/fatfs/src/ffunicode.c \
+    3rdparty/semver.c/semver.c \
     3rdparty/base64.c \
     3rdparty/strptime.c \
     src/fwup.c \
@@ -45,8 +46,7 @@ SOURCES += \
     src/mmc_bsd.c \
     src/resources.c \
     src/block_cache.c \
-    src/pad_to_block_writer.c \
-    3rdparty/semver.c/semver.c
+    src/pad_to_block_writer.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -69,10 +69,11 @@ linux {
 LIBS += -lconfuse -larchive -lsodium
 
 HEADERS += \
+    3rdparty/base64.h \
     3rdparty/fatfs/src/ff.h \
     3rdparty/fatfs/src/ffconf.h \
     3rdparty/fatfs/src/integer.h \
-    3rdparty/fatfs/src/diskio.h \
+    3rdparty/semver.c/semver.h \
     src/mbr.h \
     src/cfgfile.h \
     src/util.h \
@@ -98,9 +99,7 @@ HEADERS += \
     src/resources.h \
     src/block_cache.h \
     src/fatfs.h \
-    src/pad_to_block_writer.h \
-    3rdparty/base64.h \
-    3rdparty/semver.c/semver.h
+    src/pad_to_block_writer.h
 
 OTHER_FILES += \
     fwupdate.conf \
