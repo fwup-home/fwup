@@ -273,7 +273,7 @@ file-resource zImage {
         host-path = "output/images/zImage"
 }
 
-execute("echo zImage size is ${FWUP_SIZE_zImage}")
+execute("echo zImage size is ${FWUP_SIZE_zImage} bytes")
 ```
 
 ## Global scope
