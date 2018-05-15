@@ -28,6 +28,7 @@ meta-architecture = ""
 meta-author = "$USER"
 file-resource img {
         host-path = "${IMGFILE}"
+        skip-holes = false  # This optimization isn't safe for all .img files
 }
 define-eval(IMG_BLOCKS, "(\${FWUP_SIZE_img} + 511) / 512")
 task complete {

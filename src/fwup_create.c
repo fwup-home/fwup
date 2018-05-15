@@ -36,6 +36,7 @@ struct calc_metadata_state
 {
     struct sparse_file_map sfm;
     struct sparse_file_read_iterator read_iterator;
+    bool no_sparse_files;
 
     crypto_generichash_state hash_state;
 };
@@ -43,7 +44,7 @@ struct calc_metadata_state
 static int build_sparse_map(int fd, void *cookie)
 {
     struct calc_metadata_state *state = (struct calc_metadata_state *) cookie;
-    return sparse_file_build_map_from_fd(fd, &state->sfm);
+    return sparse_file_build_map_from_fd(fd, state->no_sparse_files, &state->sfm);
 }
 
 static int calc_hash(int fd, void *cookie)
@@ -122,6 +123,9 @@ static int compute_file_metadata(cfg_t *cfg)
         unsigned char hash[crypto_generichash_BYTES];
         if (paths) {
             struct calc_metadata_state state;
+
+            // Check whether the user wants to skip holes in files
+            state.no_sparse_files = !cfg_getbool(sec, "skip-holes");
 
             // Compute the sparse file map
             sparse_file_init(&state.sfm);

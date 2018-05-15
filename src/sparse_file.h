@@ -18,6 +18,7 @@
 #define SPARSE_FILE_H
 
 #include <confuse.h>
+#include <stdbool.h>
 #include <sys/types.h>
 
 struct sparse_file_map
@@ -51,7 +52,7 @@ int sparse_file_get_map_from_config(cfg_t *cfg, const char *resource_name, struc
 int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *sfm);
 int sparse_file_set_map_in_resource(cfg_t *resource, const struct sparse_file_map *sfm);
 
-int sparse_file_build_map_from_fd(int fd, struct sparse_file_map *sfm);
+int sparse_file_build_map_from_fd(int fd, bool sparse_file_disabled, struct sparse_file_map *sfm);
 
 
 off_t sparse_file_size(const struct sparse_file_map *sfm);

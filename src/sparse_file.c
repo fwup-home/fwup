@@ -189,10 +189,11 @@ off_t sparse_ending_hole_size(const struct sparse_file_map *sfm)
  * only one entry.
  *
  * @param fd a file descriptor with read access
+ * @param sparse_file_disabled set to true to skip sparse file scanning
  * @param sfm a location to store the sparse map
  * @return 0 if successful
  */
-int sparse_file_build_map_from_fd(int fd, struct sparse_file_map *sfm)
+int sparse_file_build_map_from_fd(int fd, bool sparse_file_disabled, struct sparse_file_map *sfm)
 {
     off_t leftover;
     int i;
@@ -214,35 +215,37 @@ int sparse_file_build_map_from_fd(int fd, struct sparse_file_map *sfm)
     off_t next = 0;
 
 #if HAVE_SPARSE_SEEK
-    for (; i < SPARSE_FILE_MAP_MAX_LEN - 2; i++) {
-        next = lseek(fd, offset, IN_HOLE(i) ? SEEK_DATA : SEEK_HOLE);
-        if (next < 0) {
-            // Normal case -> we hit the end
-            next = lseek(fd, 0, SEEK_END);
-            if (next != offset)
-                sfm->map[i++] = next - offset + leftover;
-            sfm->map_len = i;
-            return 0;
+    if (!sparse_file_disabled) {
+        for (; i < SPARSE_FILE_MAP_MAX_LEN - 2; i++) {
+            next = lseek(fd, offset, IN_HOLE(i) ? SEEK_DATA : SEEK_HOLE);
+            if (next < 0) {
+                // Normal case -> we hit the end
+                next = lseek(fd, 0, SEEK_END);
+                if (next != offset)
+                    sfm->map[i++] = next - offset + leftover;
+                sfm->map_len = i;
+                return 0;
+            }
+            if (i >= 1 && offset == next && sfm->map[i - 1] == 0) {
+                // Special case where we're in a hole and in data
+                // This happens for /dev/zero and possibly other
+                // special files.
+                sfm->map_len = i;
+                return 0;
+            }
+            sfm->map[i] = next - offset + leftover;
+            leftover = 0;
+            offset = next;
         }
-        if (i >= 1 && offset == next && sfm->map[i - 1] == 0) {
-            // Special case where we're in a hole and in data
-            // This happens for /dev/zero and possibly other
-            // special files.
-            sfm->map_len = i;
-            return 0;
-        }
-        sfm->map[i] = next - offset + leftover;
-        leftover = 0;
-        offset = next;
-    }
 
-    // Ran out of entries, so the remainder is one big data segment.
-    if (IN_HOLE(i)) {
-        // Current in a hole, so advance to an even location for a data fragment
-        sfm->map[i] = next - offset + leftover;
-        leftover = 0;
-        offset = next;
-        i++;
+        // Ran out of entries, so the remainder is one big data segment.
+        if (IN_HOLE(i)) {
+            // Current in a hole, so advance to an even location for a data fragment
+            sfm->map[i] = next - offset + leftover;
+            leftover = 0;
+            offset = next;
+            i++;
+        }
     }
 #endif
     next = lseek(fd, 0, SEEK_END);

@@ -1,0 +1,81 @@
+#!/bin/sh
+
+#
+# Test that fwup doesn't do sparse file processing when told not to
+#
+
+. ./common.sh
+
+SPARSE_FILE=$WORK/sparse.bin
+
+# Sparse file support depends on the filesystem. The size
+# of the sparse blocks may vary as well. To ensure that
+# this test works across filesystems that support sparse
+# files, keep everything on 4K boundaries.
+
+if ! $FWUP_CREATE --sparse-check "$SPARSE_FILE" --sparse-check-size 4096; then
+    echo "Skipping sparse file tests since OS or filesystem lacks support"
+    exit 0
+fi
+
+TESTFILE_4K=$WORK/4k.bin
+cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
+
+# This sparse file looks like this:
+#
+# Offset         Length        Contents
+# 0              32K           Hole
+# 32K            4K            $TESTFILE_4K
+# 36K            28K           Hole
+# 64K            4K            $TESTFILE_4K
+# 68K            932K          Hole
+# 1024K          4K            $TESTFILE_4K
+
+dd if=$TESTFILE_4K bs=1k seek=32 of=$SPARSE_FILE conv=sync 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=64 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=1024 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
+
+cat >$CONFIG <<EOF
+file-resource sparsefile {
+        host-path = "${SPARSE_FILE}"
+        skip-holes = false
+}
+
+task complete {
+        on-resource sparsefile { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "sparsefile" {
+length=1052672
+blake2b-256="d0d5820a5f1b843e304a7e75b0d8d8faaba1405bba8ccc18feb14076f539c577"
+}
+task "complete" {
+on-resource "sparsefile" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+# Create the firmware file
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+check_meta_conf
+
+# Verify the file
+$FWUP_VERIFY -V -i $FWFILE
+
+
+# Create a file of all 0xff's so that it's easy to tell
+# if the sparse file overwrote the holes or not.
+BASE_IMAGE=$WORK/base.img
+dd if=/dev/zero bs=1k count=1028 2>/dev/zero | tr \\000 \\377 | dd of=$BASE_IMAGE 2>/dev/null
+cp $BASE_IMAGE $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+CHECK_IMAGE=$WORK/check.img
+dd if=$TESTFILE_4K bs=1k seek=32 of=$CHECK_IMAGE conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=64 of=$CHECK_IMAGE conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_4K bs=1k seek=1024 of=$CHECK_IMAGE conv=sync,notrunc 2>/dev/null
+cmp_bytes 1052672 $CHECK_IMAGE $IMGFILE

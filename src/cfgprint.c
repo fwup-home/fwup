@@ -183,7 +183,8 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
             // Skip attributes not used after archive creation (see note in top comment)
             if (strcmp("host-path", opt->name) == 0 ||
                 strcmp("bootstrap-code-host-path", opt->name) == 0 ||
-                strcmp("contents", opt->name) == 0)
+                strcmp("contents", opt->name) == 0 ||
+                strcmp("skip-holes", opt->name) == 0)
                 return;
 
             ssprintf(s, "%s=", opt->name);
