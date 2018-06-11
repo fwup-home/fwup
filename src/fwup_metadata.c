@@ -39,6 +39,7 @@ static void list_metadata(cfg_t *cfg, struct simple_string *s)
     list_one(cfg, "meta-fwup-version", s);
     list_one(cfg, "meta-misc", s);
     list_one(cfg, "meta-vcs-identifier", s);
+    list_one(cfg, "meta-uuid", s);
 }
 
 /**

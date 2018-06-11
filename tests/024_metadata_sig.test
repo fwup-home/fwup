@@ -25,17 +25,19 @@ meta-version="some version"
 meta-author="someone"
 meta-platform="a platform"
 meta-architecture="an architecture"
+meta-creation-date="2018-05-05T18:10:16Z"
+meta-uuid="07810278-db9a-5aa0-bc96-da478211691a"
 EOF
 
 cd $WORK
 $FWUP_CREATE -g
 cd -
-$FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
+NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # No signing check should still pass
-$FWUP_APPLY -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -i $FWFILE -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Signing check should pass
-$FWUP_APPLY -p $WORK/fwup-key.pub -i $FWFILE -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -p $WORK/fwup-key.pub -i $FWFILE -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

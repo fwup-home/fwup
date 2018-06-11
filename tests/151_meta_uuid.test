@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Test that metadata can be retrieved the framed way
+# Test that signing doesn't change the firmware's uuid
 #
 
 . ./common.sh
@@ -29,20 +29,18 @@ meta-creation-date="2018-05-05T18:10:16Z"
 meta-uuid="07810278-db9a-5aa0-bc96-da478211691a"
 EOF
 
-cat >$EXPECTED_OUTPUT.type << EOF
-OK
-EOF
-
+cd $WORK
+$FWUP_CREATE -g
+cd -
 NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
-$FWUP_APPLY_NO_CHECK -i $FWFILE --metadata --framing > $ACTUAL_OUTPUT
 
-# Verify and removing framing
-cat $ACTUAL_OUTPUT | $FRAMING_HELPER -d > $ACTUAL_OUTPUT.noframing
+# Sanity check that unsigned version passes (this should already work)
+$FWUP_APPLY -i $FWFILE -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
-# Check the textual component
-cat $ACTUAL_OUTPUT.noframing | (dd bs=1 skip=4 2>/dev/null) | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT.trimmed
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT.trimmed
+# Sign the archive
+$FWUP_CREATE -S -s $WORK/fwup-key.priv -i $FWFILE -o $FWFILE.2
 
-# Check the type
-cat $ACTUAL_OUTPUT.noframing | (dd bs=1 count=2 2>/dev/null) > $ACTUAL_OUTPUT.type
-diff -w $EXPECTED_OUTPUT.type $ACTUAL_OUTPUT.type
+# Check the metadata again (meta-uuid shouldn't change)
+$FWUP_APPLY -i $FWFILE.2 -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

@@ -521,6 +521,7 @@ cfg_opt_t opts[] = {
     CFG_STR("meta-fwup-version", 0, CFGF_NONE),
     CFG_STR("meta-vcs-identifier", 0, CFGF_NONE),
     CFG_STR("meta-misc", 0, CFGF_NONE),
+    CFG_STR("meta-uuid", 0, CFGF_NONE),
 
     CFG_STR("require-fwup-version", "0", CFGF_NONE),
     CFG_FUNC("define", cb_define),
@@ -625,6 +626,29 @@ int archive_read_all_data(struct archive *a, struct archive_entry *ae, char **bu
     return 0;
 }
 
+static void calculate_uuid(const char *meta_conf, off_t meta_conf_size, char *uuid)
+{
+    crypto_generichash_state hash_state;
+    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+
+    // fwup's UUID: 2053dffb-d51e-4310-b93b-956da89f9f34
+    unsigned char fwup_uuid[16] = {0x20, 0x53, 0xdf, 0xfb, 0xd5, 0x1e, 0x43, 0x10, 0xb9, 0x3b, 0x95, 0x6d, 0xa8, 0x9f, 0x9f, 0x34};
+
+    crypto_generichash_update(&hash_state, fwup_uuid, sizeof(fwup_uuid));
+    crypto_generichash_update(&hash_state, (const unsigned char *) meta_conf, meta_conf_size);
+
+    unsigned char hash[crypto_generichash_BYTES];
+    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+
+    // Set version number (RFC 4122) to 5. This really isn't right since we're
+    // not using SHA-1, but libsodium doesn't include SHA-1.
+    hash[6] = (hash[6] & 0x0f) | 0x50;
+
+    sprintf(uuid, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
+            hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]);
+}
+
 int cfgfile_parse_fw_ae(struct archive *a,
                         struct archive_entry *ae,
                         cfg_t **cfg,
@@ -679,6 +703,10 @@ int cfgfile_parse_fw_ae(struct archive *a,
     cfg_set_validate_func(*cfg, "require-fwup-version", cb_validate_require_fwup_version);
     if (cfg_parse_buf(*cfg, meta_conf) != 0)
         ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
+
+    char uuid[64];
+    calculate_uuid(meta_conf, total_size, uuid);
+    cfg_setstr(*cfg, "meta-uuid", uuid);
 
 cleanup:
     if (meta_conf)

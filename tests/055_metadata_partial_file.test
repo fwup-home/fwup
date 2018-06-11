@@ -32,13 +32,15 @@ meta-version="some version"
 meta-author="someone"
 meta-platform="a platform"
 meta-architecture="an architecture"
+meta-creation-date="2018-05-05T18:10:16Z"
+meta-uuid="eaa60867-5ed5-5a6b-997c-a9759db27390"
 EOF
 
-$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Only keep the first 512 bytes of the whole 15MB .fw file!
 dd if=$FWFILE of=$FWFILE.truncated bs=1 count=512 2>/dev/null
 
-$FWUP_APPLY -i $FWFILE.truncated -m | grep -v "meta-creation-date" | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -i $FWFILE.truncated -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
 
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

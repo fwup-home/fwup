@@ -163,6 +163,7 @@ TESTS = 001_simple_fw.test \
 	147_multiple_keys.test \
 	148_config_from_stdin.test \
 	149_too_many_keys.test \
-	150_no_sparse.test
+	150_no_sparse.test \
+	151_meta_uuid.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
