@@ -285,7 +285,7 @@ static int process_resource(struct fun_context *fctx,
         if (len == 0)
             break;
 
-        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
+        crypto_generichash_update(&hash_state, (const unsigned char*) buffer, len);
 
         OK_OR_CLEANUP(pwrite_callback(cookie, buffer, len, offset));
 

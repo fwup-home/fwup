@@ -59,7 +59,7 @@ static int calc_hash(int fd, void *cookie)
         if (len == 0)
             break;
 
-        crypto_generichash_update(&state->hash_state, (unsigned char*) buffer, len);
+        crypto_generichash_update(&state->hash_state, (const unsigned char*) buffer, len);
     }
     return 0;
 }

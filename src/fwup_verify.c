@@ -68,7 +68,7 @@ static int check_resource(struct resource_list *list, const char *file_resource_
         if (len <= 0)
             ERR_RETURN("Error reading '%s' in archive", archive_entry_pathname(ae));
 
-        crypto_generichash_update(&hash_state, (unsigned char*) buffer, len);
+        crypto_generichash_update(&hash_state, (const unsigned char*) buffer, len);
         length_left -= len;
     }
 
