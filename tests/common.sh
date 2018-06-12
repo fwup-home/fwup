@@ -120,8 +120,7 @@ check_meta_conf() {
     fi
 
     # Trim the results of known lines that vary between runs
-    cat $UNZIPDIR/meta.conf | \
-        grep -v "^meta-fwup-version" \
+    cat $UNZIPDIR/meta.conf \
         > $TRIMMED_META_CONF
     diff -w $EXPECTED_META_CONF $TRIMMED_META_CONF
 }

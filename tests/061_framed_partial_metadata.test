@@ -32,7 +32,7 @@ meta-author="someone"
 meta-platform="a platform"
 meta-architecture="an architecture"
 meta-creation-date="2018-05-05T18:10:16Z"
-meta-uuid="eaa60867-5ed5-5a6b-997c-a9759db27390"
+meta-uuid="62a285ff-25b5-5c14-ea5f-0f5286b0e198"
 EOF
 
 cat >$EXPECTED_OUTPUT.type << EOF
@@ -52,7 +52,7 @@ cat $FWFILE.truncated | $FRAMING_HELPER -n 50 -e \
 cat $ACTUAL_OUTPUT | $FRAMING_HELPER -d > $ACTUAL_OUTPUT.noframing
 
 # Check the textual component
-cat $ACTUAL_OUTPUT.noframing | (dd bs=1 skip=4 2>/dev/null) | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT.trimmed
+cat $ACTUAL_OUTPUT.noframing | (dd bs=1 skip=4 2>/dev/null) > $ACTUAL_OUTPUT.trimmed
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT.trimmed
 
 # Check the type

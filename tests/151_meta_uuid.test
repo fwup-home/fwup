@@ -26,7 +26,7 @@ meta-author="someone"
 meta-platform="a platform"
 meta-architecture="an architecture"
 meta-creation-date="2018-05-05T18:10:16Z"
-meta-uuid="07810278-db9a-5aa0-bc96-da478211691a"
+meta-uuid="ded51581-3c37-5dd5-d1b6-cd8503e4cfc4"
 EOF
 
 cd $WORK
@@ -35,12 +35,12 @@ cd -
 NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Sanity check that unsigned version passes (this should already work)
-$FWUP_APPLY -i $FWFILE -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -i $FWFILE -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Sign the archive
-$FWUP_CREATE -S -s $WORK/fwup-key.priv -i $FWFILE -o $FWFILE.2
+NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -S -s $WORK/fwup-key.priv -i $FWFILE -o $FWFILE.2
 
 # Check the metadata again (meta-uuid shouldn't change)
-$FWUP_APPLY -i $FWFILE.2 -m | grep -v "meta-fwup-version" > $ACTUAL_OUTPUT
+$FWUP_APPLY -i $FWFILE.2 -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT

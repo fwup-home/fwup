@@ -341,9 +341,6 @@ int fwup_create(const char *configfile,
     // Parse configuration
     OK_OR_CLEANUP(cfgfile_parse_file(configfile, &cfg));
 
-    // Automatically add fwup metadata
-    cfg_setstr(cfg, "meta-fwup-version", PACKAGE_VERSION);
-
     // Compute all metadata
     OK_OR_CLEANUP(compute_file_metadata(cfg));
 
