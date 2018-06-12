@@ -26,7 +26,10 @@
 struct tm;
 
 int timestamp_to_tm(const char *timestamp, struct tm *tmp);
+void time_t_to_string(time_t t, char *str, size_t len);
 const char *get_creation_timestamp();
+time_t get_creation_time_t();
+
 void set_last_error(const char *fmt, ...);
 const char *last_error();
 

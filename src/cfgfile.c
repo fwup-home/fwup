@@ -659,6 +659,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
     char *meta_conf = NULL;
     off_t max_meta_conf_size = 50000;
     off_t total_size;
+
     if (archive_read_all_data(a, ae, &meta_conf, max_meta_conf_size, &total_size) < 0)
         ERR_CLEANUP_MSG("Error reading meta.conf from archive.\n"
                         "Check for file corruption or libarchive built without zlib support");
@@ -704,9 +705,25 @@ int cfgfile_parse_fw_ae(struct archive *a,
     if (cfg_parse_buf(*cfg, meta_conf) != 0)
         ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
-    char uuid[64];
-    calculate_uuid(meta_conf, total_size, uuid);
-    cfg_setstr(*cfg, "meta-uuid", uuid);
+    // Set automatically determined metadata
+
+    // meta-uuid is always calculated and cannot be overriden
+    char str[64];
+    calculate_uuid(meta_conf, total_size, str);
+    cfg_setstr(*cfg, "meta-uuid", str);
+
+    // meta-creation-data is used if it's in the meta.conf (fwup 1.1 and before)
+    if (cfg_getstr(*cfg, "meta-creation_date") == NULL) {
+        time_t creation_time = 0;
+
+        // fwup 1.2 and later base the creation date off meta.conf timestamp which
+        // may or may not be accurate.
+        if (archive_entry_mtime_is_set(ae))
+            creation_time = archive_entry_mtime(ae);
+
+        time_t_to_string(creation_time, str, sizeof(str));
+        cfg_setstr(*cfg, "meta-creation-date", str);
+    }
 
 cleanup:
     if (meta_conf)

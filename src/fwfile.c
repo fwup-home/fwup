@@ -56,6 +56,9 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
         archive_entry_set_size(entry, sizeof(signature));
         archive_entry_set_filetype(entry, AE_IFREG);
         archive_entry_set_perm(entry, 0644);
+        archive_entry_set_ctime(entry, get_creation_time_t(), 0);
+        archive_entry_set_mtime(entry, get_creation_time_t(), 0);
+        archive_entry_set_atime(entry, get_creation_time_t(), 0);
         archive_write_header(a, entry);
         archive_write_data(a, signature, sizeof(signature));
         archive_entry_free(entry);
@@ -67,6 +70,9 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
     archive_entry_set_size(entry, configtxt_len);
     archive_entry_set_filetype(entry, AE_IFREG);
     archive_entry_set_perm(entry, 0644);
+    archive_entry_set_ctime(entry, get_creation_time_t(), 0);
+    archive_entry_set_mtime(entry, get_creation_time_t(), 0);
+    archive_entry_set_atime(entry, get_creation_time_t(), 0);
     archive_write_header(a, entry);
     archive_write_data(a, configtxt, configtxt_len);
     archive_entry_free(entry);

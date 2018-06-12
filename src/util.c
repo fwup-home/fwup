@@ -35,7 +35,7 @@ extern enum fwup_progress_option fwup_progress_mode;
 
 static char *last_error_message = NULL;
 static char time_string[200] = {0};
-
+static time_t now_time = 0;
 static const char *timestamp_format = "%Y-%m-%dT%H:%M:%SZ";
 
 const char *get_creation_timestamp()
@@ -49,22 +49,37 @@ const char *get_creation_timestamp()
             struct tm tmp;
             if (strptime(now, timestamp_format, &tmp) != NULL) {
                 int rc = snprintf(time_string, sizeof(time_string), "%s", now);
-                if (rc >= 0 && rc < (int) sizeof(time_string))
+                if (rc >= 0 && rc < (int) sizeof(time_string)) {
+                    now_time = timegm(&tmp);
                     return time_string;
+                }
             }
 
             INFO("NOW environment variable set, but not in YYYY-MM-DDTHH:MM:SSZ format so ignoring");
         }
-        time_t t = time(NULL);
-        struct tm *tm_now = gmtime(&t);
-        if (tm_now == NULL)
-            fwup_err(EXIT_FAILURE, "gmtime");
-
-        strftime(time_string, sizeof(time_string), timestamp_format, tm_now);
+        now_time = time(NULL);
+        time_t_to_string(now_time, time_string, sizeof(time_string));
         set_environment("NOW", time_string);
     }
 
     return time_string;
+}
+
+time_t get_creation_time_t()
+{
+    if (now_time == 0)
+        get_creation_timestamp();
+
+    return now_time;
+}
+
+void time_t_to_string(time_t t, char *str, size_t len)
+{
+    struct tm *tm_now = gmtime(&t);
+    if (tm_now == NULL)
+        fwup_err(EXIT_FAILURE, "gmtime");
+
+    strftime(str, len, timestamp_format, tm_now);
 }
 
 int timestamp_to_tm(const char *timestamp, struct tm *tmp)
