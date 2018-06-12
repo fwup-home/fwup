@@ -227,29 +227,22 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     return 0;
 }
 
-static int set_time_from_cfg(cfg_t *cfg)
+static void initialize_timestamps()
 {
     // The purpose of this function is to set all timestamps that we create
-    // (e.g., FATFS timestamps) to the firmware creation date. This is needed
+    // (e.g., FATFS timestamps) to a fixed date. This is needed
     // to make sure that the images that we create are bit-for-bit identical.
-    const char *timestr = cfg_getstr(cfg, "meta-creation-date");
 
+    // Set the timestamp to FAT time 0
     struct tm tmp;
-    if (timestr) {
-        // Set the timestamp to the creation time
-        OK_OR_RETURN(timestamp_to_tm(timestr, &tmp));
-    } else {
-        // Set the timestamp to FAT time 0
-        tmp.tm_year = 80;
-        tmp.tm_mon = 0;
-        tmp.tm_mday = 0;
-        tmp.tm_hour = 0;
-        tmp.tm_min = 0;
-        tmp.tm_sec = 0;
-    }
+    tmp.tm_year = 80;
+    tmp.tm_mon = 0;
+    tmp.tm_mday = 1;
+    tmp.tm_hour = 0;
+    tmp.tm_min = 0;
+    tmp.tm_sec = 0;
 
     fatfs_set_time(&tmp);
-    return 0;
 }
 
 static int compute_progress(struct fun_context *fctx)
@@ -420,7 +413,7 @@ int fwup_apply(const char *fw_filename,
 
     OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, public_keys));
 
-    OK_OR_CLEANUP(set_time_from_cfg(fctx.cfg));
+    initialize_timestamps();
 
     // Initialize the output. Nothing should have been written before now
     // and waiting to initialize the output until now forces the point.

@@ -35,11 +35,7 @@ task complete {
 EOF
 
 # Create the firmware file, then "burn it"
-# Force a timestamp since the FAT serial number depends
-# on meta-creation-timestamp. This only needs to be done
-# at the create stage since burning is always supposed to
-# be bit for bit identical.
-NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 EXPECTED_OUTPUT_ROOT=$WORK/expected.root
@@ -47,11 +43,11 @@ ACTUAL_OUTPUT_ROOT=$WORK/actual.root
 
 cat >$EXPECTED_OUTPUT_ROOT << EOF
  Volume in drive : has no label
- Volume Serial Number is 46A5-9148
+ Volume Serial Number is 0021-0000
 Directory for ::/
 
-test_dir     <DIR>     2015-05-05  18:10
-AREALL~1     <DIR>     2015-05-05  18:10  areallylongfilenamedir
+test_dir     <DIR>     1980-01-01   0:00
+AREALL~1     <DIR>     1980-01-01   0:00  areallylongfilenamedir
         2 files                   0 bytes
                          38 908 928 bytes free
 
@@ -62,12 +58,12 @@ ACTUAL_OUTPUT_SUBDIR=$WORK/actual.subdir
 
 cat >$EXPECTED_OUTPUT_SUBDIR << EOF
  Volume in drive : has no label
- Volume Serial Number is 46A5-9148
+ Volume Serial Number is 0021-0000
 Directory for ::/test_dir
 
-.            <DIR>     2015-05-05  18:10
-..           <DIR>     2015-05-05  18:10
-testdir2     <DIR>     2015-05-05  18:10  
+.            <DIR>     1980-01-01   0:00
+..           <DIR>     1980-01-01   0:00
+testdir2     <DIR>     1980-01-01   0:00
         3 files                   0 bytes
                          38 908 928 bytes free
 

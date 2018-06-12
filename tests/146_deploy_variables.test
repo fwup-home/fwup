@@ -28,7 +28,7 @@ task complete {
 EOF
 
 # Create the firmware file, then "burn it"
-NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Set MYVAR to the filename that we want to be created
 MYVAR="test0123.txt" $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
@@ -38,10 +38,10 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
  Volume in drive : has no label
- Volume Serial Number is 46A5-9148
+ Volume Serial Number is 0021-0000
 Directory for ::/
 
-test0123 txt         0 2015-05-05  18:10
+test0123 txt         0 1980-01-01   0:00
         1 file                    0 bytes
                          38 910 464 bytes free
 
