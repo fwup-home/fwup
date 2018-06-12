@@ -50,7 +50,17 @@ const char *get_creation_timestamp()
             if (strptime(now, timestamp_format, &tmp) != NULL) {
                 int rc = snprintf(time_string, sizeof(time_string), "%s", now);
                 if (rc >= 0 && rc < (int) sizeof(time_string)) {
+#ifdef HAVE_TIMEGM
                     now_time = timegm(&tmp);
+#else
+#ifdef _WIN32
+                    now_time = _mkgmtime(&tmp);
+#else
+                    // mktime is influenced by the local timezone, so this will
+                    // be wrong, but close.
+                    now_time = mktime(&tmp);
+#endif
+#endif
                     return time_string;
                 }
             }
