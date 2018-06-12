@@ -30,8 +30,10 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *sig
     size_t configtxt_len;
 
     configtxt_len = fwup_cfg_to_string(cfg, &configtxt);
-    if (configtxt_len == 0)
-        ERR_RETURN("Could not create meta.conf contents");
+    if (configtxt_len == 0) {
+        configtxt = strdup("# Empty file\n");
+        configtxt_len = strlen(configtxt);
+    }
 
     int rc = fwfile_add_meta_conf_str(configtxt, configtxt_len, a, signing_key);
 
