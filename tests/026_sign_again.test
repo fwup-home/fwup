@@ -21,6 +21,9 @@ cd $WORK
 $FWUP_CREATE -g
 cd -
 
+# Make sure that all of the calls to create below use the same time.
+export NOW="2018-05-05T18:10:16Z"
+
 # Create the firmware
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
