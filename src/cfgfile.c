@@ -713,7 +713,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
     cfg_setstr(*cfg, "meta-uuid", str);
 
     // meta-creation-data is used if it's in the meta.conf (fwup 1.1 and before)
-    if (cfg_getstr(*cfg, "meta-creation_date") == NULL) {
+    if (cfg_getstr(*cfg, "meta-creation-date") == NULL) {
         time_t creation_time = 0;
 
         // fwup 1.2 and later base the creation date off meta.conf timestamp which
