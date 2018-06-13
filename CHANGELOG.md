@@ -1,6 +1,21 @@
 # Changelog
 
-## v1.1.1-dev
+## v1.2.0
+
+* New features
+  * Introduce meta-uuid. This is an automatically generated metadata field that
+    uniquely identifies a .fw file. It won't change if the .fw is rebuilt later
+    (timestamp or compression level changes) or digitally signed.
+  * Removed metadata that could change between creating .fw files so that it is
+    easier to verify that nothing significant has changes. meta-creation-date is
+    now automatically computed using zip file metadata and fwup-version has
+    been deprecated in favor of using require-fwup-version if this info is
+    important.
+
+* Bug fixes
+  * Don't try to be smart and skip holes with `img2fwup`. The hole detection
+    feature is tricky to get write and having it default to on was an oversight
+    with `img2fwup`. This release changes that.
 
 ## v1.1.0
 
