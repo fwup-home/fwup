@@ -16,7 +16,7 @@
 
 * Bug fixes
   * Don't try to be smart and skip holes with `img2fwup`. The hole detection
-    feature is tricky to get write and having it default to on was an oversight
+    feature is tricky to get right and having it default to on was an oversight
     with `img2fwup`. This release changes that.
 
 ## v1.1.0
