@@ -35,9 +35,9 @@ cd -
 NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # No signing check should still pass
-$FWUP_APPLY -i $FWFILE -m > $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Signing check should pass
-$FWUP_APPLY -p $WORK/fwup-key.pub -i $FWFILE -m > $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -p $WORK/fwup-key.pub -i $FWFILE -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
