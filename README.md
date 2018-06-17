@@ -715,22 +715,28 @@ by an `on-resource` block.
 
 If you are using git, you can invoke `fwup` as follows:
 
-    GITDESCRIBE=`git describe` fwup -c -f myupdate.conf -o out.fw
+```sh
+GITDESCRIBE=`git describe` fwup -c -f myupdate.conf -o out.fw
+```
 
 Then in `myupdate.conf` add the line:
 
-    meta-version = "${GITDESCRIBE}"
+```conf
+meta-version = "${GITDESCRIBE}"
+```
 
 On the target device, you can retrieve the version by using `-m`. For example:
 
-    $ fwup -m -i out.fw
-    meta-product = "Awesome product"
-    meta-description = "A description"
-    meta-version = "v0.0.1"
-    meta-author = "Me"
-    meta-platform = "bbb"
-    meta-architecture = "arm"
-    meta-creation-date = "2014-09-07T19:50:57Z"
+```sh
+$ fwup -m -i out.fw
+meta-product = "Awesome product"
+meta-description = "A description"
+meta-version = "v0.0.1"
+meta-author = "Me"
+meta-platform = "bbb"
+meta-architecture = "arm"
+meta-uuid="07a34e75-b7ea-5ed8-b5d9-80c10daf4939"
+```
 
 ## What's something cool that you can do with fwup
 
@@ -738,8 +744,10 @@ Ok, this isn't really a FAQ, but for some reason people think this is cool. Many
 systems that I work on are network connected with ssh. Sometimes I update them
 by doing this:
 
-    $ cat mysoftware.fw | ssh root@192.168.1.20 \
-        'fwup -a -U -d /dev/mmcblk2 -t upgrade && reboot'
+```sh
+$ cat mysoftware.fw | ssh root@192.168.1.20 \
+    'fwup -a -U -d /dev/mmcblk2 -t upgrade && reboot'
+```
 
 The ability to pipe software updates through `fwup` comes in handy. This has
 also gotten me out of situations where, for whatever reason, I no longer had enough
@@ -805,7 +813,28 @@ the `complete` target and then again for the `bootloader` target.
 Also, the `/dev/mmcblock0boot0` device is forced read-only by the kernel. To
 unlock it, run:
 
-    echo 0 > /sys/block/mmcblk0boot0/force_ro
+```sh
+echo 0 > /sys/block/mmcblk0boot0/force_ro
+```
+
+## What's the best way to identify firmware versions
+
+fwup supports several ways:
+
+1. Store the version in `meta-version`. This is usually the friendliest for
+   end users.
+2. Store the `git` hash in `meta-vcs-identifier`. This is good for developers.
+3. Use the `fwup`-computed UUID that's available in `meta-uuid' and
+   `${FWUP_META_UUID}`.
+
+Of these, the third one is always available since version fwup `v1.2.1`. The
+motivation behind it was to unambiguously know whether installed firmware
+matches the desired firmware. Since it is computed, `.fw` files generated with
+previous versions of fwup have UUIDs.
+
+The first two options require the versions to be added to the `fwup.conf` file.
+They are usually added using environment variables so that the version numbers
+are not hardcoded.
 
 ## How do I use "raw" NAND Flash
 
@@ -815,10 +844,10 @@ fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
 
 ## How do you pronounce fwup
 
-I used to pronounce it "eff-double-you-up", but then coworkers and others started calling
-it "fwup" (one syllable) and "fwup-dates" when referring to the `.fw` files.
-I now use the one syllable version. This has caused some issues in the
-documentation where "an" is used rather than "a". Feel free to send PRs.
+I used to pronounce it "eff-double-you-up", but then coworkers and others
+started calling it "fwup" (one syllable) and "fwup-dates" when referring to the
+`.fw` files.  I now use the one syllable version. This has caused some issues in
+the documentation where "an" is used rather than "a". Feel free to send PRs.
 
 # Licenses
 
