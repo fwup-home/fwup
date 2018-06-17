@@ -1,6 +1,11 @@
 # Changelog
 
-## v1.2.1-dev
+## v1.2.1
+
+* Bug fixes
+  * Clean up some ways of overiding the meta-uuid calculation
+  * Export the FWUP_META_UUID variable so that the meta-uuid field is available
+    to scripts
 
 ## v1.2.0
 
