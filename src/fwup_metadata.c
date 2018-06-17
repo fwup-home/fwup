@@ -24,7 +24,7 @@
 
 static void list_one(cfg_t *cfg, const char *key, struct simple_string *s)
 {
-    fwup_cfg_opt_to_string(cfg_getopt(cfg, key), s);
+    fwup_cfg_opt_to_string(cfg_getopt(cfg, key), s, false);
 }
 
 static void list_metadata(cfg_t *cfg, struct simple_string *s)

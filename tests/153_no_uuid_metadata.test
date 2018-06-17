@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#
+# Test that metadata is stored correctly
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+meta-product="product name"
+meta-uuid = "users shouldn't do this"
+meta-creation-date = "don't put this in a file either"
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+meta-product="product name"
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

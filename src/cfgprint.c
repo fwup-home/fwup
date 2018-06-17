@@ -122,7 +122,7 @@ static bool cfg_is_default(cfg_opt_t *opt)
     }
 }
 
-void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
+void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s, bool scrub)
 {
     if (!opt)
         return;
@@ -176,16 +176,23 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
             if (cfg_is_default(opt))
                 return;
 
-            // Don't print assertions
-            if (strncmp("assert-", opt->name, 7) == 0)
-                return;
+            if (scrub) {
+                // Don't print assertions
+                if (strncmp("assert-", opt->name, 7) == 0)
+                    return;
 
-            // Skip attributes not used after archive creation (see note in top comment)
-            if (strcmp("host-path", opt->name) == 0 ||
-                strcmp("bootstrap-code-host-path", opt->name) == 0 ||
-                strcmp("contents", opt->name) == 0 ||
-                strcmp("skip-holes", opt->name) == 0)
-                return;
+                // Skip attributes not used after archive creation (see note in top comment)
+                if (strcmp("host-path", opt->name) == 0 ||
+                    strcmp("bootstrap-code-host-path", opt->name) == 0 ||
+                    strcmp("contents", opt->name) == 0 ||
+                    strcmp("skip-holes", opt->name) == 0)
+                    return;
+
+                // Skip attributes not are automatically calculated
+                if (strcmp("meta-uuid", opt->name) == 0 ||
+                    strcmp("meta-creation-date", opt->name) == 0)
+                    return;
+            }
 
             ssprintf(s, "%s=", opt->name);
             fwup_cfg_opt_nprint_var(opt, 0, s);
@@ -197,7 +204,7 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s)
 static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s)
 {
     for (int i = 0; cfg->opts[i].name && s->str; i++)
-        fwup_cfg_opt_to_string(&cfg->opts[i], s);
+        fwup_cfg_opt_to_string(&cfg->opts[i], s, true);
 }
 
 /**

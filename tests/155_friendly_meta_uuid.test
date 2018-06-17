@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# Allow users to make the mistake of not escaping ${FWUP_META_UUID} so that it
+# gets evaluated at apply time. I know that I'm going to look back at this and
+# regret it, but it's particularly frustrating when you mess this up.
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+task complete {
+    on-finish {
+       info("The wrong way to specify the UUID is \${FWUP_META_UUID}, but we'll allow it.")
+       info("The right way to specify the UUID is \\\${FWUP_META_UUID}.")
+    }
+}
+EOF
+
+cat >$EXPECTED_OUTPUT <<EOF
+fwup: The wrong way to specify the UUID is 2f4626e9-78fa-5962-8571-59523c0f7847, but we'll allow it.
+fwup: The right way to specify the UUID is 2f4626e9-78fa-5962-8571-59523c0f7847.
+EOF
+
+# Create the firmware file, then apply it
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY_NO_CHECK -q -a -d $IMGFILE -i $FWFILE -t complete > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

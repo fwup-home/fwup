@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test that the UUID can't be tricked by setting it
+#
+
+. ./common.sh
+
+cat >$WORK/meta.conf <<EOF
+meta-product="a product"
+meta-uuid="bad bad"
+EOF
+
+# Make a sneaky .fw file with different meta.conf
+cd $WORK
+zip -q $WORK/bogus1.fw meta.conf
+cd - > /dev/null
+
+# Sanity check that the good file works
+if $FWUP_APPLY_NO_CHECK -i $WORK/bogus1.fw -m; then
+    echo "Overriding meta-uuid wasn't caught!"
+    exit 1
+fi
+
+cat >$WORK/meta.conf <<EOF
+meta-product="a product"
+define!(FWUP_META_UUID, "really bad")
+EOF
+
+# Make a sneaky .fw file with different meta.conf
+cd $WORK
+zip -q $WORK/bogus2.fw meta.conf
+cd - > /dev/null
+
+# Sanity check that the good file works
+if $FWUP_APPLY_NO_CHECK -i $WORK/bogus2.fw -m; then
+    echo "Overriding \$FWUP_META_UUID wasn't caught!"
+    exit 1
+fi

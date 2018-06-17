@@ -552,12 +552,19 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
 
     int rc = 0;
 
+    // Patch over a trivially easy error to make of not escaping the $
+    // on the FWUP_META_UUID variable. This variable needs to be resolved
+    // at "apply" time since it can't be calculated at creation time without
+    // affecting itself.
+    set_environment("FWUP_META_UUID", "${FWUP_META_UUID}");
+
     // libconfuse 3.0 note: This function is called when creating
     // archives. If there's an unknown option, we want to throw an
-    // error. I.e., don't pass CFGF_IGNORE_UNKNOWN.
+    // error so that the user can fix it. I.e., don't pass
+    // CFGF_IGNORE_UNKNOWN here.
     toplevel_cfg = cfg_init(opts, 0);
 
-    // set a validating callback function for sections
+    // Set a validating callback function for sections
     cfg_set_validate_func(toplevel_cfg, "require-fwup-version", cb_validate_require_fwup_version);
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
@@ -702,28 +709,31 @@ int cfgfile_parse_fw_ae(struct archive *a,
     *cfg = cfg_init(opts, 0);
 #endif
     cfg_set_validate_func(*cfg, "require-fwup-version", cb_validate_require_fwup_version);
-    if (cfg_parse_buf(*cfg, meta_conf) != 0)
-        ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
     // Set automatically determined metadata
 
-    // meta-uuid is always calculated and cannot be overriden
+    // fwup 1.2 and later base the creation date off meta.conf timestamp which
+    // may or may not be accurate. Set it here. If it's overridden, then we have
+    // an older .fw file and that's ok.
+    time_t creation_time = 0;
+    if (archive_entry_mtime_is_set(ae))
+        creation_time = archive_entry_mtime(ae);
     char str[64];
+    time_t_to_string(creation_time, str, sizeof(str));
+    cfg_setstr(*cfg, "meta-creation-date", str);
+
+    // meta-uuid is always calculated and cannot be overriden
     calculate_uuid(meta_conf, total_size, str);
     cfg_setstr(*cfg, "meta-uuid", str);
+    set_environment("FWUP_META_UUID", str);
 
-    // meta-creation-data is used if it's in the meta.conf (fwup 1.1 and before)
-    if (cfg_getstr(*cfg, "meta-creation-date") == NULL) {
-        time_t creation_time = 0;
+    if (cfg_parse_buf(*cfg, meta_conf) != 0)
+        ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
-        // fwup 1.2 and later base the creation date off meta.conf timestamp which
-        // may or may not be accurate.
-        if (archive_entry_mtime_is_set(ae))
-            creation_time = archive_entry_mtime(ae);
-
-        time_t_to_string(creation_time, str, sizeof(str));
-        cfg_setstr(*cfg, "meta-creation-date", str);
-    }
+    // Verify that meta-uuid wasn't changed when loading the file.
+    if (strcmp(str, cfg_getstr(*cfg, "meta-uuid")) != 0 ||
+        strcmp(str, get_environment("FWUP_META_UUID")) != 0)
+        ERR_CLEANUP_MSG("meta.conf isn't allowed to change 'meta-uuid' or '$FWUP_META_UUID'");
 
 cleanup:
     if (meta_conf)

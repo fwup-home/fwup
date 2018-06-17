@@ -1,0 +1,59 @@
+#!/bin/sh
+
+#
+# Test that referencing metadata as variables works. Only FWUP_META_UUID is
+# supported now.
+#
+# This test sends variables to a U-Boot environment block. This is a little
+# excessive, but it exercises the same path as some production code.
+#
+
+. ./common.sh
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+base64_decode >$EXPECTED_OUTPUT <<EOF
+8IaSlnV1aWQ9NDNmZGI4NDUtNjBkNC01NjNjLTkzYzktNWQ5OGNhYTRkOWRkAAD/////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////8=
+EOF
+
+cat >$CONFIG <<EOF
+meta-product = "product name"
+meta-description = "product description"
+meta-version = "some version"
+meta-platform = "a platform"
+meta-architecture = "an architecture"
+meta-author = "someone"
+
+uboot-environment uboot-env {
+    block-offset = 0
+    block-count = 1
+}
+
+task complete {
+    on-finish {
+       uboot_clearenv(uboot-env)
+
+       uboot_setenv(uboot-env, "uuid", "\\\${FWUP_META_UUID}")
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+dd if=$IMGFILE of=$ACTUAL_OUTPUT count=1 2>/dev/null
+cmp $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
