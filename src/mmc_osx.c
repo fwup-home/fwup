@@ -100,6 +100,10 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
         context->devices[ix].size = size;
         CFRelease(info);
 
+        // Filter out small devices (< 128M) since those are mounted .dmg files
+        if (size < 128000000)
+            return;
+
         context->count++;
     }
 }
