@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.2
+
+* Bug fixes
+  * On OSX, ignore mounted .dmg files when listing MicroSD locations
+  * Fix broken regression test on Alpine (the problem was with the test)
+
 ## v1.2.1
 
 * Bug fixes
