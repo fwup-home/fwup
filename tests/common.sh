@@ -50,6 +50,11 @@ case "$HOST_OS" in
     *)
 	# GNU stat
 	STAT_FILESIZE_FLAGS=-c%s
+
+        # Check for Busybox timeout which is a symlink
+	if [ -L $(which $TIMEOUT) ]; then
+		TIMEOUT=
+	fi
         ;;
 esac
 
