@@ -598,6 +598,16 @@ int main(int argc, char **argv)
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
 
+            struct stat st;
+            if (output_fd && (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0)) {
+                // The file permissions are read-only, but the user was able to
+                // open it writable. Root can do this. This is almost certainly
+                // a mistake so error out. Changing file permissions to make it
+                // writable is the way to get around this and the error message
+                // below describes it.
+                close(output_fd);
+                output_fd = -1;
+            }
             if (enable_trim) {
                 fwup_warnx("ignoring --enable_trim since operating on a regular file");
                 enable_trim = false;
