@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.3
+
+* Bug fixes
+  * Fail when writing to read-only regular files as root. This is almost
+    certainly accidental. This also fixes an issue when packaging fwup with
+    Alpine due to it running the regression tests in a fakeroot environment.
+
 ## v1.2.2
 
 * Bug fixes
