@@ -599,7 +599,7 @@ int main(int argc, char **argv)
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
 
             struct stat st;
-            if (output_fd && (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0)) {
+            if (output_fd >= 0 && (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0)) {
                 // The file permissions are read-only, but the user was able to
                 // open it writable. Root can do this. This is almost certainly
                 // a mistake so error out. Changing file permissions to make it
