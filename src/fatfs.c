@@ -140,8 +140,8 @@ static void close_open_files()
  */
 int fatfs_mkdir(struct block_cache *output, off_t block_offset, const char *dir)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     // Check if the directory already exists and is a directory.
     FILINFO info;
@@ -162,8 +162,8 @@ int fatfs_mkdir(struct block_cache *output, off_t block_offset, const char *dir)
  */
 int fatfs_setlabel(struct block_cache *output, off_t block_offset, const char *label)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
     CHECK("fat_setlabel", label, f_setlabel(label));
     return 0;
 }
@@ -178,8 +178,8 @@ int fatfs_setlabel(struct block_cache *output, off_t block_offset, const char *l
  */
 int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, const char *filename, bool file_must_exist)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     FRESULT rc = f_unlink(filename);
     switch (rc) {
@@ -208,8 +208,8 @@ int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, co
  */
 int fatfs_mv(struct block_cache *output, off_t block_offset, const char *cmd, const char *from_name, const char *to_name, bool force)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     // If forcing, remove the file first.
     if (force && fatfs_rm(output, block_offset, cmd, to_name, false))
@@ -229,8 +229,8 @@ int fatfs_mv(struct block_cache *output, off_t block_offset, const char *cmd, co
  */
 int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_name, const char *to_name)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     FIL fromfil;
     FIL tofil;
@@ -295,8 +295,8 @@ int fatfs_attrib(struct block_cache *output, off_t block_offset, const char *fil
  */
 int fatfs_touch(struct block_cache *output, off_t block_offset, const char *filename)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     FIL fil;
     CHECK("fat_touch", filename, f_open(&fil, filename, FA_OPEN_ALWAYS));
@@ -313,8 +313,8 @@ int fatfs_touch(struct block_cache *output, off_t block_offset, const char *file
  */
 int fatfs_exists(struct block_cache *output, off_t block_offset, const char *filename)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     FIL fil;
     CHECK("fatfs_exists", filename, f_open(&fil, filename, FA_OPEN_EXISTING));
@@ -332,8 +332,8 @@ int fatfs_exists(struct block_cache *output, off_t block_offset, const char *fil
  */
 int fatfs_file_matches(struct block_cache *output, off_t block_offset, const char *filename, const char *pattern)
 {
-    MAYBE_MOUNT(output, block_offset);
     close_open_files();
+    MAYBE_MOUNT(output, block_offset);
 
     FIL fil;
     CHECK("fatfs_file_matches can't open file", filename, f_open(&fil, filename, FA_READ));
@@ -382,11 +382,11 @@ cleanup:
 
 int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *filename)
 {
-    MAYBE_MOUNT(output, block_offset);
-
     // Check if this is the same file as a previous pwrite call
     if (current_file_ && strcmp(current_file_, filename) != 0)
         close_open_files();
+
+    MAYBE_MOUNT(output, block_offset);
 
     if (!current_file_) {
         // FA_CREATE_ALWAYS truncates if the file exists
@@ -406,11 +406,11 @@ int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *f
 
 int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *filename, int offset, const char *buffer, off_t size)
 {
-    MAYBE_MOUNT(output, block_offset);
-
     // Check if this is the same file as a previous pwrite call
     if (current_file_ && strcmp(current_file_, filename) != 0)
         close_open_files();
+
+    MAYBE_MOUNT(output, block_offset);
 
     if (!current_file_) {
         CHECK("fat_write can't open file", filename, f_open(&fil_, filename, FA_OPEN_ALWAYS | FA_WRITE));
