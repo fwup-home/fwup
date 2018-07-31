@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.4
+
+* Bug fixes
+  * Fixed an file truncation when writing to a FAT file partition and then
+    switch to write a file to a different FAT partion. see
+    https://github.com/fhunleth/fwup/pull/89. Thanks to @mikaelrobomagi for
+    finding and fixing this.
+
 ## v1.2.3
 
 * Bug fixes
