@@ -1,0 +1,148 @@
+#!/bin/sh
+
+#
+# Test exercises Github issue #89 where the last bytes of a file can be
+# truncated when working with multiple FAT partitions.
+#
+
+. ./common.sh
+
+# This was created from one of the device tree overlays on the Raspberry Pi
+base64_decode >$WORK/pi3-miniuart-bt.dtbo <<EOF
+0A3+7QAABaYAAAA4AAAE9AAAACgAAAARAAAAEAAAAAAAAACyAAAEvAAAAAAAAAAAAAAAAAAAAAAA
+AAABAAAAAAAAAAMAAAANAAAAAGJyY20sYmNtMjcwOAAAAAAAAAABZnJhZ21lbnRAMAAAAAAAAwAA
+AAQAAAAL/////wAAAAFfX292ZXJsYXlfXwAAAAADAAAACAAAABJkZWZhdWx0AAAAAAMAAAAEAAAA
+IP////8AAAADAAAABQAAACpva2F5AAAAAAAAAAIAAAACAAAAAWZyYWdtZW50QDEAAAAAAAMAAAAE
+AAAAC/////8AAAABX19vdmVybGF5X18AAAAAAwAAAAgAAAASZGVmYXVsdAAAAAADAAAADAAAACD/
+/////////wAAAAEAAAADAAAABQAAACpva2F5AAAAAAAAAAIAAAACAAAAAWZyYWdtZW50QDIAAAAA
+AAMAAAAEAAAAC/////8AAAABX19vdmVybGF5X18AAAAAAwAAAAAAAAAxAAAAAwAAAAAAAAA7AAAA
+AwAAAAAAAABJAAAAAgAAAAIAAAABZnJhZ21lbnRAMwAAAAAAAwAAAAQAAAAL/////wAAAAFfX292
+ZXJsYXlfXwAAAAADAAAACAAAADEAAAAgAAAAIQAAAAMAAAAEAAAAOwAAAAIAAAADAAAACAAAAEkA
+AAAAAAAAAgAAAAIAAAACAAAAAWZyYWdtZW50QDQAAAAAAAMAAAAEAAAAC/////8AAAABX19vdmVy
+bGF5X18AAAAAAWZha2VfYnRfY3RzAAAAAAMAAAAEAAAAMQAAAB8AAAADAAAABAAAADsAAAABAAAA
+AwAAAAQAAABTAAAAAQAAAAIAAAACAAAAAgAAAAFmcmFnbWVudEA1AAAAAAADAAAACQAAAFsvYWxp
+YXNlcwAAAAAAAAABX19vdmVybGF5X18AAAAAAwAAABUAAABnL3NvYy9zZXJpYWxAN2UyMDEwMDAA
+AAAAAAAAAwAAABUAAABvL3NvYy9zZXJpYWxAN2UyMTUwNDAAAAAAAAAAAgAAAAIAAAABX19zeW1i
+b2xzX18AAAAAAwAAACQAAAB3L2ZyYWdtZW50QDQvX19vdmVybGF5X18vZmFrZV9idF9jdHMAAAAA
+AgAAAAFfX2ZpeHVwc19fAAAAAAADAAAAFQAAAIMvZnJhZ21lbnRAMDp0YXJnZXQ6MAAAAAAAAAAD
+AAAAOQAAAIkvZnJhZ21lbnRAMC9fX292ZXJsYXlfXzpwaW5jdHJsLTA6MAAvZnJhZ21lbnRAMjp0
+YXJnZXQ6MAAAAAAAAAADAAAAFQAAAJQvZnJhZ21lbnRAMTp0YXJnZXQ6MAAAAAAAAAADAAAAOQAA
+AJovZnJhZ21lbnRAMS9fX292ZXJsYXlfXzpwaW5jdHJsLTA6MAAvZnJhZ21lbnRAMzp0YXJnZXQ6
+MAAAAAAAAAADAAAAJAAAAKUvZnJhZ21lbnRAMS9fX292ZXJsYXlfXzpwaW5jdHJsLTA6NAAAAAAD
+AAAAFQAAAK0vZnJhZ21lbnRANDp0YXJnZXQ6MAAAAAAAAAACAAAAAV9fbG9jYWxfZml4dXBzX18A
+AAAAAAAAAWZyYWdtZW50QDEAAAAAAAFfX292ZXJsYXlfXwAAAAADAAAABAAAACAAAAAIAAAAAgAA
+AAIAAAACAAAAAgAAAAljb21wYXRpYmxlAHRhcmdldABwaW5jdHJsLW5hbWVzAHBpbmN0cmwtMABz
+dGF0dXMAYnJjbSxwaW5zAGJyY20sZnVuY3Rpb24AYnJjbSxwdWxsAHBoYW5kbGUAdGFyZ2V0LXBh
+dGgAc2VyaWFsMABzZXJpYWwxAGZha2VfYnRfY3RzAHVhcnQwAHVhcnQwX3BpbnMAdWFydDEAdWFy
+dDFfcGlucwBidF9waW5zAGdwaW8A
+EOF
+
+cat >$WORK/wpa_supplicant.conf <<EOF
+ctrl_interface=/var/run/wpa_supplicant
+ap_scan=1
+
+network={
+   ssid="Eliasson"
+   psk="0123456789"
+}
+EOF
+
+cat >$CONFIG <<EOF
+define(UBOOT_PART_OFFSET, 60)
+define(UBOOT_PART_COUNT, 1000)
+
+define(ROOTFS1_PART_OFFSET, 77324)
+define(ROOTFS1_PART_COUNT, 289044)
+
+define(ROOTFS2_PART_OFFSET, 366368)
+define(ROOTFS2_PART_COUNT, 289044)
+
+define(USERDATA_PART_OFFSET, 1060)
+define(USERDATA_PART_COUNT, 1000)
+
+file-resource pi3-miniuart-bt.dtbo {
+    host-path = "pi3-miniuart-bt.dtbo"
+}
+file-resource wpa_supplicant.conf {
+    host-path = "wpa_supplicant.conf"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${UBOOT_PART_OFFSET}
+        block-count = \${UBOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${USERDATA_PART_OFFSET}
+        block-count = \${USERDATA_PART_COUNT}
+        type = 0xc # FAT32
+    }
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+        fat_mkfs(\${UBOOT_PART_OFFSET}, \${UBOOT_PART_COUNT})
+        fat_mkfs(\${USERDATA_PART_OFFSET}, \${USERDATA_PART_COUNT})
+    }
+
+    on-resource pi3-miniuart-bt.dtbo { fat_write(\${UBOOT_PART_OFFSET}, "pi3-miniuart-bt.dtbo") }
+    on-resource wpa_supplicant.conf { fat_write(\${USERDATA_PART_OFFSET}, "wpa_supplicant.conf") }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT.1 << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0021-0000
+Directory for ::/
+
+PI3-MI~1 DTB      1446 1980-01-01   0:00  pi3-miniuart-bt.dtbo
+        1 file                1 446 bytes
+                            490 496 bytes free
+
+EOF
+cat >$EXPECTED_OUTPUT.2 << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0021-0000
+Directory for ::/
+
+WPA_SU~1 CON       101 1980-01-01   0:00  wpa_supplicant.conf
+        1 file                  101 bytes
+                            491 520 bytes free
+
+EOF
+
+
+# Check that the directories look right
+MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@30720 > $ACTUAL_OUTPUT.1
+diff -w $EXPECTED_OUTPUT.1 $ACTUAL_OUTPUT.1
+
+MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@542720 > $ACTUAL_OUTPUT.2
+diff -w $EXPECTED_OUTPUT.2 $ACTUAL_OUTPUT.2
+
+# Check the contents of the files
+MTOOLS_SKIP_CHECK=1 mcopy -n -i $WORK/fwup.img@@30720 ::/pi3-miniuart-bt.dtbo $WORK/check.pi3-miniuart-bt.dtbo
+MTOOLS_SKIP_CHECK=1 mcopy -n -i $WORK/fwup.img@@542720 ::/wpa_supplicant.conf $WORK/check.wpa_supplicant.conf
+
+cmp $WORK/pi3-miniuart-bt.dtbo $WORK/check.pi3-miniuart-bt.dtbo
+cmp $WORK/wpa_supplicant.conf $WORK/wpa_supplicant.conf
+
+# Check for filesystem errors
+dd if=$WORK/fwup.img skip=60 of=$WORK/vfat1.img
+$FSCK_FAT $WORK/vfat1.img
+
+dd if=$WORK/fwup.img skip=1060 of=$WORK/vfat2.img
+$FSCK_FAT $WORK/vfat2.img
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
