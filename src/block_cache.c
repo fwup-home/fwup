@@ -160,7 +160,7 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
     } else {
         ssize_t bytes_read = pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
         if (bytes_read < 0) {
-            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s", BLOCK_CACHE_SEGMENT_SIZE, seg->offset, strerror(errno));
+            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s. \nTry again, but your SD card may be going bad.", BLOCK_CACHE_SEGMENT_SIZE, seg->offset, strerror(errno));
         } else if (bytes_read < BLOCK_CACHE_SEGMENT_SIZE) {
             // Didn't read enough bytes. This occurs if the destination media is
             // not a multiple of the segment size. Fill the remainder with zeros
