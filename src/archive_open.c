@@ -22,8 +22,6 @@
 
 #define DEFAULT_LIBARCHIVE_BLOCK_SIZE 16384
 
-extern bool fwup_framing;
-
 struct fwup_archive_data {
     size_t current_frame_remaining;
     bool is_eof;

@@ -23,6 +23,11 @@
 #include <sys/types.h>
 #include "../config.h"
 
+// Global options
+extern bool fwup_verbose;
+extern bool fwup_framing;
+extern bool fwup_unsafe;
+
 struct tm;
 
 int timestamp_to_tm(const char *timestamp, struct tm *tmp);
@@ -41,8 +46,6 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
 void handshake_exit();
-
-extern bool fwup_verbose;
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 

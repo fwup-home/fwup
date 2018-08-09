@@ -30,8 +30,6 @@
 #include <sys/stat.h>
 
 char *strptime(const char *s, const char *format, struct tm *tm);
-extern bool fwup_framing;
-extern enum fwup_progress_option fwup_progress_mode;
 
 static char *last_error_message = NULL;
 static char time_string[200] = {0};

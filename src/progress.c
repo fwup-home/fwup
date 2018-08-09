@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern enum fwup_progress_option fwup_progress_mode;
-
 // Elapsed time measurement maxes out at 2^31 ms = 24 days
 // NOTE: Windows builds on Travis report clock_gettime but fail. Windows
 //       builds on my laptop don't report clock_gettime and succeed.

@@ -51,6 +51,8 @@ struct fwup_progress {
     int start_time;
 };
 
+extern enum fwup_progress_option fwup_progress_mode;
+
 void progress_init(struct fwup_progress *progress, int progress_low, int progress_high);
 void progress_report(struct fwup_progress *progress, uint64_t progress_units);
 void progress_report_complete(struct fwup_progress *progress);

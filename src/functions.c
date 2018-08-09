@@ -101,8 +101,6 @@ static struct fun_info fun_table[] = {
     FUN_INFO(execute),
 };
 
-extern bool fwup_unsafe;
-
 static struct fun_info *lookup(int argc, const char **argv)
 {
     if (argc < 1) {
