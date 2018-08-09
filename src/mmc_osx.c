@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if __APPLE__
+#if defined(__APPLE__)
 #include "mmc.h"
 #include "util.h"
 

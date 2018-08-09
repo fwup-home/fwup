@@ -494,7 +494,7 @@ static inline size_t get_pagesize()
     if (cached_pagesize == 0) {
         long rc = sysconf(_SC_PAGESIZE);
         if (rc > 0)
-            cached_pagesize = rc;
+            cached_pagesize = (size_t) rc;
         else
             cached_pagesize = 4096; // Guess
     }

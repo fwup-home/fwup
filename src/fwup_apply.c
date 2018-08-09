@@ -44,7 +44,7 @@
 static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *output)
 {
     // Handle legacy require-partition1-offset=x constraint
-    int part1_offset = cfg_getint(task, "require-partition1-offset");
+    int part1_offset = (int) cfg_getint(task, "require-partition1-offset");
     if (part1_offset >= 0) {
         // Try to read the MBR. This won't work if the output
         // isn't seekable, but that's ok, since this constraint would
@@ -124,8 +124,8 @@ struct fwup_apply_data
     bool reading_stdin;
 
     // Sparse file handling
-    struct sparse_file_map sfm;
     int sparse_map_ix;
+    struct sparse_file_map sfm;
     off_t sparse_block_offset;
     off_t actual_offset;
     const void *sparse_leftover;
@@ -157,9 +157,9 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         *buffer = p->sparse_leftover;
         *offset = p->actual_offset;
         if (remaining_data_in_sparse_file_chunk >= p->sparse_leftover_len)
-            *len = p->sparse_leftover_len;
+            *len = (size_t) p->sparse_leftover_len;
         else
-            *len = remaining_data_in_sparse_file_chunk;
+            *len = (size_t) remaining_data_in_sparse_file_chunk;
 
         p->sparse_leftover += *len;
         p->sparse_leftover_len -= *len;

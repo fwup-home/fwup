@@ -115,7 +115,7 @@ static int run_on_each_path(cfg_t *sec, const char *paths, int (*func)(int, void
 static int compute_file_metadata(cfg_t *cfg)
 {
     cfg_t *sec;
-    int i = 0;
+    unsigned int i = 0;
 
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *paths = cfg_getstr(sec, "host-path");
