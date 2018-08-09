@@ -27,6 +27,7 @@
 extern bool fwup_verbose;
 extern bool fwup_framing;
 extern bool fwup_unsafe;
+extern bool fwup_handshake_on_exit;
 
 struct tm;
 
@@ -45,7 +46,6 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
-void handshake_exit();
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
@@ -98,8 +98,11 @@ off_t find_natural_units(off_t amount);
 #ifdef __GNUC__
 #define FWUP_ERR_ATTRS __attribute__ ((__noreturn__, __format__ (__printf__, 2, 3)))
 #define FWUP_WARN_ATTRS __attribute__ ((__format__ (__printf__, 1, 2)))
+#define FWUP_EXIT_ATTRS __attribute__ ((__noreturn__))
 #else
 #define FWUP_ERR_ATTRS
+#define FWUP_WARN_ATTRS
+#define FWUP_EXIT_ATTRS
 #endif
 
 // These are similar to functions provided by err.h, but they output in the framed
@@ -107,6 +110,7 @@ off_t find_natural_units(off_t amount);
 void fwup_err(int status, const char *format, ...) FWUP_ERR_ATTRS;
 void fwup_errx(int status, const char *format, ...) FWUP_ERR_ATTRS;
 void fwup_warnx(const char *format, ...) FWUP_WARN_ATTRS;
+void fwup_exit(int status) FWUP_EXIT_ATTRS;
 
 #define FWUP_MAX_PUBLIC_KEYS 10
 

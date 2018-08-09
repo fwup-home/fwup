@@ -313,7 +313,7 @@ static int fork_exec(const char *path, const char *arg)
         execl(path, path, arg, NULL);
 
         // Not supposed to reach here.
-        exit(EXIT_FAILURE);
+        fwup_exit(EXIT_FAILURE);
     } else {
         // parent
         int status;

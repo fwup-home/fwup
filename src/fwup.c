@@ -47,6 +47,7 @@
 bool fwup_verbose = false;
 bool fwup_framing = false;
 bool fwup_unsafe = false;
+bool fwup_handshake_on_exit = false;
 enum fwup_progress_option fwup_progress_mode = PROGRESS_MODE_OFF;
 
 static bool quiet = false;
@@ -290,7 +291,7 @@ static void autoselect_mmc_device(struct mmc_device *device)
             fprintf(stderr, "  %s (%s)\n", devices[i].path, sizestr);
         }
         fprintf(stderr, "Automatic selection not possible. Specify one using the -d option.\n");
-        exit(EXIT_FAILURE);
+        fwup_exit(EXIT_FAILURE);
     }
 }
 
@@ -371,7 +372,7 @@ int main(int argc, char **argv)
 
     if (argc == 1) {
         print_usage();
-        exit(EXIT_FAILURE);
+        fwup_exit(EXIT_FAILURE);
     }
 
     mmc_init();
@@ -393,8 +394,7 @@ int main(int argc, char **argv)
             break;
         case 'D': // --detect
             print_detected_devices();
-            exit(EXIT_SUCCESS);
-            break;
+            fwup_exit(EXIT_SUCCESS);
         case 'E': // --eject
             eject_on_success = true;
             break;
@@ -412,8 +412,7 @@ int main(int argc, char **argv)
             break;
         case 'h':
             print_usage();
-            exit(EXIT_SUCCESS);
-            break;
+            fwup_exit(EXIT_SUCCESS);
         case 'i':
             input_firmware = optarg;
             easy_mode = false;
@@ -477,15 +476,13 @@ int main(int argc, char **argv)
             break;
         case 'z':
             print_selected_device();
-            exit(EXIT_SUCCESS);
-            break;
+            fwup_exit(EXIT_SUCCESS);
         case '!': // --enable-trim
             enable_trim = true;
             break;
         case '@': // --version
             print_version();
-            exit(EXIT_SUCCESS);
-            break;
+            fwup_exit(EXIT_SUCCESS);
         case '#': // --no-eject
             eject_on_success = false;
             break;
@@ -526,11 +523,11 @@ int main(int argc, char **argv)
                 fwup_warnx("Ignoring public key since only %d supported", FWUP_MAX_PUBLIC_KEYS);
             break;
         case '~': // --exit-handshake
-            atexit(handshake_exit);
+            fwup_handshake_on_exit = true;
             break;
         default: /* '?' */
             print_usage();
-            exit(EXIT_FAILURE);
+            fwup_exit(EXIT_FAILURE);
         }
     }
 
@@ -620,7 +617,7 @@ int main(int argc, char **argv)
             //       that overlap what will be written.
             if (unmount_first) {
                 if (mmc_umount_all(mmc_device_path) < 0)
-                    exit(EXIT_FAILURE);
+                    fwup_exit(EXIT_FAILURE);
             }
 
             // Call out to platform-specific code to obtain a filehandle
@@ -711,5 +708,5 @@ int main(int argc, char **argv)
     for (int i = 0; i < num_public_keys; i++)
         free(public_keys[i]);
 
-    return 0;
+    fwup_exit(EXIT_SUCCESS);
 }

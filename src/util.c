@@ -331,19 +331,6 @@ int format_pretty(off_t amount, off_t units, char *out, size_t out_size)
     return snprintf(out, out_size, "%.2f %s", value, units_string);
 }
 
-void handshake_exit()
-{
-    if (write(STDOUT_FILENO, "\x1a", 1) != 1)
-        fprintf(stderr, "Error sending Ctrl+Z as part of the exit handshake");
-
-    for (;;) {
-        char throwaway[4096];
-        ssize_t rc = read(STDIN_FILENO, throwaway, sizeof(throwaway));
-        if (rc == 0 || (rc < 0 && errno != EINTR))
-            break;
-    }
-}
-
 void fwup_err(int status, const char *format, ...)
 {
     va_list ap;
@@ -361,7 +348,7 @@ void fwup_err(int status, const char *format, ...)
     }
     fwup_output(FRAMING_TYPE_ERROR, 0, s.str);
     free(s.str);
-    exit(status);
+    fwup_exit(status);
 
     va_end(ap);
 }
@@ -382,7 +369,7 @@ void fwup_errx(int status, const char *format, ...)
     }
     fwup_output(FRAMING_TYPE_ERROR, 0, s.str);
     free(s.str);
-    exit(status);
+    fwup_exit(status);
 
     va_end(ap);
 }
@@ -424,6 +411,31 @@ void fwup_output(const char *type, uint16_t code, const char *str)
         fwrite(str, 1, len, stdout);
 
     fflush(stdout);
+}
+
+static void handshake_exit(int status)
+{
+    char buffer[2] = {0x1a, (char) status};
+    if (write(STDOUT_FILENO, buffer, sizeof(buffer)) != sizeof(buffer))
+        fprintf(stderr, "Error sending Ctrl+Z as part of the exit handshake");
+
+    for (;;) {
+        char throwaway[4096];
+        ssize_t rc = read(STDIN_FILENO, throwaway, sizeof(throwaway));
+        if (rc == 0 || (rc < 0 && errno != EINTR))
+            break;
+    }
+}
+
+/*
+ * Capture calls to exit to handle the exit handshake for Erlang port integration.
+ */
+void fwup_exit(int status)
+{
+    if (fwup_handshake_on_exit)
+        handshake_exit(status);
+
+    exit(status);
 }
 
 /*

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Test that the `--exit-handshake` flag emits a CTRL+Z
+# Test that the `--exit-handshake` flag emits a CTRL+Z and then the exit code
 #
 
 . ./common.sh
@@ -20,6 +20,7 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 cat /dev/null | $FWUP_APPLY --exit-handshake -a -d $IMGFILE -i $FWFILE -t complete \
     | tr '\r' '.' \
     | tr '\032' '@' \
+    | tr '\0' '!' \
     | sed 's/\.$//g' \
     | grep -v '^Elapsed time' \
     > $WORK/actual_output.txt
@@ -27,7 +28,7 @@ cat /dev/null | $FWUP_APPLY --exit-handshake -a -d $IMGFILE -i $FWFILE -t comple
 cat >$WORK/expected_output.txt <<EOF
 .|                                    | 0%.|====================================| 100%
 Success!
-@
+@!
 EOF
 diff $WORK/expected_output.txt $WORK/actual_output.txt
 
