@@ -367,7 +367,7 @@ static int cb_validate_on_resource(cfg_t *cfg, cfg_opt_t *opt)
     const char *resource_name = cfg_title(sec);
 
     cfg_t *resource;
-    int i = 0;
+    unsigned int i = 0;
     while ((resource = cfg_getnsec(toplevel_cfg, "file-resource", i)) != NULL) {
         if (strcmp(cfg_title(resource), resource_name) == 0)
             return 0;
@@ -510,7 +510,7 @@ static cfg_opt_t task_opts[] = {
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };
-cfg_opt_t opts[] = {
+static cfg_opt_t opts[] = {
     CFG_STR("meta-product", 0, CFGF_NONE),
     CFG_STR("meta-description", 0, CFGF_NONE),
     CFG_STR("meta-version", 0, CFGF_NONE),
