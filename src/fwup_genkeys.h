@@ -17,6 +17,6 @@
 #ifndef FWUP_GENKEYS_H
 #define FWUP_GENKEYS_H
 
-int fwup_genkeys();
+int fwup_genkeys(const char *output_prefix);
 
 #endif // FWUP_LIST_H

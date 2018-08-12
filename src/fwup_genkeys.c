@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -57,8 +58,15 @@ cleanup:
     return rc;
 }
 
-int fwup_genkeys()
+/**
+ * @brief Generate a public/private signing key pair
+ * @param output_prefix if non-NULL, this is the prefix to the output file
+ * @return 0 on success
+ */
+int fwup_genkeys(const char *output_prefix)
 {
+    char pubkey_path[PATH_MAX];
+    char privkey_path[PATH_MAX];
     unsigned char pk[crypto_sign_PUBLICKEYBYTES];
     unsigned char sk[crypto_sign_SECRETKEYBYTES];
     int rc;
@@ -66,18 +74,24 @@ int fwup_genkeys()
     if (crypto_sign_keypair(pk, sk) < 0)
         ERR_RETURN("Error creating key pair");
 
-    OK_OR_CLEANUP(save_key("fwup-key.pub", pk, sizeof(pk)));
-    OK_OR_CLEANUP(save_key("fwup-key.priv", sk, sizeof(sk)));
+    if (!output_prefix)
+        output_prefix = "fwup-key";
 
-    fwup_output(FRAMING_TYPE_SUCCESS, 0,
-        "Firmware signing keys created and saved to fwup-key.pub and fwup-key.priv\n\n"
-        "Distribute fwup-key.pub with your system so that firmware updates can be\n"
-        "authenticated. Keep fwup-key.priv in a safe location.\n");
+    sprintf(pubkey_path, "%s.pub", output_prefix);
+    sprintf(privkey_path, "%s.priv", output_prefix);
+
+    OK_OR_RETURN(save_key(pubkey_path, pk, sizeof(pk)));
+    OK_OR_RETURN(save_key(privkey_path, sk, sizeof(sk)));
+
+    char message[512];
+    char *base_pubkey_path = basename(pubkey_path);
+    char *base_privkey_path = basename(privkey_path);
+    sprintf(message, "Firmware signing keys created and saved to '%.32s' and '%.32s'\n\n"
+                     "Distribute '%.32s' with your system so that firmware updates can be\n"
+                     "authenticated. Keep '%.32s' in a safe location.\n",
+            base_pubkey_path, base_privkey_path, base_pubkey_path, base_privkey_path);
+
+    fwup_output(FRAMING_TYPE_SUCCESS, 0, message);
 
     return 0;
-
-cleanup:
-    unlink("fwup-key.pub");
-    unlink("fwup-key.priv");
-    return rc;
 }

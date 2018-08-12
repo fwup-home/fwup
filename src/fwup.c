@@ -88,7 +88,7 @@ static void print_usage()
     printf("  --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)\n");
     printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
     printf("  -F, --framing Apply framing on stdin/stdout\n");
-    printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)\n");
+    printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv, or specify with -o)\n");
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
     printf("  -l, --list   List the available tasks in a firmware update\n");
     printf("  -m, --metadata   Print metadata in the firmware update\n");
@@ -344,8 +344,8 @@ int main(int argc, char **argv)
     int command = CMD_NONE;
 
     char *mmc_device_path = NULL;
-    const char *input_firmware = NULL;
-    const char *output_firmware = NULL;
+    const char *input_filename = NULL;
+    const char *output_filename = NULL;
     const char *task = NULL;
     const char *sparse_check = NULL;
     int sparse_check_size = 4096; // Arbitrary default.
@@ -414,7 +414,7 @@ int main(int argc, char **argv)
             print_usage();
             fwup_exit(EXIT_SUCCESS);
         case 'i':
-            input_firmware = optarg;
+            input_filename = optarg;
             easy_mode = false;
             break;
         case 'l': // --list
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
             easy_mode = false;
             break;
         case 'o':
-            output_firmware = optarg;
+            output_filename = optarg;
             easy_mode = false;
             break;
         case 'p':
@@ -546,7 +546,7 @@ int main(int argc, char **argv)
     // fuss. Some options are supported.
     if (easy_mode && optind == argc - 1) {
         command = CMD_APPLY;
-        input_firmware = argv[optind++];
+        input_filename = argv[optind++];
         if (!task)
             task = "complete";
     }
@@ -557,10 +557,10 @@ int main(int argc, char **argv)
 
     // Normalize the firmware filenames in the case that the user wants
     // to use stdin/stdout
-    if (input_firmware && strcmp(input_firmware, "-") == 0)
-        input_firmware = 0;
-    if (output_firmware && strcmp(output_firmware, "-") == 0)
-        output_firmware = 0;
+    if (input_filename && strcmp(input_filename, "-") == 0)
+        input_filename = 0;
+    if (output_filename && strcmp(output_filename, "-") == 0)
+        output_filename = 0;
 
     switch (command) {
     case CMD_NONE:
@@ -573,7 +573,7 @@ int main(int argc, char **argv)
             fwup_errx(EXIT_FAILURE, "specify a task (-t)");
 
         if (!mmc_device_path)
-            mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_firmware);
+            mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_filename);
 
         if (quiet)
             fwup_progress_mode = PROGRESS_MODE_OFF;
@@ -640,7 +640,7 @@ int main(int argc, char **argv)
         (void) fcntl(output_fd, F_SETFD, FD_CLOEXEC);
 #endif
 
-        if (fwup_apply(input_firmware,
+        if (fwup_apply(input_filename,
                        task,
                        output_fd,
                        &progress,
@@ -661,37 +661,37 @@ int main(int argc, char **argv)
     }
 
     case CMD_CREATE:
-        if (fwup_create(configfile, output_firmware, signing_key, compression_level) < 0)
+        if (fwup_create(configfile, output_filename, signing_key, compression_level) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_LIST:
-        if (fwup_list(input_firmware, public_keys) < 0)
+        if (fwup_list(input_filename, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_METADATA:
-        if (fwup_metadata(input_firmware, public_keys) < 0)
+        if (fwup_metadata(input_filename, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_GENERATE_KEYS:
-        if (fwup_genkeys() < 0)
+        if (fwup_genkeys(output_filename) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_SIGN:
-        if (fwup_sign(input_firmware, output_firmware, signing_key) < 0)
+        if (fwup_sign(input_filename, output_filename, signing_key) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
 
     case CMD_VERIFY:
-        if (fwup_verify(input_firmware, public_keys) < 0)
+        if (fwup_verify(input_filename, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;

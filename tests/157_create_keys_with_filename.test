@@ -1,0 +1,45 @@
+#!/bin/sh
+
+#
+# Test that you can create keys with names of your choice.
+#
+
+. ./common.sh
+
+$FWUP_CREATE -g -o "$WORK/my-key"
+
+if ! [ -e "$WORK/my-key.pub" ]; then
+    echo "Can't find $WORK/my-key.pub"
+    exit 1
+fi
+
+if ! [ -e "$WORK/my-key.priv" ]; then
+    echo "Can't find $WORK/my-key.priv"
+    exit 1
+fi
+
+# Check that the keys are the expected base64 length
+if [ "$(wc -c "$WORK/my-key.pub" | awk '{print $1}')" -ne 44 ]; then
+    echo "my-key.pub isn't 44 bytes"
+    exit 1
+fi
+if [ "$(wc -c "$WORK/my-key.priv" | awk '{print $1}')" -ne 88 ]; then
+    echo "my-key.priv isn't 88 bytes"
+    exit 1
+fi
+
+# Check that overwriting keys fails
+if $FWUP_CREATE -g -o "$WORK/my-key"; then
+    echo "Expected fwup to fail when it would have overwritten previously generated keys"
+    exit 1
+fi
+
+if ! [ -e "$WORK/my-key.pub" ]; then
+    echo "Did $WORK/my-key.pub get erased?"
+    exit 1
+fi
+
+if ! [ -e "$WORK/my-key.priv" ]; then
+    echo "Did $WORK/my-key.priv get erased?"
+    exit 1
+fi

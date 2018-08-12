@@ -169,6 +169,7 @@ TESTS = 001_simple_fw.test \
 	153_no_uuid_metadata.test \
 	154_bogus_uuid_metadata.test \
 	155_friendly_meta_uuid.test \
-	156_fat_truncation_bug.test
+	156_fat_truncation_bug.test \
+	157_create_keys_with_filename.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
