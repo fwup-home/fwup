@@ -69,7 +69,6 @@ int fwup_genkeys(const char *output_prefix)
     char privkey_path[PATH_MAX];
     unsigned char pk[crypto_sign_PUBLICKEYBYTES];
     unsigned char sk[crypto_sign_SECRETKEYBYTES];
-    int rc;
 
     if (crypto_sign_keypair(pk, sk) < 0)
         ERR_RETURN("Error creating key pair");
