@@ -1,0 +1,83 @@
+#!/bin/sh
+
+#
+# Test out including fragments almost anywhere in a fwup.conf
+#
+
+. ./common.sh
+
+cat >$CONFIG.file-resource <<EOF
+	host-path = "${TESTFILE_1K}"
+EOF
+cat >$CONFIG.on-init <<EOF
+        mbr_write(mbr-a)
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+EOF
+cat >$CONFIG.on-resource <<EOF
+        fat_write(\${BOOT_PART_OFFSET}, "stuff")
+EOF
+cat >$CONFIG.on-finish <<EOF
+        fat_mv(\${BOOT_PART_OFFSET}, "stuff", "1K.bin")
+EOF
+cat >$CONFIG.task <<EOF
+    on-init {
+        include("$CONFIG.on-init")
+    }
+EOF
+cat >$CONFIG.root <<EOF
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+EOF
+
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+include("$CONFIG.root")
+
+file-resource 1K.bin {
+    include("$CONFIG.file-resource")
+}
+
+task complete {
+    include("$CONFIG.task")
+    on-resource 1K.bin {
+        include("$CONFIG.on-resource")
+    }
+    on-finish {
+        include("$CONFIG.on-finish")
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0021-0000
+Directory for ::/
+
+1K       bin      1024 1980-01-01   0:00
+        1 file                1 024 bytes
+                         38 909 440 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

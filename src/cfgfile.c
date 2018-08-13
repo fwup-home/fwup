@@ -387,6 +387,7 @@ static int cb_validate_on_resource(cfg_t *cfg, cfg_opt_t *opt)
 #endif
 
 static cfg_opt_t file_resource_opts[] = {
+    CFG_FUNC("include", &cb_include),
     CFG_STR("host-path", 0, CFGF_NONE),
     CFG_BOOL("skip-holes", cfg_true, CFGF_NONE),
 
@@ -449,6 +450,7 @@ static cfg_opt_t uboot_environment_opts[] = {
 
 #define CFG_ON_EVENT_FUNCTIONS(CB) \
     CFG_STR_LIST("funlist", 0, CFGF_NONE), \
+    CFG_FUNC("include", &cb_include), \
     CFG_FUNC("raw_memset", CB), \
     CFG_FUNC("raw_write", CB), \
     CFG_FUNC("fat_mkfs", CB), \
@@ -472,7 +474,7 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("info", CB), \
     CFG_FUNC("path_write", CB), \
     CFG_FUNC("pipe_write", CB), \
-    CFG_FUNC("execute", CB) \
+    CFG_FUNC("execute", CB)
 
 static cfg_opt_t task_on_init_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),
@@ -492,6 +494,8 @@ static cfg_opt_t task_on_resource_opts[] = {
     CFG_END()
 };
 static cfg_opt_t task_opts[] = {
+    CFG_FUNC("include", &cb_include), \
+
     CFG_STR_LIST("reqlist", 0, CFGF_NONE), // Internal - use functions below
     CFG_FUNC("require-partition-offset", cb_task_require_func),
     CFG_FUNC("require-fat-file-exists", cb_task_require_func),
