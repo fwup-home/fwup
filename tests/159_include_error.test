@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#
+# Test that including an empty variable gives a reasonable error.
+# At one time, this said lex error.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+include(\${variable_that_doesnt_exist})
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE 2> $WORK/error.out; then
+    echo "Expected an error when including a file that doesn't exist?"
+    exit 1
+fi
+
+if ! grep "Not a regular file" $WORK/error.out >/dev/null; then
+    echo "Didn't get the error message that I expected"
+    exit 1
+fi
+

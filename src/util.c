@@ -269,6 +269,16 @@ bool file_exists(const char *path)
 }
 
 /**
+ * Return true if the file exists.
+ */
+bool is_regular_file(const char *path)
+{
+    struct stat st;
+    int rc = stat(path, &st);
+    return rc == 0 && (st.st_mode & S_IFREG);
+}
+
+/**
  * Return a string that described the units.
  */
 const char *units_to_string(off_t units)

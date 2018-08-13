@@ -204,6 +204,15 @@ static int cb_include(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
 
     char *updated_path;
     update_relative_path(cfg->filename, argv[0], &updated_path);
+
+    // The default cfg_include gives lexer errors for some bad inputs. E.g.,
+    // specifying a directory. Check the file here to give a better error
+    // message.
+    if (!is_regular_file(updated_path)) {
+        cfg_error(cfg, "Cannot include '%s': Not a regular file", argv[0]);
+        return -1;
+    }
+
     const char *newargv[2];
     newargv[0] = updated_path;
     newargv[1] = NULL;

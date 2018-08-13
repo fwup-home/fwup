@@ -46,6 +46,7 @@ int archive_filename_to_resource(const char *name, char *result, size_t maxlengt
 
 bool will_be_regular_file(const char *path);
 bool file_exists(const char *path);
+bool is_regular_file(const char *path);
 
 #define NUM_ELEMENTS(X) (sizeof(X) / sizeof(X[0]))
 
