@@ -202,14 +202,25 @@ static int cb_include(cfg_t *cfg, cfg_opt_t *opt, int argc, const char **argv)
     if (check_param_count(cfg, opt, argc, 1) < 0)
         return -1;
 
+    const char *path = argv[0];
+    if (path[0] == '\0') {
+        cfg_error(cfg, "Cannot include the contents of an undefined variable");
+        return -1;
+    }
+
     char *updated_path;
-    update_relative_path(cfg->filename, argv[0], &updated_path);
+    update_relative_path(cfg->filename, path, &updated_path);
 
     // The default cfg_include gives lexer errors for some bad inputs. E.g.,
-    // specifying a directory. Check the file here to give a better error
-    // message.
+    // specifying a directory. Check the file here to give better error
+    // messages.
+    if (!file_exists(updated_path)) {
+        cfg_error(cfg, "Cannot include '%s': File not found", path);
+        return -1;
+    }
+
     if (!is_regular_file(updated_path)) {
-        cfg_error(cfg, "Cannot include '%s': Not a regular file", argv[0]);
+        cfg_error(cfg, "Cannot include '%s': Not a regular file", path);
         return -1;
     }
 

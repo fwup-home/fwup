@@ -4,6 +4,8 @@
 # Test that including an empty variable gives a reasonable error.
 # At one time, this said lex error.
 #
+# This also tests including directories and missing files.
+#
 
 . ./common.sh
 
@@ -12,12 +14,36 @@ include(\${variable_that_doesnt_exist})
 EOF
 
 if $FWUP_CREATE -c -f $CONFIG -o $FWFILE 2> $WORK/error.out; then
-    echo "Expected an error when including a file that doesn't exist?"
+    echo "Expected an error when including an undefined variable?"
     exit 1
 fi
 
-if ! grep "Not a regular file" $WORK/error.out >/dev/null; then
-    echo "Didn't get the error message that I expected"
+if ! grep "undefined variable" $WORK/error.out >/dev/null; then
+    echo "Didn't get the undefined variable message that I was expecting"
+    exit 1
+fi
+
+cat >$CONFIG.2 <<EOF
+include($WORK)
+EOF
+if $FWUP_CREATE -c -f $CONFIG.2 -o $FWFILE 2> $WORK/error2.out; then
+    echo "Expected an error when including an undefined variable?"
+    exit 1
+fi
+if ! grep "Not a regular file" $WORK/error2.out >/dev/null; then
+    echo "Didn't get the 'not a regular file' error message that I expected"
+    exit 1
+fi
+
+cat >$CONFIG.3 <<EOF
+include($WORK/file_not_found.conf)
+EOF
+if $FWUP_CREATE -c -f $CONFIG.3 -o $FWFILE 2> $WORK/error3.out; then
+    echo "Expected an error when including a file that doesn't exist?"
+    exit 1
+fi
+if ! grep "File not found" $WORK/error3.out >/dev/null; then
+    echo "Didn't get the error message that I expected for file not found"
     exit 1
 fi
 
