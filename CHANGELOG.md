@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.5
+
+* Bug fixes
+  * When creating .fw files, include() only worked at the root level. It's now
+    possible to include files in most places. Thanks to @mobileoverlord for
+    reporting this.
+  * When generating keys, it's now possible to specify a prefix path for where
+    to put the outputs.
+  * Error message improvements
+
 ## v1.2.4
 
 * Bug fixes
