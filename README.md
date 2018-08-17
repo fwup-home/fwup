@@ -50,7 +50,7 @@ Here's a full list of features:
     functionality.
 
 Internally, `fwup` has many optimizations to speed up low level disk writes over
-what can easily be acheived with `dd(1)`. It orders, Flash erase block aligns,
+what can easily be achieved with `dd(1)`. It orders, Flash erase block aligns,
 and can skip writing large unused sections to minimize write time. The goal has
 been to make updates fast enough that iterative development cycles.
 
@@ -60,12 +60,15 @@ The simplest way to install `fwup` is via a package manager or installer.
 
 On OSX, `fwup` is in [homebrew](http://brew.sh/):
 
-    brew install fwup
+```sh
+brew install fwup
+```
 
 On Linux, download and install the appropriate package for your platform:
 
 * [Debian/Ubuntu AMD64 .deb](https://github.com/fhunleth/fwup/releases/download/v1.2.5/fwup_1.2.5_amd64.deb)
 * [Raspbian armhf .deb](https://github.com/fhunleth/fwup/releases/download/v1.2.5/fwup_1.2.5_armhf.deb)
+* Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
 * [RedHat/CentOS x86\_64 .rpm](https://github.com/fhunleth/fwup/releases/download/v1.2.5/fwup-1.2.5-1.x86_64.rpm)
 * Arch Linux - See [fwup package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 * Buildroot - Support is included upstream since the 2016.05 release
@@ -161,7 +164,7 @@ Create a firmware update archive:
   $ fwup -c -f fwupdate.conf -o myfirmware.fw
 
 Apply the firmware to an attached SDCard. This would normally be run on the host
-where it would auto-detect an SDCard and initalize it using the 'complete' task:
+where it would auto-detect an SDCard and initialize it using the 'complete' task:
 
   $ fwup -a -i myfirmware.fw -t complete
 
@@ -252,7 +255,7 @@ definition could come from a similarly named environment variable. This makes
 it possible to override a constant in a build script.
 
 In some cases, having the last definition win is preferable for constants that
-never ever should be overriden by the environment or by earlier calls to
+never ever should be overridden by the environment or by earlier calls to
 `define`. For this behavior, use `define!`:
 
     define!(MY_CONSTANT, "Can't override this")
@@ -696,7 +699,7 @@ Progress       | "PR"         | The next two bytes are the progress (0-100) as a
 A related option is `--exit-handshake`. This option was specifically implemented
 for Erlang to support integration with its port process feature. It may be
 useful for other integrations where it's more convenient to wait for a final
-character coming from a subprocress rather than watching for an exit. The
+character coming from a subprocess rather than watching for an exit. The
 problem with Erlang is that it's easy for the message that the process exited to
 beat the final characters coming out stdout. When this option is enabled, `fwup`
 expects the calling process to close `stdin` when it's ready for `fwup` to exit.
@@ -805,7 +808,7 @@ performance can only be so fast on some systems.
 
 ## How do I update /dev/mmcblock0boot0
 
-The special eMMC boot partitions are updateable the same way as the main
+The special eMMC boot partitions are updatable the same way as the main
 partition. When I create .fw files for manufacturing, I create two targets, a
 `complete` target that updates the main eMMC and a `bootloader` target that
 updates `mmcblock0boot0`. The manufacturing script runs `fwup` twice: once for
