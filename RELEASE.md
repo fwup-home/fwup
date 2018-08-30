@@ -7,7 +7,7 @@
     it up to the latest master. Push and wait for travis-ci. Eventually the
     results will be at https://scan.coverity.com/projects/fhunleth-fwup. Fix
     issues.
- 3. Update `CHANGELOG.md` with a bulletpoint list of new features and bug fixes
+ 3. Update `CHANGELOG.md` with a bullet-point list of new features and bug fixes
  4. Remove the `-dev` from the version numbers in `CHANGELOG.md` and `VERSION`.
     If doing an `rc` release, mark them appropriately.
  5. For non-rc releases, update the version numbers in `README.md`. They'll be

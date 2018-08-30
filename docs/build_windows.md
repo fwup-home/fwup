@@ -1,7 +1,7 @@
 # Building from Source for Windows
 
 Building on Windows is complicated due to the required 3rd party libraries.
-As a result, the Windows build is done on Linux using a crosscompile and
+As a result, the Windows build is done on Linux using a cross-compile and
 Wine to run the regression tests.
 
 First, make sure that 32-bit builds work and install dependencies:
@@ -39,4 +39,3 @@ To install a pre-release Chocolatey Package:
 ```sh
 choco install fwup.*.nupkg -pre
 ```
-

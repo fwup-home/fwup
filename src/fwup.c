@@ -82,11 +82,11 @@ static void print_usage()
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
     printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");
-    printf("  -E, --eject Eject removeable media after successfully writing firmware.\n");
+    printf("  -E, --eject Eject removable media after successfully writing firmware.\n");
     printf("  --no-eject Do not eject media after writing firmware\n");
     printf("  --enable-trim Enable use of the hardware TRIM command\n");
     printf("  --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)\n");
-    printf("  -f <fwupdate.conf> Specify the firmware update configuration file\n");
+    printf("  -f <fwup.conf> Specify the firmware update configuration file\n");
     printf("  -F, --framing Apply framing on stdin/stdout\n");
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv, or specify with -o)\n");
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
@@ -124,10 +124,10 @@ static void print_usage()
     printf("\n");
     printf("Create a firmware update archive:\n");
     printf("\n");
-    printf("  $ %s -c -f fwupdate.conf -o myfirmware.fw\n", program_name);
+    printf("  $ %s -c -f fwup.conf -o myfirmware.fw\n", program_name);
     printf("\n");
     printf("Apply the firmware to an attached SDCard. This would normally be run on the host\n");
-    printf("where it would auto-detect an SDCard and initalize it using the 'complete' task:\n");
+    printf("where it would auto-detect an SDCard and initialize it using the 'complete' task:\n");
     printf("\n");
     printf("  $ %s -a -i myfirmware.fw -t complete\n", program_name);
     printf("\n");

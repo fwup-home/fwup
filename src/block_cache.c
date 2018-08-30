@@ -160,7 +160,7 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
     } else {
         ssize_t bytes_read = pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
         if (bytes_read < 0) {
-            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s.\nPossible causes are that the destination is too small, the device (e.g., an SD card) is going bad, or the connection to it is flakey.",
+            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s.\nPossible causes are that the destination is too small, the device (e.g., an SD card) is going bad, or the connection to it is flaky.",
                     BLOCK_CACHE_SEGMENT_SIZE, seg->offset, strerror(errno));
         } else if (bytes_read < BLOCK_CACHE_SEGMENT_SIZE) {
             // Didn't read enough bytes. This occurs if the destination media is
@@ -399,7 +399,7 @@ int block_cache_flush(struct block_cache *bc)
     // remove writes by design.
     //
     // A related observation is that the write to a block has an error, the user
-    // can have confidence that the subsequent writes as sepecifed in the fwup.conf
+    // can have confidence that the subsequent writes as specifed in the fwup.conf
     // did not occur.
 
     struct block_cache_segment *sorted_segments[BLOCK_CACHE_NUM_SEGMENTS];

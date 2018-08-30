@@ -42,7 +42,7 @@ Here's a full list of features:
 1. Firmware archive digital signature creation and verification
 
 1. Sparse file support to reduce number of bytes that need to be written when
-   initializing large filesystems (see section on sparse files)
+   initializing large file systems (see section on sparse files)
 
 1. Permissive license (Apache 2.0 License - see end of doc)
 
@@ -123,11 +123,11 @@ Options:
   -c, --create  Create the firmware update
   -d <file> Device file for the memory card
   -D, --detect List attached SDCards or MMC devices and their sizes
-  -E, --eject Eject removeable media after successfully writing firmware.
+  -E, --eject Eject removable media after successfully writing firmware.
   --no-eject Do not eject media after writing firmware
   --enable-trim Enable use of the hardware TRIM command
   --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)
-  -f <fwupdate.conf> Specify the firmware update configuration file
+  -f <fwup.conf> Specify the firmware update configuration file
   -F, --framing Apply framing on stdin/stdout
   -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
@@ -161,7 +161,7 @@ Examples:
 
 Create a firmware update archive:
 
-  $ fwup -c -f fwupdate.conf -o myfirmware.fw
+  $ fwup -c -f fwup.conf -o myfirmware.fw
 
 Apply the firmware to an attached SDCard. This would normally be run on the host
 where it would auto-detect an SDCard and initialize it using the 'complete' task:
@@ -224,8 +224,8 @@ firmware archives. During creation, `fwup` embeds a processed version of the
 configuration file into the archive that has been stripped of comments, has had
 all variables resolved, and has some additional useful metadata added.
 Configuration files are organized into scoped blocks and options are set using
-a `key = value` syntax. Additionally, configuration files may include configuration
-fragments and other files by calling `include("filename")`.
+a `key = value` syntax. Additionally, configuration files may include
+configuration fragments and other files by calling `include("filename")`.
 
 ## Environment variables
 
@@ -325,7 +325,7 @@ file-resource zImage {
 
 Resources are usually stored in the `data` directory of the firmware archive.
 This is transparent for most users. If you need to make the `.fw` file
-interoperate with other software, it is sometimes useful to embed a file into
+work with other software, it is sometimes useful to embed a file into
 the archive at another location. This can be done by specifying an absolute
 path resource as follows:
 

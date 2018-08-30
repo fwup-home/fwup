@@ -24,7 +24,7 @@
 /**
  * The pad to block writer takes bytes written to any offset/size and aligns them
  * block boundaries. While it is possible to jump around when writing, this code
- * is not general purpose. All writes are expected to be sequentual and possibly with
+ * is not general purpose. All writes are expected to be sequential and possibly with
  * holes. There are boundary conditions that are not handled that should be handled
  * in a completely general purpose implementation. This can be seen in that the code
  * never issues any reads. This is ok, since the only use in fwup is to convert the
@@ -66,7 +66,7 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
             ptbw->index += to_skip;
         }
 
-        // Check if we're sync'd up.
+        // Check if we're synced up.
         if (current_index == offset) {
             size_t to_copy = min(sizeof(ptbw->buffer) - ptbw->index, count);
             memcpy(&ptbw->buffer[ptbw->index], buf, to_copy);

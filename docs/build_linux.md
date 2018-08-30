@@ -2,14 +2,15 @@
 
 While `fwup` is not a particularly complicated program, it is not trivial to
 build due to a couple project dependencies. If you are not comfortable with
-building applications from source, please consider one of the pre-build packages.
+building applications from source, please consider one of the pre-build
+packages.
 
-Normally Linux applications use dynamic linking. The recommendation for `fwup` is
-to statically link to avoid pulling in out-of-date versions of `libconfuse` and
-`libsodium`. The next section covers static linking. If you are a package
-maintainer or are not worried about old versions, read the second section. At the
-moment, using an old version of `libconfuse` results in one broken regression test
-that normally is not a problem for host use.
+Normally Linux applications use dynamic linking. The recommendation for `fwup`
+is to statically link to avoid pulling in out-of-date versions of `libconfuse`
+and `libsodium`. The next section covers static linking. If you are a package
+maintainer or are not worried about old versions, read the second section. At
+the moment, using an old version of `libconfuse` results in one broken
+regression test that normally is not a problem for host use.
 
 ## Common dependencies
 
@@ -41,9 +42,9 @@ make install
 
 ### Installing dependencies
 
-The installation instructions vary based on your Linux distribution. Please verify
-each step in case things have changed since this was written (and create a pull
-request on GitHub if you could.)
+The installation instructions vary based on your Linux distribution. Please
+verify each step in case things have changed since this was written (and create
+a pull request on GitHub if you could.)
 
 On Ubuntu:
 
