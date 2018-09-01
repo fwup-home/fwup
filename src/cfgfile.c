@@ -22,7 +22,7 @@
 #include "util.h"
 #include "archive_open.h"
 #include "eval_math.h"
-#include "3rdparty/semver.c/semver.h"
+#include "../3rdparty/semver.c/semver.h"
 
 #include <stdlib.h>
 #include <string.h>
