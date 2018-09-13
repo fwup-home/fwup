@@ -427,7 +427,7 @@ static void handshake_exit(int status)
 {
     char buffer[2] = {0x1a, (char) status};
     if (write(STDOUT_FILENO, buffer, sizeof(buffer)) != sizeof(buffer))
-        fprintf(stderr, "Error sending Ctrl+Z as part of the exit handshake");
+        fprintf(stderr, "fwup: Error sending Ctrl+Z as part of the exit handshake");
 
     for (;;) {
         char throwaway[4096];
