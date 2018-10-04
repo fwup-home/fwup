@@ -104,6 +104,11 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
         if (size < 128000000)
             return;
 
+        // Filter out large devices (> 65 GiB) since those are probably backup drives
+        // and not SDCards.
+        if (size > (65 * ONE_GiB))
+            return;
+
         context->count++;
     }
 }
@@ -145,7 +150,6 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     context.max_devices = max_devices;
     context.count = 0;
     DARegisterDiskAppearedCallback(da_session, toMatch, scan_disk_appeared_cb, &context);
-
 
     // Scan for removable media for 100 ms
     // NOTE: It's not clear how long the event loop has to run. Ideally, it would
