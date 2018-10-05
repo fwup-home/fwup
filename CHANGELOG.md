@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.6
+
+* Bug fixes
+  * Fix missing include on some platforms
+  * Limit size of autodetected removable drives on OSX to avoid Time Machine
+    backup drives from being reported
+
 ## v1.2.5
 
 * Bug fixes
