@@ -560,7 +560,7 @@ trim(block_offset, count)               | 0.15.0 | Discard any data previously w
 uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is corrupt, reinitialize it. If not, then do nothing
 uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
 uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
-uboot_unsetenv(my_uboot_env, name, value) | 0.10.0 | Unset the specified U-boot variable
+uboot_unsetenv(my_uboot_env, name)      | 0.10.0 | Unset the specified U-boot variable
 
 ## Sparse files
 
