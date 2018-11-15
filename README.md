@@ -840,6 +840,23 @@ The first two options require the versions to be added to the `fwup.conf` file.
 They are usually added using environment variables so that the version numbers
 are not hardcoded.
 
+## How do I get the firmware metadata formatted as JSON
+
+Use `jq`!
+
+```sh
+$ fwup -m -i $FW_FILE | jq -n -R 'reduce inputs as $i ({}; . + ($i | (match("([^=]*)=\"(.*)\"") | .captures | {(.[0].string) : .[1].string})))'
+{
+  "meta-product": "My Awesome Product",
+  "meta-version": "0.1.0",
+  "meta-author": "All of us",
+  "meta-platform": "imx6",
+  "meta-architecture": "arm",
+  "meta-creation-date": "2018-11-07T14:46:38Z",
+  "meta-uuid": "7add3c6d-230c-5bf1-77ec-5f785e91be40"
+}
+```
+
 ## How do I use "raw" NAND Flash
 
 Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See
