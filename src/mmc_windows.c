@@ -205,8 +205,33 @@ int mmc_umount_all(const char *mmc_device)
 
 int mmc_eject(const char *mmc_device)
 {
-    // Windows doesn't complain if you don't eject an unmounted device
-    (void) mmc_device;
+    WCHAR drive_path[MAX_PATH] = L"";
+    MultiByteToWideChar(CP_UTF8, 0, mmc_device, -1, drive_path, sizeof(drive_path));
+
+    HANDLE drive_handle;
+    drive_handle = CreateFile(drive_path,
+                              GENERIC_READ | GENERIC_WRITE,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                              NULL,
+                              OPEN_EXISTING,
+                              0,
+                              NULL);
+
+    if (drive_handle == INVALID_HANDLE_VALUE)
+        fwup_errx(EXIT_FAILURE, "Error re-opening'%S' (Error %lu)", drive_path, GetLastError());
+
+    BOOL status = DeviceIoControl(drive_handle,
+                                  IOCTL_STORAGE_EJECT_MEDIA,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  0,
+                                  NULL,
+                                  NULL);
+    CloseHandle(drive_handle);
+    if (!status)
+        fwup_errx(EXIT_FAILURE, "Error ejecting '%S' (Error %lu)", drive_path, GetLastError());
+
     return 0;
 }
 
