@@ -1,6 +1,10 @@
 # Changelog
 
-## v1.2.7-dev
+## v1.2.7
+
+* Bug fixes
+  * Implement eject on Windows to avoid automount after burn
+  * Update libconfuse to pull in security fix (affects static builds only)
 
 ## v1.2.6
 
