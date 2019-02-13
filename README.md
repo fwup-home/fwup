@@ -479,6 +479,40 @@ mbr mbr-a {
 }
 ```
 
+Sometimes it's useful to have the final partition fill the remainder of the
+storage. This is needed if your target's storage size is unknown and you need
+to use as much of it as possible. The `expand` option requests that `fwup`
+grow the `block-count` to be as large as possible. When using `expand`, the
+`block-count` is now the minimum partition size. Only the final partition can
+be expandable. Here's an example:
+
+```conf
+mbr mbr-a {
+        partition 0 {
+                block-offset = ${BOOT_PART_OFFSET}
+                block-count = ${BOOT_PART_COUNT}
+                type = 0x1 # FAT12
+                boot = true
+        }
+        partition 1 {
+                block-offset = ${ROOTFS_A_PART_OFFSET}
+                block-count = ${ROOTFS_A_PART_COUNT}
+                type = 0x83 # Linux
+        }
+        partition 2 {
+                block-offset = ${ROOTFS_B_PART_OFFSET}
+                block-count = ${ROOTFS_B_PART_COUNT}
+                type = 0x83 # Linux
+        }
+        partition 3 {
+                block-offset = ${APP_PART_OFFSET}
+                block-count = ${APP_PART_COUNT}
+                type = 0x83 # Linux
+                expand = true
+        }
+}
+```
+
 ## U-Boot environment
 
 For systems using the U-Boot bootloader, some support is included for modifying

@@ -84,6 +84,9 @@ struct block_cache {
     bool trimmed_remainder; // true if segments after end of bitfield are trimmed
     bool hw_trim_enabled;
 
+    // This tracks the number of blocks on the destination
+    uint32_t num_blocks;
+
     // Asynchronous writes
 #if USE_PTHREADS
     pthread_t writer_thread;

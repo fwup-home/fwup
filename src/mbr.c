@@ -33,9 +33,11 @@
  * @param partitions the partitions
  * @return 0 if successful
  */
-int mbr_verify(const struct mbr_partition partitions[4])
+static int mbr_verify(const struct mbr_partition partitions[4])
 {
+    bool expanding = false;
     int i;
+
     // Check for overlap
     for (i = 0; i < 4; i++) {
         if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0)
@@ -45,9 +47,18 @@ int mbr_verify(const struct mbr_partition partitions[4])
         uint32_t iright = ileft + partitions[i].block_count;
 
         // Check if empty.
-        if (partitions[i].partition_type == 0 ||
-                ileft == iright)
+        if (partitions[i].partition_type == 0)
+           continue;
+
+        if (ileft == iright && !partitions[i].expand_flag)
             continue;
+
+        // Validate that if expand is used, it has to be the last partition
+        if (expanding)
+            ERR_RETURN("a partition can't be specified after the one with \"expand = true\"");
+
+        if (partitions[i].expand_flag)
+            expanding = true;
 
         int j;
         for (j = 0; j < 4; j++) {
@@ -100,26 +111,33 @@ static void copy_le16(uint8_t *output, uint16_t v)
     output[1]  = (v >> 8) & 0xff;
 }
 
-static int create_partition(const struct mbr_partition *partition, uint8_t *output)
+static int create_partition(const struct mbr_partition *partition, uint8_t *output, uint32_t num_blocks)
 {
-    // Clear out the partition entry
-    memset(output, 0, 16);
+    uint32_t block_count = partition->block_count;
 
-    // Don't write most of the partition entry if it is unused.
+    // If expanding and we know the total blocks, update the mbr to the max
+    if (partition->expand_flag &&
+        num_blocks > (partition->block_offset + partition->block_count))
+        block_count = num_blocks - partition->block_offset;
+
+    // Write the partition entry
     if (partition->partition_type > 0) {
         output[0] = partition->boot_flag ? 0x80 : 0x00;
 
         lba_to_chs(partition->block_offset, &output[1]);
 
         output[4] = partition->partition_type;
-        lba_to_chs(partition->block_offset + partition->block_count - 1, &output[5]);
+        lba_to_chs(partition->block_offset + block_count - 1, &output[5]);
+    } else {
+        // Clear out an unused entry
+        memset(output, 0, 8);
     }
 
     // There's an ugly hack use case where data is stored in the block offset and
     // count of unused partition entries. That's why the following two lines aren't
     // in the "if" block above.
     copy_le32(&output[8], partition->block_offset);
-    copy_le32(&output[12], partition->block_count);
+    copy_le32(&output[12], block_count);
 
     return 0;
 }
@@ -175,14 +193,17 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
  * @param partitions the list of partitions
  * @param bootstrap optional bootstrap code (must be 440 bytes or NULL if none)
  * @param osip optional OSIP header (NULL if none)
+ * @param signature
+ * @param num_blocks the total number of blocks in the storage or 0
  * @param output the output location
  * @return 0 if success
  */
-int mbr_create(const struct mbr_partition partitions[4],
-               const uint8_t *bootstrap,
-               const struct osip_header *osip,
-               uint32_t signature,
-               uint8_t output[512])
+static int mbr_create(const struct mbr_partition partitions[4],
+                      const uint8_t *bootstrap,
+                      const struct osip_header *osip,
+                      uint32_t signature,
+                      uint32_t num_blocks,
+                      uint8_t output[512])
 {
     if (bootstrap && osip->include_osip)
         ERR_RETURN("Can't specify both bootstrap and OSIP in MBR");
@@ -201,7 +222,7 @@ int mbr_create(const struct mbr_partition partitions[4],
 
     int i;
     for (i = 0; i < 4; i++) {
-        if (create_partition(&partitions[i], &output[446 + i * 16]) < 0)
+        if (create_partition(&partitions[i], &output[446 + i * 16], num_blocks) < 0)
             return -1;
     }
 
@@ -293,6 +314,7 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
             ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
 
         partitions[partition_ix].boot_flag = cfg_getbool(partition, "boot");
+        partitions[partition_ix].expand_flag = cfg_getbool(partition, "expand");
     }
 
     if (found_partitions)
@@ -372,7 +394,7 @@ int mbr_verify_cfg(cfg_t *cfg)
 }
 
 
-int mbr_create_cfg(cfg_t *cfg, uint8_t output[512])
+int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512])
 {
     struct mbr_partition partitions[4];
     struct osip_header osip;
@@ -394,5 +416,5 @@ int mbr_create_cfg(cfg_t *cfg, uint8_t output[512])
     const char *raw_signature = cfg_getstr(cfg, "signature");
     uint32_t signature = !raw_signature ? 0 : strtoul(raw_signature, NULL, 0);
 
-    return mbr_create(partitions, bootstrap_hex ? bootstrap : NULL, &osip, signature, output);
+    return mbr_create(partitions, bootstrap_hex ? bootstrap : NULL, &osip, signature, num_blocks, output);
 }

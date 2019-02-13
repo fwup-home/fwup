@@ -172,6 +172,8 @@ TESTS = 001_simple_fw.test \
 	156_fat_truncation_bug.test \
 	157_create_keys_with_filename.test \
 	158_include_anywhere.test \
-	159_include_error.test
+	159_include_error.test \
+	160_mbr_expand.test \
+	161_mbr_expand_error.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -720,9 +720,9 @@ int mbr_write_run(struct fun_context *fctx)
 {
     const char *mbr_name = fctx->argv[1];
     cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
-    uint8_t buffer[FWUP_BLOCK_SIZE];
 
-    OK_OR_RETURN(mbr_create_cfg(mbrsec, buffer));
+    uint8_t buffer[FWUP_BLOCK_SIZE];
+    OK_OR_RETURN(mbr_create_cfg(mbrsec, fctx->output->num_blocks, buffer));
 
     OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, FWUP_BLOCK_SIZE, 0, false),
                      "unexpected error writing mbr: %s", strerror(errno));

@@ -1,0 +1,55 @@
+#!/bin/sh
+
+#
+# Test the MBR creation ability of fwup
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+# Numbers don't matter for the test so long as the MBR is right
+define(BOOT_PART_OFFSET, 1024)
+define(BOOT_PART_COUNT, 1024)
+define(ROOTFS_A_PART_OFFSET, 2048)
+define(ROOTFS_A_PART_COUNT, 2048)
+define(ROOTFS_B_PART_OFFSET, 4096)
+define(ROOTFS_B_PART_COUNT, 2048)
+define(APP_PART_OFFSET, 8192)
+define(APP_PART_COUNT, 4096)
+# define(APP_PART_COUNT, 12288) # expanded size
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+        expand = true
+    }
+    partition 2 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 3 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0x83 # Linux
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+        }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE 2> $WORK/error.out; then
+    echo "Expected an error when trying to expand a middle partition?"
+    exit 1
+fi

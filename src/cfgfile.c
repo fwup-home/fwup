@@ -434,6 +434,7 @@ static cfg_opt_t mbr_partition_opts[] = {
     CFG_INT("block-count", INT32_MAX, CFGF_NONE),
     CFG_INT("type", -1, CFGF_NONE),
     CFG_BOOL("boot", cfg_false, CFGF_NONE),
+    CFG_BOOL("expand", cfg_false, CFGF_NONE),
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };

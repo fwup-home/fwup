@@ -347,6 +347,7 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
         fwup_err(EXIT_FAILURE, "malloc");
     memset(bc->trimmed, 0, bc->trimmed_len);
     bc->hw_trim_enabled = enable_trim;
+    bc->num_blocks = 0;
 
     // Set the trim points based on the file size
     off_t end_offset = lseek(fd, 0, SEEK_END);
@@ -359,6 +360,9 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
         // Mark the trim datastructure that everything past the end has been trimmed.
         off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
         OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
+
+        // Save away the file size in blocks if needed later
+        bc->num_blocks = end_offset / FWUP_BLOCK_SIZE;
     }
 
     // Start async writer thread if available
