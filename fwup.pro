@@ -46,7 +46,9 @@ SOURCES += \
     src/mmc_bsd.c \
     src/resources.c \
     src/block_cache.c \
-    src/pad_to_block_writer.c
+    src/pad_to_block_writer.c \
+    3rdparty/fatfs/source/ff.c \
+    3rdparty/fatfs/source/ffunicode.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -99,7 +101,10 @@ HEADERS += \
     src/resources.h \
     src/block_cache.h \
     src/fatfs.h \
-    src/pad_to_block_writer.h
+    src/pad_to_block_writer.h \
+    3rdparty/fatfs/source/diskio.h \
+    3rdparty/fatfs/source/ff.h \
+    3rdparty/fatfs/source/ffconf.h
 
 OTHER_FILES += \
     fwupdate.conf \
@@ -260,4 +265,18 @@ DISTFILES += \
     tests/146_deploy_variables.test \
     tests/147_multiple_keys.test \
     tests/148_config_from_stdin.test \
-    tests/149_too_many_keys.test
+    tests/149_too_many_keys.test \
+    tests/146_deploy_variables.test \
+    tests/147_multiple_keys.test \
+    tests/148_config_from_stdin.test \
+    tests/149_too_many_keys.test \
+    tests/150_no_sparse.test \
+    tests/151_meta_uuid.test \
+    tests/152_meta_vars.test \
+    tests/153_no_uuid_metadata.test \
+    tests/154_bogus_uuid_metadata.test \
+    tests/155_friendly_meta_uuid.test \
+    tests/156_fat_truncation_bug.test \
+    tests/157_create_keys_with_filename.test \
+    tests/158_include_anywhere.test \
+    tests/159_include_error.test
