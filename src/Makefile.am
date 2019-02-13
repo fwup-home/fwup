@@ -62,17 +62,18 @@ fwup_SOURCES=\
 	../3rdparty/base64.h \
 	../3rdparty/semver.c/semver.c \
 	../3rdparty/semver.c/semver.h \
-	../3rdparty/fatfs/src/diskio.h \
-	../3rdparty/fatfs/src/integer.h \
-	../3rdparty/fatfs/src/ff.c \
-	../3rdparty/fatfs/src/ff.h \
-	../3rdparty/fatfs/src/ffconf.h \
-	../3rdparty/fatfs/src/ffunicode.c
+	../3rdparty/fatfs/source/diskio.h \
+	../3rdparty/fatfs/source/ff.c \
+	../3rdparty/fatfs/source/ff.h \
+	../3rdparty/fatfs/source/ffconf.h \
+	../3rdparty/fatfs/source/ffunicode.c
 
 EXTRA_DIST= \
-	../3rdparty/fatfs/src/00history.txt \
-	../3rdparty/fatfs/src/00readme.txt \
-	../3rdparty/fatfs/src/diskio.c \
+	../3rdparty/fatfs/source/00history.txt \
+	../3rdparty/fatfs/source/00readme.txt \
+	../3rdparty/fatfs/source/diskio.c \
+	../3rdparty/fatfs/source/ffsystem.c \
+	../3rdparty/fatfs/LICENSE.txt \
 	../3rdparty/semver.c/README.md \
 	../3rdparty/semver.c/LICENSE \
 	../3rdparty/semver.c/Makefile \
