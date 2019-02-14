@@ -211,14 +211,19 @@ static int mbr_create(const struct mbr_partition partitions[4],
     if (mbr_verify(partitions) < 0)
         return -1;
 
-    memset(output, 0, 512);
     if (bootstrap)
         memcpy(output, bootstrap, 440);
+    else
+        memset(output, 0, 440);
 
     if (osip->include_osip && write_osip(osip, output) < 0)
         return -1;
 
     copy_le32(&output[440], signature);
+
+    // Not copy protected?
+    output[444] = 0;
+    output[445] = 0;
 
     int i;
     for (i = 0; i < 4; i++) {
