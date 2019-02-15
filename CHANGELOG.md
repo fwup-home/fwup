@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.0
+
+* New feature
+  * Add `expand = true` option to the last partition in the MBR. When set, the
+    partition size will grow to fill the remainder of the destination. The
+    specified `block-count` is the minimum size and will be used if the
+    destination's size can't be determined. This makes it easier to have
+    application data partitions that resize based on installed memory.
+
+* Updates
+  * FatFS R0.13c (upgrade from R0.13a)
+
 ## v1.2.7
 
 * Bug fixes
