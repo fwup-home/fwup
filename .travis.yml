@@ -38,6 +38,7 @@ matrix:
           env: MODE=dynamic
 
 before_install:
+    - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
     - scripts/ci_install_deps.sh
 
 script:
@@ -104,6 +105,7 @@ addons:
       coverity_scan:
              project:
                 name: "fhunleth/fwup"
+                description: "Configurable firmware updates for embedded Linux"
              notification_email: fhunleth@troodon-software.com
              build_command_prepend: "./autogen.sh && ./configure"
              build_command: "make"
