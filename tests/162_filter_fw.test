@@ -1,0 +1,51 @@
+#!/bin/sh
+
+#
+# Test filtering an archive based on tasks
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource 1.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 2.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 3.bin {
+	host-path = "${TESTFILE_1K}"
+}
+file-resource 4.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource 1.bin { raw_write(0) }
+	on-resource 2.bin { raw_write(0) }
+	on-resource 3.bin { raw_write(0) }
+	on-resource 4.bin { raw_write(0) }
+}
+task upgrade.a {
+	on-resource 1.bin { raw_write(0) }
+}
+task upgrade.b {
+	on-resource 1.bin { raw_write(0) }
+	on-resource 2.bin { raw_write(0) }
+}
+EOF
+
+# Create the archive with only the upgrade task and resources
+$FWUP_CREATE -c --include-task upgrade -f $CONFIG -o $FWFILE
+
+if $FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete; then
+   echo "There shouldn't be a complete task!"
+   exit 1
+fi
+
+$FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t upgrade.a
+cmp_bytes 1024 $IMGFILE $TESTFILE_1K
+
+# Check that the verify logic works on this file
+echo $FWUP_VERIFY -V -i $FWFILE
+$FWUP_VERIFY -V -i $FWFILE

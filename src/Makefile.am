@@ -9,6 +9,7 @@ fwup_SOURCES=\
 	crc32.c \
 	eval_math.c \
 	fatfs.c \
+	filter_cfg.c \
 	functions.c \
 	fwfile.c \
 	fwup_apply.c \
@@ -39,6 +40,7 @@ fwup_SOURCES=\
 	crc32.h \
 	eval_math.h \
 	fatfs.h \
+	filter_cfg.h \
 	functions.h \
 	fwfile.h \
 	fwup_apply.h \

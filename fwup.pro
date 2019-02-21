@@ -48,7 +48,8 @@ SOURCES += \
     src/block_cache.c \
     src/pad_to_block_writer.c \
     3rdparty/fatfs/source/ff.c \
-    3rdparty/fatfs/source/ffunicode.c
+    3rdparty/fatfs/source/ffunicode.c \
+    src/filter_cfg.c
 
 osx {
     INCLUDEPATH += /usr/local/include /usr/local/opt/libarchive/include
@@ -104,7 +105,8 @@ HEADERS += \
     src/pad_to_block_writer.h \
     3rdparty/fatfs/source/diskio.h \
     3rdparty/fatfs/source/ff.h \
-    3rdparty/fatfs/source/ffconf.h
+    3rdparty/fatfs/source/ffconf.h \
+    src/filter_cfg.h
 
 OTHER_FILES += \
     fwupdate.conf \

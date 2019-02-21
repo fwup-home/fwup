@@ -174,6 +174,7 @@ TESTS = 001_simple_fw.test \
 	158_include_anywhere.test \
 	159_include_error.test \
 	160_mbr_expand.test \
-	161_mbr_expand_error.test
+	161_mbr_expand_error.test \
+	162_filter_fw.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

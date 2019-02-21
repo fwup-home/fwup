@@ -90,6 +90,7 @@ static void print_usage()
     printf("  -F, --framing Apply framing on stdin/stdout\n");
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv, or specify with -o)\n");
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
+    printf("  --include-task <task> Include the specified task in the resulting archive\n");
     printf("  -l, --list   List the available tasks in a firmware update\n");
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  -n   Report numeric progress\n");
@@ -157,6 +158,11 @@ static void print_version()
     printf("%s\n", PACKAGE_VERSION);
 }
 
+enum option_val {
+    OPTION_NO_SHORT_START = 255,
+    OPTION_INCLUDE_TASK
+};
+
 static struct option long_options[] = {
     {"apply",    no_argument,       0, 'a'},
     {"create",   no_argument,       0, 'c'},
@@ -168,6 +174,7 @@ static struct option long_options[] = {
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"help",     no_argument,       0, 'h'},
+    {"include-task", required_argument, 0, OPTION_INCLUDE_TASK},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
     {"private-key", required_argument, 0, '('},
@@ -353,6 +360,8 @@ int main(int argc, char **argv)
     unsigned char *signing_key = NULL;
     unsigned char *public_keys[FWUP_MAX_PUBLIC_KEYS + 1] = {NULL};
     int num_public_keys = 0;
+    const char *include_tasks[FWUP_MAX_PUBLIC_KEYS + 1] = {NULL};
+    int num_include_tasks = 0;
 #if __APPLE__
     // On hosts, the right behavior for almost all use cases is to eject
     // so that the user can plug the SDCard into their board. Detecting
@@ -525,6 +534,15 @@ int main(int argc, char **argv)
         case '~': // --exit-handshake
             fwup_handshake_on_exit = true;
             break;
+        case OPTION_INCLUDE_TASK: // --include-task
+            if (num_include_tasks < FWUP_MAX_PUBLIC_KEYS) {
+                include_tasks[num_include_tasks] = optarg;
+                num_include_tasks++;
+                easy_mode = false;
+            } else
+                fwup_errx(EXIT_FAILURE, "--include-task can only be specified %d times", FWUP_MAX_PUBLIC_KEYS);
+
+            break;
         default: /* '?' */
             print_usage();
             fwup_exit(EXIT_FAILURE);
@@ -661,7 +679,7 @@ int main(int argc, char **argv)
     }
 
     case CMD_CREATE:
-        if (fwup_create(configfile, output_filename, signing_key, compression_level) < 0)
+        if (fwup_create(configfile, output_filename, signing_key, compression_level, include_tasks) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 Frank Hunleth
+ * Copyright 2019 Frank Hunleth
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef FWUP_CREATE_H
-#define FWUP_CREATE_H
+#ifndef FILTER_CFG_H
+#define FILTER_CFG_H
 
-int fwup_create(const char *configfile, const char *output_firmware, const unsigned char *signing_key, int compression_level, const char **include_tasks);
+#include <confuse.h>
 
-#endif // FWUP_CREATE_H
+int filter_cfg(cfg_t *cfg, const char **include_tasks);
+
+#endif // FILTER_CFG_H

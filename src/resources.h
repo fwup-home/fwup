@@ -28,7 +28,9 @@ struct resource_list {
 
 int rlist_get_all(cfg_t *cfg, struct resource_list **resources);
 int rlist_get_from_task(cfg_t *cfg, cfg_t *task, struct resource_list **resources);
+int rlist_get_used(cfg_t *cfg, struct resource_list **resources);
 void rlist_free(struct resource_list *list);
+void rlist_subtract(struct resource_list **list, struct resource_list *what);
 struct resource_list *rlist_find_by_name(struct resource_list *list, const char *name);
 
 #endif // RESOURCES_H

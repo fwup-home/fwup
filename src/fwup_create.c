@@ -18,6 +18,7 @@
 #include "cfgfile.h"
 #include "util.h"
 #include "fwfile.h"
+#include "filter_cfg.h"
 #include "sparse_file.h"
 #include "../config.h"
 
@@ -333,13 +334,17 @@ cleanup:
 int fwup_create(const char *configfile,
                 const char *output_firmware,
                 const unsigned char *signing_key,
-                int compression_level)
+                int compression_level,
+                const char **include_tasks)
 {
     cfg_t *cfg = NULL;
     int rc = 0;
 
     // Parse configuration
     OK_OR_CLEANUP(cfgfile_parse_file(configfile, &cfg));
+
+    // Filter out any unneeded tasks and their resources
+    OK_OR_CLEANUP(filter_cfg(cfg, include_tasks));
 
     // Compute all metadata
     OK_OR_CLEANUP(compute_file_metadata(cfg));
