@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
 IMGFILE=$1
 FWFILE=$2
 
-if [[ -z "$IMGFILE" ]]; then
+if [ -z "$IMGFILE" ]; then
     echo "Compress an image file into a .fw archive so that it can be written to a"
     echo "MicroSD card using fwup."
     echo
