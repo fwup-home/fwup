@@ -591,9 +591,15 @@ int main(int argc, char **argv)
         // everything using it.
         bool is_regular_file = will_be_regular_file(mmc_device_path);
         int output_fd;
+        off_t end_offset;
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
+
+            // Get the original file length
+            // NOTE: this call is not so interesting. The interesting one is for real
+            //       media, but we need to do it anyway. <= 0 means unknown.
+            end_offset = lseek(output_fd, 0, SEEK_END);
 
             struct stat st;
             if (output_fd >= 0 && (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0)) {
@@ -620,6 +626,9 @@ int main(int argc, char **argv)
                     fwup_exit(EXIT_FAILURE);
             }
 
+            if (mmc_device_size(mmc_device_path, &end_offset) < 0)
+                fwup_warnx("Error deterimining the size of %s", mmc_device_path);
+
             // Call out to platform-specific code to obtain a filehandle
             output_fd = mmc_open(mmc_device_path);
         }
@@ -643,6 +652,7 @@ int main(int argc, char **argv)
         if (fwup_apply(input_filename,
                        task,
                        output_fd,
+                       end_offset,
                        &progress,
                        public_keys,
                        enable_trim) < 0) {

@@ -207,6 +207,14 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
     return device_count;
 }
 
+int mmc_device_size(const char *mmc_path, off_t *end_offset)
+{
+    // This function is called only when fwup has permission to
+    // write to the device so the "raw" method should always work.
+    *end_offset = mmc_device_size_raw(mmc_path);
+    return *end_offset > 0 ? 0 : -1;
+}
+
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
     // Stat both paths.

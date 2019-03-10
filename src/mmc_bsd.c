@@ -154,6 +154,20 @@ int mmc_eject(const char *mmc_device)
     return 0;
 }
 
+int mmc_device_size(const char *mmc_path, off_t *end_offset)
+{
+    *end_offset = 0;
+
+    int fd = open(mmc_path, O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    *end_offset = lseek(fd, 0, SEEK_END);
+    close(fd);
+
+    return *end_offset > 0 ? 0 : -1;
+}
+
 /**
  * @brief Open an SDCard/MMC device
  * @param mmc_path the path

@@ -235,6 +235,44 @@ int mmc_eject(const char *mmc_device)
     return 0;
 }
 
+int mmc_device_size(const char *mmc_path, off_t *end_offset)
+{
+    WCHAR drive_name[MAX_PATH] = L"";
+    MultiByteToWideChar(CP_UTF8, 0, mmc_path, -1, drive_name, MAX_PATH);
+
+    HANDLE drive_handle = CreateFile(drive_name,
+                                     GENERIC_READ | GENERIC_WRITE,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                     NULL,
+                                     OPEN_EXISTING,
+                                     FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+                                     NULL);
+    if (drive_handle == INVALID_HANDLE_VALUE) {
+        *end_offset = 0;
+        return -1;
+    }
+
+    DWORD bytes_returned;
+    DISK_GEOMETRY_EX geometry;
+    BOOL status = DeviceIoControl(drive_handle,
+                                  IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+                                  NULL,
+                                  0,
+                                  &geometry,
+                                  sizeof(geometry),
+                                  &bytes_returned,
+                                  NULL);
+    CloseHandle(drive_handle);
+
+    if (status && geometry.DiskSize.QuadPart > 0) {
+        *end_offset = geometry.DiskSize.QuadPart;
+        return 0;
+    } else {
+        *end_offset = 0;
+        return -1;
+    }
+}
+
 /**
  * @brief Open an SDCard/MMC device
  * @param mmc_path the path

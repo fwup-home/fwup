@@ -99,7 +99,7 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd, bool enable_trim);
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);

@@ -33,12 +33,12 @@ struct mmc_device {
 /**
  * @brief Run any initialization required for other mmc_* functions.
  */
-void mmc_init();
+void mmc_init(void);
 
 /**
  * @brief Free resources allocated by mmc_* functions.
  */
-void mmc_finalize();
+void mmc_finalize(void);
 
 /**
  * @brief Scan for SDCards and other removable media
@@ -47,6 +47,14 @@ void mmc_finalize();
  * @return the number of devices found
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices);
+
+/**
+ * @brief Return the size of an SDCard/MMC device
+ * @param mmc_path the path
+ * @param end_offset the size of the device
+ * @return <0 on error
+ */
+int mmc_device_size(const char *mmc_path, off_t *end_offset);
 
 /**
  * @brief Open an SDCard/MMC device

@@ -246,6 +246,26 @@ static int authopen_fd(char * const pathname)
     }
 }
 
+int mmc_device_size(const char *mmc_path, off_t *end_offset)
+{
+    // Initialize to "unknown" size should anything go wrong.
+    *end_offset = 0;
+
+    DADiskRef disk = mmc_device_to_diskref(mmc_path);
+    int rc = -1;
+    if (disk) {
+        CFDictionaryRef info = DADiskCopyDescription(disk);
+        CFNumberRef cfsize = CFDictionaryGetValue(info, kDADiskDescriptionMediaSizeKey);
+        int64_t size;
+        CFNumberGetValue(cfsize, kCFNumberSInt64Type, &size);
+        *end_offset = size;
+        CFRelease(info);
+        CFRelease(disk);
+        rc = 0;
+    }
+    return rc;
+}
+
 /**
  * Return a file handle to the specified path for mmc devices
  *

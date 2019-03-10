@@ -319,10 +319,11 @@ cleanup:
  * @brief block_cache_init
  * @param bc
  * @param fd the file descriptor of the destination
+ * @param end_offset the size of the destination in bytes
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @return
  */
-int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim)
 {
     memset(bc, 0, sizeof(struct block_cache));
 
@@ -350,19 +351,18 @@ int block_cache_init(struct block_cache *bc, int fd, bool enable_trim)
     bc->num_blocks = 0;
 
     // Set the trim points based on the file size
-    off_t end_offset = lseek(fd, 0, SEEK_END);
     if (end_offset > 0) {
-        // At least for special devices on OSX, lseek can fail to seek to the end.
-        // For these devices, don't try to initialize the trim bit vector to support
-        // to optimize reads past the end. This really only helps for regular files
-        // with partial segment writes at the end, so not a big deal.
-
         // Mark the trim datastructure that everything past the end has been trimmed.
         off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
         OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
 
         // Save away the file size in blocks if needed later
-        bc->num_blocks = end_offset / FWUP_BLOCK_SIZE;
+        bc->num_blocks = (uint32_t) (end_offset / FWUP_BLOCK_SIZE);
+    } else {
+        // When the device size is unknown, don't try to initialize the trim bit
+        // vector to support to optimize reads past the end. This really only helps
+        // for regular files with partial segment writes at the end, so not a big deal.
+        bc->num_blocks = 0;
     }
 
     // Start async writer thread if available

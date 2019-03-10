@@ -194,7 +194,7 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
  * @param bootstrap optional bootstrap code (must be 440 bytes or NULL if none)
  * @param osip optional OSIP header (NULL if none)
  * @param signature
- * @param num_blocks the total number of blocks in the storage or 0
+ * @param num_blocks the total number of blocks in the storage or 0 if unknown
  * @param output the output location
  * @return 0 if success
  */
@@ -372,6 +372,7 @@ static int mbr_cfg_to_osip(cfg_t *cfg, struct osip_header *osip)
 
     return 0;
 }
+
 int mbr_verify_cfg(cfg_t *cfg)
 {
     int found_partitions = 0;
@@ -398,7 +399,14 @@ int mbr_verify_cfg(cfg_t *cfg)
     return mbr_verify(partitions);
 }
 
-
+/**
+ * @brief Encode an MBR
+ *
+ * @param cfg the mbr configuration
+ * @param num_blocks the number of blocks on the destination or 0 if unknown
+ * @param output where to store the encoded MBR
+ * @return 0 if successful
+ */
 int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512])
 {
     struct mbr_partition partitions[4];
