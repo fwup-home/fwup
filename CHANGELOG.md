@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.1
+
+* Bug fixes
+  * Fix partition expansion on OSX.
+  * Update `img2fwup` script to only require a generic `sh` instead of `bash`.
+    Also support ` ./configure --disable-scripts` to disable installation of
+    `img2fwup` completely. It isn't needed in embedded systems.
+
 ## v1.3.0
 
 * New feature
