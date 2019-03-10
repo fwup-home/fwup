@@ -1,6 +1,8 @@
 ACLOCAL_AMFLAGS=-I m4
 
+if ENABLE_SCRIPTS
 bin_SCRIPTS = img2fwup
+endif
 
 SUBDIRS=src tests docs
 EXTRA_DIST=README.md \

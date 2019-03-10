@@ -106,6 +106,12 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 AM_CONDITIONAL([IS_CROSSCOMPILING], [test x$cross_compiling = x"yes"])
 AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu"])
 
+# Scripts
+AC_ARG_ENABLE(scripts,[AS_HELP_STRING([--disable-scripts], [do not install img2fwup and any other helper scripts])])
+AC_MSG_CHECKING([whether to install scripts])
+AS_IF([test "x${enable_scripts}" != "xno" ], AC_MSG_RESULT([yes]), AC_MSG_RESULT([no]))
+AM_CONDITIONAL([ENABLE_SCRIPTS],[test "x${enable_scripts}" != "xno"])
+
 # Coverage tests
 AC_ARG_ENABLE(gcov,[AS_HELP_STRING([--enable-gcov], [enable coverage test])])
 AC_MSG_CHECKING([whether to enable gcov])
