@@ -59,7 +59,7 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
         --without-nettle --without-expat --without-lzo2 --without-lzma \
         --without-bz2lib --without-iconv --enable-shared=no --disable-bsdtar \
         --disable-bsdcpio --disable-bsdcat --disable-xattr \
-        --without-libiconv-prefix --without-lz4
+        --without-libiconv-prefix --without-lz4 --without-cng
     make $MAKE_FLAGS
     make install
     cd $DEPS_DIR
