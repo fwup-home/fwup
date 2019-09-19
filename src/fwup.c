@@ -590,26 +590,28 @@ int main(int argc, char **argv)
         // we're just creating an image file, then don't try to unmount
         // everything using it.
         bool is_regular_file = will_be_regular_file(mmc_device_path);
-        int output_fd;
-        off_t end_offset;
+        int output_fd = -1;
+        off_t end_offset = -1;
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
 
-            // Get the original file length
-            // NOTE: this call is not so interesting. The interesting one is for real
-            //       media, but we need to do it anyway. <= 0 means unknown.
-            end_offset = lseek(output_fd, 0, SEEK_END);
+            if (output_fd >= 0) {
+                // Get the original file length
+                // NOTE: this call is not so interesting. The interesting one is for real
+                //       media, but we need to do it anyway. <= 0 means unknown.
+                end_offset = lseek(output_fd, 0, SEEK_END);
 
-            struct stat st;
-            if (output_fd >= 0 && (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0)) {
-                // The file permissions are read-only, but the user was able to
-                // open it writable. Root can do this. This is almost certainly
-                // a mistake so error out. Changing file permissions to make it
-                // writable is the way to get around this and the error message
-                // below describes it.
-                close(output_fd);
-                output_fd = -1;
+                struct stat st;
+                if (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0) {
+                    // The file permissions are read-only, but the user was able to
+                    // open it writable. Root can do this. This is almost certainly
+                    // a mistake so error out. Changing file permissions to make it
+                    // writable is the way to get around this and the error message
+                    // below describes it.
+                    close(output_fd);
+                    output_fd = -1;
+                }
             }
             if (enable_trim) {
                 fwup_warnx("ignoring --enable_trim since operating on a regular file");
