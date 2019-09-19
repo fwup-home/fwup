@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.2
+
+* Improvements
+  * Support `SOURCE_DATE_EPOCH` for reproducible archive creation. See
+    https://reproducible-builds.org/ for motivation and details. Similar support
+    was available by setting the `NOW` environment variable, but this makes
+    `fwup` follow the conventions used by pretty much everyone else.
+
 ## v1.3.1
 
 * Bug fixes
