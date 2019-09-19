@@ -304,7 +304,7 @@ meta-platform        | Platform that this update runs on (e.g., rpi or bbb)
 meta-architecture    | Platform architectures (e.g., arm)
 meta-vcs-identifier  | A version control identifier for use in reproducing this image
 meta-misc            | Miscellaneous additional data. Format and contents are up to the user
-meta-creation-date   | Timestamp when the update was created (derived from ZIP metadata). If you want to force the timestamp, set the `NOW` environment variable.
+meta-creation-date   | Timestamp when the update was created (derived from ZIP metadata). For reproducible builds, set the [`SOURCE_DATE_EPOCH`](https://reproducible-builds.org/specs/source-date-epoch/#idm55) environment variable.
 meta-fwup-version    | Version of fwup used to create the update (deprecated - no longer added since fwup 1.2.0)
 meta-uuid            | A UUID to represent this firmware. The UUID won't change even if the .fw file is digitally signed after creation (automatically generated)
 
@@ -649,6 +649,28 @@ file-resource rootfs.img {
         skip-holes = false
 }
 ```
+
+## Reproducible builds
+
+It's possible for the system time to be saved in various places when using
+`fwup`. This means that an archive with the same contents, but built at
+different times results in `.fw` files with different bytes. See
+[reproducible-builds.org](https://reproducible-builds.org/) for a discussion on
+this topic.
+
+`fwup` obeys the
+[`SOURCE_DATE_EPOCH`](https://reproducible-builds.org/docs/source-date-epoch/)
+ environment variable and will force all timestamps to the value of that
+variable when needed. Set `$SOURCE_DATE_EPOCH` to the number of seconds since
+midnight Jan 1, 1970 (run `date +%s`) to use this feature.
+
+A better way of comparing `.fw` archives, though, is to use the firmware UUID.
+The firmware UUID is computed from the contents of the archive rather than the
+bit-for-bit representation of the `.fw` file, itself. The firmware UUID is
+unaffected by timestamps (with or without `SOURCE_DATE_EPOCH`) or other things
+like compression algorithm improvements. This is not to say that
+`SOURCE_DATE_EPOCH` is not important, but that the UUID is an additional tool
+for ensuring that firmware updates are reproducible.
 
 # Firmware authentication
 

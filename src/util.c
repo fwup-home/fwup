@@ -40,35 +40,53 @@ const char *get_creation_timestamp()
 {
     // Ensure that if the creation timestamp is queried more than
     // once that the same string gets returned.
-    if (*time_string == '\0') {
-        const char *now = get_environment("NOW");
-        if (now != NULL) {
-            // The user specified NOW, so check that it's parsable.
-            struct tm tmp;
-            if (strptime(now, timestamp_format, &tmp) != NULL) {
-                int rc = snprintf(time_string, sizeof(time_string), "%s", now);
-                if (rc >= 0 && rc < (int) sizeof(time_string)) {
-#ifdef HAVE_TIMEGM
-                    now_time = timegm(&tmp);
-#else
-#ifdef _WIN32
-                    now_time = _mkgmtime(&tmp);
-#else
-                    // mktime is influenced by the local timezone, so this will
-                    // be wrong, but close.
-                    now_time = mktime(&tmp);
-#endif
-#endif
-                    return time_string;
-                }
-            }
+    if (*time_string != '\0')
+        return time_string;
 
-            INFO("NOW environment variable set, but not in YYYY-MM-DDTHH:MM:SSZ format so ignoring");
-        }
-        now_time = time(NULL);
+    // Rules for determining archive timestamps
+    //
+    // 1. Use $SOURCE_DATE_EPOCH if specifed. See
+    //    https://reproducible-builds.org/specs/source-date-epoch/
+    // 2. Use $NOW if specified. This is the original fwup way of forcing
+    //    reproducible builds so we can't break it.
+    // 3. Don't try to be deterministic and use the current time.
+
+    const char *source_date_epoch = get_environment("SOURCE_DATE_EPOCH");
+    if (source_date_epoch != NULL) {
+        now_time = strtoul(source_date_epoch, NULL, 0);
         time_t_to_string(now_time, time_string, sizeof(time_string));
         set_environment("NOW", time_string);
+        return time_string;
     }
+
+    const char *now = get_environment("NOW");
+    if (now != NULL) {
+        // The user specified NOW, so check that it's parsable.
+        struct tm tmp;
+        if (strptime(now, timestamp_format, &tmp) != NULL) {
+            int rc = snprintf(time_string, sizeof(time_string), "%s", now);
+            if (rc >= 0 && rc < (int) sizeof(time_string)) {
+#ifdef HAVE_TIMEGM
+                now_time = timegm(&tmp);
+#else
+#ifdef _WIN32
+                now_time = _mkgmtime(&tmp);
+#else
+                // mktime is influenced by the local timezone, so this will
+                // be wrong, but close.
+                now_time = mktime(&tmp);
+#endif
+#endif
+                return time_string;
+            }
+        }
+
+        INFO("NOW environment variable set, but not in YYYY-MM-DDTHH:MM:SSZ format so ignoring");
+    }
+
+    now_time = time(NULL);
+    time_t_to_string(now_time, time_string, sizeof(time_string));
+    set_environment("NOW", time_string);
 
     return time_string;
 }
