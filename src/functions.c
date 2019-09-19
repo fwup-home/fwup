@@ -18,6 +18,7 @@
 #include "util.h"
 #include "fatfs.h"
 #include "mbr.h"
+#include "gpt.h"
 #include "fwfile.h"
 #include "block_cache.h"
 #include "uboot_env.h"
@@ -53,6 +54,7 @@ DECLARE_FUN(fat_cp);
 DECLARE_FUN(fat_mkdir);
 DECLARE_FUN(fat_setlabel);
 DECLARE_FUN(fat_touch);
+DECLARE_FUN(gpt_write);
 DECLARE_FUN(mbr_write);
 DECLARE_FUN(trim);
 DECLARE_FUN(uboot_clearenv);
@@ -88,6 +90,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(fat_mkdir),
     FUN_INFO(fat_setlabel),
     FUN_INFO(fat_touch),
+    FUN_INFO(gpt_write),
     FUN_INFO(mbr_write),
     FUN_INFO(trim),
     FUN_INFO(uboot_clearenv),
@@ -696,6 +699,51 @@ int fat_touch_run(struct fun_context *fctx)
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
+}
+
+#define GPT_UNITS (GPT_SIZE * 2) // primary and secondary GPT
+
+int gpt_write_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("gpt_write requires a gpt");
+
+    const char *gpt_name = fctx->argv[1];
+    cfg_t *gptsec = cfg_gettsec(fctx->cfg, "gpt", gpt_name);
+
+    if (!gptsec)
+        ERR_RETURN("gpt_write can't find gpt reference");
+
+    return 0;
+}
+int gpt_write_compute_progress(struct fun_context *fctx)
+{
+    fctx->progress->total_units += GPT_UNITS;
+    return 0;
+}
+int gpt_write_run(struct fun_context *fctx)
+{
+    const char *gpt_name = fctx->argv[1];
+    cfg_t *gptsec = cfg_gettsec(fctx->cfg, "gpt", gpt_name);
+    int rc = 0;
+
+    uint8_t *mbr_and_primary_gpt = malloc(FWUP_BLOCK_SIZE + GPT_SIZE);
+    uint8_t *secondary_gpt = malloc(GPT_SIZE);
+
+    off_t secondary_gpt_offset;
+    OK_OR_CLEANUP(gpt_create_cfg(gptsec, fctx->output->num_blocks, mbr_and_primary_gpt, secondary_gpt, &secondary_gpt_offset));
+
+    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, mbr_and_primary_gpt, FWUP_BLOCK_SIZE + GPT_SIZE, 0, false),
+                     "unexpected error writing protective mbr and primary gpt: %s", strerror(errno));
+    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, secondary_gpt, GPT_SIZE, secondary_gpt_offset, false),
+                     "unexpected error writing secondary gpt: %s", strerror(errno));
+
+    progress_report(fctx->progress, GPT_UNITS);
+
+ cleanup:
+    free(mbr_and_primary_gpt);
+    free(secondary_gpt);
+    return rc;
 }
 
 int mbr_write_validate(struct fun_context *fctx)

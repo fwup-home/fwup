@@ -186,4 +186,18 @@ void free_page_aligned(void *memptr);
 
 int update_relative_path(const char *from_file, const char *filename, char **newpath);
 
+// UUIDs
+#define UUID_LENGTH 16
+#define UUID_STR_LENGTH 37 /* Includes NULL terminator */
+
+void uuid_to_string(const uint8_t uuid[UUID_LENGTH], char *uuid_str);
+int string_to_uuid(const char *uuid_str, uint8_t uuid[UUID_LENGTH]);
+void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid);
+
+// Endian conversion
+void ascii_to_utf16le(const char *input, char *output, size_t len);
+void copy_le64(uint8_t *output, uint64_t v);
+void copy_le32(uint8_t *output, uint32_t v);
+void copy_le16(uint8_t *output, uint16_t v);
+
 #endif // UTIL_H

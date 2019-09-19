@@ -19,6 +19,7 @@ fwup_SOURCES=\
 	fwup_verify.c \
 	fwup_metadata.c \
 	fwup_genkeys.c \
+	gpt.c \
 	mbr.c \
 	mmc_bsd.c \
 	mmc_linux.c \
@@ -48,6 +49,7 @@ fwup_SOURCES=\
 	fwup_genkeys.h \
 	fwup_sign.h \
 	fwup_verify.h \
+	gpt.h \
 	mbr.h \
 	mmc.h \
 	pad_to_block_writer.h \

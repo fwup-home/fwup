@@ -97,20 +97,6 @@ static void lba_to_chs(uint32_t lba, uint8_t *output)
     }
 }
 
-static void copy_le32(uint8_t *output, uint32_t v)
-{
-    output[0]  = v & 0xff;
-    output[1]  = (v >> 8) & 0xff;
-    output[2] = (v >> 16) & 0xff;
-    output[3] = (v >> 24) & 0xff;
-}
-
-static void copy_le16(uint8_t *output, uint16_t v)
-{
-    output[0]  = v & 0xff;
-    output[1]  = (v >> 8) & 0xff;
-}
-
 static int create_partition(const struct mbr_partition *partition, uint8_t *output, uint32_t num_blocks)
 {
     uint32_t block_count = partition->block_count;

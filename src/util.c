@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <libgen.h>
+#include <sodium.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -193,6 +194,17 @@ static char nibble_to_hexchar(uint8_t nibble)
     }
 }
 
+static int two_hex_to_byte(const char *str, uint8_t *byte)
+{
+    uint8_t sixteens = hexchar_to_int(str[0]);
+    uint8_t ones = hexchar_to_int(str[1]);
+    if (sixteens == 255 || ones == 255)
+        ERR_RETURN("Invalid character in hex string");
+
+    *byte = (uint8_t) (sixteens << 4) | ones;
+    return 0;
+}
+
 int hex_to_bytes(const char *str, uint8_t *bytes, size_t maxbytes)
 {
     size_t len = strlen(str);
@@ -203,12 +215,9 @@ int hex_to_bytes(const char *str, uint8_t *bytes, size_t maxbytes)
         ERR_RETURN("hex string is too long (%d bytes)", len / 2);
 
     while (len) {
-        uint8_t sixteens = hexchar_to_int(str[0]);
-        uint8_t ones = hexchar_to_int(str[1]);
-        if (sixteens == 255 || ones == 255)
-            ERR_RETURN("Invalid character in hex string");
+        if (two_hex_to_byte(str, bytes) < 0)
+            return -1;
 
-        *bytes = (sixteens << 4) | ones;
         str += 2;
         len -= 2;
         bytes++;
@@ -604,4 +613,126 @@ int update_relative_path(const char *fromfile, const char *filename, char **newp
         free(fromfile_copy);
     }
     return 0;
+}
+
+/**
+ * Convert a mixed endian UUID to a string
+ *
+ * @param uuid the UUID
+ * @param uuid_str a buffer that's UUID_STR_LENGTH long
+ */
+void uuid_to_string(const uint8_t uuid[UUID_LENGTH], char *uuid_str)
+{
+    sprintf(uuid_str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            uuid[3], uuid[2], uuid[1], uuid[0], uuid[5], uuid[4], uuid[7], uuid[6],
+            uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+}
+
+/**
+ * Convert a string to a mixed endian UUID
+ *
+ * @param uuid_str the string
+ * @param uuid the resulting UUID
+ * @return 0 on success; -1 on error
+ */
+int string_to_uuid(const char *uuid_str, uint8_t uuid[UUID_LENGTH])
+{
+    // sscanf %02hhx doesn't seem to work everywhere (i.e., Windows), so we
+    // have to work harder.
+
+    // 32 digits and 4 hyphens
+    if ((strlen(uuid_str) >= 32 + 4) &&
+            two_hex_to_byte(&uuid_str[0], &uuid[3]) >= 0 &&
+            two_hex_to_byte(&uuid_str[2], &uuid[2]) >= 0 &&
+            two_hex_to_byte(&uuid_str[4], &uuid[1]) >= 0 &&
+            two_hex_to_byte(&uuid_str[6], &uuid[0]) >= 0 &&
+            uuid_str[8] == '-' &&
+            two_hex_to_byte(&uuid_str[9], &uuid[5]) >= 0 &&
+            two_hex_to_byte(&uuid_str[11], &uuid[4]) >= 0 &&
+            uuid_str[13] == '-' &&
+            two_hex_to_byte(&uuid_str[14], &uuid[7]) >= 0 &&
+            two_hex_to_byte(&uuid_str[16], &uuid[6]) >= 0 &&
+            uuid_str[18] == '-' &&
+            two_hex_to_byte(&uuid_str[19], &uuid[8]) >= 0 &&
+            two_hex_to_byte(&uuid_str[21], &uuid[9]) >= 0 &&
+            uuid_str[23] == '-' &&
+            two_hex_to_byte(&uuid_str[24], &uuid[10]) >= 0 &&
+            two_hex_to_byte(&uuid_str[26], &uuid[11]) >= 0 &&
+            two_hex_to_byte(&uuid_str[28], &uuid[12]) >= 0 &&
+            two_hex_to_byte(&uuid_str[30], &uuid[13]) >= 0 &&
+            two_hex_to_byte(&uuid_str[32], &uuid[14]) >= 0 &&
+            two_hex_to_byte(&uuid_str[34], &uuid[15]) >= 0)
+        return 0;
+    else
+        return -1;
+}
+
+/**
+ * Create a new UUID by hashing the specified data
+ *
+ * @param data
+ * @param data_size
+ * @param uuid
+ */
+void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid)
+{
+    crypto_generichash_state hash_state;
+    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+
+    // fwup's UUID: 2053dffb-d51e-4310-b93b-956da89f9f34
+    unsigned char fwup_uuid[UUID_LENGTH] = {0x20, 0x53, 0xdf, 0xfb, 0xd5, 0x1e, 0x43, 0x10, 0xb9, 0x3b, 0x95, 0x6d, 0xa8, 0x9f, 0x9f, 0x34};
+
+    crypto_generichash_update(&hash_state, fwup_uuid, sizeof(fwup_uuid));
+    crypto_generichash_update(&hash_state, (const unsigned char *) data, (unsigned long long) data_size);
+
+    unsigned char hash[crypto_generichash_BYTES];
+    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+
+    // Set version number (RFC 4122) to 5. This really isn't right since we're
+    // not using SHA-1, but libsodium doesn't include SHA-1.
+    hash[6] = (hash[6] & 0x0f) | 0x50;
+
+    uuid_to_string(hash, uuid);
+}
+
+/**
+ * Convert an ASCII string to UTF16LE
+ *
+ * @param input The input string
+ * @param output Where to store the output
+ * @param len The number of characters to convert
+ */
+void ascii_to_utf16le(const char *input, char *output, size_t len)
+{
+    while (len) {
+        *output++ = *input++;
+        *output++ = 0;
+        len--;
+    }
+}
+
+void copy_le64(uint8_t *output, uint64_t v)
+{
+    output[0] = v & 0xff;
+    output[1] = (v >> 8) & 0xff;
+    output[2] = (v >> 16) & 0xff;
+    output[3] = (v >> 24) & 0xff;
+    output[4] = (v >> 32) & 0xff;
+    output[5] = (v >> 40) & 0xff;
+    output[6] = (v >> 48) & 0xff;
+    output[7] = (v >> 56) & 0xff;
+}
+
+void copy_le32(uint8_t *output, uint32_t v)
+{
+    output[0] = v & 0xff;
+    output[1] = (v >> 8) & 0xff;
+    output[2] = (v >> 16) & 0xff;
+    output[3] = (v >> 24) & 0xff;
+}
+
+void copy_le16(uint8_t *output, uint16_t v)
+{
+    output[0] = v & 0xff;
+    output[1] = (v >> 8) & 0xff;
 }

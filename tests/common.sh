@@ -62,6 +62,10 @@ base64_decode() {
     base64 $BASE64_DECODE
 }
 
+base64_decodez() {
+    base64 $BASE64_DECODE | zcat
+}
+
 filesize() {
     stat $STAT_FILESIZE_FLAGS $1
 }

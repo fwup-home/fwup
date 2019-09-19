@@ -18,6 +18,7 @@
 #include "functions.h"
 #include "requirement.h"
 #include "mbr.h"
+#include "gpt.h"
 #include "uboot_env.h"
 #include "util.h"
 #include "archive_open.h"
@@ -368,6 +369,18 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
     return 0;
 }
 
+static int cb_validate_gpt(cfg_t *cfg, cfg_opt_t *opt)
+{
+    cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
+
+    if (gpt_verify_cfg(sec) < 0) {
+        cfg_error(cfg, last_error());
+        return -1;
+    }
+
+    return 0;
+}
+
 static int cb_validate_uboot(cfg_t *cfg, cfg_opt_t *opt)
 {
     cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
@@ -462,6 +475,23 @@ static cfg_opt_t mbr_opts[] = {
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };
+static cfg_opt_t gpt_partition_opts[] = {
+    CFG_STR("block-offset", 0, CFGF_NONE), // Special case: use a string to support unsigned 32-bit offsets on 32-bit machines
+    CFG_INT("block-count", INT32_MAX, CFGF_NONE),
+    CFG_STR("type", 0, CFGF_NONE), // UUID
+    CFG_STR("guid", 0, CFGF_NONE), // UUID
+    CFG_STR("name", "", CFGF_NONE),
+    CFG_BOOL("boot", cfg_false, CFGF_NONE),
+    CFG_BOOL("expand", cfg_false, CFGF_NONE),
+    CFG_IGNORE_UNKNOWN
+    CFG_END()
+};
+static cfg_opt_t gpt_opts[] = {
+    CFG_STR("guid", 0, CFGF_NONE), // UUID
+    CFG_SEC("partition", gpt_partition_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_IGNORE_UNKNOWN
+    CFG_END()
+};
 static cfg_opt_t uboot_environment_opts[] = {
     CFG_INT("block-offset", -1, CFGF_NONE),
     CFG_INT("block-count", INT32_MAX, CFGF_NONE),
@@ -485,6 +515,7 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("fat_mkdir", CB), \
     CFG_FUNC("fat_setlabel", CB), \
     CFG_FUNC("fat_touch", CB), \
+    CFG_FUNC("gpt_write", CB), \
     CFG_FUNC("mbr_write", CB), \
     CFG_FUNC("trim", CB), \
     CFG_FUNC("uboot_clearenv", CB), \
@@ -555,6 +586,7 @@ static cfg_opt_t opts[] = {
     CFG_FUNC("define-eval!", cb_define_eval_bang),
     CFG_SEC("file-resource", file_resource_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("mbr", mbr_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+    CFG_SEC("gpt", gpt_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("task", task_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_SEC("uboot-environment", uboot_environment_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_FUNC("include", &cb_include),
@@ -593,6 +625,7 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     cfg_set_validate_func(toplevel_cfg, "require-fwup-version", cb_validate_require_fwup_version);
     cfg_set_validate_func(toplevel_cfg, "file-resource", cb_validate_file_resource);
     cfg_set_validate_func(toplevel_cfg, "mbr", cb_validate_mbr);
+    cfg_set_validate_func(toplevel_cfg, "gpt", cb_validate_gpt);
     cfg_set_validate_func(toplevel_cfg, "uboot-environment", cb_validate_uboot);
     cfg_set_validate_func(toplevel_cfg, "task|on-resource", cb_validate_on_resource);
 

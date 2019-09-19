@@ -1,0 +1,76 @@
+#!/bin/sh
+
+#
+# Test the GPT creation ability of fwup
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(EFI_TYPE, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b")
+define(LINUX_TYPE, "44479540-f297-41b2-9af7-d131d5f0458a")
+
+define(DISK_UUID, "b443fbeb-2c93-481b-88b3-0ecb0aeba911")
+define(EFI_PART_UUID, "5278721d-0089-4768-85df-b8f1b97e6684")
+define(ROOTFS_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
+
+define(EFI_PART_OFFSET, 64)
+define(EFI_PART_COUNT, 32768)
+define-eval(ROOTFS_PART_OFFSET, "\${EFI_PART_OFFSET} + \${EFI_PART_COUNT}")
+define(ROOTFS_PART_COUNT, 65536)
+
+gpt gpt-a {
+    guid = \${DISK_UUID}
+
+    partition 0 {
+        block-offset = \${EFI_PART_OFFSET}
+        block-count = \${EFI_PART_COUNT}
+        type = \${EFI_TYPE}
+        guid = \${EFI_PART_UUID}
+        name = "efi-part.vfat"
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_PART_OFFSET}
+        block-count = \${ROOTFS_PART_COUNT}
+        type = \${LINUX_TYPE}
+        guid = \${ROOTFS_PART_UUID}
+        name = "rootfs.ext2"
+    }
+}
+task complete {
+	on-init {
+                gpt_write(gpt-a)
+        }
+}
+EOF
+
+# Create the expected output from sfdisk by running ./163_gpt-generate.sh on
+# Linux.
+base64_decodez >$WORK/expected-primary-gpt.img <<EOF
+H4sIAMVuu10AA+3SzyuDcRzA8c+zcuCgdjZZTpIfcVU8w2ySWosc7PIctjjRs6WV0nOgcJXUTnO0
+46aYg+JkJFHO/oCVkKKox1d9n8OOj4Oo9+vbtz6f769Pn/qK4D8LyKPruoaKLMfwfXu2FJ2YDCci
+yRkRQ1JqpXnuqPK9473lvdqpc1Pn9Y+xw52etvhmpfWqpX4QDOh9R8+b+dDozzrCb+rKdp91vN8F
+T6akWBuuDbXb+eSWLMQ2Ho6fq2uZdVOfG3Ea76UlI4vSK8tiiS056ZMVtWKpyB9zNza+91KOFN5u
+B+6fotsXTeefof7r6dPX1XBhP3VpOl79xt9ty5IaOVUzq2qnJa/iQf/tAwAAAAAAAAAAAAAAAAAA
+AAAAAAAAAMCf8QXD+LQzAEIAAA==
+EOF
+base64_decodez >$WORK/expected-secondary-gpt.img <<EOF
+H4sIAMVuu10AA+3bsSvEYRzH8c8NFoO62cllko6LwaL4/XCOpHTZ3PIb7mKi3126UvolCqsudRPj
+rRgwXDE5kiizP+AWpCgGjzw33HgGGd6vp6fn+3zr6dPzB3y7cz3nne/34bNp7VeHq0MdfiG1rYXk
+5uPJ8+ladsPRj5FADTLKalG9WpYnX3n1acV0PFM1xykmx/deDt3S213/w1Ni57Ll4jMSv5mpvK5G
+SwfpKyeo54ca3vlaMitvMnMmO6OCqQeazAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4L9ITExFZ93U
+nBRS2tzL67HB775n5+3rU/dd9nRsv/Yxdrwba5/cOmq7bq2Vw67tB3bfzkdG/+oP+L0vmeSr/ABC
+AAA=
+EOF
+cp $WORK/expected-primary-gpt.img $WORK/expected.img
+dd if=$WORK/expected-secondary-gpt.img of=$WORK/expected.img bs=512 seek=98369 conv=notrunc
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+cmp_bytes 50381824 $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

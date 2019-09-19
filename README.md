@@ -315,6 +315,7 @@ Scope                | Description
 ---------------------|------------
 file-resource        | Defines a reference to a file that should be included in the archive
 mbr                  | Defines the master boot record contents on the destination
+gpt                  | Defines GPT partitions on the destination
 task                 | Defines a firmware update task (referenced using -t from the command line)
 
 ## file-resource
@@ -513,6 +514,38 @@ mbr mbr-a {
 }
 ```
 
+## gpt
+
+A `gpt` section specifies the contents of a [GUID Partition
+Table](https://en.wikipedia.org/wiki/GUID_Partition_Table). It is similar to the
+`mbr` section, but it supports more partitions and uses UUIDs. Here's an example
+gpt definition:
+
+```conf
+gpt my-gpt {
+    # UUID for the entire disk
+    guid = b443fbeb-2c93-481b-88b3-0ecb0aeba911
+
+    partition 0 {
+        block-offset = ${EFI_PART_OFFSET}
+        block-count = ${EFI_PART_COUNT}
+        type = c12a7328-f81f-11d2-ba4b-00a0c93ec93b # EFI type UUID
+        guid = 5278721d-0089-4768-85df-b8f1b97e6684 # ID for partition 0 (create with uuidgen)
+        name = "efi-part.vfat"
+    }
+    partition 1 {
+        block-offset = ${ROOTFS_PART_OFFSET}
+        block-count = ${ROOTFS_PART_COUNT}
+        type = 44479540-f297-41b2-9af7-d131d5f0458a # Rootfs type UUID
+        guid = fcc205c8-2f1c-4dcd-bef4-7b209aa15cca # Another uuidgen'd UUID
+        name = "rootfs.ext2"
+    }
+}
+```
+
+Call `gpt_write` to tell `fwup` to write the protective MBR and primary and backup
+GPT tables.
+
 ## U-Boot environment
 
 For systems using the U-Boot bootloader, some support is included for modifying
@@ -593,6 +626,7 @@ fat_rm(block_offset, filename)          | 0.1.0 | Delete the specified file
 fat_mkdir(block_offset, filename)       | 0.2.0 | Create a directory on a FAT file system. This also succeeds if the directory already exists.
 fat_setlabel(block_offset, label)       | 0.2.0 | Set the volume label on a FAT file system
 fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the file doesn't exist (no timestamp update like on Linux)
+gpt_write(gpt)                          | 1.4.0 | Write the specified GPT to the target
 info(message)                           | 0.13.0 | Print out an informational message
 mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the target
 path_write(destination_path)            | 0.16.0 | Write a resource to a path on the host. Requires the `--unsafe` flag
