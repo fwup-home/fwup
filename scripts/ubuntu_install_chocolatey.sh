@@ -7,7 +7,7 @@
 set -e
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-USE_PREBUILT=true
+USE_PREBUILT=false
 
 source $BASE_DIR/scripts/common.sh
 

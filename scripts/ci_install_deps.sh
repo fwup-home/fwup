@@ -34,7 +34,8 @@ install_confuse() {
 }
 
 install_sodium() {
-    curl -LO https://github.com/jedisct1/libsodium/releases/download/$LIBSODIUM_VERSION/libsodium-$LIBSODIUM_VERSION.tar.gz
+    echo Downloading and installing libsodium $LIBSODIUM_VERSION...
+    curl -LO https://github.com/jedisct1/libsodium/releases/download/$LIBSODIUM_VERSION-RELEASE/libsodium-$LIBSODIUM_VERSION.tar.gz
     tar xf libsodium-$LIBSODIUM_VERSION.tar.gz
     pushd libsodium-$LIBSODIUM_VERSION
     ./configure --prefix=$DEPS_INSTALL_DIR
