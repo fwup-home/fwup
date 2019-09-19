@@ -22,6 +22,7 @@ cd $DEPS_DIR
 
 # Build zlib
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
+    echo Building zlib...
     rm -fr $DEPS_DIR/zlib-*
     tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.xz
     cd zlib-$ZLIB_VERSION
@@ -36,6 +37,7 @@ fi
 
 # Build libconfuse
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libconfuse.a ]]; then
+    echo Building libconfuse...
     rm -fr $DEPS_DIR/confuse-*
     tar xf $DOWNLOAD_DIR/confuse-$CONFUSE_VERSION.tar.xz
     cd confuse-$CONFUSE_VERSION
@@ -47,6 +49,7 @@ fi
 
 # Build libarchive
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
+    echo Building libarchive...
     rm -fr libarchive-*
     tar xf $DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.gz
     cd libarchive-$LIBARCHIVE_VERSION
@@ -64,6 +67,7 @@ fi
 
 # Build libsodium
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
+    echo Building libsodium...
     rm -fr libsodium-*
     tar xf $DOWNLOAD_DIR/libsodium-$LIBSODIUM_VERSION.tar.gz
     cd libsodium-$LIBSODIUM_VERSION
