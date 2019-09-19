@@ -10,6 +10,17 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 source $BASE_DIR/scripts/common.sh
 
+if [ $(uname -s) = "Darwin" ]; then
+    SHA256SUM=/usr/local/bin/gsha256sum
+
+    if [ ! -f $SHA256SUM ]; then
+        echo "Please run 'brew install coreutils' for gsha256sum"
+        exit 1
+    fi
+else
+    SHA256SUM=sha256sum
+fi
+
 # Initialize some directories
 mkdir -p $DOWNLOAD_DIR
 
@@ -22,5 +33,5 @@ cd $DOWNLOAD_DIR
 [ -e libsodium-$LIBSODIUM_VERSION.tar.gz ] || curl -LO https://github.com/jedisct1/libsodium/releases/download/$LIBSODIUM_VERSION-RELEASE/libsodium-$LIBSODIUM_VERSION.tar.gz
 
 echo "Verifying checksums..."
-sha256sum -c $BASE_DIR/scripts/third_party.sha256
+$SHA256SUM -c $BASE_DIR/scripts/third_party.sha256
 
