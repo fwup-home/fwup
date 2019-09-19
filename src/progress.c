@@ -83,7 +83,7 @@ static void draw_progress_bar(struct fwup_progress *progress, int percent)
 
 static void output_progress(struct fwup_progress *progress, int percent)
 {
-    if (percent == progress->last_reported_percent)
+    if (percent <= progress->last_reported_percent)
         return;
 
     progress->last_reported_percent = percent;
