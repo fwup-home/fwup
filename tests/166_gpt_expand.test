@@ -1,0 +1,128 @@
+#!/bin/sh
+
+#
+# Test that when the expand flag is set on the final partition, it expands.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(EFI_TYPE, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b")
+define(LINUX_ROOT_ARM_TYPE, "69DAD710-2CE4-4E3C-B16C-21A1D49ABED3")
+define(LINUX_TYPE, "0FC63DAF-8483-4772-8E79-3D69D8477DE4")
+
+define(DISK_UUID, "b443fbeb-2c93-481b-88b3-0ecb0aeba911")
+define(EFI_PART_UUID, "5278721d-0089-4768-85df-b8f1b97e6684")
+define(ROOTFS_A_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
+define(ROOTFS_B_PART_UUID, "4E69D2CD-028F-40CE-BBEE-94FB353B424C")
+define(APP_PART_UUID, "9558571B-1DFC-4C3F-8DB4-A8A564FB99A4")
+
+# Numbers don't matter for the test so long as the MBR is right
+define(BOOT_PART_OFFSET, 1024)
+define(BOOT_PART_COUNT, 1024)
+define(ROOTFS_A_PART_OFFSET, 2048)
+define(ROOTFS_A_PART_COUNT, 2048)
+define(ROOTFS_B_PART_OFFSET, 4096)
+define(ROOTFS_B_PART_COUNT, 2048)
+define(APP_PART_OFFSET, 8192)
+define(APP_PART_COUNT, 4096)
+# define(APP_PART_COUNT, 12288) # expanded size
+
+gpt gpt-a {
+    guid = \${DISK_UUID}
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = \${EFI_TYPE}
+        guid = \${EFI_PART_UUID}
+        name = "efi-part.vfat"
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = \${LINUX_ROOT_ARM_TYPE}
+        guid = \${ROOTFS_A_PART_UUID}
+        name = "rootfs.a.ext2"
+    }
+    partition 2 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = \${LINUX_ROOT_ARM_TYPE}
+        guid = \${ROOTFS_B_PART_UUID}
+        name = "rootfs.b.ext2"
+    }
+    partition 3 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = \${LINUX_TYPE}
+        guid = \${APP_PART_UUID}
+        name = "app"
+        expand = true
+    }
+}
+task complete {
+	on-init {
+                gpt_write(gpt-a)
+        }
+}
+EOF
+
+# Create the expected output from sfdisk by running ./166_gpt_expand-generate.sh on
+# Linux.
+base64_decodez >$WORK/expected-primary-gpt.img <<EOF
+H4sIABNvu10AA+3QTSiDcRwH8N8WkYNtJ4dZNidpTCunmdcYmcUiDrtMtjylrGdLk0htigMOONjJ
+isJlyQ5easVBRnMYRS4OdlutlIPa6vGXZ4dd1EOJ+n6e/vV/+z7fp4cI/jM5ZQRBkLGZrkF6emi/
+s6tH299mHySSkYPtPAcixo8TmXgj/9bqfERcp7Md0TW9unvxsPy6LL2nkovH8+KwDQhx6d8Dv63G
+W3tW9ZZUnfTSVrw5btLwfvsSjVsWno5ejufcQSr6vCeUFOZc5CaO6shDTuLJR/U0xXacbCaN8v6R
+S+mbbAcTuvBdKHZ7WXyeqzQk+mKvM9pQ2HFFpWK/ojDH0yR7fKzTy7qdbLjIz9bGH/YnkpxtVX7T
+eppZzzaa2q2kFPsrvuof/XZ/xHyhCAR5y8q0mXuwzKbUwyMbOU2LdTm6uzOW3dwmrdhvKMw52Z/3
+SOwCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIC/7R2zs5eOAEIAAA==
+EOF
+base64_decodez >$WORK/expected-secondary-gpt.img <<EOF
+H4sIABNvu10AA+3QTyiDYRwH8N9E5GDbyWGWjYs0JuU08zdeMoulOOzglS1vKevd0iRSpjjggIOd
+rKY4SXbwp1YcZDSHUeTisttKKQfaah48DruoWcnh+3l66nl+z/Pr+/RUuatPy19j6uMe2oo0RUxa
+2WtbojFh4fHw+WjW6aN8+pQupAwOcpJENeQikWTyUC1NsorIVtlR3T1IcUOjdX9cH7j1h28uCs5S
+ZcZob/hlWucP2C+piOcrM/tkmmDDwzLdLFtk00Fetq/PMT8ak6yredctJ0/ryQZTm4VUPL/0p/yR
+X+fvmc+V8z5ZWJkyS/fCTFwzOLSR0jZblkM726PJzSDpeL4xs09kP+/KMgsAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAD+r47Obl1fq22ASEF2tq8cDr591PV1X+cKfq/iu4HXE8n20JpB07V4
+UHJVnNhVK3h9jk9rfzryF++H3LwDhhS2pQBCAAA=
+EOF
+cp $WORK/expected-primary-gpt.img $WORK/unexpanded.img
+dd if=$WORK/expected-secondary-gpt.img of=$WORK/unexpanded.img bs=512 seek=12289 conv=notrunc
+
+base64_decodez >$WORK/expected-primary-gpt2.img <<EOF
+H4sIABNvu10AA+3QTyiDYRwH8N8WkYNtLg6zbE7SUMpp5m82MrMWcdjllS0rZb1bmjQpUxxwwMFO
+VhQukh2GWnGQ0RxGkYvLbstKOaitXo+8O+yiXkrU9/P21PPv+37fXiL4z+SUEQRBxmY6m/T00H63
+qVdr67APEsnIwXZMxorAx4lMvJF/a00+Iq7T2a7Iml7ds3hUfl2W3lPJxeM5cUyEnqPSvwd+W623
+7qz6Lak66aOteGvcoOH99iUaNy88RV+OZ11BKvq8J5QU5pzkIjfVk4c44slHDTTFdjg2k0Z5/+hO
+6VushxO68F0odntZfJ6rakz0x15ntKGw44pKxX5FYY6nSfb4WKeXdXNsOMnP1k0/7E8k3dZV+U37
+aWY922zotJBS7K/8qn/02/0HxgvFfJA3r0wb3Q/mQEo9PLKR07RZliO7O2PZzW3Siv0DhTmO/XmP
+xC4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPjb3gHtLyCBAEIAAA==
+EOF
+base64_decodez >$WORK/expected-secondary-gpt2.img <<EOF
+H4sIABNvu10AA+3QPUiCQRgH8McoiobUqcEkbYqwD4Ims0/KIjORoAaXN1J8QUheJYwoAg1qqIZq
+yCmhoKaIHCxBqCGysMGCoqXFTQqChkAhr7oGl8CEaPj/joO75+7hf1y9p+G09i2pPBmi7XhHXK+W
+fNZlchoXHyMvx/OOAJXSp/dyymMnB4nUSG4SSCIvNdE0qwhsVRjF3YOY0rWbD13a0G0wdnNRdpat
+aU4Mx15nNcGQ7ZIqeL48v0+iKTa8LNPDsgU27eRj+9Yi8xNJ0bxWct0Vfd7ItOl7TKTg+dU/5U/8
+Ov/AcC73ByTj6oxBvDfOpVRj45tZdadpJby3O5nZ2iENzx/J7xPYz7sLzAIAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAID/q69/UGPpto4SycjG9s6ov+WjrrV8ncv4vbrvBl5PZ3rD6zrVwNJR
+1VVlel8p4/UFPl3Bp8hfvB+KkwOi5yMAAEIAAA==
+EOF
+cp $WORK/expected-primary-gpt2.img $WORK/expanded.img
+dd if=$WORK/expected-secondary-gpt2.img of=$WORK/expanded.img bs=512 seek=20481 conv=notrunc
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that when creating a file and there's no size information that
+# the partition will be the specified block_size
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+cmp_bytes 6308864 $WORK/unexpanded.img $IMGFILE
+
+# Now make the image file larger to see that the final partition is larger
+dd if=/dev/zero of=$IMGFILE bs=512 count=20514 2>/dev/null
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+cmp_bytes 10503168 $WORK/expanded.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
