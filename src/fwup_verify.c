@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <sodium.h>
 
+#define VERIFICATION_CHUNK_SIZE (64 * 1024)
+
 static int check_resource(struct resource_list *list, const char *file_resource_name, struct archive *a, struct archive_entry *ae)
 {
     struct resource_list *item = rlist_find_by_name(list, file_resource_name);
@@ -57,20 +59,22 @@ static int check_resource(struct resource_list *list, const char *file_resource_
     crypto_generichash_state hash_state;
     crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
     size_t length_left = expected_length;
+    char *buffer = malloc(VERIFICATION_CHUNK_SIZE);
     while (length_left != 0) {
-        char buffer[4096];
-
-        size_t to_read = sizeof(buffer);
+        size_t to_read = VERIFICATION_CHUNK_SIZE;
         if (to_read > length_left)
             to_read = length_left;
 
         ssize_t len = archive_read_data(a, buffer, to_read);
-        if (len <= 0)
+        if (len <= 0) {
+            free(buffer);
             ERR_RETURN("Error reading '%s' in archive", archive_entry_pathname(ae));
+        }
 
         crypto_generichash_update(&hash_state, (const unsigned char*) buffer, len);
         length_left -= len;
     }
+    free(buffer);
 
     unsigned char hash[crypto_generichash_BYTES];
     crypto_generichash_final(&hash_state, hash, sizeof(hash));
