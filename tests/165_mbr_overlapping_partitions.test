@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test that an mbr with overlapping partitions fails
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 64)
+define(BOOT_PART_COUNT, 1024)
+define(ROOTFS_PART_OFFSET, 128)
+define(ROOTFS_PART_COUNT, 1024)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_PART_OFFSET}
+        block-count = \${ROOTFS_PART_COUNT}
+        type = 0xc # FAT32
+    }
+}}
+task complete {
+	on-init {
+		mbr_write(mbr-a)
+	}
+}
+EOF
+
+# Try to create the firmware image
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected creation to fail due to overlapping boot and rootfs partitions."
+    exit 1
+fi
