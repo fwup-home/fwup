@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.0
+
+* New feature
+  * GPT partitions. This is perhaps the oldest feature request for fwup. Thanks
+    for your patience. The support in this version allows for static GPT
+    partitions and ones where the last partition grows to available space. All
+    UUIDs must be specified (but you can use variables to inject dynamic UUIDs
+    from scripts calling fwup. See the new `gpt_write` function and details in
+    the README.md.
+
 ## v1.3.2
 
 * Improvements
