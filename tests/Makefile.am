@@ -178,7 +178,9 @@ TESTS = 001_simple_fw.test \
 	162_source_date_epoch.test \
 	163_gpt.test \
 	164_gpt_overlapping_partitions.test \
-        165_mbr_overlapping_partitions.test \
-	166_gpt_expand.test
+	165_mbr_overlapping_partitions.test \
+	166_gpt_expand.test \
+	167_gpt_16_parts.test \
+	168_gpt_flags.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

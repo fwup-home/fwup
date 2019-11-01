@@ -481,7 +481,7 @@ static cfg_opt_t gpt_partition_opts[] = {
     CFG_STR("type", 0, CFGF_NONE), // UUID
     CFG_STR("guid", 0, CFGF_NONE), // UUID
     CFG_STR("name", "", CFGF_NONE),
-    CFG_BOOL("boot", cfg_false, CFGF_NONE),
+    CFG_STR("flags", "0", CFGF_NONE), // Special case: use a string to support unsigned 64-bit number
     CFG_BOOL("expand", cfg_false, CFGF_NONE),
     CFG_IGNORE_UNKNOWN
     CFG_END()
