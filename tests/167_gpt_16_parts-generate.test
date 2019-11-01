@@ -1,0 +1,78 @@
+#!/bin/sh
+
+set -e
+
+# Adapted from Buildroot
+
+# GPT partition type UUIDs
+esp_type=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+linux_root_arm_type=69DAD710-2CE4-4E3C-B16C-21A1D49ABED3
+linux_type=0FC63DAF-8483-4772-8E79-3D69D8477DE4
+
+# Hardcode UUIDs for reproducible images (call uuidgen to make more)
+disk_uuid=b443fbeb-2c93-481b-88b3-0ecb0aeba911
+efi_part_uuid=5278721d-0089-4768-85df-b8f1b97e6684
+rootfs_a_part_uuid=fcc205c8-2f1c-4dcd-bef4-7b209aa15cca
+rootfs_b_part_uuid=4E69D2CD-028F-40CE-BBEE-94FB353B424C
+app_part_uuid=9558571B-1DFC-4C3F-8DB4-A8A564FB99A4
+
+# Boot partition offset and size, in 512-byte sectors
+efi_part_start=1024
+efi_part_size=1024
+rootfs_a_part_start=2048
+rootfs_a_part_size=2048
+rootfs_b_part_start=4096
+rootfs_b_part_size=2048
+
+gpt_size=33
+
+first_lba=$(( 1 + gpt_size ))
+last_lba=$(( 57344 + 4096 ))
+
+# Disk image size in 512-byte sectors
+image_size=$(( last_lba + gpt_size + 1 ))
+
+primary_gpt_lba=0
+secondary_gpt_lba=$(( image_size - gpt_size ))
+
+rm -f disk.img disk-primary-gpt.img disk-secondary-gpt.img disk_expanded.img
+dd if=/dev/zero of=disk.img bs=512 count=0 seek=$image_size 2>/dev/null
+
+sfdisk disk.img <<EOF
+label: gpt
+label-id: $disk_uuid
+device: /dev/foobar0
+unit: sectors
+first-lba: $first_lba
+last-lba: $last_lba
+
+/dev/foobar0p1 : start=$efi_part_start,  size=$efi_part_size,  type=$esp_type,   uuid=$efi_part_uuid,  name="efi-part.vfat"
+/dev/foobar0p2 : start=$rootfs_a_part_start, size=$rootfs_a_part_size, type=$linux_root_arm_type, uuid=$rootfs_a_part_uuid, name="rootfs.a.ext2"
+/dev/foobar0p3 : start=$rootfs_b_part_start, size=$rootfs_b_part_size, type=$linux_root_arm_type, uuid=$rootfs_b_part_uuid, name="rootfs.b.ext2"
+/dev/foobar0p4 : start=8192, size=4096, type=$linux_type, uuid=8d456f24-e9de-46c2-849f-ec7ff8a5fc67, name="partition 3"
+/dev/foobar0p5 : start=12288, size=4096, type=$linux_type, uuid=55bdb548-d9f7-4fd4-aed4-90d0e56e213e, name="partition 4"
+/dev/foobar0p6 : start=16384, size=4096, type=$linux_type, uuid=ca3caf44-c157-41f0-b72a-56c62633e50a, name="partition 5"
+/dev/foobar0p7 : start=20480, size=4096, type=$linux_type, uuid=66282c74-1379-4356-8bfa-6b488c4180fc, name="partition 6"
+/dev/foobar0p8 : start=24576, size=4096, type=$linux_type, uuid=403c1fcf-5718-4f9a-b78a-30e3bc274cb9, name="partition 7"
+/dev/foobar0p9 : start=28672, size=4096, type=$linux_type, uuid=19a5a8a1-2e0e-411e-a552-af011fab44d0, name="partition 8"
+/dev/foobar0p10 : start=32768, size=4096, type=$linux_type, uuid=87cd4e2a-556c-483c-b8fd-fe7a152c2637, name="partition 9"
+/dev/foobar0p11 : start=36864, size=4096, type=$linux_type, uuid=b697224b-2f5f-4677-8ca7-dd69619a8479, name="partition 10"
+/dev/foobar0p12 : start=40960, size=4096, type=$linux_type, uuid=22bbf772-675f-40b3-b465-b163e062279b, name="partition 11"
+/dev/foobar0p13 : start=45056, size=4096, type=$linux_type, uuid=6952eb1f-510a-412d-80df-34ad74a52dde, name="partition 12"
+/dev/foobar0p14 : start=49152, size=4096, type=$linux_type, uuid=09813f9a-e4b5-4fa6-bfb8-685e32442833, name="partition 13"
+/dev/foobar0p15 : start=53248, size=4096, type=$linux_type, uuid=a6d47ef2-c7fa-435c-bedf-85d978905c47, name="partition 14"
+/dev/foobar0p16 : start=57344, size=4096, type=$linux_type, uuid=f4f3da36-2b95-4460-936a-c8d2b87dffd9, name="partition 15"
+EOF
+
+echo
+echo "Add the following to the unit test"
+echo
+echo "base64_decodez >\$WORK/expected-primary-gpt.img <<EOF"
+dd if=disk.img bs=512 count=$gpt_size skip=$primary_gpt_lba 2>/dev/null | gzip -c | base64
+echo "EOF"
+echo "base64_decodez >\$WORK/expected-secondary-gpt.img <<EOF"
+dd if=disk.img bs=512 count=$gpt_size skip=$secondary_gpt_lba 2>/dev/null | gzip -c | base64
+echo "EOF"
+echo "cp \$WORK/expected-primary-gpt.img \$WORK/expected.img"
+echo "dd if=\$WORK/expected-secondary-gpt.img of=\$WORK/expected.img bs=512 seek=$secondary_gpt_lba conv=notrunc"
+

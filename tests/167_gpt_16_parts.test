@@ -1,0 +1,192 @@
+#!/bin/sh
+
+#
+# Test that when the expand flag is set on the final partition, it expands.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+define(EFI_TYPE, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b")
+define(LINUX_ROOT_ARM_TYPE, "69DAD710-2CE4-4E3C-B16C-21A1D49ABED3")
+define(LINUX_TYPE, "0FC63DAF-8483-4772-8E79-3D69D8477DE4")
+
+define(DISK_UUID, "b443fbeb-2c93-481b-88b3-0ecb0aeba911")
+define(EFI_PART_UUID, "5278721d-0089-4768-85df-b8f1b97e6684")
+define(ROOTFS_A_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
+define(ROOTFS_B_PART_UUID, "4E69D2CD-028F-40CE-BBEE-94FB353B424C")
+
+# Numbers don't matter for the test so long as the MBR is right
+define(BOOT_PART_OFFSET, 1024)
+define(BOOT_PART_COUNT, 1024)
+define(ROOTFS_A_PART_OFFSET, 2048)
+define(ROOTFS_A_PART_COUNT, 2048)
+define(ROOTFS_B_PART_OFFSET, 4096)
+define(ROOTFS_B_PART_COUNT, 2048)
+define(APP_PART_OFFSET, 8192)
+define(APP_PART_COUNT, 4096)
+
+gpt gpt-a {
+    guid = \${DISK_UUID}
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = \${EFI_TYPE}
+        guid = \${EFI_PART_UUID}
+        name = "efi-part.vfat"
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = \${LINUX_ROOT_ARM_TYPE}
+        guid = \${ROOTFS_A_PART_UUID}
+        name = "rootfs.a.ext2"
+    }
+    partition 2 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = \${LINUX_ROOT_ARM_TYPE}
+        guid = \${ROOTFS_B_PART_UUID}
+        name = "rootfs.b.ext2"
+    }
+    partition 3 {
+        block-offset = 8192
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 8d456f24-e9de-46c2-849f-ec7ff8a5fc67
+        name = "partition 3"
+    }
+    partition 4 {
+        block-offset = 12288
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 55bdb548-d9f7-4fd4-aed4-90d0e56e213e
+        name = "partition 4"
+    }
+    partition 5 {
+        block-offset = 16384
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = ca3caf44-c157-41f0-b72a-56c62633e50a
+        name = "partition 5"
+    }
+    partition 6 {
+        block-offset = 20480
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 66282c74-1379-4356-8bfa-6b488c4180fc
+        name = "partition 6"
+    }
+    partition 7 {
+        block-offset = 24576
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 403c1fcf-5718-4f9a-b78a-30e3bc274cb9
+        name = "partition 7"
+    }
+    partition 8 {
+        block-offset = 28672
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 19a5a8a1-2e0e-411e-a552-af011fab44d0
+        name = "partition 8"
+    }
+    partition 9 {
+        block-offset = 32768
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 87cd4e2a-556c-483c-b8fd-fe7a152c2637
+        name = "partition 9"
+    }
+    partition 10 {
+        block-offset = 36864
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = b697224b-2f5f-4677-8ca7-dd69619a8479
+        name = "partition 10"
+    }
+    partition 11 {
+        block-offset = 40960
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 22bbf772-675f-40b3-b465-b163e062279b
+        name = "partition 11"
+    }
+    partition 12 {
+        block-offset = 45056
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 6952eb1f-510a-412d-80df-34ad74a52dde
+        name = "partition 12"
+    }
+    partition 13 {
+        block-offset = 49152
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = 09813f9a-e4b5-4fa6-bfb8-685e32442833
+        name = "partition 13"
+    }
+    partition 14 {
+        block-offset = 53248
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = a6d47ef2-c7fa-435c-bedf-85d978905c47
+        name = "partition 14"
+    }
+    partition 15 {
+        block-offset = 57344
+        block-count = 4096
+        type = \${LINUX_TYPE}
+        guid = f4f3da36-2b95-4460-936a-c8d2b87dffd9
+        name = "partition 15"
+    }
+}
+task complete {
+	on-init {
+                gpt_write(gpt-a)
+        }
+}
+EOF
+
+# Create the expected output from sfdisk by running ./167_gpt_16_parts-generate.sh on
+# Linux.
+base64_decodez >$WORK/expected-primary-gpt.img <<EOF
+H4sIAGWWu10AA+3VW0hTcRzA8d+kqHzwQkRFl6mEis37rXDqltMtLGcj9WWkM7ycEhdzlBZeokk3
+TcEiWA/qw+xGLVFzZmn6YGqYooNSyAnpQxhmJSleWkf970GLzo6OKPh9Dn84l/9/38Ng/wGg/5kd
+TJjNZg595jrJfnXCg+iYwy7xQtlxAA7I6TuhId9Ni084ZIblU90sS8j1+FxUfQVvl+RKncNr+/H7
+znbkcREZpWEDC+zfB/1tnjlebdyZfudnsVDVFdEVtkeVK7sKmeJik+FLU0G6BjYszzNvWrkuDdKB
+Am84AwpQgRp84Cx9R0GfseP0doga5fHjarNcq43aloHOje3zu317jrZMXXDRVsu7YTPpO65cpwIl
+fajpZg7dVtAjDXLp64B19nv6qbgyuzeC5ombc8Fhh46AE+lv/1M/dc19fXiH4yWNSnwjL5x6J84f
+3aeMLh3+2B6jqfxUOKObzwAX0vdduc7yvVNLQwnZ9MRAlu3f9SUNLxKmB43Sx8byvrFs1wjwI/1I
+5n6QDfoiPb87qW1S2OiV2OEeOGYPAtKXMveDbdBX8zzT87YmRl2fPS0pERbNQzzpJzP3Q2zQ7+Xy
+BTuStNLGa34fnnscaYIU0lcy90Nt0K++p9vp4LNXqJPpOdyHoj46tNwvZO4fsEHfK67nclYCX2JY
++HF+G889dOnPZLFfxtw/aIN+rNvtp8m+52JK7r6nFFpNHpSTfiVz39/yY1lHXzXd7JacUSeoT6s9
+OZLqcQeqSF9vTd9/3X3uuIyyP+YtLDIFPVLrvIfhCem3WtNnu/v92tdGXtzSMFojbTVknggQeQbC
+S9LvtabPfgdc3f9aYKyZfSWPajEVD+aWy8XQR/oma/rsd8DV/ZChb1O39qeIKk519hvyzYMwQvqf
+remvZQdECCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCH0L/oJsX9TqwBCAAA=
+EOF
+base64_decodez >$WORK/expected-secondary-gpt.img <<EOF
+H4sIAGWWu10AA+3UW0hTcRzA8d+iqHzwQkRGl6mEis37rXDqltMt1M1G6stozvByTFzMUVqoiybd
+NAWLYD2oD7MiaomaM0tzD6aGKToohZyQPoRRVoLiJTvp3wctOpsb0cPvc/jDOf9z/nwPB87ft9Cv
+iz035PYsEep6Y3qjDqiKpNcgV1huMX5tK83WwlZYsbwd1smCbKDAH86CAlSghgA4R88o6DPbuL4d
+pSY4XHFjvme9Wdcx3LPNtLg/sD+5Y+aih65e1gc7SN9l/ToVKOlDTTcL6baCHllQRF+H2NnvH6LE
+VVve8No/31oIjzqWBK6kv+dv/cxN9w3R3S6XtSrhzeJo6p2wZOKQMr5y7KMpQVv7qWxOv5gDHqQf
+uH7d2nenVoYSCugHQ21s/6kvanmROjtiljw2Vw9OFnjGQBDpxzL3wxzQFxi4feld0/xWv7Ru79BJ
+J+CRvoS5H+6Avprjm128Ky3uxvwZUQVfswgppC9n7kc4oD/A5vLc03WS1utBH577JLVBBukrmfuR
+DujX39fvdQ44yNdLDSz2Q8EgHVrtlzH3jzig7yfuv5KfyhUZl35c2M3xjgQN6Vcx9486oJ/odeep
+PPB8QsW995RCpy2GatKvZe4Hr/0sdvRVs+1e8pwmXnNW4+nxTJ+7UEf6Bmv6wXb32VNSyumEP19j
+CXuk1vuPwRPS77Smb+vu93tfF3tpZ8tEg6TTmHsqROAbCi9Jf8Cavu074Mb+t1Jzw/wrWVyHpXyk
+qFomhEHSt1jTt30H3NiPGP0+c/twhqAmr2fIWLI8AuOk/8Wa/mZ2QIQQQgghhBBCCCGEEEIIIYQQ
+QgghhBBCCCGEEEIIIYQQQgj9b+ITjnuk8KUnAVggo6/z3I2mX/Oe06v3WeQ5r7UFZH5qIa65hrNP
+dLXJ+bXT1AM3FpnXkFEZNbz0L94f2ecnHvCAmwBCAAA=
+EOF
+cp $WORK/expected-primary-gpt.img $WORK/expected.img
+dd if=$WORK/expected-secondary-gpt.img of=$WORK/expected.img bs=512 seek=61441 conv=notrunc
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+cmp_bytes 31474688 $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
