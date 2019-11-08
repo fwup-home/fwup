@@ -29,6 +29,7 @@
 #include <sodium.h>
 
 #include "../3rdparty/base64.h"
+#include "block_cache.h"
 #include "mmc.h"
 #include "util.h"
 #include "fwup_apply.h"
@@ -634,6 +635,11 @@ int main(int argc, char **argv)
             // Call out to platform-specific code to obtain a filehandle
             output_fd = mmc_open(mmc_device_path);
         }
+
+        // Trim the detected image size down to a multiple of the block cache
+        // segment size (128 KB) since since fwup only writes full blocks. If
+        // this isn't done, it is possible to write beyond the end of file.
+        end_offset &= ~(BLOCK_CACHE_SEGMENT_SIZE - 1);
 
         // Make sure that the output opened successfully and don't allow the
         // filehandle to be passed to child processes.

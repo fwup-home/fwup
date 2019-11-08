@@ -91,25 +91,25 @@ cp $WORK/expected-primary-gpt.img $WORK/unexpanded.img
 dd if=$WORK/expected-secondary-gpt.img of=$WORK/unexpanded.img bs=512 seek=12289 conv=notrunc
 
 base64_decodez >$WORK/expected-primary-gpt2.img <<EOF
-H4sIABNvu10AA+3QTyiDYRwH8N8WkYNtLg6zbE7SUMpp5m82MrMWcdjllS0rZb1bmjQpUxxwwMFO
-VhQukh2GWnGQ0RxGkYvLbstKOaitXo+8O+yiXkrU9/P21PPv+37fXiL4z+SUEQRBxmY6m/T00H63
-qVdr67APEsnIwXZMxorAx4lMvJF/a00+Iq7T2a7Iml7ds3hUfl2W3lPJxeM5cUyEnqPSvwd+W623
-7qz6Lak66aOteGvcoOH99iUaNy88RV+OZ11BKvq8J5QU5pzkIjfVk4c44slHDTTFdjg2k0Z5/+hO
-6VushxO68F0odntZfJ6rakz0x15ntKGw44pKxX5FYY6nSfb4WKeXdXNsOMnP1k0/7E8k3dZV+U37
-aWY922zotJBS7K/8qn/02/0HxgvFfJA3r0wb3Q/mQEo9PLKR07RZliO7O2PZzW3Siv0DhTmO/XmP
-xC4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPjb3gHtLyCBAEIAAA==
+H4sIAEOfxV0AA+3TTyiDYRwH8N/WRA62nRxmGSdprJTTzN+YZdZaxGGXV7a8pax3S5NImeKAAw52
+sqJwkezgT604yGgOo0jhspPVSjmorV6P9jrMQY0S9f28PfX8+f2eb+9bLxH8Z3JKiaIoYzPRnn93
+73Z7h0Vnb3H0EMnIyXY0ioTi/UQmVXzcWimtH6R1Mt0WXtJrOmf3Si6Kk1tquXQ+JY0ni8H5jdeB
+X1blrT4uf42rD7toLdoYNWoFv2OOhswzj/vPB5PuACmydWJhbp+L3MRTDXmII4F8VEujbIdjs/yo
+bu74hL7BtjtcEboORq7OCk4yZYZYd+RlXBcMOc+pSMpX5vYJNMIeH8v0smyODRf52bruh/mxOG9b
+lF82H6WW0/XGViuppPzSr/IHvp2/YzpVTgcE88KYib81TyQ0ff0rGW2TdT68uTGYXl0nXbbu/tPf
+zbEv78kzCwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/rY3o2m94gBCAAA=
 EOF
 base64_decodez >$WORK/expected-secondary-gpt2.img <<EOF
-H4sIABNvu10AA+3QPUiCQRgH8McoiobUqcEkbYqwD4Ims0/KIjORoAaXN1J8QUheJYwoAg1qqIZq
-yCmhoKaIHCxBqCGysMGCoqXFTQqChkAhr7oGl8CEaPj/joO75+7hf1y9p+G09i2pPBmi7XhHXK+W
-fNZlchoXHyMvx/OOAJXSp/dyymMnB4nUSG4SSCIvNdE0qwhsVRjF3YOY0rWbD13a0G0wdnNRdpat
-aU4Mx15nNcGQ7ZIqeL48v0+iKTa8LNPDsgU27eRj+9Yi8xNJ0bxWct0Vfd7ItOl7TKTg+dU/5U/8
-Ov/AcC73ByTj6oxBvDfOpVRj45tZdadpJby3O5nZ2iENzx/J7xPYz7sLzAIAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAID/q69/UGPpto4SycjG9s6ov+WjrrV8ncv4vbrvBl5PZ3rD6zrVwNJR
-1VVlel8p4/UFPl3Bp8hfvB+KkwOi5yMAAEIAAA==
+H4sIAEOfxV0AA+3bPUiCQRgH8McoiobUqcEka4qwhKDJ7JMyyUQkyMHljZReCJJXCSOKIIMaqqEa
+ckooqCkihz5AqCGysMGCIkgXlxKCoCFQ0KtucQlMiIb/7zju7uGOP3f7NXgaz2o/YsqTAdqKtEf0
+aslnW6Ix40Li6O141uWnUvqSLac8TnKRSE3kJoEk8lIzTbKKwGaFUdw/ikltm+VgvC54FwjfXpad
+Z2p00cHw+7QmEHRcUQXPl+efk2iCNS/L9LBsgXUn+di6pcj8aEy0rJbcdJ6+rqdb9d1mUvD86p/y
+R36dv2+4kM/7JePKlEF8MM4kVcP2jYy6w7wc2t0ZTW9uk+Z735M1/5zAXt5dYBYAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAD8X719Jo21yzZEJCMHW8ft0efPepb/N5fxffV8jPN6Kt0TWtOq
++hcPq64rU3vKBK/P8f5i0jn+5AJQlBysljDEAEIAAA==
 EOF
 cp $WORK/expected-primary-gpt2.img $WORK/expanded.img
-dd if=$WORK/expected-secondary-gpt2.img of=$WORK/expanded.img bs=512 seek=20481 conv=notrunc
+dd if=$WORK/expected-secondary-gpt2.img of=$WORK/expanded.img bs=512 seek=20703 conv=notrunc
 
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
@@ -120,9 +120,9 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 cmp_bytes 6308864 $WORK/unexpanded.img $IMGFILE
 
 # Now make the image file larger to see that the final partition is larger
-dd if=/dev/zero of=$IMGFILE bs=512 count=20514 2>/dev/null
+dd if=/dev/zero of=$IMGFILE bs=512 count=20736 2>/dev/null
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
-cmp_bytes 10503168 $WORK/expanded.img $IMGFILE
+cmp $WORK/expanded.img $IMGFILE
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

@@ -16,6 +16,8 @@ rootfs_a_part_uuid=fcc205c8-2f1c-4dcd-bef4-7b209aa15cca
 rootfs_b_part_uuid=4E69D2CD-028F-40CE-BBEE-94FB353B424C
 app_part_uuid=9558571B-1DFC-4C3F-8DB4-A8A564FB99A4
 
+gpt_size=33
+
 # Boot partition offset and size, in 512-byte sectors
 efi_part_start=1024
 efi_part_size=1024
@@ -25,9 +27,11 @@ rootfs_b_part_start=4096
 rootfs_b_part_size=2048
 app_part_start=8192
 app_part_size=4096
-app_part_expanded_size=12288
 
-gpt_size=33
+# Force the image size to be a multiple of 128 KB. fwup will round
+# to the nearest multiple since it only works in 128 KB chunks.
+image_expanded_size=20736
+app_part_expanded_size=$(( image_expanded_size - gpt_size - 1 - app_part_start ))
 
 first_lba=$(( 1 + gpt_size ))
 last_lba=$(( app_part_start + app_part_size ))
@@ -35,7 +39,6 @@ last_lba_expanded=$(( app_part_start + app_part_expanded_size ))
 
 # Disk image size in 512-byte sectors
 image_size=$(( last_lba + gpt_size + 1 ))
-image_expanded_size=$(( last_lba_expanded + gpt_size + 1 ))
 
 primary_gpt_lba=0
 secondary_gpt_lba=$(( image_size - gpt_size ))
