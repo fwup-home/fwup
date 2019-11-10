@@ -72,7 +72,7 @@ if $FWUP_VERIFY -V --public-key $LONG_PUBLIC_KEY -i $FWFILE; then echo "verify l
 
 # Passing a private key that's too long or too short should fail
 if $FWUP_CREATE --private-key $TRUNCATED_PRIVATE_KEY -c -f $CONFIG -o $FWFILE; then echo "create private truncated"; exit 1; fi
-if $FWUP_CREATE --private-key $LONG_PRIVATE_KEY -c -f $CONFIG -o $FWFILE; then echo "create private truncated"; exit 1; fi
+if $FWUP_CREATE --private-key $LONG_PRIVATE_KEY -c -f $CONFIG -o $FWFILE; then echo "create long private"; exit 1; fi
 
 # Passing a corrupt private key currently succeeds (not ideal, but...)
 $FWUP_CREATE --private-key $CORRUPT_PRIVATE_KEY -c -f $CONFIG -o $FWFILE
