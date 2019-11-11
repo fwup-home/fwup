@@ -632,7 +632,7 @@ mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the
 path_write(destination_path)            | 0.16.0 | Write a resource to a path on the host. Requires the `--unsafe` flag
 pipe_write(command)                     | 0.16.0 | Pipe a resource through a command on the host. Requires the `--unsafe` flag
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
-raw_write(block_offset)                 | 0.1.0 | Write the resource to the specified block offset
+raw_write(block_offset, options)        | 0.1.0 | Write the resource to the specified block offset. Options include `cipher` and `secret`.
 trim(block_offset, count)               | 0.15.0 | Discard any data previously written to the range. TRIM requests are issued to the device if --enable-trim is passed to fwup.
 uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is corrupt, reinitialize it. If not, then do nothing
 uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
@@ -683,6 +683,51 @@ file-resource rootfs.img {
         skip-holes = false
 }
 ```
+
+## Disk encryption
+
+The `raw_write` function has limited support for disk encryption that's
+compatible with the Linux `dm-crypt` kernel driver. This makes it possible to
+write filesystem data in a way that's unreadable at rest. Caveats are in order:
+
+1. `fwup` does not address handling of secret keys and improper handling can
+   easily compromise the benefits of encryption
+2. The `.fw` archive is not encrypted. This mechanism assumes that the secrecy
+   of the archive is protected by other means. Of course, it is possible to
+   pre-encrypt the data in the archive, but then you can't have device-specific
+   secret keys.
+3. Only the simplest `dm-crypt` cipher is currently supported ("aes-cbc-plain").
+   This has known deficiencies. PRs for other modes that can be incorporated
+   under `fwup`'s Apache License would be appreciated
+
+Various tutorials exist on the Internet for creating encrypted filesystems and
+mounting filesystems using `dm-crypt`. `fwup` doesn't do as much. It takes a
+block of bytes to write, encrypts it, and writes it to the destination. For
+example, if you have a SquashFS-formatted filesystem that you want written
+encrypted to a disk, you'd have this fragment:
+
+```conf
+on-resource fs.squashfs {
+    raw_write(${PARTITION_START}, "cipher=aes-cbc-plain", "secret=\${SECRET_KEY}")
+}
+```
+
+In the above example, the `SECRET_KEY` is expected to come from an environment
+variable being set on the device when applying the firmware update. You could,
+of course, hard-code the secret key in the configuration file to test things
+out. The key is base64-encoded.
+
+Then, on the device, mount the SquashFS partition but use `dm-crypt`. The
+process will look something like this:
+
+```sh
+losetup /dev/loop0 /dev/mmcblk0p2
+cryptsetup open --type=plain --cipher=aes-cbc-plain --key-file=key.txt /dev/loop0 my-filesystem
+mount /dev/mapper/my-filesystem /mnt
+```
+
+You will likely need to replace many of the arguments above with ones
+appropriate for your system.
 
 ## Reproducible builds
 
