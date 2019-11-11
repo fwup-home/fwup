@@ -17,6 +17,8 @@ SOURCES += \
     3rdparty/semver.c/semver.c \
     3rdparty/base64.c \
     3rdparty/strptime.c \
+    3rdparty/tiny-AES-c/aes.c \
+    src/disk_crypto.c \
     src/fwup.c \
     src/fatfs.c \
     src/mbr.c \
@@ -77,6 +79,8 @@ HEADERS += \
     3rdparty/fatfs/src/ffconf.h \
     3rdparty/fatfs/src/integer.h \
     3rdparty/semver.c/semver.h \
+    3rdparty/tiny-AES-c/aes.h \
+    src/disk_crypto.h \
     src/mbr.h \
     src/cfgfile.h \
     src/util.h \

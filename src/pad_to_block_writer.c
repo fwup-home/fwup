@@ -16,6 +16,7 @@
 
 #include "pad_to_block_writer.h"
 #include "block_cache.h"
+#include "disk_crypto.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -40,14 +41,37 @@ static size_t min(size_t a, size_t b)
         return b;
 }
 
-void ptbw_init(struct pad_to_block_writer *ptbw, struct block_cache *output)
+static int encrypt_and_pwrite(struct pad_to_block_writer *ptbw, uint8_t *buf, size_t count, off_t offset, bool streamed)
+{
+    if (ptbw->dc)
+        disk_crypto_encrypt(ptbw->dc, buf, buf, count, offset);
+
+    return block_cache_pwrite(ptbw->output, buf, count, offset, streamed);
+}
+
+static int encrypt_and_pwrite_const(struct pad_to_block_writer *ptbw, const uint8_t *buf, size_t count, off_t offset, bool streamed)
+{
+    if (ptbw->dc) {
+        // If encrypting and we can't encrypt in-place, then encrypt to a temporary buffer.
+        uint8_t *tmp = malloc(count);
+        disk_crypto_encrypt(ptbw->dc, buf, tmp, count, offset);
+        int rc = block_cache_pwrite(ptbw->output, tmp, count, offset, streamed);
+        free(tmp);
+        return rc;
+    } else {
+        return block_cache_pwrite(ptbw->output, buf, count, offset, streamed);
+    }
+}
+
+void ptbw_init(struct pad_to_block_writer *ptbw, struct block_cache *output, struct disk_crypto *dc)
 {
     ptbw->output = output;
     ptbw->index = 0;
     ptbw->offset = 0;
+    ptbw->dc = dc;
 }
 
-int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count, off_t offset)
+int ptbw_pwrite(struct pad_to_block_writer *ptbw, const uint8_t *buf, size_t count, off_t offset)
 {
     // Check for leftovers
     if (ptbw->index != 0) {
@@ -70,7 +94,7 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
         if (current_index == offset) {
             size_t to_copy = min(sizeof(ptbw->buffer) - ptbw->index, count);
             memcpy(&ptbw->buffer[ptbw->index], buf, to_copy);
-            buf = (const uint8_t *) buf + to_copy;
+            buf = buf + to_copy;
             ptbw->index += to_copy;
             count -= to_copy;
             offset += to_copy;
@@ -78,7 +102,7 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
             // Flush if filled or return if need more
             if (ptbw->index == sizeof(ptbw->buffer)) {
                 // Write the full buffer out.
-                OK_OR_RETURN(block_cache_pwrite(ptbw->output, ptbw->buffer, sizeof(ptbw->buffer), ptbw->offset, true));
+                OK_OR_RETURN(encrypt_and_pwrite(ptbw, ptbw->buffer, sizeof(ptbw->buffer), ptbw->offset, true));
                 ptbw->index = 0;
             } else {
                 // Still a partial buffer, so return until we get more.
@@ -103,10 +127,10 @@ int ptbw_pwrite(struct pad_to_block_writer *ptbw, const void *buf, size_t count,
     if (count > sizeof(ptbw->buffer)) {
         // Write as many block size blocks as we can.
         size_t to_copy = (count & ~(sizeof(ptbw->buffer) - 1));
-        OK_OR_RETURN(block_cache_pwrite(ptbw->output, buf, to_copy, offset, true));
+        OK_OR_RETURN(encrypt_and_pwrite_const(ptbw, buf, to_copy, offset, true));
         offset += to_copy;
         count -= to_copy;
-        buf = (const uint8_t *) buf + to_copy;
+        buf = buf + to_copy;
     }
 
     // Any leftovers?
@@ -125,7 +149,7 @@ int ptbw_flush(struct pad_to_block_writer *ptbw)
         // Clear out any unwritten parts of the block.
         memset(&ptbw->buffer[ptbw->index], 0, sizeof(ptbw->buffer) - ptbw->index);
 
-        OK_OR_RETURN(block_cache_pwrite(ptbw->output, ptbw->buffer, sizeof(ptbw->buffer), ptbw->offset, true));
+        OK_OR_RETURN(encrypt_and_pwrite(ptbw, ptbw->buffer, sizeof(ptbw->buffer), ptbw->offset, true));
 
         ptbw->index = 0;
     }

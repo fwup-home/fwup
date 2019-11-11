@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Frank Hunleth
+ * Copyright 2019 Frank Hunleth
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef PAD_TO_BLOCK_WRITER_H
-#define PAD_TO_BLOCK_WRITER_H
+#ifndef DISK_CRYPTO_H
+#define DISK_CRYPTO_H
 
 #include "util.h"
 
-struct block_cache;
 struct disk_crypto;
+typedef void (disk_crypto_encrypt_fun)(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output);
 
-struct pad_to_block_writer
-{
-    struct block_cache *output;
-    struct disk_crypto *dc;
-
-    uint8_t buffer[FWUP_BLOCK_SIZE];
-    size_t index;
-    off_t offset;
+struct disk_crypto {
+    disk_crypto_encrypt_fun *encrypt;
+    uint8_t key[32];
+    off_t base_offset;
 };
-void ptbw_init(struct pad_to_block_writer *ptbw, struct block_cache *output, struct disk_crypto *dc);
-int ptbw_pwrite(struct pad_to_block_writer *ptbw, const uint8_t *buf, size_t count, off_t offset);
-int ptbw_flush(struct pad_to_block_writer *ptbw);
 
-#endif // PAD_TO_BLOCK_WRITER_H
+int disk_crypto_init(struct disk_crypto *dc, const char *mode, const char *secret, off_t base_offset);
+void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset);
+void disk_crypto_free(struct disk_crypto *dc);
+
+#endif // EVAL_MATH_H
+
+

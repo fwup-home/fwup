@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Test writing a resource to an encrypted disk
+#
+# Note: fwup and dmcrypt pad blocks differently, so test files need to be
+# multiples of 512.
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource subdir/TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource subdir/TEST { raw_write(1, "cipher=aes-cbc-plain", "secret=jpwHgP1/XQDBijCBL+lgz85x9gdN2c3taqsol1aMyFY=") }
+}
+EOF
+
+# Run ./169_disk_crypto_aes_cbc_plain-generate.sh
+base64_decodez >$WORK/expected.img <<EOF
+H4sIAGdny10AA+3UCzcVBgDA8bzJipDSgx5LiUhFlmvGTUPH42qVajXUpVCppLK4yZEjE0s5KBOV
+QietpJQ8ijhRCzfWKa3aFburkISL7GNs5+z/+xC/MWPwf7aoNiYj1bSvf0P4+LWK9UdqAopHbTzc
+pC5Cr+67G+NdG19XDr+QSwyN7txecd0rXLQzXCNcWd+hdF6ovZKK2YmL4nrzho5epd2niodt//qz
+9xdFettciU3ElfuX1igO929KvHzYK88jY0jnZ3W5s673b2M1Is3MG5MNi7WkDssrhOuCraIE4lMO
+8w1WB87b66eX550z5NISst/SO+hS85vZqqkNSv3RYf4phruqBO9ta9/tdkyw0WzwkmRp71jjEt+k
+aRh5pk3kU254JdTCW6Z9+xuxUVdO/GC1257YLeVHqvqytVMWSn8K+kE29ZVRZcvwubDV/l0fvVy6
+VYb1jadNChcveala2OPpXOM2YfuyWfczo60vGMXv716zPUFXe6F/mqzT2F+q0G9MNmgXqn+bUhhp
+3O0e9DZbUtSVmS77pN6V49ykfKZ8rG2Imuk499x88wKfaSOX7inlT1vzZdIs7we7js9Z4uM62WTS
+wazGeToCmTx3hqmv4fls9UCFLMQir7fML33Ya/GnALmZqHAo683jsviCDYYtkvlqljeMKxZeqJ7u
+f9tO5Ciobnhw9tOHPFexu1ZL4xjFJp+BnIOZCe+OLt53yOlBzDI9P+ujH0evBkttp3soUvvm1uq4
+HLNfnNhSYGKpHKvVY56xTzNqwL8iOW5LQe/nta80ZVF23V8XCaoHLY3LwmMDy4sK/kh665BmWVev
+YakTl5m39GG/+kN5b0l84vrl6x3qCyzquuu2ne6Q3lz5UD5etsN56JD4k3mzyKayZuWZv/W3aZcU
+aQSInrXnDDZITCoDQlum+A4dU/iKTOfNKM1vd9rVlN5c4KezIjPqqiSv3vKg5Aur1q3+B1eH3cqo
+0zqQfMRZ10Ms7yl5WTlB9bW3rbttQsVwh9rOy9cmPE1f9njUIFDsa6h2ozzVpinuSUT7QFx3XrT+
+Xse2qZ7D3Sue3+rs12/QPitQSvp92oDT2jt7gww2PzIJHZo4v7M+OVhJJfSEXpjjDJlvRZDU8buJ
+otbjAVWmsXqDT6x8aw4tCPi89rnYauO6DjfX0GuNTsIRt5Bm+01ZfacfPZOfVAhHs0SlduM8g+e/
+qTbbcX//FKPSjMLiRau+Ehyr0hXahigtUPc9F1P5tsUnrvC61NNvzNE7STde1xQluTnab0y40PDm
+RX9a9ubZ+la1W9vSZl25prksv6lM0rnf3cD85LiRwrFxQqvTISFpW79+mvtjZMz5ninGUoO70Vcn
+T3eWPXrvs2DqraV+I3Gl6mn5K3O2PxH5Db2cc3N368z+mxHZnbZ2v5YEeMo62pRTTlU6vCjWqe1/
+fXJVutLVRBWXi+onvjf+YH0+Yp/Q+HrCgRaL8R+TBSURPaoZ4yyu35v8qqI5f3xAa1dQ7tPEixes
+z+2xTzWdKfi3/wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/Df9A7/A004AAAIA
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+cmp $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

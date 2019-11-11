@@ -8,6 +8,7 @@ fwup_SOURCES=\
 	cfgprint.c \
 	crc32.c \
 	eval_math.c \
+	disk_crypto.c \
 	fatfs.c \
 	functions.c \
 	fwfile.c \
@@ -39,6 +40,7 @@ fwup_SOURCES=\
 	cfgprint.h \
 	crc32.h \
 	eval_math.h \
+	disk_crypto.h \
 	fatfs.h \
 	functions.h \
 	fwfile.h \
@@ -62,6 +64,8 @@ fwup_SOURCES=\
 	util.h \
 	../3rdparty/semver.c/semver.c \
 	../3rdparty/semver.c/semver.h \
+	../3rdparty/tiny-AES-c/aes.c \
+	../3rdparty/tiny-AES-c/aes.h \
 	../3rdparty/fatfs/source/diskio.h \
 	../3rdparty/fatfs/source/ff.c \
 	../3rdparty/fatfs/source/ff.h \
@@ -79,6 +83,8 @@ EXTRA_DIST= \
 	../3rdparty/semver.c/Makefile \
 	../3rdparty/semver.c/semver_unit.c \
 	../3rdparty/semver.c/semver_test.c \
+	../3rdparty/tiny-AES-c/README.md \
+	../3rdparty/tiny-AES-c/unlicense.txt \
 	../3rdparty/strptime.c \
 	fwup.h2m
 

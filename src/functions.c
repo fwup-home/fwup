@@ -16,6 +16,7 @@
 
 #include "functions.h"
 #include "util.h"
+#include "disk_crypto.h"
 #include "fatfs.h"
 #include "mbr.h"
 #include "gpt.h"
@@ -333,15 +334,55 @@ cleanup:
     return rc;
 }
 
+struct raw_write_options {
+    const char *cipher;
+    const char *secret;
+};
+static int parse_raw_write_options(const struct fun_context *fctx, struct raw_write_options *options)
+{
+    memset(options, 0, sizeof(*options));
+
+    for (int i = 2; i < fctx->argc; i++) {
+        const char *key;
+        const char *value;
+
+        key = fctx->argv[i];
+        value = strchr(key, '=');
+        if (!value)
+            ERR_RETURN("Expecting '=' for optional raw_write parameter");
+
+        value++;
+
+        if (strncmp(key, "cipher=", 7) == 0)
+            options->cipher = value;
+        else if (strncmp(key, "secret=", 7) == 0)
+            options->secret = value;
+        else
+            ERR_RETURN("Unexpected parameter to raw_write: %s", key);
+    }
+    return 0;
+}
 int raw_write_validate(struct fun_context *fctx)
 {
     if (fctx->type != FUN_CONTEXT_FILE)
         ERR_RETURN("raw_write only usable in on-resource");
 
-    if (fctx->argc != 2)
+    if (fctx->argc < 2)
         ERR_RETURN("raw_write requires a block offset");
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_write requires a non-negative integer block offset");
+
+    // Check the options
+    struct raw_write_options options;
+    OK_OR_RETURN(parse_raw_write_options(fctx, &options));
+
+    if (options.cipher) {
+        struct disk_crypto dc;
+        if (disk_crypto_init(&dc, options.cipher, options.secret, 0) < 0)
+            return -1;
+
+        disk_crypto_free(&dc);
+    }
 
     return 0;
 }
@@ -364,7 +405,7 @@ static int raw_write_final_hole_callback(void *cookie, off_t hole_size, off_t fi
 
     // If this is a regular file, seeking is insufficient in making the file
     // the right length, so write a block of zeros to the end.
-    char zeros[FWUP_BLOCK_SIZE];
+    uint8_t zeros[FWUP_BLOCK_SIZE];
     memset(zeros, 0, sizeof(zeros));
     off_t to_write = sizeof(zeros);
     if (hole_size < to_write)
@@ -374,21 +415,41 @@ static int raw_write_final_hole_callback(void *cookie, off_t hole_size, off_t fi
 }
 int raw_write_run(struct fun_context *fctx)
 {
+    int rc = 0;
+
     // Raw write runs all writes through pad_to_block_writer to guarantee
     // block size writes to the caching code no matter how the input resources
     // get decompressed.
 
     struct raw_write_cookie rwc;
     rwc.dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
-    ptbw_init(&rwc.ptbw, fctx->output);
 
-    OK_OR_RETURN(process_resource(fctx,
+    struct raw_write_options options;
+    OK_OR_RETURN(parse_raw_write_options(fctx, &options));
+
+    struct disk_crypto dc_info;
+    struct disk_crypto *dc = NULL;
+    if (options.cipher) {
+        // Can't fail since checked above
+        disk_crypto_init(&dc_info, options.cipher, options.secret, rwc.dest_offset);
+        dc = &dc_info;
+    }
+
+    ptbw_init(&rwc.ptbw, fctx->output, dc);
+
+    OK_OR_CLEANUP(process_resource(fctx,
                                   false,
                                   raw_write_pwrite_callback,
                                   raw_write_final_hole_callback,
                                   &rwc));
 
-    return ptbw_flush(&rwc.ptbw);
+    rc = ptbw_flush(&rwc.ptbw);
+
+cleanup:
+    if (dc)
+        disk_crypto_free(dc);
+
+    return rc;
 }
 
 int raw_memset_validate(struct fun_context *fctx)

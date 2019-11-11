@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#
+# Test that simple error conditions are detected
+#
+
+. ./common.sh
+
+cat >$CONFIG <<EOF
+file-resource test { contents = "Hello!" }
+task complete {
+    on-resource test { raw_write(1, "cipher=aes-cbc-plain") }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting missing secret to fail"
+    exit 1
+fi
+
+cat >$CONFIG <<EOF
+file-resource test { contents = "Hello!" }
+task complete {
+    on-resource test { raw_write(1, "cipher=aes-cbc-plain", "secret=123") }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting short secret to fail"
+    exit 1
+fi
+
+cat >$CONFIG <<EOF
+file-resource test { contents = "Hello!" }
+task complete {
+    on-resource test { raw_write(1, "unsupported=1") }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expecting unsupported parameter to fail"
+    exit 1
+fi
+
