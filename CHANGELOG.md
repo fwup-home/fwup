@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.5.0
+
+* Bug fixes
+  * Fixed overrun when writing to devices with non-128KB sizes. Fwup tries to
+    write in 128KB blocks for efficiency and in an attempted to avoid
+    read/modify/write operations for partial blocks on Flash-based devices. The
+    code for this could write past the end of a device and this became more
+    apparent with GPT support which writes partition information to the end of a
+    device.
+
+* New feature
+  * Encrypted partition support for use with dm-crypt. This functionality should
+    be considered "beta". Only the simplest encryption method (aes-cbc-plain)
+    is available. This works, but requires some knowledge about working with
+    encrypted root filesystems (the likely scenario for this feature).
+
 ## v1.4.0
 
 * New feature
