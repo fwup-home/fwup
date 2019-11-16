@@ -39,7 +39,7 @@ cat >$EXPECTED_OUTPUT.type << EOF
 OK
 EOF
 
-NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Only keep the first 512 bytes of the whole 15MB .fw file!
 dd if=$FWFILE of=$FWFILE.truncated bs=1 count=512 2>/dev/null

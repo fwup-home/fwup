@@ -32,14 +32,14 @@ EOF
 cd $WORK
 $FWUP_CREATE -g
 cd -
-NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
 # Sanity check that unsigned version passes (this should already work)
 $FWUP_APPLY_NO_CHECK -i $FWFILE -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Sign the archive
-NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -S -s $WORK/fwup-key.priv -i $FWFILE -o $FWFILE.2
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -S -s $WORK/fwup-key.priv -i $FWFILE -o $FWFILE.2
 
 # Check the metadata again (meta-uuid shouldn't change)
 $FWUP_APPLY_NO_CHECK -i $FWFILE.2 -m > $ACTUAL_OUTPUT

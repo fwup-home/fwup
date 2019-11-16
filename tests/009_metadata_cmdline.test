@@ -29,9 +29,14 @@ meta-creation-date="2018-05-05T18:10:16Z"
 meta-uuid="ded51581-3c37-5dd5-d1b6-cd8503e4cfc4"
 EOF
 
-NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+# Test the preferred way
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY_NO_CHECK -i $FWFILE -m > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
+# Make sure the old way still works
+(unset SOURCE_DATE_EPOCH && NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE)
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check that the verify logic works on this file

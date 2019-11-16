@@ -32,7 +32,7 @@ EOF
 cd $WORK
 $FWUP_CREATE -g
 cd -
-NOW="2018-05-05T18:10:16Z" $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
 
 # No signing check should still pass
 $FWUP_APPLY_NO_CHECK -i $FWFILE -m > $ACTUAL_OUTPUT

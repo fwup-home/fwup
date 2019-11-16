@@ -113,9 +113,9 @@ task dump_mbr_b {
 EOF
 
 # Create the "same" firmware file two seconds apart
-# to see if there are any timestamps not affected by $NOW
-NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+# to see if there are any timestamps not affected by $SOURCE_DATE_EPOCH
+SOURCE_DATE_EPOCH=1430849416 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 sleep 2
-NOW="2015-05-05T18:10:16Z" $FWUP_CREATE -c -f $CONFIG -o $FWFILE.2
+SOURCE_DATE_EPOCH=1430849416 $FWUP_CREATE -c -f $CONFIG -o $FWFILE.2
 
 cmp $FWFILE $FWFILE.2
