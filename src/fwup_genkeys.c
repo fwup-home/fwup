@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <limits.h>
 
+#include "3rdparty/base64.h"
 #include "util.h"
 
 #ifndef FWUP_MINIMAL
@@ -41,11 +42,16 @@ static int save_key(const char *name, unsigned char *key, size_t key_len)
     if (fd < 0)
         ERR_RETURN("Couldn't create '%s': %s", name, strerror(errno));
 
-    size_t buffer_len = sodium_base64_encoded_len(key_len, sodium_base64_VARIANT_ORIGINAL);
-    char buffer[buffer_len];
-    sodium_bin2base64(buffer, buffer_len, key, key_len, sodium_base64_VARIANT_ORIGINAL);
+    size_t encoded_len = base64_raw_to_encoded_count(key_len);
+    char buffer[encoded_len + 1];
+    size_t unpadded_len = to_base64(buffer, encoded_len, key, key_len);
 
-    size_t encoded_len = buffer_len - 1;
+    // The libsodium base64 code doesn't pad. This isn't a problem for
+    // fwup, but triggers decode errors when the output is run through
+    // base64. See https://tools.ietf.org/html/rfc4648#page-4.
+    while (unpadded_len < encoded_len)
+        buffer[unpadded_len++] = '=';
+
     ssize_t written = write(fd, buffer, encoded_len);
     if (written < 0 || (size_t) written != encoded_len)
         ERR_CLEANUP_MSG("Couldn't write to '%s': %s", name, strerror(errno));

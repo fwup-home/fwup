@@ -28,6 +28,7 @@
 
 #include <sodium.h>
 
+#include "3rdparty/base64.h"
 #include "block_cache.h"
 #include "mmc.h"
 #include "util.h"
@@ -217,12 +218,10 @@ static unsigned char *decode_key(const char *buffer,
     }
 
     // Check for Base64-encoded key (with or without padding)
-    size_t base64_key_len = sodium_base64_encoded_len(key_len, sodium_base64_VARIANT_ORIGINAL_NO_PADDING) - 1;
-    size_t padded_base64_key_len = sodium_base64_encoded_len(key_len, sodium_base64_VARIANT_ORIGINAL) - 1;
-    size_t decoded_len;
+    size_t base64_key_len = base64_raw_to_unpadded_count(key_len);
+    size_t decoded_len = key_len;
     if (buffer_len >= base64_key_len &&
-        buffer_len <= padded_base64_key_len &&
-        sodium_base642bin(key, key_len, buffer, base64_key_len, NULL, &decoded_len, NULL, sodium_base64_VARIANT_ORIGINAL_NO_PADDING) == 0 &&
+        from_base64(key, &decoded_len, buffer) != NULL &&
         decoded_len == key_len) {
         return key;
     }
@@ -238,7 +237,7 @@ static unsigned char *load_key(const char *path, const char *key_type, size_t ke
     if (!fp)
         fwup_err(EXIT_FAILURE, "Error opening %s key file '%s'", key_type, path);
 
-    size_t base64_size = sodium_base64_encoded_len(key_len, sodium_base64_VARIANT_ORIGINAL_NO_PADDING) - 1;
+    size_t base64_size = base64_raw_to_encoded_count(key_len);
     char buffer[base64_size + 1];
 
     size_t amount_read = fread(buffer, 1, base64_size, fp);

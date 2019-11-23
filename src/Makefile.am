@@ -62,6 +62,8 @@ fwup_SOURCES=\
 	sparse_file.h \
 	uboot_env.h \
 	util.h \
+	3rdparty/base64.c \
+	3rdparty/base64.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
 	3rdparty/tiny-AES-c/aes.c \
