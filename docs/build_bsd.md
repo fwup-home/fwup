@@ -45,9 +45,9 @@ To build the dynamic version, install the shared library dependencies:
 
     # The FreeBSD, DragonFlyBSD, and OpenBSD versions of libconfuse are very old (v2.7)
     # 2.8 or later is needed and >=3.0 is much preferred.
-    curl -O -L https://github.com/martinh/libconfuse/releases/download/v3.2.1/confuse-3.2.1.tar.gz
-    tar xzf confuse-3.2.1.tar.gz
-    cd confuse-3.2.1
+    curl -O -L https://github.com/martinh/libconfuse/releases/download/v3.2.2/confuse-3.2.2.tar.gz
+    tar xzf confuse-3.2.2.tar.gz
+    cd confuse-3.2.2
     ./configure && make && sudo make install
 
 If you are building `fwup` from the git repository, you'll need to
