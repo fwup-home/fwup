@@ -32,7 +32,7 @@ change the installation location.
 ./scripts/download_deps.sh
 ./scripts/build_deps.sh
 ./autogen.sh    # only necessary if building from a git source tree
-PKG_CONFIG_PATH=/home/fhunleth/fwup/build/host/deps/usr/lib/pkgconfig ./configure --enable-shared=no
+PKG_CONFIG_PATH=$PWD/build/host/deps/usr/lib/pkgconfig ./configure --enable-shared=no
 make
 make check
 make install
