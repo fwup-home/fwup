@@ -142,13 +142,66 @@ const char *last_error()
     return last_error_message ? last_error_message : "none";
 }
 
+static uint8_t hexchar_to_int(char c)
+{
+    switch (c) {
+    case '0': return 0;
+    case '1': return 1;
+    case '2': return 2;
+    case '3': return 3;
+    case '4': return 4;
+    case '5': return 5;
+    case '6': return 6;
+    case '7': return 7;
+    case '8': return 8;
+    case '9': return 9;
+    case 'a':
+    case 'A': return 10;
+    case 'b':
+    case 'B': return 11;
+    case 'c':
+    case 'C': return 12;
+    case 'd':
+    case 'D': return 13;
+    case 'e':
+    case 'E': return 14;
+    case 'f':
+    case 'F': return 15;
+    default: return 255;
+    }
+}
+
+static char nibble_to_hexchar(uint8_t nibble)
+{
+    switch (nibble) {
+    case 0: return '0';
+    case 1: return '1';
+    case 2: return '2';
+    case 3: return '3';
+    case 4: return '4';
+    case 5: return '5';
+    case 6: return '6';
+    case 7: return '7';
+    case 8: return '8';
+    case 9: return '9';
+    case 10: return 'a';
+    case 11: return 'b';
+    case 12: return 'c';
+    case 13: return 'd';
+    case 14: return 'e';
+    case 15: return 'f';
+    default: return '0';
+    }
+}
+
 static int two_hex_to_byte(const char *str, uint8_t *byte)
 {
-    size_t bin_len;
-    if (sodium_hex2bin(byte, 1, str, 2, NULL, &bin_len, NULL) < 0 ||
-        bin_len != 1)
+    uint8_t sixteens = hexchar_to_int(str[0]);
+    uint8_t ones = hexchar_to_int(str[1]);
+    if (sixteens == 255 || ones == 255)
         ERR_RETURN("Invalid character in hex string");
 
+    *byte = (uint8_t) (sixteens << 4) | ones;
     return 0;
 }
 
@@ -158,17 +211,26 @@ int hex_to_bytes(const char *str, uint8_t *bytes, size_t numbytes)
     if (len != numbytes * 2)
         ERR_RETURN("hex string should have length %d, but got %d", numbytes * 2, len);
 
-    size_t bin_len;
-    if (sodium_hex2bin(bytes, numbytes, str, len, NULL, &bin_len, NULL) < 0 ||
-        bin_len != numbytes)
-        ERR_RETURN("Invalid character in hex string");
+    while (len) {
+        if (two_hex_to_byte(str, bytes) < 0)
+            return -1;
 
+        str += 2;
+        len -= 2;
+        bytes++;
+    }
     return 0;
 }
 
 int bytes_to_hex(const uint8_t *bytes, char *str, size_t byte_count)
 {
-    sodium_bin2hex(str, byte_count * 2 + 1, bytes, byte_count);
+    while (byte_count) {
+        *str++ = nibble_to_hexchar(*bytes >> 4);
+        *str++ = nibble_to_hexchar(*bytes & 0xf);
+        bytes++;
+        byte_count--;
+    }
+    *str = '\0';
     return 0;
 }
 
