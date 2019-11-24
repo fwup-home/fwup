@@ -5,7 +5,7 @@
 This works on Ubuntu 19.10:
 
 ```sh
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev libsodium-dev
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev
 ./configure
 make -j4
 sudo make install
@@ -23,11 +23,11 @@ building applications from source, please consider one of the pre-build
 packages.
 
 Normally Linux applications use dynamic linking. The recommendation for `fwup`
-is to statically link to avoid pulling in out-of-date versions of `libconfuse`
-and `libsodium`. The next section covers static linking. If you are a package
-maintainer or are not worried about old versions, read the second section. At
-the moment, using an old version of `libconfuse` results in one broken
-regression test that normally is not a problem for host use.
+is to statically link to avoid pulling in out-of-date versions of `libconfuse`.
+The next section covers static linking. If you are a package maintainer or are
+not worried about old versions, read the second section. At the moment, using an
+old version of `libconfuse` results in one broken regression test that normally
+is not a problem for host use.
 
 ## Common dependencies
 
@@ -73,7 +73,7 @@ pushd /tmp/confuse-3.2.2
 popd
 rm -rf /tmp/confuse-3.2.2
 
-sudo apt-get install libarchive-dev libsodium-dev
+sudo apt-get install libarchive-dev
 ```
 
 On CentOS 6:
@@ -93,13 +93,6 @@ pushd /tmp/libarchive-3.1.2
 popd
 rm -rf /tmp/libarchive-3.1.2
 
-# The version of libsodium available in yum is too old
-curl -L https://download.libsodium.org/libsodium/releases/libsodium-1.0.8.tar.gz | tar -xz -C /tmp
-pushd /tmp/libsodium-1.0.8
-./configure && make && sudo make install
-popd
-rm -rf /tmp/libsodium-1.0.8
-
 # Assuming all of the libraries were installed to /usr/local/lib
 sudo ldconfig /usr/local/lib
 
@@ -117,13 +110,13 @@ pushd /tmp/confuse-3.2.2
 popd
 rm -rf /tmp/confuse-3.2.2
 
-sudo yum install libarchive-devel libsodium-devel
+sudo yum install libarchive-devel
 ```
 
 On Alpine:
 
 ```sh
-apk add confuse-dev libarchive-dev libsodium-dev
+apk add confuse-dev libarchive-dev
 ```
 
 ### Building

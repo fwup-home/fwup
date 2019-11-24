@@ -16,8 +16,9 @@
 
 #include "disk_crypto.h"
 #include "3rdparty/tiny-AES-c/aes.h"
+#include "3rdparty/base64.h"
+#include "monocypher.h"
 
-#include <sodium.h>
 #include <string.h>
 
 static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
@@ -45,8 +46,8 @@ static int aes_cbc_plain_init(struct disk_crypto *dc, const char *secret_key)
         // Try base64 since that was was used in fwup 1.5.0, but it turned out
         // to be inconvenient to actually use. Do not copy/paste this to other
         // cipher options.
-        size_t decoded_len;
-        if (sodium_base642bin(dc->key, AES_KEYLEN, secret_key, strlen(secret_key), NULL, &decoded_len, NULL, sodium_base64_VARIANT_ORIGINAL) == 0 &&
+        size_t decoded_len = AES_KEYLEN;
+        if (from_base64(dc->key, &decoded_len, secret_key) != NULL &&
             decoded_len == AES_KEYLEN)
             return 0;
     }

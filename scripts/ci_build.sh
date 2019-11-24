@@ -7,8 +7,8 @@
 #    TRAVIS_OS_NAME - "linux" or "osx"
 #    MODE           - "static", "dynamic", "windows", "raspberrypi", or "minimal"
 #
-# Static builds use scripts to download libarchive, libconfuse, and libsodium,
-# so those are only installed on shared library builds.
+# Static builds use scripts to download libarchive and libconfuse, so those are
+# only installed on shared library builds.
 #
 
 set -e

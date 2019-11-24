@@ -24,12 +24,12 @@
 #include "archive_open.h"
 #include "eval_math.h"
 #include "3rdparty/semver.c/semver.h"
+#include "monocypher-ed25519.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <archive.h>
 #include <archive_entry.h>
-#include <sodium.h>
 
 // Global variable for passing the top level cfg pointer through libconfuse
 // This is needed for validating some of the function calls.
@@ -715,7 +715,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
 
         bool worked = false;
         while (*public_keys) {
-            if (crypto_sign_verify_detached(meta_conf_signature, (unsigned char *) meta_conf, total_size, *public_keys) == 0) {
+            if (crypto_ed25519_check(meta_conf_signature, *public_keys, (const uint8_t *) meta_conf, total_size) == 0) {
                 worked = true;
                 break;
             }
@@ -794,11 +794,11 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, unsigned char 
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
         off_t total_size;
-        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
+        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, 64, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
 
-        if (total_size != crypto_sign_BYTES)
+        if (total_size != 64)
             ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
         rc = archive_read_next_header(a, &ae);

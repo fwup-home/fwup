@@ -37,7 +37,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <sodium.h>
+#include "monocypher.h"
 
 #define DECLARE_FUN(FUN) \
     static int FUN ## _validate(struct fun_context *fctx); \
@@ -264,7 +264,7 @@ static int process_resource(struct fun_context *fctx,
         ERR_CLEANUP_MSG("%s can't find file-resource '%s'", fctx->argv[0], fctx->on_event->title);
 
     char *expected_hash = cfg_getstr(resource, "blake2b-256");
-    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
+    if (!expected_hash || strlen(expected_hash) != FWUP_BLAKE2b_256_LEN * 2)
         ERR_CLEANUP_MSG("invalid blake2b hash for '%s'", fctx->on_event->title);
 
     OK_OR_CLEANUP(sparse_file_get_map_from_resource(resource, &sfm));
@@ -272,8 +272,8 @@ static int process_resource(struct fun_context *fctx,
 
     off_t total_data_read = 0;
 
-    crypto_generichash_state hash_state;
-    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+    crypto_blake2b_ctx hash_state;
+    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
 
     off_t last_offset = 0;
     for (;;) {
@@ -287,7 +287,7 @@ static int process_resource(struct fun_context *fctx,
         if (len == 0)
             break;
 
-        crypto_generichash_update(&hash_state, (const unsigned char*) buffer, len);
+        crypto_blake2b_update(&hash_state, (const uint8_t*) buffer, len);
 
         OK_OR_CLEANUP(pwrite_callback(cookie, buffer, len, offset));
 
@@ -322,8 +322,8 @@ static int process_resource(struct fun_context *fctx,
     }
 
     // Verify hash
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+    unsigned char hash[32];
+    crypto_blake2b_final(&hash_state, hash);
     char hash_str[sizeof(hash) * 2 + 1];
     bytes_to_hex(hash, hash_str, sizeof(hash));
     if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)

@@ -26,7 +26,7 @@
 #include <string.h>
 #include <archive.h>
 #include <archive_entry.h>
-#include <sodium.h>
+#include "monocypher.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -40,7 +40,7 @@ struct calc_metadata_state
     struct sparse_file_read_iterator read_iterator;
     bool no_sparse_files;
 
-    crypto_generichash_state hash_state;
+    crypto_blake2b_ctx hash_state;
 };
 
 static int build_sparse_map(int fd, void *cookie)
@@ -61,7 +61,7 @@ static int calc_hash(int fd, void *cookie)
         if (len == 0)
             break;
 
-        crypto_generichash_update(&state->hash_state, (const unsigned char*) buffer, len);
+        crypto_blake2b_update(&state->hash_state, (const uint8_t*) buffer, len);
     }
     return 0;
 }
@@ -122,7 +122,7 @@ static int compute_file_metadata(cfg_t *cfg)
     while ((sec = cfg_getnsec(cfg, "file-resource", i++)) != NULL) {
         const char *paths = cfg_getstr(sec, "host-path");
 
-        unsigned char hash[crypto_generichash_BYTES];
+        unsigned char hash[FWUP_BLAKE2b_256_LEN];
         if (paths) {
             struct calc_metadata_state state;
 
@@ -135,11 +135,11 @@ static int compute_file_metadata(cfg_t *cfg)
             OK_OR_RETURN(sparse_file_set_map_in_resource(sec, &state.sfm));
 
             // Compute the hash across the files
-            crypto_generichash_init(&state.hash_state, NULL, 0, crypto_generichash_BYTES);
+            crypto_blake2b_general_init(&state.hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
             sparse_file_start_read(&state.sfm, &state.read_iterator);
             OK_OR_RETURN(run_on_each_path(sec, paths, calc_hash, &state));
 
-            crypto_generichash_final(&state.hash_state, hash, sizeof(hash));
+            crypto_blake2b_final(&state.hash_state, hash);
             sparse_file_free(&state.sfm);
         } else {
             const char *contents = cfg_getstr(sec, "contents");
@@ -152,7 +152,7 @@ static int compute_file_metadata(cfg_t *cfg)
             cfg_setint(sec, "length", len);
 #endif
 
-            crypto_generichash(hash, sizeof(hash), (const unsigned char *) contents, len, NULL, 0);
+            crypto_blake2b_general(hash, FWUP_BLAKE2b_256_LEN, NULL, 0, (const uint8_t *) contents, len);
         }
         char hash_str[sizeof(hash) * 2 + 1];
         bytes_to_hex(hash, hash_str, sizeof(hash));

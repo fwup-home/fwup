@@ -8,7 +8,7 @@
 #                     (e.g., x86_64-w64-mingw32)
 #
 # This script creates a static build of fwup to avoid dependency issues
-# with libconfuse and libsodium.
+# with libconfuse and libarchive.
 #
 # To build the Windows executable on Linux:
 #  sudo apt-get install gcc-mingw-w64-x86-64
@@ -51,7 +51,7 @@ make $MAKE_FLAGS
 
 if [ -z "$CROSS_COMPILE" ]; then
     # Verify that it was statically linked
-    for CHECK_LIB in libz confuse archive sodium; do
+    for CHECK_LIB in libz confuse archive; do
         if $LDD src/fwup | grep $CHECK_LIB; then
             echo "fwup was dynamically linked to $CHECK_LIB. This should not happen.";
             exit 1

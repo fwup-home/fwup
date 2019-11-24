@@ -64,6 +64,10 @@ fwup_SOURCES=\
 	util.h \
 	3rdparty/base64.c \
 	3rdparty/base64.h \
+	3rdparty/monocypher-3.0.0/src/monocypher.c \
+	3rdparty/monocypher-3.0.0/src/monocypher.h \
+	3rdparty/monocypher-3.0.0/src/optional/monocypher-ed25519.c \
+	3rdparty/monocypher-3.0.0/src/optional/monocypher-ed25519.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
 	3rdparty/tiny-AES-c/aes.c \
@@ -95,14 +99,14 @@ fwup_SOURCES+=3rdparty/strptime.c
 endif
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
+	      -I$(srcdir)/3rdparty/monocypher-3.0.0/src \
+	      -I$(srcdir)/3rdparty/monocypher-3.0.0/src/optional \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \
-	      $(SODIUM_CFLAGS) \
 	      $(PTHREAD_CFLAGS)
 
 fwup_LDADD = $(CONFUSE_LIBS) \
 	     $(ARCHIVE_LIBS) \
-	     $(SODIUM_LIBS) \
 	     $(PTHREAD_LIBS)
 
 if ENABLE_GCOV

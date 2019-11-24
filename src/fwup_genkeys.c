@@ -15,7 +15,7 @@
  */
 
 #include "fwup_genkeys.h"
-#include <sodium.h>
+#include "monocypher-ed25519.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -46,9 +46,9 @@ static int save_key(const char *name, unsigned char *key, size_t key_len)
     char buffer[encoded_len + 1];
     size_t unpadded_len = to_base64(buffer, encoded_len, key, key_len);
 
-    // The libsodium base64 code doesn't pad. This isn't a problem for
-    // fwup, but triggers decode errors when the output is run through
-    // base64. See https://tools.ietf.org/html/rfc4648#page-4.
+    // The base64 code doesn't pad. This isn't a problem for fwup, but triggers
+    // decode errors when the output is run through base64. See
+    // https://tools.ietf.org/html/rfc4648#page-4.
     while (unpadded_len < encoded_len)
         buffer[unpadded_len++] = '=';
 
@@ -70,11 +70,13 @@ int fwup_genkeys(const char *output_prefix)
 {
     char pubkey_path[PATH_MAX];
     char privkey_path[PATH_MAX];
-    unsigned char pk[crypto_sign_PUBLICKEYBYTES];
-    unsigned char sk[crypto_sign_SECRETKEYBYTES];
+    uint8_t sk[FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN];
+    uint8_t *pk = &sk[FWUP_PRIVATE_KEY_LEN];
 
-    if (crypto_sign_keypair(pk, sk) < 0)
-        ERR_RETURN("Error creating key pair");
+    if (get_random(sk, FWUP_PRIVATE_KEY_LEN) < 0)
+        ERR_RETURN("Could not get enough random bytes");
+
+    crypto_ed25519_public_key(pk, sk);
 
     if (!output_prefix)
         output_prefix = "fwup-key";
@@ -82,8 +84,8 @@ int fwup_genkeys(const char *output_prefix)
     sprintf(pubkey_path, "%s.pub", output_prefix);
     sprintf(privkey_path, "%s.priv", output_prefix);
 
-    OK_OR_RETURN(save_key(pubkey_path, pk, sizeof(pk)));
-    OK_OR_RETURN(save_key(privkey_path, sk, sizeof(sk)));
+    OK_OR_RETURN(save_key(pubkey_path, pk,  FWUP_PUBLIC_KEY_LEN));
+    OK_OR_RETURN(save_key(privkey_path, sk, FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN));
 
     char message[512];
     char *base_pubkey_path = basename(pubkey_path);

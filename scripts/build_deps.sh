@@ -65,18 +65,6 @@ if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
     cd $DEPS_DIR
 fi
 
-# Build libsodium
-if [[ ! -e $DEPS_INSTALL_DIR/lib/libsodium.a ]]; then
-    echo Building libsodium...
-    rm -fr libsodium-*
-    tar xf $DOWNLOAD_DIR/libsodium-$LIBSODIUM_VERSION.tar.gz
-    cd libsodium-$LIBSODIUM_VERSION
-    PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --enable-shared=no
-    make $MAKE_FLAGS
-    make install
-    cd $DEPS_DIR
-fi
-
 # Return to the base directory
 cd $BASE_DIR
 

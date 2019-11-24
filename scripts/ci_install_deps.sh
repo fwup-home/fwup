@@ -7,7 +7,7 @@
 #    TRAVIS_OS_NAME - "linux" or "osx"
 #    BUILD_STATIC   - "true" or "false"
 #
-# Static builds use scripts to download libarchive, libconfuse, and libsodium,
+# Static builds use scripts to download libarchive and libconfuse
 # so those are only installed on shared library builds.
 #
 
@@ -34,17 +34,6 @@ install_confuse() {
     popd
 }
 
-install_sodium() {
-    echo Downloading and installing libsodium $LIBSODIUM_VERSION...
-    curl -LO https://github.com/jedisct1/libsodium/releases/download/$LIBSODIUM_VERSION-RELEASE/libsodium-$LIBSODIUM_VERSION.tar.gz
-    tar xf libsodium-$LIBSODIUM_VERSION.tar.gz
-    pushd libsodium-$LIBSODIUM_VERSION
-    ./configure --prefix=$DEPS_INSTALL_DIR
-    make $MAKE_FLAGS
-    sudo make install
-    popd
-}
-
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     sudo apt-get update -qq
     sudo apt-get install -qq autopoint mtools unzip zip help2man
@@ -57,7 +46,6 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
         singlethread|dynamic|minimal)
             sudo apt-get install -qq libarchive-dev
             install_confuse
-            install_sodium
             pip install --user cpp-coveralls
             ;;
         static)
@@ -81,7 +69,7 @@ else
     brew install mtools
 
     if [[ "$MODE" = "dynamic" ]]; then
-        brew install libarchive libsodium confuse
+        brew install libarchive confuse
     fi
 fi
 

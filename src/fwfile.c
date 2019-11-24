@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <archive_entry.h>
-#include <sodium.h>
+#include "monocypher-ed25519.h"
 
 #ifndef FWUP_MINIMAL
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
@@ -49,10 +49,8 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
 
     // If the user passed in a signing key, sign the meta.conf.
     if (signing_key) {
-        unsigned char signature[crypto_sign_BYTES];
-        crypto_sign_detached(signature, NULL,
-                             (unsigned char *) configtxt, configtxt_len,
-                             signing_key);
+        uint8_t signature[FWUP_SIGNATURE_LEN];
+        crypto_ed25519_sign(signature, &signing_key[0], &signing_key[FWUP_PRIVATE_KEY_LEN], (const uint8_t *) configtxt, configtxt_len);
 
         entry = archive_entry_new();
         archive_entry_set_pathname(entry, "meta.conf.ed25519");

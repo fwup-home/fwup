@@ -17,7 +17,7 @@ AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 # Check for header files
 AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h \
                   stdlib.h string.h unistd.h archive.h confuse.h \
-                  sys/ptrace.h libgen.h])
+                  sys/ptrace.h libgen.h sys/random.h])
 
 # Check for typedefs, structures, and compiler characteristics
 AC_TYPE_INT64_T
@@ -66,7 +66,6 @@ AS_IF([test "x$PKG_CONFIG" = "xno"],[
 
 PKG_CHECK_MODULES([ARCHIVE], [libarchive], [], AC_MSG_ERROR([Requires libarchive. Libarchive must be built with zlib support.]))
 PKG_CHECK_MODULES([CONFUSE], [libconfuse >= 2.8], [], AC_MSG_ERROR([Requires libconfuse v2.8 or later]))
-PKG_CHECK_MODULES([SODIUM], [libsodium], [], AC_MSG_ERROR([Requires libsodium]))
 
 AC_ARG_WITH([pthreads],
             [AS_HELP_STRING([--with-pthreads],
@@ -82,6 +81,8 @@ AS_CASE(["$with_pthreads"],
 AS_CASE([$host_os],
         [darwin*], [LIBS="$LIBS -framework CoreFoundation -framework DiskArbitration"]
         )
+
+AC_SEARCH_LIBS([BCryptGenRandom], [bcrypt], [], [])
 
 # Limit functionality for minimal size
 AC_ARG_ENABLE(minimal-build,[AS_HELP_STRING([--enable-minimal-build], [create minimal build (only supports applying updates)])])

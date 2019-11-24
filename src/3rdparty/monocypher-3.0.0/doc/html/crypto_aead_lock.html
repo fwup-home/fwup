@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_LOCK(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_LOCK(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_LOCK(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_aead_lock</b>,
+  <b class="Nm" title="Nm">crypto_aead_unlock</b>,
+  <b class="Nm" title="Nm">crypto_lock</b>,
+  <b class="Nm" title="Nm">crypto_unlock</b> &#x2014;
+  <span class="Nd" title="Nd">authenticated encryption with additional
+  data</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock</b>(<var class="Fa" title="Fa">uint8_t
+  mac[16]</var>, <var class="Fa" title="Fa">uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>,
+  <var class="Fa" title="Fa">const uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_unlock</b>(<var class="Fa" title="Fa">uint8_t
+  *plain_text</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>,
+  <var class="Fa" title="Fa">const uint8_t mac[16]</var>,
+  <var class="Fa" title="Fa">const uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_aead_lock</b>(<var class="Fa" title="Fa">uint8_t
+  mac[16]</var>, <var class="Fa" title="Fa">uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>,
+  <var class="Fa" title="Fa">const uint8_t *ad</var>,
+  <var class="Fa" title="Fa">size_t ad_size</var>,
+  <var class="Fa" title="Fa">const uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_aead_unlock</b>(<var class="Fa" title="Fa">uint8_t
+  *plain_text</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>,
+  <var class="Fa" title="Fa">const uint8_t mac[16]</var>,
+  <var class="Fa" title="Fa">const uint8_t *ad</var>,
+  <var class="Fa" title="Fa">size_t ad_size</var>,
+  <var class="Fa" title="Fa">const uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b class="Fn" title="Fn">crypto_lock</b>() encrypts and authenticates a
+  plaintext. It can be decrypted by
+  <b class="Fn" title="Fn">crypto_unlock</b>(). The arguments are:
+<dl class="Bl-tag">
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">key</var></dt>
+  <dd class="It-tag">A 32-byte session key, shared between the sender and the
+      recipient. It must be secret and random. Different methods can be used to
+      produce and exchange this key, such as Diffie-Hellman key exchange,
+      password key derivation (the password must be communicated on a secure
+      channel), or even meeting physically. See
+      <a class="Xr" title="Xr" href="crypto_key_exchange.html">crypto_key_exchange(3monocypher)</a>
+      for key exchange, and
+      <a class="Xr" title="Xr" href="crypto_argon2i.html">crypto_argon2i(3monocypher)</a>
+      for password key derivation.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">nonce</var></dt>
+  <dd class="It-tag">A 24-byte number, used only once with any given session
+      key. It does not need to be secret or random, but it does have to be
+      unique. <i class="Em" title="Em">Never</i> use the same nonce twice with
+      the same key. This would reveal the XOR of 2 different messages, which
+      allows decryption and forgeries. The easiest (and recommended) way to
+      generate this nonce is to select it at random. See
+      <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a> about
+      random number generation (use your operating system's random number
+      generator).</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">mac</var></dt>
+  <dd class="It-tag">A 16-byte <i class="Em" title="Em">message authentication
+      code</i> (MAC), that can only be produced by someone who knows the session
+      key. This guarantee cannot be upheld if a nonce has been reused with the
+      session key, because doing so allows the attacker to learn the
+      authentication key associated with that nonce. The MAC is intended to be
+      sent along with the ciphertext.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">plain_text</var></dt>
+  <dd class="It-tag">The secret message. Its contents will be kept hidden from
+      attackers. Its length however, will <i class="Em" title="Em">not</i>. Be
+      careful when combining encryption with compression. See
+      <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a> for
+      details.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">cipher_text</var></dt>
+  <dd class="It-tag">The encrypted message.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">text_size</var></dt>
+  <dd class="It-tag">Length of both <var class="Fa" title="Fa">plain_text
+      and</var> <var class="Fa" title="Fa">cipher_text</var>, in bytes.</dd>
+</dl>
+<div class="Pp"></div>
+The <var class="Fa" title="Fa">cipher_text</var> and
+  <var class="Fa" title="Fa">plain_text</var> arguments may point to the same
+  buffer for in-place encryption. Otherwise, the buffers they point to must not
+  overlap.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_unlock</b>() first checks the integrity of an
+  encrypted message. If it has been corrupted,
+  <b class="Fn" title="Fn">crypto_unlock</b>() returns -1 immediately.
+  Otherwise, it decrypts the message, then returns zero.
+  <i class="Em" title="Em">Always check the return value</i>.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_aead_lock</b>() and
+  <b class="Fn" title="Fn">crypto_aead_unlock</b>() are variants of
+  <b class="Fn" title="Fn">crypto_lock</b>() and
+  <b class="Fn" title="Fn">crypto_unlock</b>(), permitting additional data.
+  Additional data is authenticated, but <i class="Em" title="Em">not</i>
+  encrypted. This is used to authenticate relevant data that cannot be
+  encrypted. The arguments are:
+<dl class="Bl-tag">
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">ad</var></dt>
+  <dd class="It-tag">Additional data to authenticate. It will not be encrypted.
+      May be <code class="Dv" title="Dv">NULL</code> if
+      <var class="Fa" title="Fa">ad_size</var> is zero. Setting
+      <var class="Fa" title="Fa">ad_size</var> to zero yields the same results
+      as <b class="Fn" title="Fn">crypto_lock</b>() and
+      <b class="Fn" title="Fn">crypto_unlock</b>().</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">ad_size</var></dt>
+  <dd class="It-tag">Length of the additional data, in bytes.
+      <b class="Sy" title="Sy">That length is not authenticated.</b> If the
+      additional data is of variable length, the length should be appended to
+      <var class="Fa" title="Fa">ad</var> so it gets authenticated, and should
+      be extracted from the end of the message when decrypting. Otherwise an
+      attacker could provide a false length, effectively moving the boundary
+      between the additional data and the ciphertext. This may cause buffer
+      overflows in some programs.</dd>
+</dl>
+<div class="Pp"></div>
+An incremental interface is available; see
+  <a class="Xr" title="Xr" href="crypto_lock_init.html">crypto_lock_init(3monocypher)</a>.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<b class="Fn" title="Fn">crypto_lock</b>() and
+  <b class="Fn" title="Fn">crypto_aead_lock</b>() return nothing. They cannot
+  fail. <b class="Fn" title="Fn">crypto_unlock</b>() and
+  <b class="Fn" title="Fn">crypto_aead_unlock</b>() return 0 on success or -1 if
+  the message was corrupted (i.e. <var class="Fa" title="Fa">mac</var>
+  mismatched the combination of <var class="Fa" title="Fa">key</var>,
+  <var class="Fa" title="Fa">nonce</var>, <var class="Fa" title="Fa">ad</var>
+  and <var class="Fa" title="Fa">cipher_text</var>). Corruption can be caused by
+  transmission errors, programmer error, or an attacker's interference.
+  <var class="Fa" title="Fa">plain_text</var> does not need to be wiped if the
+  decryption fails.
+<h1 class="Sh" title="Sh" id="EXAMPLES"><a class="selflink" href="#EXAMPLES">EXAMPLES</a></h1>
+Encryption:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key        [32];  /* Random, secret session key  */ 
+const uint8_t nonce      [24];  /* Use only once per key       */ 
+const uint8_t plain_text [500]; /* Secret message              */ 
+uint8_t       mac        [16];  /* Message authentication code */ 
+uint8_t       cipher_text[500]; /* Encrypted message           */ 
+crypto_lock(mac, cipher_text, key, nonce, plain_text, 500); 
+/* Wipe secrets if they are no longer needed */ 
+crypto_wipe(plain_text, 500); 
+crypto_wipe(key, 32); 
+/* Transmit cipher_text, nonce, and mac over the network */
+</pre>
+</div>
+<div class="Pp"></div>
+To decrypt the above:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key        [32];  /* Same as the above         */ 
+const uint8_t nonce      [24];  /* Same as the above         */ 
+const uint8_t cipher_text[500]; /* Encrypted message         */ 
+const uint8_t mac        [16];  /* Received from the network */ 
+uint8_t       plain_text [500]; /* Secret message            */ 
+if (crypto_unlock(plain_text, key, nonce, mac, cipher_text, 500)) { 
+    /* The message is corrupted. 
+     * Wipe key if it is no longer needed, 
+     * and abort the decryption. 
+     */ 
+    crypto_wipe(key, 32); 
+} 
+/* Wipe secrets if they are no longer needed */ 
+crypto_wipe(plain_text, 500); 
+crypto_wipe(key, 32);
+</pre>
+</div>
+<div class="Pp"></div>
+In-place encryption:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key  [32];  /* Random, secret session key  */ 
+const uint8_t nonce[24];  /* Use only once per key       */ 
+uint8_t       text [500]; /* Secret message              */ 
+uint8_t       mac  [16];  /* Message authentication code */ 
+crypto_lock(mac, text, key, nonce, text, 500); 
+/* Wipe secrets if they are no longer needed */ 
+crypto_wipe(key, 32); 
+/* Transmit text, nonce, and mac over the network */
+</pre>
+</div>
+<div class="Pp"></div>
+In-place decryption:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t  key  [32];  /* Same as the above       */ 
+const uint8_t  nonce[24];  /* Same as the above       */ 
+const uint8_t  mac  [16];  /* Reived from the network */ 
+uint8_t        text [500]; /* Message to decrypt      */ 
+if (crypto_unlock(text, key, nonce, mac, text, 500)) { 
+    /* The message is corrupted. 
+     * Wipe key if it is no longer needed, 
+     * and abort the decryption. 
+     */ 
+    crypto_wipe(key, 32); 
+} 
+/* Wipe secrets if they are no longer needed */ 
+crypto_wipe(text, 500); 
+crypto_wipe(key, 32);
+</pre>
+</div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_key_exchange.html">crypto_key_exchange(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_lock_init.html">crypto_lock_init(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="STANDARDS"><a class="selflink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement the XChacha20 (encryption) and Poly1305 (MAC)
+  primitives. Chacha20 and Poly1305 are described in RFC 7539. XChacha20 derives
+  from Chacha20 the same way XSalsa20 derives from Salsa20, and benefits from
+  the same security reduction (proven secure as long as Chacha20 itself is
+  secure).
+<h1 class="Sh" title="Sh" id="IMPLEMENTATION_DETAILS"><a class="selflink" href="#IMPLEMENTATION_DETAILS">IMPLEMENTATION
+  DETAILS</a></h1>
+<b class="Fn" title="Fn">crypto_aead_lock</b>() and
+  <b class="Fn" title="Fn">crypto_aead_unlock</b>() do not authenticate the
+  length themselves to make them compatible with
+  <b class="Fn" title="Fn">crypto_lock</b>() and
+  <b class="Fn" title="Fn">crypto_unlock</b>() when the size of the additional
+  data is zero. This also simplifies the implementation.
+<div class="Pp"></div>
+This rarely causes problems in practice, because most of the time, the length of
+  the additional data is either fixed or self-contained, and thus outside of
+  attacker control.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">December 28, 2017</td>
+    <td class="foot-os">Linux 4.4.0-116-generic</td>
+  </tr>
+</table>
+</body>
+</html>

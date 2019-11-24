@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_LOCK_INIT(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_LOCK_INIT(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_LOCK_INIT(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_lock_init</b>,
+  <b class="Nm" title="Nm">crypto_lock_aead_auth</b>,
+  <b class="Nm" title="Nm">crypto_lock_update</b>,
+  <b class="Nm" title="Nm">crypto_lock_final</b>,
+  <b class="Nm" title="Nm">crypto_unlock_init</b>,
+  <b class="Nm" title="Nm">crypto_unlock_aead_auth</b>,
+  <b class="Nm" title="Nm">crypto_unlock_update</b>,
+  <b class="Nm" title="Nm">crypto_unlock_final</b>,
+  <b class="Nm" title="Nm">crypto_lock_auth</b>,
+  <b class="Nm" title="Nm">crypto_lock_encrypt</b> &#x2014;
+  <span class="Nd" title="Nd">incremental authenticated encryption with
+  additional data</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_init</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_aead_auth</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t *ad</var>,
+  <var class="Fa" title="Fa">size_t ad_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_update</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">const uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_final</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t mac[16]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_unlock_init</b>(<var class="Fa" title="Fa">crypto_unlock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_unlock_aead_auth</b>(<var class="Fa" title="Fa">crypto_unlock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t *ad</var>,
+  <var class="Fa" title="Fa">size_t ad_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_unlock_update</b>(<var class="Fa" title="Fa">crypto_unlock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">const uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_unlock_final</b>(<var class="Fa" title="Fa">crypto_unlock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t mac[16]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_auth</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t *ad</var>,
+  <var class="Fa" title="Fa">size_t ad_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_lock_encrypt</b>(<var class="Fa" title="Fa">crypto_lock_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">const uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+These functions are variants of
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_unlock.html">crypto_unlock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_aead_lock.html">crypto_aead_lock(3monocypher)</a>
+  and
+  <a class="Xr" title="Xr" href="crypto_aead_unlock.html">crypto_aead_unlock(3monocypher)</a>.
+  Prefer those simpler functions if possible.
+<div class="Pp"></div>
+This incremental interface can be used to encrypt and decrypt messages too large
+  to fit in a single buffer. The arguments are the same as described for the
+  direct interface described in
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>.
+<div class="Pp"></div>
+Encryption requires four steps:
+<ul class="Bl-bullet">
+  <li class="It-bullet">Initialise a context with
+      <b class="Fn" title="Fn">crypto_lock_init</b>().</li>
+  <li class="It-bullet">Authenticate additional data, if any, with
+      <b class="Fn" title="Fn">crypto_lock_aead_auth</b>().</li>
+  <li class="It-bullet">Encrypt and authenticate some data with
+      <b class="Fn" title="Fn">crypto_lock_update</b>().</li>
+  <li class="It-bullet">Generate the MAC with
+      <b class="Fn" title="Fn">crypto_lock_final</b>().</li>
+</ul>
+<div class="Pp"></div>
+Decryption also requires four steps:
+<ul class="Bl-bullet">
+  <li class="It-bullet">Initialise a context with
+      <b class="Fn" title="Fn">crypto_unlock_init</b>().</li>
+  <li class="It-bullet">Verify additional data, if any, with
+      <b class="Fn" title="Fn">crypto_unlock_aead_auth</b>().</li>
+  <li class="It-bullet">Decrypt and verify some data with
+      <b class="Fn" title="Fn">crypto_unlock_update</b>().</li>
+  <li class="It-bullet">Verify the MAC with
+      <b class="Fn" title="Fn">crypto_unlock_final</b>().</li>
+</ul>
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_lock_encrypt</b>() encrypts or decrypts data
+  <i class="Em" title="Em">without authenticating it</i>. It is meant as a
+  building block. Used with <b class="Fn" title="Fn">crypto_lock_auth</b>(), it
+  enables various AEAD constructions. Most users do not need either of them.
+  Prefer <b class="Fn" title="Fn">crypto_lock_update</b>() and
+  <b class="Fn" title="Fn">crypto_unlock_update</b>() instead.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<b class="Fn" title="Fn">crypto_lock_init</b>(),
+  <b class="Fn" title="Fn">crypto_unlock_init</b>(),
+  <b class="Fn" title="Fn">crypto_lock_auth</b>(),
+  <b class="Fn" title="Fn">crypto_lock_encrypt</b>(),
+  <b class="Fn" title="Fn">crypto_lock_aead_auth</b>(),
+  <b class="Fn" title="Fn">crypto_unlock_aead_auth</b>(),
+  <b class="Fn" title="Fn">crypto_lock_update</b>(),
+  <b class="Fn" title="Fn">crypto_unlock_update</b>(), and
+  <b class="Fn" title="Fn">crypto_lock_final</b>() return nothing. They cannot
+  fail.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_unlock_final</b>() returns 0 on success or -1 if
+  the message was corrupted. Corruption can be caused by transmission errors,
+  programmer error, or an attacker's interference.
+  <i class="Em" title="Em">Always check the return value</i>.
+<h1 class="Sh" title="Sh" id="EXAMPLES"><a class="selflink" href="#EXAMPLES">EXAMPLES</a></h1>
+Encryption:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key        [ 32]; /* Session key                 */ 
+const uint8_t nonce      [ 32]; /* Unique per session key      */ 
+const uint8_t ad         [500]; /* Optional additional data    */ 
+const uint8_t plain_text [500]; /* Secret message              */ 
+uint8_t       cipher_text[500]; /* Encrypted message           */ 
+uint8_t       mac        [ 16]; /* Message authentication code */ 
+ 
+/* Set up initial context */ 
+crypto_lock_ctx ctx; 
+crypto_lock_init(&amp;ctx, key, nonce); 
+/* Wipe the key if it is no longer needed */ 
+crypto_wipe(key, 32); 
+ 
+/* Authenticate additional data */ 
+for (size_t i = 0; i &lt; 500; i += 100) { 
+    crypto_lock_aead_auth(&amp;ctx, ad + i, 100); 
+} 
+ 
+/* Encrypt message */ 
+for (size_t i = 0; i &lt; 500; i += 100) { 
+    crypto_lock_update(&amp;ctx, cipher_text + i, plain_text + i, 100); 
+    /* Wipe the secret message if it is no longer needed */ 
+    crypto_wipe(plain_text + i, 100); 
+} 
+ 
+/* Produce the MAC */ 
+crypto_lock_final(&amp;ctx, mac);
+</pre>
+</div>
+<div class="Pp"></div>
+To decrypt the above:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key        [ 32]; /* Session key              */ 
+const uint8_t nonce      [ 32]; /* Unique per session key   */ 
+const uint8_t mac        [ 16]; /* Transmitted MAC          */ 
+const uint8_t ad         [500]; /* Optional additional data */ 
+const uint8_t cipher_text[500]; /* Encrypted message        */ 
+uint8_t       plain_text [500]; /* Secret message           */ 
+ 
+/* Set up initial context */ 
+crypto_unlock_ctx ctx; 
+crypto_unlock_init(&amp;ctx, key, nonce); 
+/* Wipe the key if it is no longer needed */ 
+crypto_wipe(key, 32); 
+ 
+/* Verify additional data */ 
+for (size_t i = 0; i &lt; 500; i += 100) { 
+    crypto_unlock_aead_auth(&amp;ctx, ad + i, 100); 
+} 
+ 
+/* Decrypt message */ 
+for (size_t i = 0; i &lt; 500; i += 100) { 
+    crypto_unlock_update(&amp;ctx, plain_text + i, cipher_text + i, 100); 
+} 
+ 
+/* Check the MAC */ 
+if (crypto_unlock_final(&amp;ctx, mac)) { 
+    /* Corrupted message, abort processing */ 
+} else { 
+    /* Genuine message */ 
+} 
+ 
+/* Wipe the secret message if it is no longer needed */ 
+crypto_wipe(plain_text, 500);
+</pre>
+</div>
+<div class="Pp"></div>
+In-place encryption without additional data:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t key   [ 32]; /* Session key                 */ 
+const uint8_t nonce [ 32]; /* Unique per session key      */ 
+uint8_t       text  [500]; /* Message                     */ 
+uint8_t       mac   [ 16]; /* Message authentication code */ 
+ 
+/* Set up initial context */ 
+crypto_lock_ctx ctx; 
+crypto_lock_init(&amp;ctx, key, nonce); 
+/* Wipe the key if it is no longer needed */ 
+crypto_wipe(key, 32); 
+ 
+/* Encrypt message */ 
+for (size_t i = 0; i &lt; 500; i += 100) { 
+    crypto_lock_update(&amp;ctx, text + i, text + i, 100); 
+} 
+ 
+/* Produce the MAC */ 
+crypto_lock_final(&amp;ctx, mac);
+</pre>
+</div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_aead_lock.html">crypto_aead_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_aead_unlock.html">crypto_aead_unlock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_key_exchange.html">crypto_key_exchange(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_unlock.html">crypto_unlock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="STANDARDS"><a class="selflink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement the XChacha20 (encryption) and Poly1305 (MAC)
+  primitives. Chacha20 and Poly1305 are described in RFC 7539. XChacha20 derives
+  from Chacha20 the same way XSalsa20 derives from Salsa20, and benefits from
+  the same security reduction (proven secure as long as Chacha20 itself is
+  secure).
+<h1 class="Sh" title="Sh" id="SECURITY_CONSIDERATIONS"><a class="selflink" href="#SECURITY_CONSIDERATIONS">SECURITY
+  CONSIDERATIONS</a></h1>
+Messages are not verified until the call to
+  <b class="Fn" title="Fn">crypto_unlock_final</b>(). Make sure to call it and
+  check the return value <i class="Em" title="Em">before</i> processing the
+  message. Messages may be stored before they are verified, but they cannot be
+  trusted. Processing untrusted messages increases the attack surface of the
+  system. Doing so securely is hard. Do not process messages before calling
+  <b class="Fn" title="Fn">crypto_unlock_final</b>().
+<h1 class="Sh" title="Sh" id="IMPLEMENTATION_DETAILS"><a class="selflink" href="#IMPLEMENTATION_DETAILS">IMPLEMENTATION
+  DETAILS</a></h1>
+<ul class="Bl-bullet">
+  <li class="It-bullet"><var class="Vt" title="Vt">crypto_unlock_ctx</var> is an
+      alias to <var class="Vt" title="Vt">crypto_lock_ctx</var>.</li>
+  <li class="It-bullet"><b class="Fn" title="Fn">crypto_unlock_init</b>() is an
+      alias to <b class="Fn" title="Fn">crypto_lock_init</b>().</li>
+  <li class="It-bullet"><b class="Fn" title="Fn">crypto_lock_aead_auth</b>() and
+      <b class="Fn" title="Fn">crypto_unlock_aead_auth</b>() are aliases to
+      <b class="Fn" title="Fn">crypto_lock_auth</b>().</li>
+</ul>
+<div class="Pp"></div>
+The incremental interface is roughly three times slower than the direct
+  interface at identifying corrupted messages. This is because the incremental
+  interface works in a single pass and has to interleave decryption and
+  verification. Users who expect a high corruption rate may want to avoid
+  it.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">December 28, 2017</td>
+    <td class="foot-os">Linux 4.4.0-116-generic</td>
+  </tr>
+</table>
+</body>
+</html>

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sodium.h>
+#include "monocypher.h"
 
 #define VERIFICATION_CHUNK_SIZE (64 * 1024)
 
@@ -53,11 +53,11 @@ static int check_resource(struct resource_list *list, const char *file_resource_
         ERR_RETURN("Length mismatch for %s", file_resource_name);
 
     char *expected_hash = cfg_getstr(item->resource, "blake2b-256");
-    if (!expected_hash || strlen(expected_hash) != crypto_generichash_BYTES * 2)
+    if (!expected_hash || strlen(expected_hash) != FWUP_BLAKE2b_256_LEN * 2)
         ERR_RETURN("invalid blake2b-256 hash for '%s'", file_resource_name);
 
-    crypto_generichash_state hash_state;
-    crypto_generichash_init(&hash_state, NULL, 0, crypto_generichash_BYTES);
+    crypto_blake2b_ctx hash_state;
+    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
     size_t length_left = expected_length;
     char *buffer = malloc(VERIFICATION_CHUNK_SIZE);
     while (length_left != 0) {
@@ -71,13 +71,13 @@ static int check_resource(struct resource_list *list, const char *file_resource_
             ERR_RETURN("Error reading '%s' in archive", archive_entry_pathname(ae));
         }
 
-        crypto_generichash_update(&hash_state, (const unsigned char*) buffer, len);
+        crypto_blake2b_update(&hash_state, (const uint8_t*) buffer, len);
         length_left -= len;
     }
     free(buffer);
 
-    unsigned char hash[crypto_generichash_BYTES];
-    crypto_generichash_final(&hash_state, hash, sizeof(hash));
+    unsigned char hash[FWUP_BLAKE2b_256_LEN];
+    crypto_blake2b_final(&hash_state, hash);
     char hash_str[sizeof(hash) * 2 + 1];
     bytes_to_hex(hash, hash_str, sizeof(hash));
     if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
@@ -116,11 +116,11 @@ int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
 
     if (strcmp(archive_entry_pathname(ae), "meta.conf.ed25519") == 0) {
         off_t total_size;
-        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, crypto_sign_BYTES, &total_size) < 0)
+        if (archive_read_all_data(a, ae, (char **) &meta_conf_signature, FWUP_SIGNATURE_LEN, &total_size) < 0)
             ERR_CLEANUP_MSG("Error reading meta.conf.ed25519 from archive.\n"
                             "Check for file corruption or libarchive built without zlib support");
 
-        if (total_size != crypto_sign_BYTES)
+        if (total_size != FWUP_SIGNATURE_LEN)
             ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
 
         rc = archive_read_next_header(a, &ae);

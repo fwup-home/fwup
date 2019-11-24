@@ -200,4 +200,15 @@ void copy_le64(uint8_t *output, uint64_t v);
 void copy_le32(uint8_t *output, uint32_t v);
 void copy_le16(uint8_t *output, uint16_t v);
 
+// Crypto
+#define FWUP_PUBLIC_KEY_LEN 32
+#define FWUP_PRIVATE_KEY_LEN 32
+#define FWUP_SIGNATURE_LEN 64
+#define FWUP_BLAKE2b_256_LEN 32
+#define FWUP_BLAKE2b_512_LEN 64
+
+#ifndef FWUP_APPLY_ONLY
+int get_random(uint8_t *buf, size_t len);
+#endif
+
 #endif // UTIL_H

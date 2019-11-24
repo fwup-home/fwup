@@ -71,7 +71,7 @@ linux {
     QMAKE_CFLAGS += -std=gnu99
 }
 
-LIBS += -lconfuse -larchive -lsodium
+LIBS += -lconfuse -larchive
 
 HEADERS += \
     3rdparty/base64.h \

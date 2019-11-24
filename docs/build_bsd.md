@@ -35,13 +35,13 @@ To build the dynamic version, install the shared library dependencies:
     # Install compile-time and run-time dependencies
 
     ## FreeBSD/DragonFlyBSD
-    pkg install libarchive libsodium
+    pkg install libarchive
 
     ## OpenBSD
-    pkg_add libarchive libsodium curl
+    pkg_add libarchive curl
 
     ## NetBSD
-    pkg_add confuse libarchive libsodium
+    pkg_add confuse libarchive
 
     # The FreeBSD, DragonFlyBSD, and OpenBSD versions of libconfuse are very old (v2.7)
     # 2.8 or later is needed and >=3.0 is much preferred.

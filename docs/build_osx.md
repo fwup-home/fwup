@@ -9,7 +9,7 @@ source, though, here's the recipe:
 
 ```bash
 # The following packages are needed to build
-$ brew install confuse libarchive libsodium pkg-config automake
+$ brew install confuse libarchive pkg-config automake
 
 # The following packages are needed for the regression tests
 $ brew install coreutils mtools
@@ -31,7 +31,7 @@ version that only requires standard OSX-supplied shared libraries. Here's how:
 
 ```bash
 # The following packages are needed to build
-$ brew install confuse libarchive libsodium pkg-config automake
+$ brew install confuse libarchive pkg-config automake
 
 # The following packages are needed for the regression tests
 $ brew install coreutils mtools

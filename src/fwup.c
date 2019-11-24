@@ -26,7 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <sodium.h>
+#include "monocypher.h"
 
 #include "3rdparty/base64.h"
 #include "block_cache.h"
@@ -261,23 +261,23 @@ static unsigned char *parse_key(const char *buffer, size_t buffer_len, const cha
 
 static unsigned char *load_public_key(const char *path)
 {
-    return load_key(path, "public", crypto_sign_PUBLICKEYBYTES);
+    return load_key(path, "public", FWUP_PUBLIC_KEY_LEN);
 }
 
 static unsigned char *parse_public_key(const char *buffer, size_t buffer_len)
 {
-    return parse_key(buffer, buffer_len, "public", crypto_sign_PUBLICKEYBYTES);
+    return parse_key(buffer, buffer_len, "public", FWUP_PUBLIC_KEY_LEN);
 }
 
 #ifndef FWUP_MINIMAL
 static unsigned char *load_signing_key(const char *path)
 {
-    return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
+    return load_key(path, "private", FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN);
 }
 
 static unsigned char *parse_signing_key(const char *buffer, size_t buffer_len)
 {
-    return parse_key(buffer, buffer_len, "private", crypto_sign_SECRETKEYBYTES);
+    return parse_key(buffer, buffer_len, "private", FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN);
 }
 
 static void autoselect_mmc_device(struct mmc_device *device)
