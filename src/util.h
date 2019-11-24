@@ -39,7 +39,7 @@ time_t get_creation_time_t();
 void set_last_error(const char *fmt, ...);
 const char *last_error();
 
-int hex_to_bytes(const char *str, uint8_t *bytes, size_t maxbytes);
+int hex_to_bytes(const char *str, uint8_t *bytes, size_t numbytes);
 int bytes_to_hex(const uint8_t *bytes, char *str, size_t byte_count);
 
 int archive_filename_to_resource(const char *name, char *result, size_t maxlength);

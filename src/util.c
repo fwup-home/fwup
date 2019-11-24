@@ -152,18 +152,15 @@ static int two_hex_to_byte(const char *str, uint8_t *byte)
     return 0;
 }
 
-int hex_to_bytes(const char *str, uint8_t *bytes, size_t maxbytes)
+int hex_to_bytes(const char *str, uint8_t *bytes, size_t numbytes)
 {
     size_t len = strlen(str);
-    if (len & 1)
-        ERR_RETURN("hex string should have an even number of characters");
-
-    if (len / 2 > maxbytes)
-        ERR_RETURN("hex string is too long (%d bytes)", len / 2);
+    if (len != numbytes * 2)
+        ERR_RETURN("hex string should have length %d, but got %d", numbytes * 2, len);
 
     size_t bin_len;
-    if (sodium_hex2bin(bytes, maxbytes, str, len, NULL, &bin_len, NULL) < 0 ||
-        bin_len != maxbytes)
+    if (sodium_hex2bin(bytes, numbytes, str, len, NULL, &bin_len, NULL) < 0 ||
+        bin_len != numbytes)
         ERR_RETURN("Invalid character in hex string");
 
     return 0;
