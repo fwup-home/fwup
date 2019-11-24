@@ -38,13 +38,20 @@ static int aes_cbc_plain_init(struct disk_crypto *dc, const char *secret_key)
 {
     dc->encrypt = aes_cbc_plain_encrypt;
 
-    size_t decoded_len;
-    if (!secret_key ||
-        sodium_base642bin(dc->key, AES_KEYLEN, secret_key, strlen(secret_key), NULL, &decoded_len, NULL, sodium_base64_VARIANT_ORIGINAL) != 0 ||
-        decoded_len != AES_KEYLEN)
-        ERR_RETURN("aes-cbc-plain requires a base64-encoded %d-bit key", AES_KEYLEN * 8);
+    if (secret_key) {
+        if (hex_to_bytes(secret_key, dc->key, AES_KEYLEN) == 0)
+            return 0;
 
-    return 0;
+        // Try base64 since that was was used in fwup 1.5.0, but it turned out
+        // to be inconvenient to actually use. Do not copy/paste this to other
+        // cipher options.
+        size_t decoded_len;
+        if (sodium_base642bin(dc->key, AES_KEYLEN, secret_key, strlen(secret_key), NULL, &decoded_len, NULL, sodium_base64_VARIANT_ORIGINAL) == 0 &&
+            decoded_len == AES_KEYLEN)
+            return 0;
+    }
+
+    ERR_RETURN("aes-cbc-plain requires a hex-encoded %d-bit key", AES_KEYLEN * 8);
 }
 
 /**

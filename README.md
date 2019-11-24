@@ -715,7 +715,7 @@ on-resource fs.squashfs {
 In the above example, the `SECRET_KEY` is expected to come from an environment
 variable being set on the device when applying the firmware update. You could,
 of course, hard-code the secret key in the configuration file to test things
-out. The key is base64-encoded.
+out. The key is hex-encoded.
 
 Then, on the device, mount the SquashFS partition but use `dm-crypt`. The
 process will look something like this:

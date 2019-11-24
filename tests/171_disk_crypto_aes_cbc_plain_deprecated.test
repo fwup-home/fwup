@@ -1,10 +1,10 @@
 #!/bin/sh
 
 #
-# Test writing a resource to an encrypted disk
+# Test aes-cbc-plain with the secret base64 encoded.
 #
-# Note: fwup and dmcrypt pad blocks differently, so test files need to be
-# multiples of 512.
+# This is a deprecated feature and is kept around since 1.5.0 supported it.
+# Use regular hex encoding for secrets.
 #
 
 . ./common.sh
@@ -15,7 +15,7 @@ file-resource subdir/TEST {
 }
 
 task complete {
-        on-resource subdir/TEST { raw_write(1, "cipher=aes-cbc-plain", "secret=8e9c0780fd7f5d00c18a30812fe960cfce71f6074dd9cded6aab2897568cc856") }
+        on-resource subdir/TEST { raw_write(1, "cipher=aes-cbc-plain", "secret=jpwHgP1/XQDBijCBL+lgz85x9gdN2c3taqsol1aMyFY=") }
 }
 EOF
 
