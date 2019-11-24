@@ -210,11 +210,11 @@ static int gpt_cfg_to_partitions(cfg_t *cfg, struct gpt_partition *partitions, i
         found = found | (1 << partition_ix);
 
         const char *unverified_type = cfg_getstr(partition, "type");
-        if (!unverified_type || string_to_uuid(unverified_type, partitions[partition_ix].partition_type) < 0)
+        if (!unverified_type || string_to_uuid_me(unverified_type, partitions[partition_ix].partition_type) < 0)
             ERR_RETURN("partition %d's type must set to a UUID", partition_ix);
 
         const char *unverified_guid = cfg_getstr(partition, "guid");
-        if (!unverified_guid || string_to_uuid(unverified_guid, partitions[partition_ix].guid) < 0)
+        if (!unverified_guid || string_to_uuid_me(unverified_guid, partitions[partition_ix].guid) < 0)
             ERR_RETURN("partition %d must have a valid guid", partition_ix);
 
         const char *unverified_name = cfg_getstr(partition, "name");
@@ -262,7 +262,7 @@ int gpt_verify_cfg(cfg_t *cfg)
 {
     uint8_t guid[UUID_LENGTH];
     const char *unverified_guid = cfg_getstr(cfg, "guid");
-    if (!unverified_guid || string_to_uuid(unverified_guid, guid) < 0)
+    if (!unverified_guid || string_to_uuid_me(unverified_guid, guid) < 0)
         ERR_RETURN("GPT must have a valid disk guid");
 
     int found_partitions = 0;
@@ -332,7 +332,7 @@ int gpt_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t *mbr_and_primary_gpt
     header.num_partitions = (GPT_PARTITION_TABLE_BLOCKS * FWUP_BLOCK_SIZE / GPT_PARTITION_SIZE);
     header.partition_crc = crc32buf((const char *) secondary_gpt, header.num_partitions * GPT_PARTITION_SIZE);
     const char *unverified_guid = cfg_getstr(cfg, "guid");
-    if (!unverified_guid || string_to_uuid(unverified_guid, header.disk_guid) < 0)
+    if (!unverified_guid || string_to_uuid_me(unverified_guid, header.disk_guid) < 0)
         return -1;
 
     header.first_usable_lba = 1 + GPT_SIZE_BLOCKS;

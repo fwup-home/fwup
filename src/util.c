@@ -551,15 +551,19 @@ int update_relative_path(const char *fromfile, const char *filename, char **newp
 }
 
 /**
- * Convert a mixed endian UUID to a string
+ * Convert a UUID to a string in big endian form.
+ *
+ * Historical note: fwup always printed UUIDs in big endian. Then GPT support
+ * came in with the mixed endian UUIDs. That's why this looks weird and it's
+ * hard to change them to be consistent.
  *
  * @param uuid the UUID
  * @param uuid_str a buffer that's UUID_STR_LENGTH long
  */
-void uuid_to_string(const uint8_t uuid[UUID_LENGTH], char *uuid_str)
+void uuid_to_string_be(const uint8_t uuid[UUID_LENGTH], char *uuid_str)
 {
     sprintf(uuid_str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-            uuid[3], uuid[2], uuid[1], uuid[0], uuid[5], uuid[4], uuid[7], uuid[6],
+            uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
             uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
 }
 
@@ -570,7 +574,7 @@ void uuid_to_string(const uint8_t uuid[UUID_LENGTH], char *uuid_str)
  * @param uuid the resulting UUID
  * @return 0 on success; -1 on error
  */
-int string_to_uuid(const char *uuid_str, uint8_t uuid[UUID_LENGTH])
+int string_to_uuid_me(const char *uuid_str, uint8_t uuid[UUID_LENGTH])
 {
     // sscanf %02hhx doesn't seem to work everywhere (i.e., Windows), so we
     // have to work harder.
@@ -627,7 +631,7 @@ void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid)
     // not using SHA-1, but libsodium doesn't include SHA-1.
     hash[6] = (hash[6] & 0x0f) | 0x50;
 
-    uuid_to_string(hash, uuid);
+    uuid_to_string_be(hash, uuid);
 }
 
 /**
