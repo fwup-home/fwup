@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.1
+
+* Improvements
+  * Check exact size when decoding hex strings for MBR bootcode blocks. This
+    fixes an error that makes a typo really hard to see.
+  * Support hex strings for encrypted filesystem secrets to match dm-crypt.
+
 ## v1.5.0
 
 * Bug fixes
