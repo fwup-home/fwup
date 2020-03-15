@@ -1,5 +1,22 @@
 # Building from source on Linux
 
+## TLDR
+
+This works on Ubuntu 19.10:
+
+```sh
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev libsodium-dev
+./configure
+make -j4
+sudo make install
+```
+
+Users on earlier versions of Ubuntu will get a warning about libconfuse being
+old. That's usually not a problem if you are only creating .fw files. Having a
+current version of libconfuse is important on the device side.
+
+## More information
+
 While `fwup` is not a particularly complicated program, it is not trivial to
 build due to a couple project dependencies. If you are not comfortable with
 building applications from source, please consider one of the pre-build
