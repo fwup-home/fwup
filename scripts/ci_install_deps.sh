@@ -54,7 +54,7 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
             sudo apt-get update
             sudo apt-get install -qq gcc-mingw-w64-x86-64 wine
             ;;
-        singlethread|dynamic)
+        singlethread|dynamic|minimal)
             sudo apt-get install -qq libarchive-dev
             install_confuse
             install_sodium

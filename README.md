@@ -90,10 +90,13 @@ or clone this repository. Then read one of the following files:
 * [Raspbian build instructions](docs/build_rpi.md)
 * [FreeBSD/NetBSD/OpenBSD build instructions](docs/build_bsd.md)
 
-When building from source, please verify that the regression test pass
-on your system (run `make check`) before using `fwup` in production. While
-the tests usually pass, they have found minor issues in third party libraries in the
-past that really should be fixed.
+When building from source, please verify that the regression test pass on your
+system (run `make check`) before using `fwup` in production. While the tests
+usually pass, they have found minor issues in third party libraries in the past
+that really should be fixed.
+
+NOTE: For space-constrained target devices, use `./configure
+--enable-minimal-build` to trim functionality that's rarely used.
 
 # Invoking
 

@@ -83,6 +83,10 @@ AS_CASE([$host_os],
         [darwin*], [LIBS="$LIBS -framework CoreFoundation -framework DiskArbitration"]
         )
 
+# Limit functionality for minimal size
+AC_ARG_ENABLE(minimal-build,[AS_HELP_STRING([--enable-minimal-build], [create minimal build (only supports applying updates)])])
+AS_IF([test "x${enable_minimal_build}" = "xyes" ], [AC_DEFINE([FWUP_MINIMAL], [1], [Defined if functionality should be limited to applying updates])])
+
 # Shell completion
 AC_ARG_WITH([bash-completion-dir],
     AS_HELP_STRING([--with-bash-completion-dir[=PATH]],

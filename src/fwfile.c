@@ -24,6 +24,7 @@
 #include <archive_entry.h>
 #include <sodium.h>
 
+#ifndef FWUP_MINIMAL
 int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *signing_key)
 {
     char *configtxt;
@@ -81,3 +82,4 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
 
     return 0;
 }
+#endif

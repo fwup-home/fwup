@@ -32,6 +32,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#ifndef FWUP_MINIMAL
+
 struct calc_metadata_state
 {
     struct sparse_file_map sfm;
@@ -353,3 +355,4 @@ cleanup:
 
     return rc;
 }
+#endif // FWUP_MINIMAL

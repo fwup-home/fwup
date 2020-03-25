@@ -344,6 +344,7 @@ int sparse_file_read_next_data(struct sparse_file_read_iterator *iterator, int f
     return 0;
 }
 
+#ifndef FWUP_MINIMAL
 /**
  * @brief Check whether sparse files are supported on a filesystem
  *
@@ -384,3 +385,4 @@ cleanup:
     ERR_RETURN("Sparse file supported not compiled into fwup.");
 #endif
 }
+#endif

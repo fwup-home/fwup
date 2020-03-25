@@ -27,6 +27,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef FWUP_MINIMAL
+
 /**
  * @brief Sign a firmware update file
  * @param input_filename the firmware update filename
@@ -162,3 +164,4 @@ cleanup:
     return rc;
 
 }
+#endif // FWUP_MINIMAL

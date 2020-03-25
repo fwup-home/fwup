@@ -29,6 +29,8 @@
 
 #include "util.h"
 
+#ifndef FWUP_MINIMAL
+
 static int save_key(const char *name, unsigned char *key, size_t key_len)
 {
     int rc = 0;
@@ -89,3 +91,5 @@ int fwup_genkeys(const char *output_prefix)
 
     return 0;
 }
+
+#endif // FWUP_MINIMAL

@@ -20,6 +20,9 @@ matrix:
           env: MODE=windows
         - os: linux
           compiler: gcc
+          env: MODE=minimal
+        - os: linux
+          compiler: gcc
           env: MODE=raspberrypi
         - os: linux
           compiler: gcc

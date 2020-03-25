@@ -54,6 +54,9 @@ static bool quiet = false;
 
 static void print_usage()
 {
+#ifdef FWUP_MINIMAL
+    printf("Documentation not included in minimal builds.\n");
+#else
 #if defined(__APPLE__)
     const char *example_sd = "/dev/rdisk2";
 #elif defined(__linux__)
@@ -150,6 +153,7 @@ static void print_usage()
     printf("\n");
     printf("Also see the unit tests that come with fwup source code for more examples.\n");
     printf("Obtain source code and report bugs at https://github.com/fhunleth/fwup.\n");
+#endif
 }
 
 static void print_version()
@@ -261,21 +265,21 @@ static unsigned char *load_public_key(const char *path)
     return load_key(path, "public", crypto_sign_PUBLICKEYBYTES);
 }
 
-static unsigned char *load_signing_key(const char *path)
-{
-    return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
-}
-
 static unsigned char *parse_public_key(const char *buffer, size_t buffer_len)
 {
     return parse_key(buffer, buffer_len, "public", crypto_sign_PUBLICKEYBYTES);
+}
+
+#ifndef FWUP_MINIMAL
+static unsigned char *load_signing_key(const char *path)
+{
+    return load_key(path, "private", crypto_sign_SECRETKEYBYTES);
 }
 
 static unsigned char *parse_signing_key(const char *buffer, size_t buffer_len)
 {
     return parse_key(buffer, buffer_len, "private", crypto_sign_SECRETKEYBYTES);
 }
-
 
 static void autoselect_mmc_device(struct mmc_device *device)
 {
@@ -326,6 +330,7 @@ static void print_selected_device()
     fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
     free(s.str);
 }
+#endif
 
 static void print_detected_devices()
 {
@@ -342,16 +347,19 @@ static void print_detected_devices()
 
 int main(int argc, char **argv)
 {
-    const char *configfile = "fwupdate.conf";
     int command = CMD_NONE;
 
     char *mmc_device_path = NULL;
     const char *input_filename = NULL;
     const char *output_filename = NULL;
     const char *task = NULL;
+#ifndef FWUP_MINIMAL
+    const char *configfile = "fwupdate.conf";
     const char *sparse_check = NULL;
     int sparse_check_size = 4096; // Arbitrary default.
+    int compression_level = 9; // 1 - 9
     bool accept_found_device = false;
+#endif
     unsigned char *signing_key = NULL;
     unsigned char *public_keys[FWUP_MAX_PUBLIC_KEYS + 1] = {NULL};
     int num_public_keys = 0;
@@ -370,7 +378,6 @@ int main(int argc, char **argv)
     bool numeric_progress = false;
     int progress_low = 0;    // 0%
     int progress_high = 100; // to 100%
-    int compression_level = 9; // 1 - 9
 
     if (argc == 1) {
         print_usage();
@@ -387,10 +394,54 @@ int main(int argc, char **argv)
             command = CMD_APPLY;
             easy_mode = false;
             break;
+#ifndef FWUP_MINIMAL
         case 'c': // --create
             command = CMD_CREATE;
             easy_mode = false;
             break;
+        case 'f':
+            configfile = optarg;
+            easy_mode = false;
+            break;
+        case 'g': // --gen-keys
+            command = CMD_GENERATE_KEYS;
+            easy_mode = false;
+            break;
+        case 'S': // --sign
+            command = CMD_SIGN;
+            easy_mode = false;
+            break;
+        case '&': // --sparse-check
+            sparse_check = optarg;
+            command = CMD_SPARSE_CHECK;
+            easy_mode = false;
+            break;
+        case '*': // --sparse-check-size
+            sparse_check_size = strtol(optarg, 0, 0);
+            break;
+        case 's':
+            signing_key = load_signing_key(optarg);
+            easy_mode = false;
+            break;
+        case 'z':
+            print_selected_device();
+            fwup_exit(EXIT_SUCCESS);
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            compression_level = opt - '0';
+            break;
+        case '(': // --private-key
+            signing_key = parse_signing_key(optarg, strlen(optarg));
+            easy_mode = false;
+            break;
+#endif
         case 'd':
             mmc_device_path = optarg;
             break;
@@ -400,16 +451,8 @@ int main(int argc, char **argv)
         case 'E': // --eject
             eject_on_success = true;
             break;
-        case 'f':
-            configfile = optarg;
-            easy_mode = false;
-            break;
         case 'F': // --framing
             fwup_framing = true;
-            easy_mode = false;
-            break;
-        case 'g': // --gen-keys
-            command = CMD_GENERATE_KEYS;
             easy_mode = false;
             break;
         case 'h':
@@ -446,14 +489,6 @@ int main(int argc, char **argv)
         case 'q':
             quiet = true;
             break;
-        case 'S': // --sign
-            command = CMD_SIGN;
-            easy_mode = false;
-            break;
-        case 's':
-            signing_key = load_signing_key(optarg);
-            easy_mode = false;
-            break;
         case 't': // --task
             task = optarg;
             break;
@@ -470,15 +505,14 @@ int main(int argc, char **argv)
         case 'U': // --no-unmount
             unmount_first = false;
             break;
+        case 'y':
+#ifndef FWUP_MINIMAL
+            accept_found_device = true;
+#endif
+            break;
         case '+': // --unsafe
             fwup_unsafe = true;
             break;
-        case 'y':
-            accept_found_device = true;
-            break;
-        case 'z':
-            print_selected_device();
-            fwup_exit(EXIT_SUCCESS);
         case '!': // --enable-trim
             enable_trim = true;
             break;
@@ -493,29 +527,6 @@ int main(int argc, char **argv)
             break;
         case '%': // progress-high
             progress_high = strtol(optarg, 0, 0);
-            break;
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            compression_level = opt - '0';
-            break;
-        case '&': // --sparse-check
-            sparse_check = optarg;
-            command = CMD_SPARSE_CHECK;
-            easy_mode = false;
-            break;
-        case '*': // --sparse-check-size
-            sparse_check_size = strtol(optarg, 0, 0);
-            break;
-        case '(': // --private-key
-            signing_key = parse_signing_key(optarg, strlen(optarg));
-            easy_mode = false;
             break;
         case ')': // --public-key
             if (num_public_keys < FWUP_MAX_PUBLIC_KEYS) {
@@ -574,9 +585,13 @@ int main(int argc, char **argv)
         if (!task)
             fwup_errx(EXIT_FAILURE, "specify a task (-t)");
 
-        if (!mmc_device_path)
+        if (!mmc_device_path) {
+#ifndef FWUP_MINIMAL
             mmc_device_path = autoselect_and_confirm_mmc_device(accept_found_device, input_filename);
-
+#else
+            fwup_errx(EXIT_FAILURE, "autodetection compiled out. specify a device (-d)");
+#endif
+        }
         if (quiet)
             fwup_progress_mode = PROGRESS_MODE_OFF;
         else if (fwup_framing)
@@ -679,11 +694,31 @@ int main(int argc, char **argv)
         break;
     }
 
+#ifndef FWUP_MINIMAL
     case CMD_CREATE:
         if (fwup_create(configfile, output_filename, signing_key, compression_level) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
+    case CMD_GENERATE_KEYS:
+        if (fwup_genkeys(output_filename) < 0)
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
+
+        break;
+
+    case CMD_SIGN:
+        if (fwup_sign(input_filename, output_filename, signing_key) < 0)
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
+
+        break;
+
+    case CMD_SPARSE_CHECK:
+        if (sparse_file_is_supported(sparse_check, sparse_check_size) < 0)
+            fwup_errx(EXIT_FAILURE, "%s", last_error());
+        else
+            fwup_output(FRAMING_TYPE_SUCCESS, 0, "Sparse files supported\n");
+        break;
+#endif
 
     case CMD_LIST:
         if (fwup_list(input_filename, public_keys) < 0)
@@ -697,29 +732,12 @@ int main(int argc, char **argv)
 
         break;
 
-    case CMD_GENERATE_KEYS:
-        if (fwup_genkeys(output_filename) < 0)
-            fwup_errx(EXIT_FAILURE, "%s", last_error());
-
-        break;
-
-    case CMD_SIGN:
-        if (fwup_sign(input_filename, output_filename, signing_key) < 0)
-            fwup_errx(EXIT_FAILURE, "%s", last_error());
-
-        break;
 
     case CMD_VERIFY:
         if (fwup_verify(input_filename, public_keys) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
-
-    case CMD_SPARSE_CHECK:
-        if (sparse_file_is_supported(sparse_check, sparse_check_size) < 0)
-            fwup_errx(EXIT_FAILURE, "%s", last_error());
-        else
-            fwup_output(FRAMING_TYPE_SUCCESS, 0, "Sparse files supported\n");
     }
 
     if (signing_key)

@@ -5,7 +5,7 @@
 #
 # Inputs:
 #    TRAVIS_OS_NAME - "linux" or "osx"
-#    MODE           - "static", "dynamic", "windows", or "raspberrypi"
+#    MODE           - "static", "dynamic", "windows", "raspberrypi", or "minimal"
 #
 # Static builds use scripts to download libarchive, libconfuse, and libsodium,
 # so those are only installed on shared library builds.
@@ -21,6 +21,10 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
     *-static)
         # If this is a static build, run 'build_pkg.sh'
         bash -v scripts/build_pkg.sh
+        exit 0
+        ;;
+    linux-minimal)
+        bash -v scripts/build_and_test_minimal.sh
         exit 0
         ;;
     linux-dynamic)
@@ -70,5 +74,4 @@ else
 fi
 make -j4
 make -j4 check
-
 
