@@ -4,12 +4,12 @@
 # Test the creation and application of a trivial firmware file
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # 1KB of all ones
 TESTFILE=1K.bin
 
-cat >$CONFIG <<EOF
+cat >"$CONFIG" <<EOF
 define(TEST_DEFINE, "$TESTFILE")
 
 # Test substitution in a field
@@ -18,7 +18,7 @@ meta-product = \${TEST_DEFINE}
 # Test substitution in a resource name
 file-resource "\${TEST_DEFINE}" {
         # Test substitution in the middle of a string
-        host-path = "$TESTS_DIR/\${TEST_DEFINE}"
+        host-path = "$TESTS_SRC_DIR/\${TEST_DEFINE}"
 }
 
 task complete {
@@ -27,7 +27,7 @@ task complete {
 }
 EOF
 
-cat >$EXPECTED_META_CONF <<EOF
+cat >"$EXPECTED_META_CONF" <<EOF
 meta-product="$TESTFILE"
 file-resource "$TESTFILE" {
   length=1024

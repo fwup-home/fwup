@@ -7,7 +7,7 @@
 # destinations. It found a segfault once so that's why I keep it.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Don't create 1T and larger temp files on systems that don't have
 # sparse file support.

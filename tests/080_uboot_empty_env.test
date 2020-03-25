@@ -4,7 +4,7 @@
 # Test U-boot support for setting variables
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 
 # Create a starter uboot environment block

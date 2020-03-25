@@ -4,7 +4,7 @@
 # Test that you can create keys with names of your choice.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 $FWUP_CREATE -g -o "$WORK/my-key"
 

@@ -7,7 +7,7 @@
 # internally.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Skip this test on systems that don't support sparse files (check for
 # at least 1 MB hole size support)

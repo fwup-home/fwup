@@ -4,7 +4,7 @@
 # Test that printing an error message works
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 

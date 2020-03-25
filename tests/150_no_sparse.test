@@ -4,7 +4,7 @@
 # Test that fwup doesn't do sparse file processing when told not to
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 SPARSE_FILE=$WORK/sparse.bin
 

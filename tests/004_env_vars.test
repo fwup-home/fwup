@@ -8,18 +8,18 @@
 # GitHub and build it yourself.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 export TEST_ENV_VAR=1K.bin
 
-cat >$CONFIG <<EOF
+cat >"$CONFIG" <<EOF
 # Test substitution in a field
 meta-product = \${TEST_ENV_VAR}
 
 # Test substitution in a resource name
 file-resource "\${TEST_ENV_VAR}" {
         # Test substitution in the middle of a string
-        host-path = "$TESTS_DIR/\${TEST_ENV_VAR}"
+        host-path = "$TESTS_SRC_DIR/\${TEST_ENV_VAR}"
 }
 
 task complete {
@@ -28,7 +28,7 @@ task complete {
 }
 EOF
 
-cat >$EXPECTED_META_CONF <<EOF
+cat >"$EXPECTED_META_CONF" <<EOF
 meta-product="${TEST_ENV_VAR}"
 file-resource "${TEST_ENV_VAR}" {
   length=1024

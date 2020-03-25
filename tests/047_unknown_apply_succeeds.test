@@ -9,7 +9,7 @@
 # the compile warning in cfgfile.c.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 meta-product = "testing test test"

@@ -7,7 +7,7 @@
 # without it.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 meta-vcs-identifier = "0e919751fc38196f2486b0c98ded91013eb9baa3"

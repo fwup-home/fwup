@@ -6,7 +6,7 @@
 # can be run on systems w/o sparse file support.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Create the "sparse" resource.
 

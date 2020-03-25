@@ -4,7 +4,7 @@
 # Test that an error is detected if a file is missing its metadata from the archive.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource a.bin {

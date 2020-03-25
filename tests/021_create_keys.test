@@ -4,7 +4,7 @@
 # Test out progress reporting on a firmware write
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cd $WORK
 $FWUP_CREATE -g

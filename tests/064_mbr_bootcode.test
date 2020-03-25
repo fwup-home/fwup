@@ -4,7 +4,7 @@
 # Test the MBR creation ability of fwup
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 base64_decode >$WORK/bootstrap-data <<EOF
 M8D6jtiO0LwAfInmBleOwPv8vwAGuQAB86XqHwYAAFJStEG7qlUxyTD2+c0TchOB+1WqdQ3R6XMJ

@@ -4,7 +4,7 @@
 # Test that printing usage works
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 ACTUAL_OUTPUT_NO_ARGS=$WORK/actual.no_args
 ACTUAL_OUTPUT_BAD_ARG=$WORK/actual.bad_arg

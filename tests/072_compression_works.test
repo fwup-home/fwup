@@ -5,7 +5,7 @@
 # probably that libarchive was compiled without zlib support.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 TESTFILE_ZEROS=$WORK/zeros
 dd if=/dev/zero of=$TESTFILE_ZEROS bs=1024 count=100 2>/dev/null

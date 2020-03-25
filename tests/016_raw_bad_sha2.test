@@ -4,7 +4,7 @@
 # Test the SHA-256 check when write raw bytes.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource 1K.bin {

@@ -5,7 +5,7 @@
 # file. Make sure that the sparse file is in the output.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Create the "sparse" resource.
 SPARSE_FILE=$WORK/sparse.bin

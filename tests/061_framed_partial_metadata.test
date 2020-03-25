@@ -5,7 +5,7 @@
 # when only some of that file is streamed in the framed way
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 create_15M_file
 
 EXPECTED_OUTPUT=$WORK/expected_output

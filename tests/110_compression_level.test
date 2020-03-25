@@ -4,7 +4,7 @@
 # Test that the compression level options work
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Compress the fwup binary. While not deterministic, it is more
 # interesting than compressioning the randomly generated files

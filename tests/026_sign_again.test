@@ -4,7 +4,7 @@
 # Test that signing firmware after it was made does the right thing
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

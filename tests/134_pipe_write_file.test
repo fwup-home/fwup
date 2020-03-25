@@ -5,12 +5,12 @@
 # target system
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 OUTFILE=$WORK/output1k
 
 if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
-    # This test needs a Windows executable that reads from STDIN.  
+    # This test needs a Windows executable that reads from STDIN.
     # No suitable executables are currently on Travis CI Image
     exit 0
 fi

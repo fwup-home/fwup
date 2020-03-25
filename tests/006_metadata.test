@@ -4,7 +4,7 @@
 # Test that metadata is stored correctly
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 meta-product = "product name"

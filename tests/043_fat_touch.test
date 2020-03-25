@@ -4,7 +4,7 @@
 # Test the fat_touch command that creates an empty file
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)

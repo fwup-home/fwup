@@ -5,7 +5,7 @@
 # cause parse errors.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$WORK/meta.conf <<EOF
 file-resource "1K.bin" {

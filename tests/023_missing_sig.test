@@ -4,7 +4,7 @@
 # Test that installing a firmware that's missing a signature fails
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

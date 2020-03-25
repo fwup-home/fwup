@@ -6,7 +6,7 @@
 # mounted.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 case $HOST_OS in
     Darwin|Windows)

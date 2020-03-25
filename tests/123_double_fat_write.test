@@ -7,7 +7,7 @@
 # for inspecting the error code.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)

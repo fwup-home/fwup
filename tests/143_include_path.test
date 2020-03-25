@@ -4,7 +4,7 @@
 # Test that includes are relative to the current file's path.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 CONFIG_PATH1=$WORK/config1
 CONFIG_PATH2=$WORK/config2

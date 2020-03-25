@@ -4,7 +4,7 @@
 # Test that the signing crypto didn't change
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # To create the files for this test, edit 024_metadata_sig.test so
 # that it exits with an error code. This will keep its work directory

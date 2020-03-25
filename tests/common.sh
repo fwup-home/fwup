@@ -70,7 +70,8 @@ filesize() {
     stat $STAT_FILESIZE_FLAGS $1
 }
 
-TESTS_DIR=$(dirname $($READLINK -f $0))
+TESTS_SRC_DIR=$(dirname $($READLINK -f $0))
+TESTS_DIR=$(pwd)
 
 # Default to testing the fwup built in the src directory,
 # but it is possible to define the version of fwup used for
@@ -156,9 +157,9 @@ trap cleanup EXIT
 # a test to pass even though the data had been reordered.
 # (This never actually happened to my knowledge.)
 
-TESTFILE_1K=$TESTS_DIR/1K.bin
-TESTFILE_1K_CORRUPT=$TESTS_DIR/1K-corrupt.bin
-TESTFILE_150K=$TESTS_DIR/150K.bin
+TESTFILE_1K="$TESTS_SRC_DIR/1K.bin"
+TESTFILE_1K_CORRUPT="$TESTS_SRC_DIR/1K-corrupt.bin"
+TESTFILE_150K="$TESTS_SRC_DIR/150K.bin"
 
 # Generated test data
 create_15M_file() {

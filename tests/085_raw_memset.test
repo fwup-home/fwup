@@ -4,7 +4,7 @@
 # Test writing a constant value across a region
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 task complete {

@@ -10,7 +10,7 @@
 # U-Boot requires that the type be set to "FAT16" rather than
 # just "FAT", so that's checked here as well.
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)

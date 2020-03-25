@@ -4,7 +4,7 @@
 # Write a firmware image and then test upgrading it
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 

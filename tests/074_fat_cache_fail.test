@@ -6,7 +6,7 @@
 # sequence of zeros in the middle of u-image.img.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 create_file() {
     NAME=$1

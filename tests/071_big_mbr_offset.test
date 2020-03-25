@@ -4,7 +4,7 @@
 # Test that an mbr offset that requires a 32-bit unsigned int works
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 4200000000)

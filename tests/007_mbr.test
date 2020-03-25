@@ -4,7 +4,7 @@
 # Test the MBR creation ability of fwup
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 # Numbers don't matter for the test so long as the MBR is right

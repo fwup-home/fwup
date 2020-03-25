@@ -4,7 +4,7 @@
 # Test that multiple "require" clauses pick the right option.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 

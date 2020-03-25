@@ -4,7 +4,7 @@
 # Test that applying signed firmware the streaming way works
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

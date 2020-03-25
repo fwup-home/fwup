@@ -6,7 +6,7 @@
 # before it has been completely downloaded.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 create_15M_file
 
 EXPECTED_OUTPUT=$WORK/expected_output

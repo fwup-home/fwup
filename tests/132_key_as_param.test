@@ -4,7 +4,7 @@
 # Test that it's possible to pass keys around as commandline parameters
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

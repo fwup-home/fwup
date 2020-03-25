@@ -4,7 +4,7 @@
 # Test out including fragments almost anywhere in a fwup.conf
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG.file-resource <<EOF
 	host-path = "${TESTFILE_1K}"

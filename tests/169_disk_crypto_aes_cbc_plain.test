@@ -7,7 +7,7 @@
 # multiples of 512.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {

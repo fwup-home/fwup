@@ -5,7 +5,7 @@
 # even when the time changes.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 63)

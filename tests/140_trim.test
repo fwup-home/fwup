@@ -6,7 +6,7 @@
 # we can verify some on the support.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 task complete {

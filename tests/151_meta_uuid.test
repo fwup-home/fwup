@@ -4,7 +4,7 @@
 # Test that signing doesn't change the firmware's uuid
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 EXPECTED_OUTPUT=$WORK/expected_output
 ACTUAL_OUTPUT=$WORK/actual_output

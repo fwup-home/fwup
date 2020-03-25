@@ -4,7 +4,7 @@
 # Test that signing firmware does the expected thing
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

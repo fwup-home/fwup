@@ -4,7 +4,7 @@
 # Test require-fwup-version
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 
 cat >$CONFIG.pass1 <<EOF

@@ -4,7 +4,7 @@
 # Test the creation of a .fw with an unknown field fails
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 meta-myunknownfield = "break"

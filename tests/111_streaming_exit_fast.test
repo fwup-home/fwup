@@ -7,7 +7,7 @@
 # are errors, so we want to make sure that it works.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 if [ -z $TIMEOUT ]; then
     echo "GNU coreutils' timeout command unavailable so skipping test."

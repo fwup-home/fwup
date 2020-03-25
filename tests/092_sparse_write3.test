@@ -6,7 +6,7 @@
 # but has the opposite order of hole/data.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 SPARSE_FILE=$WORK/sparse.bin
 

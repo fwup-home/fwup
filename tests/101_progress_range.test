@@ -4,7 +4,7 @@
 # Test out progress over a custom range
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource 1.bin {

@@ -6,7 +6,7 @@
 # regret it, but it's particularly frustrating when you mess this up.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 EXPECTED_OUTPUT=$WORK/expected_output
 ACTUAL_OUTPUT=$WORK/actual_output

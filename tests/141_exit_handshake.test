@@ -4,7 +4,7 @@
 # Test that the `--exit-handshake` flag emits a CTRL+Z and then the exit code
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 task complete {

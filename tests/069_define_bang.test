@@ -5,7 +5,7 @@
 # does.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(TEST_DEFINE, "define_override")

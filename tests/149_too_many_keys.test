@@ -4,7 +4,7 @@
 # Test that passing too many public keys ignores the extra ones
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

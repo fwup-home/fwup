@@ -7,7 +7,7 @@
 # This also tests including directories and missing files.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 include(\${variable_that_doesnt_exist})

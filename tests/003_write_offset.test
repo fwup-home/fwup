@@ -4,7 +4,7 @@
 # Test writing a resource to an offset
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource subdir/TEST {

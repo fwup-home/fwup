@@ -5,7 +5,7 @@
 # target system
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 OUTFILE=$WORK/output.txt
 LOCAL_FILE=$WORK/somefile.txt

@@ -4,7 +4,7 @@
 # Test the creation and application of a trivial firmware file
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource TEST {

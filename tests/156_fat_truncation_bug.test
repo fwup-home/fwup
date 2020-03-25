@@ -5,7 +5,7 @@
 # truncated when working with multiple FAT partitions.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # This was created from one of the device tree overlays on the Raspberry Pi
 base64_decode >$WORK/pi3-miniuart-bt.dtbo <<EOF

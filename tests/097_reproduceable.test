@@ -5,7 +5,7 @@
 # the bits are the same. This checks for timestamps being stored in the files.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 

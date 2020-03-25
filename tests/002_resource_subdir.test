@@ -4,7 +4,7 @@
 # Test resources in subdirectories
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource subdir/onesubdir {

@@ -4,7 +4,7 @@
 # Test that corrupt U-boot environments fail
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(UBOOT_ENV_OFFSET, 32)

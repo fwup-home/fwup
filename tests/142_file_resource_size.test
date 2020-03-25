@@ -4,7 +4,7 @@
 # Test generating the size of a file resource
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 EXPECTED_SIZE_FILE=$WORK/expected_size.txt
 

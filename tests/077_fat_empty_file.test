@@ -4,7 +4,7 @@
 # Test that writing a zero-length file truncates
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 EMPTY=$WORK/empty
 touch $EMPTY

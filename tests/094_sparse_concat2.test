@@ -10,7 +10,7 @@
 # than with others.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 SPARSE_FILE=$WORK/sparse.bin
 

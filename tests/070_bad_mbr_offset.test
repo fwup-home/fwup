@@ -4,7 +4,7 @@
 # Test that an mbr offset that's too large triggers an error
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 4300000000)

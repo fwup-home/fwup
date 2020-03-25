@@ -9,7 +9,7 @@
 # nice to have around.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 create_15M_file
 
 cat >$CONFIG <<EOF

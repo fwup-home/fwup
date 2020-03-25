@@ -11,7 +11,7 @@
 # 'on-finish' handler, but sometimes a file triggers it.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 file-resource 1.bin {

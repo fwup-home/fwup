@@ -4,7 +4,7 @@
 # Manually create a .fw file that has a hole at the end.
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Create the "sparse" resource.
 SPARSE_FILE=$WORK/sparse.bin

@@ -4,7 +4,7 @@
 # Test that an mbr with overlapping partitions fails
 #
 
-. ./common.sh
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cat >$CONFIG <<EOF
 define(BOOT_PART_OFFSET, 64)
