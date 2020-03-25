@@ -62,34 +62,34 @@ fwup_SOURCES=\
 	sparse_file.h \
 	uboot_env.h \
 	util.h \
-	../3rdparty/semver.c/semver.c \
-	../3rdparty/semver.c/semver.h \
-	../3rdparty/tiny-AES-c/aes.c \
-	../3rdparty/tiny-AES-c/aes.h \
-	../3rdparty/fatfs/source/diskio.h \
-	../3rdparty/fatfs/source/ff.c \
-	../3rdparty/fatfs/source/ff.h \
-	../3rdparty/fatfs/source/ffconf.h \
-	../3rdparty/fatfs/source/ffunicode.c
+	3rdparty/semver.c/semver.c \
+	3rdparty/semver.c/semver.h \
+	3rdparty/tiny-AES-c/aes.c \
+	3rdparty/tiny-AES-c/aes.h \
+	3rdparty/fatfs/source/diskio.h \
+	3rdparty/fatfs/source/ff.c \
+	3rdparty/fatfs/source/ff.h \
+	3rdparty/fatfs/source/ffconf.h \
+	3rdparty/fatfs/source/ffunicode.c
 
 EXTRA_DIST= \
-	../3rdparty/fatfs/source/00history.txt \
-	../3rdparty/fatfs/source/00readme.txt \
-	../3rdparty/fatfs/source/diskio.c \
-	../3rdparty/fatfs/source/ffsystem.c \
-	../3rdparty/fatfs/LICENSE.txt \
-	../3rdparty/semver.c/README.md \
-	../3rdparty/semver.c/LICENSE \
-	../3rdparty/semver.c/Makefile \
-	../3rdparty/semver.c/semver_unit.c \
-	../3rdparty/semver.c/semver_test.c \
-	../3rdparty/tiny-AES-c/README.md \
-	../3rdparty/tiny-AES-c/unlicense.txt \
-	../3rdparty/strptime.c \
+	3rdparty/fatfs/source/00history.txt \
+	3rdparty/fatfs/source/00readme.txt \
+	3rdparty/fatfs/source/diskio.c \
+	3rdparty/fatfs/source/ffsystem.c \
+	3rdparty/fatfs/LICENSE.txt \
+	3rdparty/semver.c/README.md \
+	3rdparty/semver.c/LICENSE \
+	3rdparty/semver.c/Makefile \
+	3rdparty/semver.c/semver_unit.c \
+	3rdparty/semver.c/semver_test.c \
+	3rdparty/tiny-AES-c/README.md \
+	3rdparty/tiny-AES-c/unlicense.txt \
+	3rdparty/strptime.c \
 	fwup.h2m
 
 if !HAS_STRPTIME
-fwup_SOURCES+=../3rdparty/strptime.c
+fwup_SOURCES+=3rdparty/strptime.c
 endif
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
@@ -112,7 +112,7 @@ man_MANS = fwup.1
 CLEANFILES = $(man_MANS)
 
 fwup.1: fwup$(EXEEXT) fwup.h2m
-	$(HELP2MAN) --no-discard-stderr --output=$@ --no-info --include fwup.h2m \
+	$(HELP2MAN) --no-discard-stderr --output=$@ --no-info --include $(srcdir)/fwup.h2m \
 	    -n "configurable embedded firmware update creator and runner" \
 	    ./fwup$(EXEEXT)
 else

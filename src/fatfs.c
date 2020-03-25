@@ -18,8 +18,8 @@
 
 #include "fatfs.h"
 
-#include "../3rdparty/fatfs/source/ff.h"
-#include "../3rdparty/fatfs/source/diskio.h"  /* FatFs lower layer API */
+#include "3rdparty/fatfs/source/ff.h"
+#include "3rdparty/fatfs/source/diskio.h"  /* FatFs lower layer API */
 #include "util.h"
 #include "block_cache.h"
 
