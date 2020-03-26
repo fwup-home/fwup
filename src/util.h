@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include "../config.h"
+#include "config.h"
 
 // Global options
 extern bool fwup_verbose;

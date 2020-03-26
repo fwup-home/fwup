@@ -41,7 +41,7 @@
 #include "progress.h"
 #include "simple_string.h"
 #include "sparse_file.h"
-#include "../config.h"
+#include "config.h"
 
 // Global options
 bool fwup_verbose = false;
