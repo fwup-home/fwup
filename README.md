@@ -30,7 +30,7 @@ Here's a full list of features:
 1. Multiple firmware update task options per archive so that one archive can
    upgrade varying target configurations
 
-1. Basic disk partitioning and FAT filesystem manipulation
+1. Basic disk partitioning (GPT and MBR) and FAT filesystem manipulation
 
 1. Human and machine readable progress.
 
@@ -50,8 +50,8 @@ Here's a full list of features:
 
 Internally, `fwup` has many optimizations to speed up low level disk writes over
 what can easily be achieved with `dd(1)`. It orders, Flash erase block aligns,
-and can skip writing large unused sections to minimize write time. The goal has
-been to make updates fast enough that iterative development cycles.
+and can skip writing large unused sections to minimize write time. The goal is
+to make updates fast enough to support use during code development.
 
 # Installing
 
@@ -212,7 +212,7 @@ files to  `.fw` files. `fwup` comes with the following shell script helper:
 * `img2fwup` - convert a raw image file to a `.fw` file
 
 A use case for the `img2fwup` script is to convert a large SDCard image file
-to one that is compressed and checksumed by `fwup` for distribution.
+to one that is compressed and checksummed by `fwup` for distribution.
 
 # Versioning
 
