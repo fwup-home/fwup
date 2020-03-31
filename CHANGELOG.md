@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.5.2
+
+This release does not change any functionality. It provides a modest (~30%)
+reduction in fwup's footprint by trimming easy-to-remove code.
+
+* Support a minimal "apply-only" of `fwup`. Use `./configure
+  --enable-minimal-build` to select this.
+* Replace libsodium with [Monocypher](https://monocypher.org/). Monocypher is
+  a small crypto library that's very similar to libsodium in many ways, but
+  optimizes for code size rather than performance.
+
+Note that the regression tests will fail with the minimal version of `fwup`
+since almost all tests create `.fw` archives and the minimal one can't do that.
+It's possible to use a full-featured version of `fwup` to handle the creation
+parts only so that the minimal `fwup` can be tested on everything else. See the
+CI scripts if you'd like to replicate these tests.
+
 ## v1.5.1
 
 * Improvements
