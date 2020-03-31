@@ -7,14 +7,17 @@
 set -e
 set -v
 
-mkdir full_featured
-mkdir minimal
+# Just in case the source directory has been configured, clean it up.
+make distclean || true
 
+# Create minimal and full-featured versions in separate build directories
+mkdir minimal
 cd minimal
 ../configure --enable-minimal-build
 make -j4
 cd ..
 
+mkdir full_featured
 cd full_featured
 ../configure
 make -j4
