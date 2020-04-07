@@ -101,7 +101,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * FWUP_BLOCK_SIZE, block_count * FWUP_BLOCK_SIZE, true),
                      "Error trimming blocks affacted by fat_mkfs");
 
-    // The third parameter is the cluster size. We set it low so
+    // The au_size is the cluster size. We set it low so
     // that we have enough clusters to easily bump the cluster count
     // above the FAT32 threshold. The minimum number of clusters to
     // get FAT32 is 65526. This is important for the Raspberry Pi since
@@ -116,7 +116,14 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     // NOTE3: Specify FM_SFD (super-floppy disk) to avoid fatfs wanting to create
     // a master boot record.
     char buffer[FF_MAX_SS];
-    CHECK("fat_mkfs", NULL, f_mkfs("", FM_SFD|FM_FAT|FM_FAT32, FWUP_BLOCK_SIZE, buffer, sizeof(buffer)));
+    MKFS_PARM mkfs_parms;
+    memset(&mkfs_parms, 0, sizeof(mkfs_parms));
+    mkfs_parms.fmt = FM_SFD | FM_FAT | FM_FAT32;
+    mkfs_parms.n_fat = 2;
+    mkfs_parms.align = 0;  // Use default
+    mkfs_parms.n_root = 0; // Use default
+    mkfs_parms.au_size = FWUP_BLOCK_SIZE;
+    CHECK("fat_mkfs", NULL, f_mkfs("", &mkfs_parms, buffer, sizeof(buffer)));
 
     return 0;
 }
@@ -420,7 +427,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
     }
 
     // Check if this pwrite requires a seek.
-    DWORD desired_offset = offset;
+    FSIZE_t desired_offset = offset;
     if (desired_offset != f_tell(&fil_)) {
         // Need to seek, but if we're seeking past the end, be sure to fill in with zeros.
         if (desired_offset > f_size(&fil_)) {
@@ -428,11 +435,11 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
             CHECK("fat_write can't seek to end of file", filename, f_lseek(&fil_, f_size(&fil_)));
 
             // Write zeros.
-            DWORD zero_count = desired_offset - f_tell(&fil_);
+            UINT zero_count = desired_offset - f_tell(&fil_);
             char zero_buffer[FWUP_BLOCK_SIZE];
             memset(zero_buffer, 0, sizeof(zero_buffer));
             while (zero_count) {
-                DWORD btw = (zero_count < sizeof(zero_buffer) ? zero_count : sizeof(zero_buffer));
+                UINT btw = (zero_count < sizeof(zero_buffer) ? zero_count : sizeof(zero_buffer));
                 UINT bw;
                 CHECK("fat_write can't write", filename, f_write(&fil_, zero_buffer, btw, &bw));
                 if (btw != bw)
@@ -477,7 +484,7 @@ DSTATUS disk_status(BYTE pdrv)		/* Physical drive number (0..) */
 
 DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
                   BYTE *buff,		/* Data buffer to store read data */
-                  DWORD sector,	/* Sector address (LBA) */
+                  LBA_t sector,	/* Sector address (LBA) */
                   UINT count)		/* Number of sectors to read (1..128) */
 {
     if (pdrv != 0 || output_ == NULL)
@@ -491,7 +498,7 @@ DRESULT disk_read(BYTE pdrv,		/* Physical drive number (0..) */
 
 DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
                    const BYTE *buff,	/* Data to be written */
-                   DWORD sector,		/* Sector address (LBA) */
+                   LBA_t sector,		/* Sector address (LBA) */
                    UINT count)			/* Number of sectors to write (1..128) */
 {
     if (pdrv != 0 || output_ == NULL)

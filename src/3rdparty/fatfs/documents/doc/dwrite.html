@@ -18,7 +18,7 @@
 DRESULT disk_write (
   BYTE <span class="arg">pdrv</span>,        <span class="c">/* [IN] Physical drive number */</span>
   const BYTE* <span class="arg">buff</span>, <span class="c">/* [IN] Pointer to the data to be written */</span>
-  DWORD <span class="arg">sector</span>,     <span class="c">/* [IN] Sector number to write from */</span>
+  LBA_t <span class="arg">sector</span>,     <span class="c">/* [IN] Sector number to write from */</span>
   UINT <span class="arg">count</span>        <span class="c">/* [IN] Number of sectors to write */</span>
 );
 </pre>
@@ -32,7 +32,7 @@ DRESULT disk_write (
 <dt>buff</dt>
 <dd>Pointer to the first item of the <em>byte array</em> to be written. The size of data to be written is sector size * <tt class="arg">count</tt> bytes.</dd>
 <dt>sector</dt>
-<dd>Start sector number in 32-bit LBA.</dd>
+<dd>Start sector number in 32-bit or 64-bit LBA. The data type <tt>LBA_t</tt> is an alias of <tt>DWORD</tt> or <tt>QWORD</tt> depends on the configuration option.</dd>
 <dt>count</dt>
 <dd>Number of sectors to write.</dd>
 </dl>

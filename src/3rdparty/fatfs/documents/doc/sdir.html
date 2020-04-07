@@ -19,7 +19,7 @@
     FFOBJID obj;        <span class="c">/* Object identifier */</span>
     DWORD   dptr;       <span class="c">/* Current read/write offset */</span>
     DWORD   clust;      <span class="c">/* Current cluster */</span>
-    DWORD   sect;       <span class="c">/* Current sector */</span>
+    LBA_t   sect;       <span class="c">/* Current sector */</span>
     BYTE*   dir;        <span class="c">/* Pointer to the current SFN entry in the win[] */</span>
     BYTE*   fn;         <span class="c">/* Pointer to the SFN buffer (in/out) {file[8],ext[3],status[1]} */</span>
 <span class="k">#if</span> FF_USE_LFN

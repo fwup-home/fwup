@@ -45,8 +45,9 @@
    <li><a href="#volume_strs">FF_VOLUME_STRS</a></li>
    <li><a href="#multi_partition">FF_MULTI_PARTITION</a></li>
    <li><a href="#max_ss">FF_MIN_SS, FF_MAX_SS</a></li>
+   <li><a href="#fs_lba64">FF_LBA64</a></li>
+   <li><a href="#fs_gptmin">FF_GPT_MIN</a></li>
    <li><a href="#use_trim">FF_USE_TRIM</a></li>
-   <li><a href="#fs_nofsinfo">FF_FS_NOFSINFO</a></li>
  </ul>
 </li>
 <li>System Configurations
@@ -55,6 +56,7 @@
    <li><a href="#fs_exfat">FF_FS_EXFAT</a></li>
    <li><a href="#fs_nortc">FF_FS_NORTC</a></li>
    <li><a href="#nortc_time">FF_NORTC_MON, FF_NORTC_MDAY, FF_NORTC_YEAR</a></li>
+   <li><a href="#fs_nofsinfo">FF_FS_NOFSINFO</a></li>
    <li><a href="#fs_lock">FF_FS_LOCK</a></li>
    <li><a href="#fs_reentrant">FF_FS_REENTRANT</a></li>
    <li><a href="#fs_timeout">FF_FS_TIMEOUT</a></li>
@@ -157,7 +159,7 @@
 <p>LFN function requiers certain internal working buffer for the file name. This option defines size of the buffer and the value can be in range of 12 to 255 in UTF-16 encoding unit of the LFN. The buffer occupies <tt>(FF_MAX_LFN + 1) * 2</tt> bytes and additional <tt>(FF_MAX_LFN + 44) / 15 * 32</tt> bytes when exFAT is enabled. It is recommended to be set 255 to fully support the LFN specification. This option has no effect when LFN is not enabled.</p>
 
 <h4 id="lfn_unicode">FF_LFN_UNICODE</h4>
-<p>This option switches character encoding for the file name on the API. When Unicode is selected, <tt>FF_CODE_PAGE</tt> has actually no meaning except for compatibility with legacy systems, such as MS-DOS and any system without support for LFN. FatFs supports the code point upto U+10FFFF.</p>
+<p>This option switches character encoding for the file name on the API. When Unicode is selected, <tt>FF_CODE_PAGE</tt> has actually no meaning except for compatibility with legacy systems, such as MS-DOS and any system without support for LFN. FatFs supports the code point up to U+10FFFF.</p>
 <table class="lst2">
 <tr><th>Value</th><th>Character Encoding</th><th><tt>TCHAR</tt></th></tr>
 <tr><td>0</td><td>ANSI/OEM in current CP</td><td>char</td></tr>
@@ -204,7 +206,7 @@
 <h3>Volume/Drive Configurations</h3>
 
 <h4 id="volumes">FF_VOLUMES</h4>
-<p>This option configures number of volumes (logical drives upto 10) to be used.</p>
+<p>This option configures number of volumes (logical drives up to 10) to be used.</p>
 
 <h4 id="str_volume_id">FF_STR_VOLUME_ID</h4>
 <p>This option switches the support for string volume ID. When arbitrary string for the volume ID is enabled for the drive prefix, also pre-defined strings by <tt>FF_VOLUME_STRS</tt> or user defined strings can be used as drive prefix in the path name. Numeric drive number is always valid regardless of this option, and also either format of drive prefix can be enabled by this option.</p>
@@ -226,10 +228,34 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sdc","usb"};
 <p>Disable (0) or Enable (1). This option switches multi-partition function. By default (0), each logical drive number is bound to the same physical drive number and only a volume in the physical drive is mounted. When enabled, each logical drive is bound to the partition on the physical drive listed in the user defined partition resolution table <tt>VolToPart[]</tt>. Also <tt>f_fdisk</tt> funciton will be available. For more information, read <a href="filename.html#vol">here</a>.</p>
 
 <h4 id="max_ss">FF_MIN_SS, FF_MAX_SS</h4>
-<p>This set of options defines the extent of sector size used on the low level disk I/O interface, <tt>disk_read</tt> and <tt>disk_write</tt> function. Valid values are 512, 1024, 2048 and 4096. <tt>FF_MIN_SS</tt> defines minimum sector size and <tt>FF_MAX_SS</tt> defines the maximum sector size. Always set both 512 for memory card and harddisk. But a larger value may be required for on-board flash memory and some type of optical media. When <tt>FF_MAX_SS &gt; FF_MIN_SS</tt>, support of variable sector size is enabled and <tt>GET_SECTOR_SIZE</tt> command needs to be implemented to the <tt>disk_ioctl</tt> function.</p>
+<p>This set of options defines the extent of sector size used for the low level disk I/O interface, <tt>disk_read</tt> and <tt>disk_write</tt> function. Valid values are 512, 1024, 2048 and 4096. <tt>FF_MIN_SS</tt> defines minimum sector size and <tt>FF_MAX_SS</tt> defines the maximum sector size. Always set both 512 for memory card and harddisk. But a larger value may be required for on-board flash memory and some type of optical media. When <tt>FF_MAX_SS &gt; FF_MIN_SS</tt>, support of variable sector size is enabled and <tt>GET_SECTOR_SIZE</tt> command needs to be implemented to the <tt>disk_ioctl</tt> function.</p>
+
+<h4 id="fs_lba64">FF_LBA64</h4>
+<p>This option switches media access interface to 64-bit LBA and enables GUID Partition Table (GPT) for partition management, Enabled (1) or Disabled (0). exFAT filesystem needs to be enabled to enable this feature.</p>
+
+<h4 id="fs_gptmin">FF_MIN_GPT</h4>
+<p>This option specifies the threshold of determination of partitioning format when create patitions on the drive in <tt>f_mkfs</tt> and <tt>f_fdisk</tt> function. When number of sectors on the drive is equal or larger than this value, the drive will be partitioned in GPT. This option has no effect when <tt>FF_LBA64 == 0</tt>.</p>
 
 <h4 id="use_trim">FF_USE_TRIM</h4>
 <p>Disable (0) or Enable (1). This option switches ATA-TRIM function. To enable Trim function, also <tt>CTRL_TRIM</tt> command should be implemented to the <tt>disk_ioctl</tt> function.</p>
+
+</div>
+
+
+<div class="para doc" id="system">
+<h3>System Configurations</h3>
+
+<h4 id="fs_tiny">FF_FS_TINY</h4>
+<p>Normal (0) or Tiny (1). The tiny configuration reduces size of the <tt>FIL</tt> structure, file object, <tt>FF_MAX_SS</tt> bytes each. Instead of private sector buffer eliminated from the file object, common sector buffer in the <tt>FATFS</tt> structure, filesystem object, is used for the file data transfer.</p>
+
+<h4 id="fs_exfat">FF_FS_EXFAT</h4>
+<p>This option switches support for exFAT filesystem in addition to the FAT/FAT32 filesystem, Enabled (1) or Disabled (0). To enable exFAT, also LFN must be enabled and configureing <tt>FF_LFN_UNICODE &gt;= 1</tt> and <tt>FF_MAX_LFN == 255</tt> is recommended for full-featured exFAT function. Note that enabling exFAT discards ANSI C (C89) compatibility because of need for 64-bit integer type.</p>
+
+<h4 id="fs_nortc">FF_FS_NORTC</h4>
+<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp function. If the system does not have any RTC function or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a fixed timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp function, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect at read-only configuration.</p>
+
+<h4 id="nortc_time">FF_NORTC_MON, FF_NORTC_MDAY, FF_NORTC_YEAR</h4>
+<p>This set of options defines the time to be used at no RTC systems. This option has no effect at read-only configuration or <tt>FF_FS_NORTC == 0</tt>.</p>
 
 <h4 id="fs_nofsinfo">FF_FS_NOFSINFO</h4>
 <p>0 to 3. If you need to know correct free space on the FAT32 volume, set bit 0 of this option, and <tt>f_getfree</tt> function at first time after volume mount will force a full FAT scan. Bit 1 controls the use of last allocated cluster number.</p>
@@ -240,24 +266,6 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sdc","usb"};
 <tr><td>bit1=0</td><td>Use last allocated cluster number in the FSINFO to find a free cluster if available.</td></tr>
 <tr><td>bit1=1</td><td>Do not trust last allocated cluster number in the FSINFO.</td></tr>
 </table>
-
-</div>
-
-
-<div class="para doc" id="system">
-<h3>System Configurations</h3>
-
-<h4 id="fs_tiny">FF_FS_TINY</h4>
-<p>Normal (0) or Tiny (1). At the tiny configuration, size of the file object <tt>FIL</tt> is reduced <tt>FF_MAX_SS</tt> bytes. Instead of private data buffer eliminated from the file object, common sector buffer in the filesystem object <tt>FATFS</tt> is used for the file data transfer.</p>
-
-<h4 id="fs_exfat">FF_FS_EXFAT</h4>
-<p>This option switches support for the exFAT filesystem in addition to the FAT/FAT32 filesystem, Enabled (1) or Disabled (0). To enable exFAT, also LFN must be enabled and configureing <tt>FF_LFN_UNICODE &gt;= 1</tt> and <tt>FF_MAX_LFN == 255</tt> is recommended for full-featured exFAT function. Note that enabling exFAT discards ANSI C (C89) compatibility because of need for 64-bit integer type.</p>
-
-<h4 id="fs_nortc">FF_FS_NORTC</h4>
-<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp function. If the system does not have any RTC function or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a fixed timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp function, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect at read-only configuration.</p>
-
-<h4 id="nortc_time">FF_NORTC_MON, FF_NORTC_MDAY, FF_NORTC_YEAR</h4>
-<p>This set of options defines the time to be used at no RTC systems. This option has no effect at read-only configuration or <tt>FF_FS_NORTC == 0</tt>.</p>
 
 <h4 id="fs_lock">FF_FS_LOCK</h4>
 <p>This option switches file lock function to control duplicated file open and illegal operations to open objects. Note that the file lock function is independent of re-entrancy. This option must be 0 at read-only configuration.</p>

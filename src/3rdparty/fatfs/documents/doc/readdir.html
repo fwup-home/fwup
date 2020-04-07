@@ -48,7 +48,7 @@ FRESULT f_readdir (
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_readdir</tt> function reads a directory item, informations about the object. Every item in the directory can be read in sequence by <tt>f_readdir</tt> function calls. Dot entries (<tt>"."</tt> and <tt>".."</tt>) in the sub-directory are filtered out and they will never appear in the read items. When all directory items have been read and no item to read, a null string is stored into the <tt>fno-&gt;fname[]</tt> without any error. When a null pointer is given to the <tt class="arg">fno</tt>, the read index of the directory object is rewinded.</p>
+<p>The <tt>f_readdir</tt> function reads a directory item, informations about the object. Items in the directory can be read in sequence by <tt>f_readdir</tt> function calls. Dot entries (<tt>"."</tt> and <tt>".."</tt>) in the sub-directory are filtered out and they will never appear in the read items. When all directory items have been read and no item to read, a null string is stored into the <tt>fno-&gt;fname[]</tt> without any error. When a null pointer is given to the <tt class="arg">fno</tt>, the read index of the directory object is rewinded.</p>
 <p>When support of long file name (LFN) is enabled, a member <tt>altname[]</tt> is defined in the file information structure to store the short file name of the object. If the long file name is not accessible due to some reason listed below, short file name is stored to the <tt>fname[]</tt> and <tt>altname[]</tt> has a null string.</p>
 <ul>
 <li>The item has no LFN. (Not the case at exFAT volume)</li>

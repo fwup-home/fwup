@@ -22,9 +22,9 @@
     BYTE    err;          <span class="c">/* Abort flag (error code) */</span>
     FSIZE_t fptr;         <span class="c">/* File read/write pointer (Byte offset origin from top of the file) */</span>
     DWORD   clust;        <span class="c">/* Current cluster of fptr (One cluster behind if fptr is on the cluster boundary. Invalid if fptr == 0.) */</span>
-    DWORD   sect;         <span class="c">/* Current data sector (Can be invalid if fptr is on the cluster boundary.)*/</span>
+    LBA_t   sect;         <span class="c">/* Current data sector (Can be invalid if fptr is on the cluster boundary.)*/</span>
 <span class="k">#if</span> !FF_FS_READONLY
-    DWORD   dir_sect;     <span class="c">/* Sector number containing the directory entry */</span>
+    LBA_t   dir_sect;     <span class="c">/* Sector number containing the directory entry */</span>
     BYTE*   dir_ptr;      <span class="c">/* Ponter to the directory entry in the window */</span>
 <span class="k">#endif</span>
 <span class="k">#if</span> FF_USE_FASTSEEK

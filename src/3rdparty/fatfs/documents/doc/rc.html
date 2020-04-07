@@ -11,7 +11,7 @@
 
 <body>
 <h1>Return Code of API Functions</h1>
-<p>Most of API functions return common result code as enum type <tt>FRESULT</tt>. When an API function succeeded, it returns zero (<tt>FR_OK</tt>), otherwise it returns non-zero value indicates type of error.</p>
+<p>Most of API functions return common result code in enum type <tt>FRESULT</tt>. When an API function succeeded, it returns zero (<tt>FR_OK</tt>), otherwise it returns non-zero value indicates type of error.</p>
 
 <dl class="ret">
 
@@ -29,7 +29,7 @@
 <li>There is a bug in the FatFs module itself.</li>
 <li>Wrong lower layer implementation.</li>
 </ul>
-Note that if once this error occured at any operation to an open file, the file object is aborted and any operation to the file except for close will be rejected.
+Note that if once this error occured at any operation to an open file, the file object is aborted and all operations to the file except for close will be rejected.
 </dd>
 
 <dt id="nr">FR_NOT_READY</dt>
@@ -46,13 +46,13 @@ Note that if once this error occured at any operation to an open file, the file 
 <dd>Could not find the file in the directory.</dd>
 
 <dt id="np">FR_NO_PATH</dt>
-<dd>Could not find the path, some directory in the path name could not be found.</dd>
+<dd>Could not find the path. A directory in the path name could not be found.</dd>
 
 <dt id="in">FR_INVALID_NAME</dt>
 <dd>The given string is invalid as the <a href="filename.html">path name</a>. One of the following possibilities is suspected.
 <ul>
-<li>There is any character not allowed for the file name.</li>
-<li>The string is out of 8.3 format. (at non-LFN cfg.)</li>
+<li>There is a character not allowed for the file name.</li>
+<li>The file name is out of 8.3 format. (at non-LFN cfg.)</li>
 <li><tt>FF_MAX_LFN</tt> is insufficient for the file name. (at LFN cfg.)</li>
 <li>There is any character encoding error in the string.</li>
 </ul>
@@ -72,7 +72,7 @@ Note that if once this error occured at any operation to an open file, the file 
 </dd>
 
 <dt id="ex">FR_EXIST</dt>
-<dd>Name collision, an object with the same name is already existing.</dd>
+<dd>Name collision. An object with the same name is already existing in the directory.</dd>
 
 <dt id="io">FR_INVALID_OBJECT</dt>
 <dd>The file/directory object is invalid or a null pointer is given. There are some reasons as follows:
@@ -87,7 +87,7 @@ Note that if once this error occured at any operation to an open file, the file 
 <dd>A write mode operation against the write-protected media.</dd>
 
 <dt id="id">FR_INVALID_DRIVE</dt>
-<dd>Invalid drive number is specified in the path name. A null pointer is given as the path name. (Related option: <tt><a href="config.html#volumes">FF_VOLUMES</a></tt>)</dd>
+<dd>Invalid drive number is specified in the path name or a null pointer is given as the path name. (Related option: <tt><a href="config.html#volumes">FF_VOLUMES</a></tt>)</dd>
 
 <dt id="ne">FR_NOT_ENABLED</dt>
 <dd>Work area for the logical drive has not been registered by <tt>f_mount</tt> function.</dd>
@@ -99,7 +99,7 @@ Note that if once this error occured at any operation to an open file, the file 
 <dd>The <tt>f_mkfs</tt> function aborted before start in format due to a reason as follows:
 <ul>
 <li>It is impossible to format with the given parameters.</li>
-<li>The size of volume is too small. 128 sectors minimum with <tt>FM_SFD</tt>.</li>
+<li>The size of volume is too small. 128 sectors minimum with <tt>FM_SFD</tt> option.</li>
 <li>The partition bound to the logical drive coulud not be found. (Related option: <tt><a href="config.html#multi_partition">FF_MULTI_PARTITION</a></tt>)</li>
 </ul>
 </dd>

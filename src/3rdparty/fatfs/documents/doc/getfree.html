@@ -53,7 +53,7 @@ FRESULT f_getfree (
 
 <div class="para desc">
 <h4>Descriptions</h4>
-<p>The <tt>f_getfree</tt> function gets number of free clusters on the volume. The member <tt>csize</tt> in the filesystem object indicates number of sectors per cluster, so that the free space in unit of sector can be calcurated with this information. When FSINFO structure on the FAT32 volume is not in sync, this function can return an incorrect free cluster count. To avoid this problem, FatFs can be forced full FAT scan by <tt><a href="config.html#fs_nofsinfo">FF_FS_NOFSINFO</a></tt> option.</p>
+<p>The <tt>f_getfree</tt> function gets number of free clusters on the volume. The member <tt>csize</tt> in the filesystem object indicates number of sectors per cluster, so that the free space in unit of sector can be calcurated with this information. In case of FSINFO structure on the FAT32 volume is not in sync, this function can return an incorrect free cluster count. To avoid this problem, FatFs can be forced full FAT scan by <tt><a href="config.html#fs_nofsinfo">FF_FS_NOFSINFO</a></tt> option.</p>
 </div>
 
 

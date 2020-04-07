@@ -19,7 +19,7 @@
 FRESULT f_expand (
   FIL*    <span class="arg">fp</span>,  <span class="c">/* [IN] File object */</span>
   FSIZE_t <span class="arg">fsz</span>, <span class="c">/* [IN] File size expanded to */</span>
-  BYTE    <span class="arg">opt</span>  <span class="c">/* [IN] Operation mode */</span>
+  BYTE    <span class="arg">opt</span>  <span class="c">/* [IN] Allocation mode */</span>
 );
 </pre>
 </div>
@@ -32,7 +32,7 @@ FRESULT f_expand (
 <dt>fsz</dt>
 <dd>Number of bytes in size to prepare or allocate for the file. The data type <tt>FSIZE_t</tt> is an alias of either <tt>DWORD</tt>(32-bit) or <tt>QWORD</tt>(64-bit) depends on the configuration option <tt>FF_FS_EXFAT</tt>.</dd>
 <dt>opt</dt>
-<dd>Operation mode. Prepare only (0) or Allocate now (1).</dd>
+<dd>Allocation mode. Prepare to allocate (0) or Allocate now (1).</dd>
 </dl>
 </div>
 
@@ -52,16 +52,16 @@ FRESULT f_expand (
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_expand</tt> function prepares or allocates a contiguous data area to the file. When <tt class="arg">opt</tt> is 1, the function allocates a contiguous data area to the file. Unlike expansion of file by <tt>f_lseek</tt> function, the file must be truncated prior to use this function and read/write pointer of the file stays at top of the file after the function. The file content allocated with this function is <em>undefined</em> because no data is written to the file in this process. The function can fail with <tt>FR_DENIED</tt> due to some reasons below.</p>
+<p>The <tt>f_expand</tt> function prepares or allocates a contiguous data area to the file. When <tt class="arg">opt</tt> is 1, the function allocates a contiguous data area to the file. Unlike expansion of file size by <tt>f_lseek</tt> function, the file must be truncated prior to use this function and read/write pointer of the file stays at offset 0 after the function call. The file content allocated with this function is <em>undefined</em> because no data is written to the file in this process. The function can fail with <tt>FR_DENIED</tt> due to some reasons below.</p>
 <ul>
 <li>No free contiguous space was found.</li>
 <li>Size of the file was not zero.</li>
 <li>The file has been opened in read-only mode.</li>
 <li>Not allowable file size. (&gt;= 4 GB on FAT volume)</li>
 </ul>
-<p>When <tt class="arg">opt</tt> is 0, the function finds a contiguous data area and set it as suggested point for next allocation instead of allocating it to the file. The next cluster allocation is started at top of the contiguous area found by this function. Thus the write file is guaranteed be contiguous and no allocation delay until the size reaches that size at least unless any other changes to the volume is performed.</p>
-<p>The contiguous file would have an advantage at time-critical read/write operations. It eliminates some overheads in the filesystem and the storage media caused by random access due to fragmented file data. Especially FAT access for the contiguous file on the exFAT volume is completely eliminated and storage media will be accessed sequentially.</p>
-<p>Also the contiguous file can be easily accessed directly via low-level disk functions. But this is not recommended in consideration for future compatibility. Use <a href="../res/app5.c">this function</a> to examine if the file is contiguous or not.</p>
+<p>When <tt class="arg">opt</tt> is 0, the function finds a contiguous data area and set it as suggested point for allocation. The subsequent cluster allocation begins at top of the contiguous area found by this function. Thus the write file is guaranteed be contiguous and without allocation delay until the file size reaches that size unless any other changes to the volume is performed.</p>
+<p>The contiguous file has an advantage at time-critical read/write operations. It eliminates some overheads in the filesystem and the storage device caused by random access due to fragmented file data.</p>
+<p>Also the contiguous file can be easily accessed directly via low-level disk functions. But this is not recommended in consideration for portability and future compatibility. If the file is not confirmed be contiguous, use <a href="../res/app5.c">this function</a> to examine if it is contiguous or not.</p>
 </div>
 
 <div class="para comp">

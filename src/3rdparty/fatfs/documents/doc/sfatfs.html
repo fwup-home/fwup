@@ -47,11 +47,11 @@
 <span class="k">#endif</span>
     DWORD   n_fatent;     <span class="c">/* Number of FAT entries (Number of clusters + 2) */</span>
     DWORD   fsize;        <span class="c">/* Sectors per FAT */</span>
-    DWORD   volbase;      <span class="c">/* Volume base LBA */</span>
-    DWORD   fatbase;      <span class="c">/* FAT base LBA */</span>
-    DWORD   dirbase;      <span class="c">/* Root directory base (LBA|Cluster) */</span>
-    DWORD   database;     <span class="c">/* Data base LBA */</span>
-    DWORD   winsect;      <span class="c">/* Sector LBA appearing in the win[] */</span>
+    LBA_t   volbase;      <span class="c">/* Volume base LBA */</span>
+    LBA_t   fatbase;      <span class="c">/* FAT base LBA */</span>
+    LBA_t   dirbase;      <span class="c">/* Root directory base (LBA|Cluster) */</span>
+    LBA_t   database;     <span class="c">/* Data base LBA */</span>
+    LBA_t   winsect;      <span class="c">/* Sector LBA appearing in the win[] */</span>
     BYTE    win[FF_MAX_SS]; <span class="c">/* Disk access window for directory, FAT (and file data at tiny cfg) */</span>
 } FATFS;
 </pre>

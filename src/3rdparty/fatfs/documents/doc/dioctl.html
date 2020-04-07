@@ -57,35 +57,35 @@ DRESULT disk_ioctl (
 <table class="lst">
 <caption>Standard ioctl command used by FatFs</caption>
 <tr><th>Command</th><th>Description</th></tr>
-<tr><td>CTRL_SYNC</td><td>Make sure that the device has finished pending write process. If the disk I/O module or storage device has a write-back cache, the cached data marked dirty must be written back to the media immediately. Nothing to do for this command if each write operation to the media is completed within the <tt>disk_write</tt> function.</td></tr>
-<tr><td>GET_SECTOR_COUNT</td><td>Returns number of available sectors on the drive into the <tt>DWORD</tt> variable pointed by <tt class="arg">buff</tt>. This command is used by <tt>f_mkfs</tt> and <tt>f_fdisk</tt> function to determine the volume/partition size to be created. Required at <tt>FF_USE_MKFS == 1</tt>.</td></tr>
-<tr><td>GET_SECTOR_SIZE</td><td>Returns sector size of the device into the <tt>WORD</tt> variable pointed by <tt class="arg">buff</tt>. Valid return values for this command are 512, 1024, 2048 and 4096. This command is required only if <tt>FF_MAX_SS &gt; FF_MIN_SS</tt>. When <tt>FF_MAX_SS == FF_MIN_SS</tt>, this command is never used and the device must work at that sector size.</td></tr>
-<tr><td>GET_BLOCK_SIZE</td><td>Returns erase block size of the flash memory media in unit of sector into the <tt>DWORD</tt> variable pointed by <tt class="arg">buff</tt>. The allowable value is 1 to 32768 in power of 2. Return 1 if the erase block size is unknown or non flash memory media. This command is used by only <tt>f_mkfs</tt> function and it attempts to align data area on the erase block boundary. Required at <tt>FF_USE_MKFS == 1</tt>.</td></tr>
-<tr><td>CTRL_TRIM</td><td>Informs the device the data on the block of sectors is no longer needed and it can be erased. The sector block is specified by a <tt>DWORD</tt> array {&lt;start sector&gt;, &lt;end sector&gt;} pointed by <tt class="arg">buff</tt>. This is an identical command to Trim of ATA device. Nothing to do for this command if this funcion is not supported or not a flash memory device. FatFs does not check the result code and the file function is not affected even if the sector block was not erased well. This command is called on remove a cluster chain and in the <tt>f_mkfs</tt> function. Required at <tt>FF_USE_TRIM == 1</tt>.</td></tr>
+<tr><td>CTRL_SYNC</td><td>Makes sure that the device has finished pending write process. If the disk I/O layer or storage device has a write-back cache, the cached data not written back must be flushed to the media immediately. Nothing to do for this command if each write operation to the media is completed within the <tt>disk_write</tt> function.</td></tr>
+<tr><td>GET_SECTOR_COUNT</td><td>Retrieves number of available sectors, the largest allowable LBA + 1, on the drive into the <tt>LBA_t</tt> variable pointed by <tt class="arg">buff</tt>. This command is used by <tt>f_mkfs</tt> and <tt>f_fdisk</tt> function to determine the size of volume/partition to be created. It is required when <tt>FF_USE_MKFS == 1</tt>.</td></tr>
+<tr><td>GET_SECTOR_SIZE</td><td>Retrieves sector size used for read/write function into the <tt>WORD</tt> variable pointed by <tt class="arg">buff</tt>. Valid sector sizes are 512, 1024, 2048 and 4096. This command is required only if <tt>FF_MAX_SS &gt; FF_MIN_SS</tt>. When <tt>FF_MAX_SS == FF_MIN_SS</tt>, this command will be never used and the read/write function must work in <tt>FF_MAX_SS</tt> bytes/sector only.</td></tr>
+<tr><td>GET_BLOCK_SIZE</td><td>Retrieves erase block size of the flash memory media in unit of sector into the <tt>DWORD</tt> variable pointed by <tt class="arg">buff</tt>. The allowable value is 1 to 32768 in power of 2. Return 1 if the erase block size is unknown or non flash memory media. This command is used by only <tt>f_mkfs</tt> function and it attempts to align data area on the erase block boundary. It is required when <tt>FF_USE_MKFS == 1</tt>.</td></tr>
+<tr><td>CTRL_TRIM</td><td>Informs the device the data on the block of sectors is no longer needed and it can be erased. The sector block is specified in an <tt>LBA_t</tt> array {&lt;Start LBA&gt;, &lt;End LBA&gt;} pointed by <tt class="arg">buff</tt>. This is an identical command to Trim of ATA device. Nothing to do for this command if this funcion is not supported or not a flash memory device. FatFs does not check the result code and the file function is not affected even if the sector block was not erased well. This command is called on remove a cluster chain and in the <tt>f_mkfs</tt> function. It is required when <tt>FF_USE_TRIM == 1</tt>.</td></tr>
 </table>
 
 <p>FatFs never uses any device dependent command nor user defined command. Following table shows an example of non-standard commands which may be useful for some applications.</p>
 <table class="lst">
 <caption>Example of optional ioctl command</caption>
 <tr><th>Command</th><th>Description</th></tr>
-<tr><td>CTRL_FORMAT</td><td>Create a physical format on the media. If <tt class="arg">buff</tt> is not null, it is pointer to the call-back function for progress notification.</td></tr>
-<tr><td>CTRL_POWER_IDLE</td><td>Put the device idle state. <tt>STA_NOINIT</tt> in the current status flags may not be set if the device goes active state by generic read/write function.</td></tr>
-<tr><td>CTRL_POWER_OFF</td><td>Put the device off state. Shut-down the power to the device and deinitialize the device interface if needed. <tt>STA_NOINIT</tt> in the current status flags must be set. The device goes active state by <tt>disk_initialize</tt> function.</td></tr>
-<tr><td>CTRL_LOCK</td><td>Lock media eject mechanism.</td></tr>
-<tr><td>CTRL_UNLOCK</td><td>Unlock media eject mechanism.</td></tr>
-<tr><td>CTRL_EJECT</td><td>Eject media cartridge. <tt>STA_NOINIT</tt> and <tt>STA_NODISK</tt> in status flag are set after the function succeeded.</td></tr>
-<tr><td>CTRL_GET_SMART</td><td>Read SMART information.</td></tr>
-<tr><td>MMC_GET_TYPE</td><td>Get card type. The type flags, bit0:MMCv3, bit1:SDv1, bit2:SDv2+ and bit3:LBA, is stored to a BYTE variable pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
-<tr><td>MMC_GET_CSD</td><td>Read CSD register into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
-<tr><td>MMC_GET_CID</td><td>Read CID register into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
-<tr><td>MMC_GET_OCR</td><td>Read OCR register into a 4-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
-<tr><td>MMC_GET_SDSTAT</td><td>Read SDSTATUS register into a 64-byte buffer pointed by <tt class="arg">buff</tt>. (SDC specific command)</td></tr>
-<tr><td>ATA_GET_REV</td><td>Get the revision string into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
-<tr><td>ATA_GET_MODEL</td><td>Get the model string into a 40-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
-<tr><td>ATA_GET_SN</td><td>Get the serial number string into a 20-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
-<tr><td>ISDIO_READ</td><td>Read a block of iSDIO registers specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
-<tr><td>ISDIO_WRITE</td><td>Write a block of data to iSDIO registers specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
-<tr><td>ISDIO_MRITE</td><td>Change bits in an iSDIO register specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
+<tr><td>CTRL_FORMAT</td><td>Creates a physical format on the media. If <tt class="arg">buff</tt> is not null, it is pointer to the call-back function for progress notification.</td></tr>
+<tr><td>CTRL_POWER_IDLE</td><td>Puts the device idle state. <tt>STA_NOINIT</tt> in the current status flags may not be set if the device goes active state by generic read/write function.</td></tr>
+<tr><td>CTRL_POWER_OFF</td><td>Puts the device off state. Shut-down the power to the device and deinitialize the device interface if needed. <tt>STA_NOINIT</tt> in the current status flags must be set. The device goes active state by <tt>disk_initialize</tt> function.</td></tr>
+<tr><td>CTRL_LOCK</td><td>Locks media eject mechanism.</td></tr>
+<tr><td>CTRL_UNLOCK</td><td>Unlocks media eject mechanism.</td></tr>
+<tr><td>CTRL_EJECT</td><td>Ejects media cartridge. <tt>STA_NOINIT</tt> and <tt>STA_NODISK</tt> in status flag are set after the function succeeded.</td></tr>
+<tr><td>CTRL_GET_SMART</td><td>Reads SMART information.</td></tr>
+<tr><td>MMC_GET_TYPE</td><td>Gets card type. The type flags, bit0:MMCv3, bit1:SDv1, bit2:SDv2+ and bit3:LBA, is stored to a BYTE variable pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
+<tr><td>MMC_GET_CSD</td><td>Reads CSD register into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
+<tr><td>MMC_GET_CID</td><td>Reads CID register into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
+<tr><td>MMC_GET_OCR</td><td>Reads OCR register into a 4-byte buffer pointed by <tt class="arg">buff</tt>. (MMC/SDC specific command)</td></tr>
+<tr><td>MMC_GET_SDSTAT</td><td>Reads SDSTATUS register into a 64-byte buffer pointed by <tt class="arg">buff</tt>. (SDC specific command)</td></tr>
+<tr><td>ATA_GET_REV</td><td>Gets the revision string into a 16-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
+<tr><td>ATA_GET_MODEL</td><td>Gets the model string into a 40-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
+<tr><td>ATA_GET_SN</td><td>Gets the serial number string into a 20-byte buffer pointed by <tt class="arg">buff</tt>. (ATA/CFC specific command)</td></tr>
+<tr><td>ISDIO_READ</td><td>Reads a block of iSDIO registers specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
+<tr><td>ISDIO_WRITE</td><td>Writes a block of data to iSDIO registers specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
+<tr><td>ISDIO_MRITE</td><td>Changes bits in an iSDIO register specified by command structure pointed by <tt class="arg">buff</tt>. (FlashAir specific command)</td></tr>
 </table>
 </div>
 
