@@ -40,6 +40,9 @@ Here's a full list of features:
 
 1. Firmware archive digital signature creation and verification
 
+1. Delta update support using [VCDIFF](https://en.wikipedia.org/wiki/VCDIFF).
+   See delta update section for details (BETA FEATURE).
+
 1. Sparse file support to reduce number of bytes that need to be written when
    initializing large file systems (see section on sparse files)
 
@@ -642,6 +645,88 @@ uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable 
 uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name)      | 0.10.0 | Unset the specified U-boot variable
 
+## Delta firmware updates (BETA)
+
+The purpose of delta firmware updates is to reduce firmware update file sizes
+and their associated costs by sending patches to devices. This requires that one
+know what firmware is running on the device so that an appropriate patch can be
+made. As with other features, `fwup` only addresses the firmware update file
+processing piece, but assists in this process by 1. uniquely identifying
+firmware via UUIDs and 2. including
+[`xdelta3`](https://github.com/jmacd/xdelta/tree/release3_1_apl/xdelta3)
+decompression support.
+
+This feature is currently BETA, since it may change in backwards incompatible
+ways based on trial deployments. If you're using this, please avoid deploying it
+to places that are hard to access just in case.
+
+`fwup` cannot produce delta `.fw` archives automatically. However, they are
+easy to produce manually or via a script. The deployments in progress use
+scripts to create patches for upgrading all possible firmware versions (keyed
+off UUID). Here's how:
+
+1. Decide which file resource is a good candidate for delta updates (you can
+   pick more than one). Call this `rootfs.img`.
+2. In the `fwup.conf`, in the `on-resource rootfs.img` handlers, specify where
+   the currently running rootfs.img contents exist. For example, if you're
+   doing an A/B upgrades, when you upgrade B, point to the A's rootfs for
+   source contents and vice versa for upgrading A. It will look something
+   like this:
+
+   ```txt
+   task upgrade.a {
+       on-resource rootfs.img {
+           delta-source-raw-offset=${ROOTFS_B_PART_OFFSET}
+           delta-source-raw-count=${ROOTFS_B_PART_COUNT}
+           raw_write(${ROOTFS_A_PART_OFFSET})
+       }
+   }
+   task upgrade.b {
+       on-resource rootfs.img {
+           delta-source-raw-offset=${ROOTFS_A_PART_OFFSET}
+           delta-source-raw-count=${ROOTFS_A_PART_COUNT}
+           raw_write(${ROOTFS_B_PART_OFFSET})
+       }
+   }
+   ```
+
+3. Obtain the firmware file for the software running on the device. Call this
+   `original.fw`.
+4. Create the firmware file for the new software. Call this `update.fw`. If
+   you normally sign your firmware files, you can sign it now or sign the
+   resulting patch file depending on what works best for your release process.
+5. Run `unzip` on both `original.fw` and `update.fw` in different directories.
+   The `rootfs.img` file can be found under the `data` directory when unzipped.
+6. `mkdir -p my_patch/data`
+7. `xdelta3 -A -S -f -s original/data/rootfs.img update/data/rootfs.img my_patch/data/rootfs.img`
+8. `cp update.fw my_patch/delta_update.fw`
+9. `cd my_patch && zip delta_update.fw data/rootfs.img`
+
+The `delta_update.fw` will have the patch for the `rootfs.img` and should be
+quite a bit smaller. If not, check that your before and after `rootfs.img` files
+don't have a lot of timestamp changes or are already so compressed that the
+deltas propagate through the entire image.
+
+Even though you're manually modifying the `.fw` file, `fwup` stills provide
+guarantees on the final bits installed on the device. For one, `fwup` computes
+Blake 2B hashes on the final contents of the files, so what matters is what
+comes out of the `xdelta3` decompressor and not what is stored in the archive.
+Most likely though, `xdelta3` will detect corruption since it checks Adler32
+checksums as it decompresses.
+
+### Delta update on-resource source settings
+
+Where to find the source ("before" version) is always specified in `on-resource`
+blocks. It can either be source from raw bytes or from files in a FAT-formatted
+partition. Only one source is supported in each `on-resource` block.
+
+Key                               | Description
+----------------------------------|------------
+delta-source-raw-offset           | Set to the starting block offset
+delta-source-raw-count            | Set to the number of blocks in the source region. No reads will be allowed outside of this area.
+delta-source-fat-offset           | Not implemented yet
+delta-source-fat-path             | Not implemented yet
+
 ## Sparse files
 
 Sparse files are files with gaps in them that are only represented on the
@@ -1068,3 +1153,10 @@ included that is distributed under the Apache 2.0 license.
 
 This code was released into the public domain. See
 [unlicense.txt](src/3rdparty/tiny-AES-c/unlicense.txt) for details.
+
+## Xdelta3
+
+Only the xdelta3 decompressor is currently used by `fwup` so most of the code in
+the `xdelta3` directory is ignored or disabled. Importantly, `fwup`'s use of
+xdelta3 does not bring in any xdelta3 dependencies. Xdelta3 is covered by the
+Apache-2.0 license.

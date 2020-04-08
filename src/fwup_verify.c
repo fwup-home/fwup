@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "monocypher.h"
+#include "fwup_xdelta3.h"
 
 #define VERIFICATION_CHUNK_SIZE (64 * 1024)
 
@@ -43,11 +44,8 @@ static int process_entry(struct archive *a, struct archive_entry *ae, off_t *len
         // to test similar code paths.
         const void *buffer;
         size_t len;
-        int64_t offset64 = 0;
-        int rc;
-        do {
-            rc = archive_read_data_block(a, &buffer, &len, &offset64);
-        } while (rc == ARCHIVE_OK && len == 0);
+        int64_t offset64;
+        int rc = fwup_archive_read_data_block(a, &buffer, &len, &offset64);
 
         if (rc == ARCHIVE_EOF)
             break;
@@ -102,6 +100,47 @@ static int check_normal_resource(struct resource_list *item,
     return 0;
 }
 
+static int xdelta_read_patch_callback(void* cookie, const void **buffer, size_t *len)
+{
+    struct archive *a = (struct archive *) cookie;
+
+    int64_t ignored;
+    int rc = fwup_archive_read_data_block(a, buffer, len, &ignored);
+
+    if (rc == ARCHIVE_OK) {
+        return 0;
+    } else if (rc == ARCHIVE_EOF) {
+        *len = 0;
+        *buffer = NULL;
+        return 0;
+    } else {
+        *len = 0;
+        *buffer = NULL;
+        ERR_RETURN(archive_error_string(a));
+    }
+}
+
+static int check_xdelta3_resource(struct resource_list *item, const char *file_resource_name, struct archive *a, struct archive_entry *ae)
+{
+    // Since verification doesn't have access to the "before" image, we can't run
+    // xdelta3 and check that the outcome matches the expected. However, we can
+    // do a bunch of sanity checks.
+
+    // Check that there's a Blake 2B hash.
+    const char *expected_hash;
+    OK_OR_RETURN(get_expected_hash(item, file_resource_name, &expected_hash));
+
+    struct xdelta_state xd;
+    xdelta_init(&xd, xdelta_read_patch_callback, NULL, a);
+
+    // This will check that the data at least looks like an xdelta3 patch and the
+    // options in the header look decodeable. (xdelta3 will return errors)
+    OK_OR_RETURN(xdelta_read_header(&xd));
+
+    xdelta_free(&xd);
+    return 0;
+}
+
 static int check_resource(struct resource_list *list, const char *file_resource_name, struct archive *a, struct archive_entry *ae)
 {
     struct resource_list *item = rlist_find_by_name(list, file_resource_name);
@@ -116,9 +155,22 @@ static int check_resource(struct resource_list *list, const char *file_resource_
     sparse_file_init(&sfm);
     OK_OR_RETURN(sparse_file_get_map_from_resource(item->resource, &sfm));
 
-    size_t expected_length = sparse_file_data_size(&sfm);
+    off_t expected_length = sparse_file_data_size(&sfm);
+    off_t archive_length = archive_entry_size(ae);
+    if (archive_length < 0)
+        ERR_RETURN("Missing file length in archive for %s", file_resource_name);
 
-    return check_normal_resource(item, file_resource_name, a, ae, expected_length);
+    if (sfm.map_len == 1 && archive_entry_size_is_set(ae) && archive_length != expected_length) {
+        // Possible xdelta3 patch
+        return check_xdelta3_resource(item, file_resource_name, a, ae);
+    } else {
+        // Normal file
+
+        if (archive_entry_size_is_set(ae) && archive_length != expected_length)
+            ERR_RETURN("ZIP local header length mismatch for %s", file_resource_name);
+
+        return check_normal_resource(item, file_resource_name, a, ae, expected_length);
+    }
 }
 
 /**

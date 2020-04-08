@@ -20,6 +20,7 @@ fwup_SOURCES=\
 	fwup_verify.c \
 	fwup_metadata.c \
 	fwup_genkeys.c \
+	fwup_xdelta3.c \
 	gpt.c \
 	mbr.c \
 	mmc_bsd.c \
@@ -51,6 +52,7 @@ fwup_SOURCES=\
 	fwup_genkeys.h \
 	fwup_sign.h \
 	fwup_verify.h \
+	fwup_xdelta3.h \
 	gpt.h \
 	mbr.h \
 	mmc.h \
@@ -76,7 +78,16 @@ fwup_SOURCES=\
 	3rdparty/fatfs/source/ff.c \
 	3rdparty/fatfs/source/ff.h \
 	3rdparty/fatfs/source/ffconf.h \
-	3rdparty/fatfs/source/ffunicode.c
+	3rdparty/fatfs/source/ffunicode.c \
+	3rdparty/xdelta3/xdelta3.h \
+	3rdparty/xdelta3/xdelta3-internal.h \
+	3rdparty/xdelta3/xdelta3-list.h \
+	3rdparty/xdelta3/xdelta3-hash.h \
+	3rdparty/xdelta3/xdelta3-cfgs.h \
+	3rdparty/xdelta3/xdelta3-second.h \
+	3rdparty/xdelta3/xdelta3-fgk.h \
+	3rdparty/xdelta3/xdelta3-djw.h \
+	3rdparty/xdelta3/xdelta3-decode.h
 
 EXTRA_DIST= \
 	3rdparty/fatfs/source/00history.txt \
@@ -92,6 +103,8 @@ EXTRA_DIST= \
 	3rdparty/tiny-AES-c/README.md \
 	3rdparty/tiny-AES-c/unlicense.txt \
 	3rdparty/strptime.c \
+	3rdparty/xdelta3/xdelta3.c \
+	3rdparty/xdelta3/LICENSE \
 	fwup.h2m
 
 if !HAS_STRPTIME

@@ -61,6 +61,11 @@ struct fun_context {
     // Output location (NULL if not opened yet.)
     struct block_cache *output;
 
+    // Delta update processing (NULL if not in use)
+    struct xdelta_state *xd;
+    off_t xd_source_offset;
+    size_t xd_source_count;
+
     void *cookie;
 };
 

@@ -542,6 +542,10 @@ static cfg_opt_t task_on_error_opts[] = {
 };
 static cfg_opt_t task_on_resource_opts[] = {
     CFG_BOOL("verify-on-the-fly", cfg_false, CFGF_NONE), // Deprecated
+    CFG_STR("delta-source-raw-offset", 0, CFGF_NONE), // Special case: use a string to support unsigned 32-bit offsets on 32-bit machines
+    CFG_INT("delta-source-raw-count", INT32_MAX, CFGF_NONE),
+    CFG_STR("delta-source-fat-offset", 0, CFGF_NONE), // Special case: use a string to support unsigned 32-bit offsets on 32-bit machines
+    CFG_STR("delta-source-fat-path", 0, CFGF_NONE),
     CFG_ON_EVENT_FUNCTIONS(cb_on_resource_func),
     CFG_END()
 };

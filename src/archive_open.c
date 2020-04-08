@@ -176,3 +176,15 @@ int fwup_archive_open_filename(struct archive *a, const char *filename)
 
     return archive_read_open1(a);
 }
+
+int fwup_archive_read_data_block(struct archive *a, const void **buff, size_t *s, int64_t *o)
+{
+    // Handle case where archive_read_data_block returns a 0 byte read
+    // even though it's not at end of file. A second read gets past this.
+
+    int rc;
+    do {
+        rc = archive_read_data_block(a, buff, s, o);
+    } while (rc == ARCHIVE_OK && *s == 0);
+    return rc;
+}

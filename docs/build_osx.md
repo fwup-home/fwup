@@ -12,7 +12,7 @@ source, though, here's the recipe:
 $ brew install confuse libarchive pkg-config automake
 
 # The following packages are needed for the regression tests
-$ brew install coreutils mtools
+$ brew install coreutils mtools xdelta
 
 $ cd fwup
 $ ./autogen.sh
@@ -34,7 +34,7 @@ version that only requires standard OSX-supplied shared libraries. Here's how:
 $ brew install confuse libarchive pkg-config automake
 
 # The following packages are needed for the regression tests
-$ brew install coreutils mtools
+$ brew install coreutils mtools xdelta
 
 $ cd fwup
 $ ./scripts/download_deps.sh

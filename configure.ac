@@ -33,6 +33,10 @@ AC_PROG_CC_C99
 
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
+AC_CHECK_SIZEOF(size_t)
+AC_CHECK_SIZEOF(unsigned int)
+AC_CHECK_SIZEOF(unsigned long)
+AC_CHECK_SIZEOF(unsigned long long)
 
 # Check for library functions
 AC_CHECK_FUNCS([memset gettimeofday setenv strdup strndup \

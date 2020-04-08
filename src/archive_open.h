@@ -20,5 +20,6 @@
 #include <archive.h>
 
 int fwup_archive_open_filename(struct archive *a, const char *filename);
+int fwup_archive_read_data_block(struct archive *a, const void **buff, size_t *s, int64_t *o);
 
 #endif // ARCHIVE_OPEN_H

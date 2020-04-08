@@ -1,0 +1,128 @@
+#!/bin/sh
+
+#
+# Verify that bad delta updates fail
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+FWFILE2="$WORK/fwup2.fw"
+
+cat >"$CONFIG" <<EOF
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 256) # This must be <150 KB for test 4 to exercise the right code paths
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 256)
+
+file-resource rootfs.original {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.next {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+    on-resource rootfs.original { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade {
+    on-resource rootfs.next {
+        delta-source-raw-offset=\${ROOTFS_A_PART_OFFSET}
+        delta-source-raw-count=\${ROOTFS_A_PART_COUNT}
+        raw_write(\${ROOTFS_B_PART_OFFSET})
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete
+
+mkdir -p "$WORK/data"
+
+# Test number 1 - Bad xdelta3 patch
+#   Just replace the resource even though it's not one at all.
+
+dd if="$TESTFILE_1K" of="$WORK/data/rootfs.next" count=1 bs=512
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+if $FWUP_VERIFY -V -i "$FWFILE2"; then
+    echo "Expecting bad xdelta3 patch to be detected during verification"
+    exit 1
+fi
+if $FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade; then
+    echo "Expecting bad xdelta3 patch to be detected during apply"
+    exit 1
+fi
+
+# Test number 2 - xdelta secondary compression is detected
+
+rm -f "$WORK/data/rootfs.next"
+xdelta3 -S fgk -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+if $FWUP_VERIFY -V -i "$FWFILE2"; then
+    echo "Expecting verify error since xdelta secondary compression not supported"
+    exit 1
+fi
+if $FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade; then
+    echo "Expecting apply error since xdelta secondary compression not supported"
+    exit 1
+fi
+
+# Test number 3 - different result is detected
+#
+# This one creates a delta that ends up with a different result. fwup's Blake2B hash
+# will mismatch.
+
+rm -f "$WORK/data/rootfs.next"
+xdelta3 -A -S -f -s "$TESTFILE_1K" "$TESTFILE_1K_CORRUPT" "$WORK/data/rootfs.next"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+
+# Verify will work since it doesn't have the "before" image to generate the result
+$FWUP_VERIFY -V -i "$FWFILE2"
+if $FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade; then
+    echo "Expecting apply error since patch generates different result"
+    exit 1
+fi
+
+# Test number 4 - source references too large
+#
+# This one creates a delta that will read beyond the end of the source region. While
+# it's hard to imaging someone constructing a patch that does this to "steal" data
+# from another file partition and somehow matching a Blake2B hash, it's bad and
+# should fail quickly.
+
+rm -f "$WORK/data/rootfs.next"
+xdelta3 -A -S -f -s "$TESTFILE_150K" "$TESTFILE_150K" "$WORK/data/rootfs.next"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+
+# Verify will work since it doesn't have the "before" image to generate the result
+$FWUP_VERIFY -V -i "$FWFILE2"
+if $FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade; then
+    echo "Expecting apply error since patch will read past the end of the source"
+    exit 1
+fi
+
+# Test number 5 - different source
+#
+# This one creates a delta that expects a different source image. This test
+# is trickier than it looks, since it you're not careful, xdelta will ignore
+# the source image and everything will be ok. Shifting the source image 1 byte
+# is enough to make the offsets off. Xdelta's Adler32 checksum will catch this
+# error. (But if it didn't, fwup's Blake2B certainly would)
+
+rm -f "$WORK/data/rootfs.next"
+dd if="$TESTFILE_1K" of="$WORK/shifted1K.bin" skip=1 bs=1 2>/dev/null
+xdelta3 -A -S -f -s "$WORK/shifted1K.bin" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+
+# Verify will work since it doesn't have the "before" image to generate the result
+$FWUP_VERIFY -V -i "$FWFILE2"
+if $FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade; then
+    echo "Expecting apply error since patch source data is different"
+    exit 1
+fi
+

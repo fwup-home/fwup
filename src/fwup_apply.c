@@ -40,6 +40,7 @@
 #include "progress.h"
 #include "resources.h"
 #include "block_cache.h"
+#include "fwup_xdelta3.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *output)
 {
@@ -132,7 +133,7 @@ struct fwup_apply_data
     off_t sparse_leftover_len;
 };
 
-static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
+static int read_callback_normal(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
 {
     struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
 
@@ -180,16 +181,8 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     }
 
     // Decompress more data
-
-    // off_t could be 32-bits so offset can't be passed directly to archive_read_data_block
-    int64_t offset64 = 0;
-    int rc;
-
-    // Handle case where archive_read_data_block returns a 0 byte read
-    // even though it's not at end of file. A second read gets past this.
-    do {
-        rc = archive_read_data_block(p->a, buffer, len, &offset64);
-    } while (rc == ARCHIVE_OK && *len == 0);
+    int64_t ignored;
+    int rc = fwup_archive_read_data_block(p->a, buffer, len, &ignored);
 
     if (rc == ARCHIVE_EOF) {
         *len = 0;
@@ -226,6 +219,63 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
     }
 
     return 0;
+}
+
+static int xdelta_read_patch_callback(void* cookie, const void **buffer, size_t *len)
+{
+    struct fun_context *fctx = (struct fun_context *) cookie;
+    struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
+
+    int64_t ignored;
+    int rc = fwup_archive_read_data_block(p->a, buffer, len, &ignored);
+
+    if (rc == ARCHIVE_OK) {
+        return 0;
+    } else if (rc == ARCHIVE_EOF) {
+        *len = 0;
+        *buffer = NULL;
+        return 0;
+    } else {
+        *len = 0;
+        *buffer = NULL;
+        ERR_RETURN(archive_error_string(p->a));
+    }
+}
+
+static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, off_t offset)
+{
+    struct fun_context *fctx = (struct fun_context *) cookie;
+
+    if (offset < 0 ||
+        offset + count > fctx->xd_source_count)
+        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %d", fctx->xd_source_count, offset, count);
+
+    return block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
+}
+
+static int read_callback_xdelta(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
+{
+    struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
+
+    // This would be ridiculous...
+    if (p->sfm.map_len != 1)
+        ERR_RETURN("Sparse xdelta not supported");
+
+    OK_OR_RETURN(xdelta_read(fctx->xd, buffer, len));
+
+    // xdelta_read's output has no holes
+    *offset = p->actual_offset;
+    p->actual_offset += *len;
+
+    return 0;
+}
+
+static int read_callback(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
+{
+    if (fctx->xd)
+        return read_callback_xdelta(fctx, buffer, len, offset);
+    else
+        return read_callback_normal(fctx, buffer, len, offset);
 }
 
 static void initialize_timestamps()
@@ -329,10 +379,41 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
             }
         }
 
+// MOVE ME!!!
+{
+    cfg_t *on_resource = cfg_gettsec(fctx->task, "on-resource", resource_name);
+    if (on_resource) {
+        off_t size_in_archive = archive_entry_size(ae);
+        off_t expected_size_in_archive = sparse_file_data_size(&pd->sfm);
+
+        if (pd->sfm.map_len == 1 && archive_entry_size_is_set(ae) && size_in_archive != expected_size_in_archive) {
+            const char *source_raw_offset_str = cfg_getstr(on_resource, "delta-source-raw-offset");
+            int source_raw_count = cfg_getint(on_resource, "delta-source-raw-count");
+            if (source_raw_count > 0 && source_raw_offset_str != NULL) {
+                off_t source_raw_offset = strtoul(source_raw_offset_str, NULL, 0);
+
+                fctx->xd = malloc(sizeof(struct xdelta_state));
+                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
+                fctx->xd_source_offset = source_raw_offset * FWUP_BLOCK_SIZE;
+                fctx->xd_source_count = source_raw_count * FWUP_BLOCK_SIZE;
+            } else {
+                ERR_CLEANUP_MSG("File '%s' isn't expected size (%d vs %d) and xdelta3 patch support not enabled on it. (Add delta-source-raw-offset or delta-source-raw-count at least)", resource_name, (int) size_in_archive, (int) expected_size_in_archive);
+            }
+        }
+    }
+}
         OK_OR_CLEANUP(apply_event(fctx, fctx->task, "on-resource", resource_name, fun_run));
 
         item->processed = true;
         sparse_file_free(&pd->sfm);
+
+{ // MOVE ME!!!
+    if (fctx->xd) {
+        xdelta_free(fctx->xd);
+        free(fctx->xd);
+        fctx->xd = NULL;
+    }
+}
     }
 
     // Make sure that all "on-resource" blocks have been run.

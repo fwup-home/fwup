@@ -36,7 +36,7 @@ install_confuse() {
 
 if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
     sudo apt-get update -qq
-    sudo apt-get install -qq autopoint mtools unzip zip help2man
+    sudo apt-get install -qq autopoint mtools unzip zip help2man xdelta3
     case $MODE in
         windows)
             sudo dpkg --add-architecture i386
@@ -66,10 +66,10 @@ else
     # OSX
     # Travis comes with pkg-config, automake, and coreutils installed
     brew update
-    brew install mtools
+    brew install mtools xdelta
 
     if [[ "$MODE" = "dynamic" ]]; then
-        brew install libarchive confuse
+        brew install libarchive confuse xdelta
     fi
 fi
 
