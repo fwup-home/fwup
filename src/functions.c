@@ -241,7 +241,7 @@ static int process_resource_compute_progress(struct fun_context *fctx, bool coun
  * It handles the following:
  *   1. Finds the resource
  *   2. Verifies that the resource contents pass the checksums
- *   3. Handles sparse reousrces
+ *   3. Handles sparse resources
  *   4. Checks nit-picky issues and returns errors when detected
  *
  * NOTE: count_holes must match the value passed to process_resource_compute_progress.
