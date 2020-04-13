@@ -61,7 +61,10 @@ fi
 
 if [ "$CROSS_COMPILE" != "arm-linux-gnueabihf" ]; then
     # Run the regression tests
-    make $MAKE_FLAGS check
+    if ! make $MAKE_FLAGS check; then
+        cat tests/test-suite.log
+        exit 1
+    fi
 fi
 
 make install-strip

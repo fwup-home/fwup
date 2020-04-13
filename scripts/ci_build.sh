@@ -61,7 +61,11 @@ esac
 
 # Normal build
 make -j4
-make -j4 check
+if ! make -j4 check; then
+    cat tests/test-suite.log
+    echo "git source 'make check' failed. See log above"
+    exit 1
+fi
 make dist
 
 # Check that the distribution version works by building it again
@@ -73,5 +77,8 @@ else
     PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
 fi
 make -j4
-make -j4 check
-
+if ! make -j4 check; then
+    cat tests/test-suite.log
+    echo "Distribution 'make check' failed. See log above"
+    exit 1
+fi

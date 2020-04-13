@@ -26,5 +26,8 @@ cd ..
 # Go back and test the minimal version of fwup, but use the full-featured one
 # to create the archives.
 cd minimal
-FWUP_CREATE=$PWD/../full_featured/src/fwup make -j4 check
-
+if ! FWUP_CREATE=$PWD/../full_featured/src/fwup make -j4 check; then
+    cat tests/test-suite.log
+    echo "'make check' failed. See log above"
+    exit 1
+fi
