@@ -30,7 +30,7 @@ fi
 
 if [ -e $BASE_DIR/Makefile ]; then
     # Run distclean to ensure that we have a clean build.
-    make distclean
+    make -C $BASE_DIR distclean
 fi
 
 # Build the dependencies
