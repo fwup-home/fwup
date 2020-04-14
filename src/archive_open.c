@@ -37,30 +37,6 @@ struct fwup_archive_data {
     char buffer[DEFAULT_LIBARCHIVE_BLOCK_SIZE];
 };
 
-static int normal_open(struct archive *a, void *client_data)
-{
-    struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
-
-    archive_clear_error(a);
-    if (ad->is_stdin) {
-        ad->fd = STDIN_FILENO;
-#ifdef _WIN32
-        setmode(STDIN_FILENO, O_BINARY);
-#endif
-    } else {
-        ad->fd = open(ad->name, O_RDONLY | O_WIN32_BINARY);
-        if (ad->fd < 0) {
-            archive_set_error(a, errno, "Failed to open '%s'", ad->name);
-            return ARCHIVE_FATAL;
-        }
-#ifdef HAVE_FCNTL
-        (void) fcntl(ad->fd, F_SETFD, FD_CLOEXEC);
-#endif
-    }
-
-    return ARCHIVE_OK;
-}
-
 static ssize_t normal_read(struct archive *a, void *client_data, const void **buff)
 {
     struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
@@ -167,16 +143,36 @@ int fwup_archive_open_filename(struct archive *a, const char *filename)
     ad->current_frame_remaining = 0;
     ad->is_eof = false;
     ad->is_stdin = (filename == NULL || filename[0] == '\0');
-    ad->fd = -1;
     if (!ad->is_stdin)
         strncpy(ad->name, filename, sizeof(ad->name) - 1);
+
+    if (ad->is_stdin) {
+        ad->fd = STDIN_FILENO;
+#ifdef _WIN32
+        setmode(STDIN_FILENO, O_BINARY);
+#endif
+    } else {
+        ad->fd = open(ad->name, O_RDONLY | O_WIN32_BINARY);
+        if (ad->fd < 0) {
+            archive_set_error(a, errno, "Failed to open '%s'", ad->name);
+            return ARCHIVE_FATAL;
+        }
+#ifdef HAVE_FCNTL
+        (void) fcntl(ad->fd, F_SETFD, FD_CLOEXEC);
+#endif
+    }
+
+    archive_read_set_callback_data(a, ad);
+    archive_read_set_close_callback(a, normal_close);
 
     if (fwup_framing && ad->is_stdin) {
         // If reading from standard in and framing is enabled, then
         // it needs to be applied to the input too.
-        return archive_read_open(a, ad, normal_open, framed_stdin_read, normal_close);
+        archive_read_set_read_callback(a, framed_stdin_read);
     } else {
         // Files and stdin w/o framing are handled similarly.
-        return archive_read_open(a, ad, normal_open, normal_read, normal_close);
+        archive_read_set_read_callback(a, normal_read);
     }
+
+    return archive_read_open1(a);
 }
