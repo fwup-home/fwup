@@ -67,17 +67,19 @@ static void draw_progress_bar(struct fwup_progress *progress, int percent)
     static const char fifty_equals[] = "==================================================";
 
     if (progress->total_units <= 0) {
-        printf("\r|%-" PROGRESS_BITS_STR ".*s| %d%%",
-               percent * PROGRESS_BITS / 100, fifty_equals,
-               percent);
-    } else {
-        off_t units = find_natural_units(progress->total_units);
-        printf("\r|%-" PROGRESS_BITS_STR ".*s| %d%% (%.2f / %.2f) %s",
-               percent * PROGRESS_BITS / 100, fifty_equals,
+        printf("\r%3d%% [%-" PROGRESS_BITS_STR ".*s]",
                percent,
-               ((double) progress->current_units) / units,
-               ((double) progress->total_units) / units,
-               units_to_string(units));
+               percent * PROGRESS_BITS / 100, fifty_equals);
+    } else {
+        off_t read_units = find_natural_units(progress->input_bytes);
+        off_t written_units = find_natural_units(progress->current_units);
+        printf("\r%3d%% [%-" PROGRESS_BITS_STR ".*s] %.2f %s in / %.2f %s out \b\b",
+               percent,
+               percent * PROGRESS_BITS / 100, fifty_equals,
+               ((double) progress->input_bytes) / read_units,
+               units_to_string(read_units),
+               ((double) progress->current_units) / written_units,
+               units_to_string(written_units));
     }
 }
 
@@ -129,6 +131,7 @@ void progress_init(struct fwup_progress *progress,
     progress->start_time = 0;
     progress->low = progress_low;
     progress->range = progress_high - progress_low;
+    progress->input_bytes = 0;
 
     output_progress(progress, progress_low);
 }

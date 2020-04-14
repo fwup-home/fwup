@@ -15,8 +15,10 @@
  */
 
 #include "archive_open.h"
+#include "progress.h"
 #include "util.h"
 
+#include <archive.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -32,6 +34,7 @@ struct fwup_archive_data {
     bool is_stdin;
     bool is_eof;
     int fd;
+    struct fwup_progress *progress;
 
     char name[PATH_MAX];
     char buffer[DEFAULT_LIBARCHIVE_BLOCK_SIZE];
@@ -55,6 +58,9 @@ static ssize_t normal_read(struct archive *a, void *client_data, const void **bu
 
             return -1;
         }
+
+        if (ad->progress)
+            ad->progress->input_bytes += bytes_read;
 
         return bytes_read;
     }
@@ -119,6 +125,9 @@ static ssize_t framed_stdin_read(struct archive *a, void *client_data, const voi
         return -1;
     } else {
         ad->current_frame_remaining -= amount_read;
+        if (ad->progress)
+            ad->progress->input_bytes += amount_read;
+
         return amount_read;
     }
 }
@@ -130,9 +139,10 @@ static ssize_t framed_stdin_read(struct archive *a, void *client_data, const voi
  *
  * @param a a libarchive handle
  * @param filename the file to open or NULL for stdin
+ * @param progress input progress is reported if non-NULL
  * @return a libarchive error code (e.g., ARCHIVE_OK or ARCHIVE_FATAL)
  */
-int fwup_archive_open_filename(struct archive *a, const char *filename)
+int fwup_archive_open_filename(struct archive *a, const char *filename, struct fwup_progress *progress)
 {
     struct fwup_archive_data *ad = (struct fwup_archive_data *) calloc(1, sizeof(struct fwup_archive_data));
     if (ad == NULL) {
@@ -145,6 +155,7 @@ int fwup_archive_open_filename(struct archive *a, const char *filename)
     ad->is_stdin = (filename == NULL || filename[0] == '\0');
     if (!ad->is_stdin)
         strncpy(ad->name, filename, sizeof(ad->name) - 1);
+    ad->progress = progress;
 
     if (ad->is_stdin) {
         ad->fd = STDIN_FILENO;

@@ -787,7 +787,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, unsigned char 
     unsigned char *meta_conf_signature = NULL;
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);
-    rc = fwup_archive_open_filename(a, filename);
+    rc = fwup_archive_open_filename(a, filename, NULL);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("%s", archive_error_string(a));
 

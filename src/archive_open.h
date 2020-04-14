@@ -17,9 +17,13 @@
 #ifndef ARCHIVE_OPEN_H
 #define ARCHIVE_OPEN_H
 
-#include <archive.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-int fwup_archive_open_filename(struct archive *a, const char *filename);
+struct fwup_progress;
+struct archive;
+
+int fwup_archive_open_filename(struct archive *a, const char *filename, struct fwup_progress *progress);
 int fwup_archive_read_data_block(struct archive *a, const void **buff, size_t *s, int64_t *o);
 
 #endif // ARCHIVE_OPEN_H

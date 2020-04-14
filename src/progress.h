@@ -38,7 +38,11 @@ struct fwup_progress {
     // This counts up as we make progress.
     uint64_t current_units;
 
-    // The most recent progress reported is cached to avoid unnecessary context switching/IO
+    // Keep track of the current progress. Reports are never sent that
+    // duplicate previous reports.
+    //
+    // NOTE: The percent is 100 * current_units / total_units. (I.e., roughly
+    // written bytes out of the total to write)
     int last_reported_percent;
 
     // This is the starting progress value (normally 0 for 0%)
@@ -49,6 +53,9 @@ struct fwup_progress {
 
     // If the mode supports it, this is the start time of the update in milliseconds
     int start_time;
+
+    // Track the number of input bytes processed.
+    uint64_t input_bytes;
 };
 
 extern enum fwup_progress_option fwup_progress_mode;

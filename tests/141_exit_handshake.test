@@ -13,20 +13,21 @@ EOF
 
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-# Run the command and turn the `\r`s into periods to make
+# Run the command and turn the `\r`s into newlines to make
 # it easy to compare with the expected output. The
 # call to sed is to discard the final `\r` that's present
 # on Windows.
 cat /dev/null | $FWUP_APPLY --exit-handshake -a -d $IMGFILE -i $FWFILE -t complete \
-    | tr '\r' '.' \
     | tr '\032' '@' \
     | tr '\0' '!' \
-    | sed 's/\.$//g' \
+    | tr '\r' '\n' \
+    | sed '/^$/d' \
     | grep -v '^Elapsed time' \
     > $WORK/actual_output.txt
 
 cat >$WORK/expected_output.txt <<EOF
-.|                                    | 0%.|====================================| 100%
+  0% [                                    ]
+100% [====================================]
 Success!
 @!
 EOF

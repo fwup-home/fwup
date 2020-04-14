@@ -467,7 +467,7 @@ int fwup_apply(const char *fw_filename,
     pd.a = archive_read_new();
 
     archive_read_support_format_zip(pd.a);
-    int arc = fwup_archive_open_filename(pd.a, fw_filename);
+    int arc = fwup_archive_open_filename(pd.a, fw_filename, progress);
     if (arc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("%s", archive_error_string(pd.a));
 

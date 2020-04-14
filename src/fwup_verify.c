@@ -192,7 +192,7 @@ int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
     if (!input_filename)
         ERR_CLEANUP_MSG("Specify an input firmware file");
 
-    rc = fwup_archive_open_filename(a, input_filename);
+    rc = fwup_archive_open_filename(a, input_filename, NULL);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("%s", archive_error_string(a));
 
