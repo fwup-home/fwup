@@ -385,8 +385,6 @@ int fwup_apply(const char *fw_filename,
     fctx.cookie = &pd;
     pd.a = archive_read_new();
 
-    bool reading_stdin = (fw_filename == NULL || fw_filename[0] == '\0');
-
     archive_read_support_format_zip(pd.a);
     int arc = fwup_archive_open_filename(pd.a, fw_filename);
     if (arc != ARCHIVE_OK)
@@ -464,24 +462,8 @@ cleanup:
 
     sparse_file_free(&pd.sfm);
 
-    // If reading stdin, redirect it from file descriptor zero temporarily so
-    // that libarchive doesn't try to read any more from it. For whatever reason,
-    // libarchive will try to drain it completely when calling archive_read_free(),
-    // and this can take a long time. We don't want to close stdin completely,
-    // since that will break the pipe before we exit. This doesn't interact well
-    // with Erlang and maybe other programs.
-    int tmp_stdin = -1;
-    if (reading_stdin) {
-        tmp_stdin = dup(STDIN_FILENO);
-        close(STDIN_FILENO);
-    }
-
     archive_read_free(pd.a);
 
-    if (tmp_stdin >= 0) {
-        dup2(tmp_stdin, STDIN_FILENO);
-        close(tmp_stdin);
-    }
     if (meta_conf_signature)
         free(meta_conf_signature);
 

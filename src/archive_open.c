@@ -19,23 +19,92 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define DEFAULT_LIBARCHIVE_BLOCK_SIZE 16384
 
 struct fwup_archive_data {
     size_t current_frame_remaining;
+    bool is_stdin;
     bool is_eof;
-    char buffer[4096];
+    int fd;
+
+    char name[PATH_MAX];
+    char buffer[DEFAULT_LIBARCHIVE_BLOCK_SIZE];
 };
 
-static int framed_stdin_open(struct archive *a, void *client_data)
+static int normal_open(struct archive *a, void *client_data)
 {
     struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
 
-    ad->current_frame_remaining = 0;
-    ad->is_eof = false;
-
     archive_clear_error(a);
+    if (ad->is_stdin) {
+        ad->fd = STDIN_FILENO;
+#ifdef _WIN32
+        setmode(STDIN_FILENO, O_BINARY);
+#endif
+    } else {
+        ad->fd = open(ad->name, O_RDONLY | O_WIN32_BINARY);
+        if (ad->fd < 0) {
+            archive_set_error(a, errno, "Failed to open '%s'", ad->name);
+            return ARCHIVE_FATAL;
+        }
+#ifdef HAVE_FCNTL
+        (void) fcntl(ad->fd, F_SETFD, FD_CLOEXEC);
+#endif
+    }
+
+    return ARCHIVE_OK;
+}
+
+static ssize_t normal_read(struct archive *a, void *client_data, const void **buff)
+{
+    struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
+
+    *buff = ad->buffer;
+    for (;;) {
+        ssize_t bytes_read = read(ad->fd, ad->buffer, sizeof(ad->buffer));
+        if (bytes_read < 0) {
+            if (errno == EINTR)
+                continue;
+
+            if (ad->is_stdin)
+                archive_set_error(a, errno, "Error reading stdin");
+            else
+                archive_set_error(a, errno, "Error reading '%s'", ad->name);
+
+            return -1;
+        }
+
+        return bytes_read;
+    }
+}
+
+static int normal_close(struct archive *a, void *client_data)
+{
+    struct fwup_archive_data *ad = (struct fwup_archive_data *) client_data;
+    (void)a; /* UNUSED */
+
+    // NOTE: One very important difference between libarchive's default file
+    // reading implementation and this one is that libarchive drains stdin
+    // before closing it. This is the friendly thing to do when working with
+    // pipes since if data isn't needed at the end, you still have to consume
+    // it or the source of the pipe gets an error. This is NOT the behavior
+    // we want. We want to leave it up to other code for whether to drain or
+    // not. That way if there's an error, that code can choose to exit immediately
+    // and not pay the cost of transferring all of those bytes through the pipe.
+    // The pipe data may originate from a remote source and stopping the
+    // transmission immediately saves time.
+
+    // Only close files - not stdin.
+    if (ad->fd > 0)
+        close(ad->fd);
+
+    free(ad);
     return ARCHIVE_OK;
 }
 
@@ -78,13 +147,6 @@ static ssize_t framed_stdin_read(struct archive *a, void *client_data, const voi
     }
 }
 
-static int framed_stdin_close(struct archive *a, void *client_data)
-{
-    (void) a; // UNUSED
-    free(client_data);
-    return ARCHIVE_OK;
-}
-
 /**
  * @brief Open the specified file for use with libarchive.
  *
@@ -96,18 +158,25 @@ static int framed_stdin_close(struct archive *a, void *client_data)
  */
 int fwup_archive_open_filename(struct archive *a, const char *filename)
 {
-    // If framing isn't enabled or we're reading from a file, then
-    // the built-in libarchive reading functions are fine.
-    if (!fwup_framing ||
-            (filename != NULL && filename[0] != '\0'))
-        return archive_read_open_filename(a, filename, DEFAULT_LIBARCHIVE_BLOCK_SIZE);
-
-    // Reading from stdin with framing
-    struct fwup_archive_data *ad = (struct fwup_archive_data *) malloc(sizeof(struct fwup_archive_data));
+    struct fwup_archive_data *ad = (struct fwup_archive_data *) calloc(1, sizeof(struct fwup_archive_data));
     if (ad == NULL) {
         archive_set_error(a, ENOMEM, "No memory");
         return ARCHIVE_FATAL;
     }
 
-    return archive_read_open(a, ad, framed_stdin_open, framed_stdin_read, framed_stdin_close);
+    ad->current_frame_remaining = 0;
+    ad->is_eof = false;
+    ad->is_stdin = (filename == NULL || filename[0] == '\0');
+    ad->fd = -1;
+    if (!ad->is_stdin)
+        strncpy(ad->name, filename, sizeof(ad->name) - 1);
+
+    if (fwup_framing && ad->is_stdin) {
+        // If reading from standard in and framing is enabled, then
+        // it needs to be applied to the input too.
+        return archive_read_open(a, ad, normal_open, framed_stdin_read, normal_close);
+    } else {
+        // Files and stdin w/o framing are handled similarly.
+        return archive_read_open(a, ad, normal_open, normal_read, normal_close);
+    }
 }
