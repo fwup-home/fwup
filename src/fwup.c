@@ -162,36 +162,50 @@ static void print_version()
     printf("%s\n", PACKAGE_VERSION);
 }
 
+enum fwup_long_option_only_value {
+    OPTION_NO_EJECT = 0x1000,
+    OPTION_ENABLE_TRIM,
+    OPTION_EXIT_HANDSHAKE,
+    OPTION_PRIVATE_KEY,
+    OPTION_PUBLIC_KEY,
+    OPTION_PROGRESS_LOW,
+    OPTION_PROGRESS_HIGH,
+    OPTION_SPARSE_CHECK,
+    OPTION_SPARSE_CHECK_SIZE,
+    OPTION_UNSAFE,
+    OPTION_VERSION
+};
+
 static struct option long_options[] = {
     {"apply",    no_argument,       0, 'a'},
     {"create",   no_argument,       0, 'c'},
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
-    {"no-eject", no_argument,       0, '#'},
-    {"enable-trim", no_argument,    0, '!'},
-    {"exit-handshake", no_argument, 0, '~'},
+    {"no-eject", no_argument,       0, OPTION_NO_EJECT},
+    {"enable-trim", no_argument,    0, OPTION_ENABLE_TRIM},
+    {"exit-handshake", no_argument, 0, OPTION_EXIT_HANDSHAKE},
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"help",     no_argument,       0, 'h'},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
-    {"private-key", required_argument, 0, '('},
+    {"private-key", required_argument, 0, OPTION_PRIVATE_KEY},
     {"private-key-file", required_argument, 0, 's'},
-    {"public-key", required_argument, 0, ')'},
+    {"public-key", required_argument, 0, OPTION_PUBLIC_KEY},
     {"public-key-file ", required_argument, 0, 'p'},
-    {"progress-low", required_argument, 0, '$'},
-    {"progress-high", required_argument, 0, '%'},
+    {"progress-low", required_argument, 0, OPTION_PROGRESS_LOW},
+    {"progress-high", required_argument, 0, OPTION_PROGRESS_HIGH},
     {"quiet",    no_argument,       0, 'q'},
-    {"sparse-check", required_argument, 0, '&'},
-    {"sparse-check-size", required_argument, 0, '*'},
+    {"sparse-check", required_argument, 0, OPTION_SPARSE_CHECK},
+    {"sparse-check-size", required_argument, 0, OPTION_SPARSE_CHECK_SIZE},
     {"sign",     no_argument,       0, 'S'},
     {"task",     required_argument, 0, 't'},
     {"unmount",  no_argument,       0, 'u'},
     {"no-unmount", no_argument,     0, 'U'},
-    {"unsafe",   no_argument,       0, '+'},
+    {"unsafe",   no_argument,       0, OPTION_UNSAFE},
     {"verbose",  no_argument,       0, 'v'},
     {"verify",   no_argument,       0, 'V'},
-    {"version",  no_argument,       0, '@'},
+    {"version",  no_argument,       0, OPTION_VERSION},
     {0,          0,                 0, 0 }
 };
 
@@ -410,12 +424,12 @@ int main(int argc, char **argv)
             command = CMD_SIGN;
             easy_mode = false;
             break;
-        case '&': // --sparse-check
+        case OPTION_SPARSE_CHECK: // --sparse-check
             sparse_check = optarg;
             command = CMD_SPARSE_CHECK;
             easy_mode = false;
             break;
-        case '*': // --sparse-check-size
+        case OPTION_SPARSE_CHECK_SIZE: // --sparse-check-size
             sparse_check_size = strtol(optarg, 0, 0);
             break;
         case 's':
@@ -436,7 +450,7 @@ int main(int argc, char **argv)
         case '9':
             compression_level = opt - '0';
             break;
-        case '(': // --private-key
+        case OPTION_PRIVATE_KEY: // --private-key
             signing_key = parse_signing_key(optarg, strlen(optarg));
             easy_mode = false;
             break;
@@ -509,32 +523,32 @@ int main(int argc, char **argv)
             accept_found_device = true;
 #endif
             break;
-        case '+': // --unsafe
+        case OPTION_UNSAFE: // --unsafe
             fwup_unsafe = true;
             break;
-        case '!': // --enable-trim
+        case OPTION_ENABLE_TRIM: // --enable-trim
             enable_trim = true;
             break;
-        case '@': // --version
+        case OPTION_VERSION: // --version
             print_version();
             fwup_exit(EXIT_SUCCESS);
-        case '#': // --no-eject
+        case OPTION_NO_EJECT: // --no-eject
             eject_on_success = false;
             break;
-        case '$': // progress-low
+        case OPTION_PROGRESS_LOW: // progress-low
             progress_low = strtol(optarg, 0, 0);
             break;
-        case '%': // progress-high
+        case OPTION_PROGRESS_HIGH: // progress-high
             progress_high = strtol(optarg, 0, 0);
             break;
-        case ')': // --public-key
+        case OPTION_PUBLIC_KEY: // --public-key
             if (num_public_keys < FWUP_MAX_PUBLIC_KEYS) {
                 public_keys[num_public_keys] = parse_public_key(optarg, strlen(optarg));
                 num_public_keys++;
             } else
                 fwup_warnx("Ignoring public key since only %d supported", FWUP_MAX_PUBLIC_KEYS);
             break;
-        case '~': // --exit-handshake
+        case OPTION_EXIT_HANDSHAKE: // --exit-handshake
             fwup_handshake_on_exit = true;
             break;
         default: /* '?' */
