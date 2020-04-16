@@ -1,0 +1,72 @@
+#!/bin/sh
+
+#
+# Test that signing the firmware first and creating a patch results in the same
+# thing as creating a patch and signing the patch
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >"$CONFIG" <<EOF
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+
+file-resource rootfs.next {
+        host-path = "${TESTFILE_1K}"
+}
+
+task upgrade {
+    on-resource rootfs.next {
+        delta-source-raw-offset=\${ROOTFS_A_PART_OFFSET}
+        delta-source-raw-count=\${ROOTFS_A_PART_COUNT}
+        raw_write(\${ROOTFS_B_PART_OFFSET})
+    }
+}
+EOF
+
+# Create new keys
+(cd "$WORK" && $FWUP_CREATE -g)
+
+# Make sure that all of the calls to create below use the same time.
+export SOURCE_DATE_EPOCH=1525543816
+
+# Create and sign the firmware file
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+$FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE" -o "$FWFILE.signed"
+
+# Manually create a signed delta upgrade by replacing rootfs.next
+# with the delta3 version
+mkdir -p "$WORK/data"
+xdelta3 -A -S -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+cp "$FWFILE.signed" "$FWFILE.signed.patch"
+(cd "$WORK" && zip "$FWFILE.signed.patch" data/rootfs.next)
+
+# Manually create an unsigned delta upgrade by replacing rootfs.next with the
+# delta3 version
+cp "$FWFILE" "$FWFILE.unsigned.patch"
+(cd "$WORK" && zip "$FWFILE.unsigned.patch" data/rootfs.next)
+
+# Check the signatures on both the signed and the delta firmware
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed"
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch"
+
+# Now sign the unsigned patch and make sure that it's still valid
+$FWUP_VERIFY -V -i "$FWFILE.unsigned.patch" # Sanity check.
+$FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE.unsigned.patch" -o "$FWFILE.signed.patch2"
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch2"
+
+# I don't know how these would fail if the above succeeds, but it better be the
+# case that the signature and meta.conf files are same for all ways of signing
+# the patch .fw files.
+mkdir -p "$WORK/signed"
+mkdir -p "$WORK/signed.patch"
+mkdir -p "$WORK/signed.patch2"
+(cd "$WORK/signed" && unzip "$FWFILE.signed")
+(cd "$WORK/signed.patch" && unzip "$FWFILE.signed.patch")
+(cd "$WORK/signed.patch2" && unzip "$FWFILE.signed.patch2")
+cmp "$WORK/signed/meta.conf.ed25519" "$WORK/signed.patch/meta.conf.ed25519"
+cmp "$WORK/signed/meta.conf.ed25519" "$WORK/signed.patch2/meta.conf.ed25519"
+cmp "$WORK/signed/meta.conf" "$WORK/signed.patch/meta.conf"
+cmp "$WORK/signed/meta.conf" "$WORK/signed.patch2/meta.conf"

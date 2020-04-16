@@ -187,6 +187,7 @@ TESTS = 001_simple_fw.test \
 	171_disk_crypto_aes_cbc_plain_deprecated.test \
 	172_delta_upgrade.test \
 	173_bad_delta_upgrades.test \
-	174_streamed_delta_upgrade.test
+	174_streamed_delta_upgrade.test \
+	175_sign_delta_upgrade.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
