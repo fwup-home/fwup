@@ -38,6 +38,7 @@ dd if=$TESTFILE_4K bs=1k seek=1024 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
 cat >$CONFIG <<EOF
 file-resource sparsefile {
         host-path = "${SPARSE_FILE}"
+        skip-holes = true
 }
 
 task complete {

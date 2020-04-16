@@ -1,7 +1,8 @@
 #!/bin/sh
 
 #
-# Test that fwup doesn't do sparse file processing when told not to
+# Test that fwup doesn't do sparse file processing by default
+# I.e., skip-holes defaults to false
 #
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
@@ -38,7 +39,6 @@ dd if=$TESTFILE_4K bs=1k seek=1024 of=$SPARSE_FILE conv=sync,notrunc 2>/dev/null
 cat >$CONFIG <<EOF
 file-resource sparsefile {
         host-path = "${SPARSE_FILE}"
-        skip-holes = false
 }
 
 task complete {

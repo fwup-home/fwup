@@ -678,12 +678,13 @@ zeros and automatically create holes. Programs like `dd(1)` can do this, though,
 so it is crucial that you do not run files through `dd` to make then sparser
 before passing them to `fwup`.
 
-To turn this feature off, set `skip-holes` on the resource to `false`:
+This feature is off by default. To turn this feature on, set `skip-holes` on
+the resource to `true`:
 
 ```conf
 file-resource rootfs.img {
         host-path = "output/images/rootfs.img"
-        skip-holes = false
+        skip-holes = true
 }
 ```
 

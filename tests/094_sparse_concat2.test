@@ -46,39 +46,51 @@ dd if=$TESTFILE_4K of=$TESTFILE_B bs=1k seek=8 conv=sync 2>/dev/null
 cat >$CONFIG <<EOF
 file-resource a {
         host-path = "${TESTFILE_A}"
+        skip-holes = true
 }
 file-resource b {
         host-path = "${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource aa {
         host-path = "${TESTFILE_A};${TESTFILE_A}"
+        skip-holes = true
 }
 file-resource ab {
         host-path = "${TESTFILE_A};${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource ba {
         host-path = "${TESTFILE_B};${TESTFILE_A}"
+        skip-holes = true
 }
 file-resource bb {
         host-path = "${TESTFILE_B};${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource aab {
         host-path = "${TESTFILE_A};${TESTFILE_A};${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource aba {
         host-path = "${TESTFILE_A};${TESTFILE_B};${TESTFILE_A}"
+        skip-holes = true
 }
 file-resource abb {
         host-path = "${TESTFILE_A};${TESTFILE_B};${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource baa {
         host-path = "${TESTFILE_B};${TESTFILE_A};${TESTFILE_A}"
+        skip-holes = true
 }
 file-resource bab {
         host-path = "${TESTFILE_B};${TESTFILE_A};${TESTFILE_B}"
+        skip-holes = true
 }
 file-resource bba {
         host-path = "${TESTFILE_B};${TESTFILE_B};${TESTFILE_A}"
+        skip-holes = true
 }
 EOF
 

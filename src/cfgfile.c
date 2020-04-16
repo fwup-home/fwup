@@ -422,7 +422,7 @@ static int cb_validate_on_resource(cfg_t *cfg, cfg_opt_t *opt)
 static cfg_opt_t file_resource_opts[] = {
     CFG_FUNC("include", &cb_include),
     CFG_STR("host-path", 0, CFGF_NONE),
-    CFG_BOOL("skip-holes", cfg_true, CFGF_NONE),
+    CFG_BOOL("skip-holes", cfg_false, CFGF_NONE),
 
 #if (SIZEOF_INT == 4 && SIZEOF_OFF_T > 4)
     // If we're on a 32-bit machine that has large file offsets,
