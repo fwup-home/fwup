@@ -31,6 +31,77 @@
 
 #define VERIFICATION_CHUNK_SIZE (64 * 1024)
 
+static int process_entry(struct archive *a, struct archive_entry *ae, off_t *length_read, uint8_t *hash)
+{
+    crypto_blake2b_ctx hash_state;
+    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
+
+    *length_read = 0;
+    int64_t expected_offset = 0;
+    for (;;) {
+        // See fwup_apply for comments. This code is intentionally the same
+        // to test similar code paths.
+        const void *buffer;
+        size_t len;
+        int64_t offset64 = 0;
+        int rc;
+        do {
+            rc = archive_read_data_block(a, &buffer, &len, &offset64);
+        } while (rc == ARCHIVE_OK && len == 0);
+
+        if (rc == ARCHIVE_EOF)
+            break;
+        else if (rc != ARCHIVE_OK)
+            ERR_RETURN(archive_error_string(a));
+
+        if (offset64 != expected_offset)
+            ERR_RETURN("Unexpected offset hole when decoding archive");
+        expected_offset += len;
+
+        crypto_blake2b_update(&hash_state, (const uint8_t*) buffer, len);
+        *length_read += len;
+    }
+
+    crypto_blake2b_final(&hash_state, hash);
+    return 0;
+}
+
+static int get_expected_hash(struct resource_list *item, const char *file_resource_name, const char **expected_hash)
+{
+    const char *hash = cfg_getstr(item->resource, "blake2b-256");
+    if (!hash || strlen(hash) != FWUP_BLAKE2b_256_LEN * 2)
+        ERR_RETURN("invalid blake2b-256 hash for '%s'", file_resource_name);
+
+    *expected_hash = hash;
+
+    return 0;
+}
+
+static int check_normal_resource(struct resource_list *item,
+                                 const char *file_resource_name,
+                                 struct archive *a,
+                                 struct archive_entry *ae,
+                                 off_t expected_length)
+{
+    uint8_t hash[FWUP_BLAKE2b_256_LEN];
+    off_t length_read;
+
+    OK_OR_RETURN(process_entry(a, ae, &length_read, hash));
+
+    if (length_read != expected_length)
+        ERR_RETURN("ZIP data length mismatch for %s", file_resource_name);
+
+    const char *expected_hash;
+    OK_OR_RETURN(get_expected_hash(item, file_resource_name, &expected_hash));
+
+    char hash_str[sizeof(hash) * 2 + 1];
+    bytes_to_hex(hash, hash_str, sizeof(hash));
+    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
+        ERR_RETURN("Detected blake2b digest mismatch for %s", file_resource_name);
+
+    return 0;
+}
+
 static int check_resource(struct resource_list *list, const char *file_resource_name, struct archive *a, struct archive_entry *ae)
 {
     struct resource_list *item = rlist_find_by_name(list, file_resource_name);
@@ -46,44 +117,8 @@ static int check_resource(struct resource_list *list, const char *file_resource_
     OK_OR_RETURN(sparse_file_get_map_from_resource(item->resource, &sfm));
 
     size_t expected_length = sparse_file_data_size(&sfm);
-    ssize_t archive_length = archive_entry_size(ae);
-    if (archive_length < 0)
-        ERR_RETURN("Missing file length in archive for %s", file_resource_name);
-    if ((size_t) archive_length != expected_length)
-        ERR_RETURN("Length mismatch for %s", file_resource_name);
 
-    char *expected_hash = cfg_getstr(item->resource, "blake2b-256");
-    if (!expected_hash || strlen(expected_hash) != FWUP_BLAKE2b_256_LEN * 2)
-        ERR_RETURN("invalid blake2b-256 hash for '%s'", file_resource_name);
-
-    crypto_blake2b_ctx hash_state;
-    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
-    size_t length_left = expected_length;
-    char *buffer = malloc(VERIFICATION_CHUNK_SIZE);
-    while (length_left != 0) {
-        size_t to_read = VERIFICATION_CHUNK_SIZE;
-        if (to_read > length_left)
-            to_read = length_left;
-
-        ssize_t len = archive_read_data(a, buffer, to_read);
-        if (len <= 0) {
-            free(buffer);
-            ERR_RETURN("Error reading '%s' in archive", archive_entry_pathname(ae));
-        }
-
-        crypto_blake2b_update(&hash_state, (const uint8_t*) buffer, len);
-        length_left -= len;
-    }
-    free(buffer);
-
-    unsigned char hash[FWUP_BLAKE2b_256_LEN];
-    crypto_blake2b_final(&hash_state, hash);
-    char hash_str[sizeof(hash) * 2 + 1];
-    bytes_to_hex(hash, hash_str, sizeof(hash));
-    if (memcmp(hash_str, expected_hash, sizeof(hash_str)) != 0)
-        ERR_RETURN("Detected blake2b digest mismatch for %s", file_resource_name);
-
-    return 0;
+    return check_normal_resource(item, file_resource_name, a, ae, expected_length);
 }
 
 /**
