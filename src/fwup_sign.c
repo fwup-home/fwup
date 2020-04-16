@@ -18,7 +18,6 @@
 #include "fwfile.h"
 #include "util.h"
 #include "cfgfile.h"
-#include "archive_open.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -67,7 +66,11 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
         ERR_CLEANUP_MSG("Out of memory");
     snprintf(temp_filename, temp_filename_len, "%s.tmp", input_filename);
 
-    rc = fwup_archive_open_filename(in, input_filename);
+    // NOTE: Normally we'd call fwup_archive_read_open, but that function has
+    // been optimized for the streaming case. That disables seeking to the
+    // central directory at the end for file attributes. Old libarchive
+    // versions don't process the local headers properly and this code breaks.
+    rc = archive_read_open_filename(in, input_filename, 65536);
     if (rc != ARCHIVE_OK)
         ERR_CLEANUP_MSG("%s", archive_error_string(in));
 
