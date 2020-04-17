@@ -166,6 +166,7 @@ int fwup_archive_open_filename(struct archive *a, const char *filename, struct f
         ad->fd = open(ad->name, O_RDONLY | O_WIN32_BINARY);
         if (ad->fd < 0) {
             archive_set_error(a, errno, "Failed to open '%s'", ad->name);
+            free(ad);
             return ARCHIVE_FATAL;
         }
 #ifdef HAVE_FCNTL
