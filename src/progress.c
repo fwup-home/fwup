@@ -73,7 +73,7 @@ static void draw_progress_bar(struct fwup_progress *progress, int percent)
     } else {
         off_t read_units = find_natural_units(progress->input_bytes);
         off_t written_units = find_natural_units(progress->current_units);
-        printf("\r%3d%% [%-" PROGRESS_BITS_STR ".*s] %.2f %s in / %.2f %s out \b\b",
+        printf("\r%3d%% [%-" PROGRESS_BITS_STR ".*s] %.2f %s in / %.2f %s out   \b\b\b",
                percent,
                percent * PROGRESS_BITS / 100, fifty_equals,
                ((double) progress->input_bytes) / read_units,
