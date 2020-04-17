@@ -43,7 +43,7 @@ Here's a full list of features:
 1. Sparse file support to reduce number of bytes that need to be written when
    initializing large file systems (see section on sparse files)
 
-1. Permissive license (Apache 2.0 License - see end of doc)
+1. Permissive license (Apache 2.0 License - see end of doc for details)
 
 1. Extensively regression tested! Tests also provide simple examples of
     functionality.
@@ -1015,15 +1015,22 @@ fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
 
 I used to pronounce it "eff-double-you-up", but then coworkers and others
 started calling it "fwup" (one syllable) and "fwup-dates" when referring to the
-`.fw` files.  I now use the one syllable version. This has caused some issues in
-the documentation where "an" is used rather than "a". Feel free to send PRs.
+`.fw` files. I now use the one syllable version. This has caused issues in the
+documentation where "an" is used rather than "a". Feel free to send PRs.
 
 # Licenses
 
 This utility contains source code with various licenses. The bulk of the code is
-licensed with the Apache 2.0 license which can be found in the `LICENSE` file.
+licensed with the Apache-2.0 license which can be found in the `LICENSE` file.
 
-All 3rd party source code can be found in the `3rdparty` directory.
+All statically-linked 3rd party source code can be found in the `src/3rdparty`
+directory. The following sections summarize the included code licenses.
+
+## base64.c
+
+Public Domain or Creative Commons CC0. See file for explanatory text.
+
+## FatFS
 
 The FAT filesystem code (FatFs) comes from [elm-chan.org](http://elm-chan.org/fsw/ff/00index_e.html)
 and has the following license:
@@ -1041,9 +1048,23 @@ developments under license policy of following terms.
 * Redistributions of source code must retain the above copyright notice.
 >>>
 
+## Monocypher
+
+This package has been dual licensed under the 2-clause BSD and CC-0. See
+[LICENCE.md](src/3rdparty/monocypher-3.0.0/LICENCE.md).
+
+## semver.c
+
 `fwup` uses [semver.c](https://github.com/h2non/semver.c) for checking versions.
 `semver.c` is Copyright (c) Tomás Aparicio and distributed under the MIT
-License. See [LICENSE](3rdparty/semver.c/LICENSE).
+License. See [LICENSE](src/3rdparty/semver.c/LICENSE).
+
+## strptime.c
 
 On systems without the function strptime(), a version from Google is
 included that is distributed under the Apache 2.0 license.
+
+## Tiny AES
+
+This code was released into the public domain. See
+[unlicense.txt](src/3rdparty/tiny-AES-c/unlicense.txt) for details.
