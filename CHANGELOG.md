@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.6.0
+
+This release adds beta support for VCDIFF delta updates. This makes it possible
+to significantly reduce firmware update sizes if you know the firmware version
+running on the device. See the README.md for details.
+
+IMPORTANT: If you were using `fwup`'s sparse file support, the `skip-holes`
+option now defaults to `false`. You must set `skip-holes=true` for any resources
+that should be scanned. Since this is an optimization, nothing should break, but
+it will be slower. This will affect firmware that writes large and empty ext2/4
+filesystems (and similar). Most known `fwup` usage is unaffected. The default
+was changed since `skip-holes` could cause confusion and it was incompatible
+with delta updates.
+
+* Improvements
+  * VCDIFF support using xdelta3
+  * Progress bar now shows bytes in
+  * Updated to FatFS R0.14
+
+* Bug fixes
+  * Refactor firmware archive validation logic to more closely match firmware
+    update code to avoid false failures due to differences in ZIP file
+    processing
+
 ## v1.5.2
 
 This release does not change any functionality. It provides a modest (~30%)
