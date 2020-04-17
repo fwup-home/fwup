@@ -321,7 +321,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 pd->actual_offset = pd->sfm.map[1];
             } else {
                 // sparse map has a 0 length data block and possibly a hole,
-                // but it doesn't have anoter data block. This means that it's
+                // but it doesn't have another data block. This means that it's
                 // either a 0-length file or it's all sparse. Signal EOF. This
                 // might be a bug, but I can't think of a real use case for a completely
                 // sparse file.
