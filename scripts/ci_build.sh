@@ -14,6 +14,8 @@
 set -e
 set -v
 
+FWUP_VERSION=$(cat VERSION)
+
 # Create ./configure
 ./autogen.sh
 
@@ -69,8 +71,8 @@ fi
 make dist
 
 # Check that the distribution version works by building it again
-tar xf fwup-*.tar.gz
-cd fwup-*
+tar xf fwup-$FWUP_VERSION.tar.gz
+cd fwup-$FWUP_VERSION
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
     ./configure;
 else
