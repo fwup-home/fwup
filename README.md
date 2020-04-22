@@ -18,7 +18,7 @@ Distribution of software update archives is not a feature. Users can call out to
 `fwup` to run upgrades from external media, stream them from the network, or
 script them using a tool like Ansible if so desired.
 
-Here's a full list of features:
+Here's a list of features:
 
 1. Uses standard ZIP archives to make debugging and transmission simple.
 
@@ -48,13 +48,15 @@ Here's a full list of features:
 
 1. Permissive license (Apache 2.0 License - see end of doc for details)
 
-1. Extensively regression tested! Tests also provide simple examples of
+1. Extensively regression tested! Tests also provide examples of
     functionality.
 
 Internally, `fwup` has many optimizations to speed up low level disk writes over
 what can easily be achieved with `dd(1)`. It orders, Flash erase block aligns,
-and can skip writing large unused sections to minimize write time. The goal is
-to make updates fast enough to support use during code development.
+and can skip writing large unused sections to minimize write time. It also
+verifies writes to catch corruption before the device reboots to the new
+firmware. The goal is to make updates fast enough for code development and
+reliable enough for production use.
 
 # Installing
 
@@ -156,6 +158,8 @@ Options:
   --unsafe Allow unsafe commands (consider applying only signed archives)
   -v, --verbose   Verbose
   -V, --verify  Verify an existing firmware file (specify -i)
+  --verify-writes Verify writes when applying firmware updates to detect corruption (default for writing to device files)
+  --no-verify-writes Do not verify writes when applying firmware updates (default for regular files)
   --version Print out the version
   -y   Accept automatically found memory card when applying a firmware update
   -z   Print the memory card that would be automatically detected and exit

@@ -178,6 +178,8 @@ TESTS = 001_simple_fw.test \
 	175_sign_delta_upgrade.test \
 	176_newline_in_key.test \
 	177_gpt_boot_flag.test \
-	178_gpt_bad_flags.test
+	178_gpt_bad_flags.test \
+	179_verify_detects_raw_corruption.test \
+	180_verify_detects_fat_corruption.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

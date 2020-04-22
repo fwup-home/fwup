@@ -114,6 +114,8 @@ static void print_usage()
     printf("  --unsafe Allow unsafe commands (consider applying only signed archives)\n");
     printf("  -v, --verbose   Verbose\n");
     printf("  -V, --verify  Verify an existing firmware file (specify -i)\n");
+    printf("  --verify-writes Verify writes when applying firmware updates to detect corruption (default for writing to device files)\n");
+    printf("  --no-verify-writes Do not verify writes when applying firmware updates (default for regular files)\n");
     printf("  --version Print out the version\n");
     printf("  -y   Accept automatically found memory card when applying a firmware update\n");
     printf("  -z   Print the memory card that would be automatically detected and exit\n");
@@ -173,7 +175,9 @@ enum fwup_long_option_only_value {
     OPTION_SPARSE_CHECK,
     OPTION_SPARSE_CHECK_SIZE,
     OPTION_UNSAFE,
-    OPTION_VERSION
+    OPTION_VERSION,
+    OPTION_VERIFY_WRITES,
+    OPTION_NO_VERIFY_WRITES
 };
 
 static struct option long_options[] = {
@@ -205,6 +209,8 @@ static struct option long_options[] = {
     {"unsafe",   no_argument,       0, OPTION_UNSAFE},
     {"verbose",  no_argument,       0, 'v'},
     {"verify",   no_argument,       0, 'V'},
+    {"verify-writes", no_argument,  0, OPTION_VERIFY_WRITES},
+    {"no-verify-writes", no_argument,  0, OPTION_NO_VERIFY_WRITES},
     {"version",  no_argument,       0, OPTION_VERSION},
     {0,          0,                 0, 0 }
 };
@@ -391,6 +397,7 @@ int main(int argc, char **argv)
     bool numeric_progress = false;
     int progress_low = 0;    // 0%
     int progress_high = 100; // to 100%
+    int verify_writes = -1; // Use default (yes unless writing to a regular file)
 
     if (argc == 1) {
         print_usage();
@@ -551,6 +558,12 @@ int main(int argc, char **argv)
         case OPTION_EXIT_HANDSHAKE: // --exit-handshake
             fwup_handshake_on_exit = true;
             break;
+        case OPTION_VERIFY_WRITES: // --verify-writes
+            verify_writes = true;
+            break;
+        case OPTION_NO_VERIFY_WRITES: // --no-verify-writes
+            verify_writes = false;
+            break;
         default: /* '?' */
             print_usage();
             fwup_exit(EXIT_FAILURE);
@@ -686,13 +699,18 @@ int main(int argc, char **argv)
         (void) fcntl(output_fd, F_SETFD, FD_CLOEXEC);
 #endif
 
+        // If verify_writes wasn't set, then verify if not a regular file.
+        if (verify_writes < 0)
+            verify_writes = !is_regular_file;
+
         if (fwup_apply(input_filename,
                        task,
                        output_fd,
                        end_offset,
                        &progress,
                        public_keys,
-                       enable_trim) < 0) {
+                       enable_trim,
+                       verify_writes) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
             fwup_errx(EXIT_FAILURE, "%s", last_error());

@@ -67,6 +67,9 @@ struct block_cache_segment {
 struct block_cache {
     int fd;
 
+    // Read everything back after its written
+    bool verify_writes;
+
     // Counter for maintaining LRU
     uint32_t timestamp;
 
@@ -74,7 +77,10 @@ struct block_cache {
     struct block_cache_segment segments[BLOCK_CACHE_NUM_SEGMENTS];
 
     // Temporary buffer for reading segments that are partially valid
-    uint8_t *temp;
+    uint8_t *read_temp;
+
+    // Temporary buffer for checking that writes worked
+    uint8_t *verify_temp;
 
     // Track "trimmed" segments in a bitfield. One bit per segment.
     // E.g., 128K/bit -> 1M takes represented in 1 byte -> 1G in 1 KB, etc.
@@ -92,6 +98,7 @@ struct block_cache {
     pthread_t writer_thread;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
+    uint8_t *thread_verify_temp;
 
     volatile bool running;
     volatile struct block_cache_segment *seg_to_write;
@@ -99,7 +106,7 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim);
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim, bool verify_writes);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);

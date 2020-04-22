@@ -184,16 +184,35 @@ static int make_segment_valid(struct block_cache *bc, struct block_cache_segment
         set_all_valid(seg);
     } else if (!all_valid) {
         // Mixed valid/invalid. Need to read to a temporary buffer and merge.
-        OK_OR_RETURN(read_segment(bc, seg, bc->temp));
+        OK_OR_RETURN(read_segment(bc, seg, bc->read_temp));
 
         for (int i = 0; i < BLOCK_CACHE_BLOCKS_PER_SEGMENT; i++) {
             if (!is_valid(seg, i)) {
                 size_t offset = i * FWUP_BLOCK_SIZE;
-                memcpy(seg->data + offset, bc->temp + offset, FWUP_BLOCK_SIZE);
+                memcpy(seg->data + offset, bc->read_temp + offset, FWUP_BLOCK_SIZE);
                 set_valid(seg, i);
             }
         }
     }
+    return 0;
+}
+
+static int verified_segment_write(struct block_cache *bc, volatile struct block_cache_segment *seg, uint8_t *temp)
+{
+    off_t offset = seg->offset;
+    const uint8_t *data = seg->data;
+
+    if (pwrite(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
+        ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", offset);
+
+    if (bc->verify_writes) {
+        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
+            ERR_RETURN("read back failed at offset %" PRId64, offset);
+
+        if (memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) != 0)
+            ERR_RETURN("write verification failed at offset %" PRId64, offset);
+    }
+
     return 0;
 }
 
@@ -204,11 +223,11 @@ static void *writer_worker(void *void_bc)
 
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     for (;;) {
-        if (bc->seg_to_write) {
+        if (bc->seg_to_write && bc->bad_offset < 0) {
             volatile struct block_cache_segment *seg = bc->seg_to_write;
 
             OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
-            if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
+            if (verified_segment_write(bc, seg, bc->thread_verify_temp) < 0)
                 bc->bad_offset = seg->offset;
             OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
 
@@ -226,15 +245,15 @@ static void *writer_worker(void *void_bc)
 }
 static int check_async_error(struct block_cache *bc)
 {
-    if (bc->bad_offset >= 0) {
-        off_t bad_offset = bc->bad_offset;
-        bc->bad_offset = -1;
-        ERR_RETURN("write failed at offset %" PRId64". Check media size.", bad_offset);
-    }
+    if (bc->bad_offset >= 0)
+        ERR_RETURN("write failed at offset %" PRId64". Check media size.", bc->bad_offset);
     return 0;
 }
 static int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
+    // Don't start if already errored.
+    OK_OR_RETURN(check_async_error(bc));
+
     // Wait for the writer thread to complete the last set of writes
     // before starting new ones.
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
@@ -256,8 +275,12 @@ static void wait_for_write_completion(struct block_cache *bc, struct block_cache
         OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
 }
+
 static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
+    // Don't start if already errored.
+    OK_OR_RETURN(check_async_error(bc));
+
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     if (bc->seg_to_write == seg) {
         while (bc->seg_to_write == seg)
@@ -267,19 +290,17 @@ static inline int do_sync_write(struct block_cache *bc, struct block_cache_segme
         return check_async_error(bc);
     } else {
         OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
-        if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-            ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", seg->offset);
-        return 0;
+        int rc = verified_segment_write(bc, seg, bc->verify_temp);
+        if (rc < 0)
+            bc->bad_offset = seg->offset;
+        return rc;
     }
 }
 #else
 // Single-threaded version
 static inline int do_sync_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
-    if (pwrite(bc->fd, seg->data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset) != BLOCK_CACHE_SEGMENT_SIZE)
-        ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", seg->offset);
-
-    return 0;
+    return verified_segment_write(bc, seg, bc->verify_temp);
 }
 static inline int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
@@ -321,9 +342,14 @@ cleanup:
  * @param fd the file descriptor of the destination
  * @param end_offset the size of the destination in bytes
  * @param enable_trim true if allowed to issue TRIM commands to the device
+ * @param verify_writes true to verify writes
  * @return
  */
-int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim)
+int block_cache_init(struct block_cache *bc,
+        int fd,
+        off_t end_offset,
+        bool enable_trim,
+        bool verify_writes)
 {
     memset(bc, 0, sizeof(struct block_cache));
 
@@ -333,10 +359,16 @@ int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enab
 
     pthread_mutex_init(&bc->mutex, NULL);
     pthread_cond_init(&bc->cond, NULL);
+    if (verify_writes)
+        alloc_page_aligned((void **) &bc->thread_verify_temp, BLOCK_CACHE_SEGMENT_SIZE);
 #endif
 
     bc->fd = fd;
-    alloc_page_aligned((void **) &bc->temp, BLOCK_CACHE_SEGMENT_SIZE);
+    bc->verify_writes = verify_writes;
+    alloc_page_aligned((void **) &bc->read_temp, BLOCK_CACHE_SEGMENT_SIZE);
+
+    if (verify_writes)
+        alloc_page_aligned((void **) &bc->verify_temp, BLOCK_CACHE_SEGMENT_SIZE);
 
     // Initialized to nothing trimmed. I.e. every write that doesn't fall on a
     // segment boundary is a read/modify/write.
@@ -432,8 +464,10 @@ int block_cache_flush(struct block_cache *bc)
 
     int rc = 0;
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
-        if (flush_segment(bc, sorted_segments[i]) < 0)
+        if (flush_segment(bc, sorted_segments[i]) < 0) {
             rc = -1;
+            break;
+        }
     }
 
     return rc;
@@ -462,6 +496,9 @@ int block_cache_free(struct block_cache *bc)
         fwup_errx(EXIT_FAILURE, "pthread_join");
     pthread_mutex_destroy(&bc->mutex);
     pthread_cond_destroy(&bc->cond);
+    if (bc->verify_writes)
+        free_page_aligned(bc->thread_verify_temp);
+    bc->thread_verify_temp = NULL;
 #endif
 
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
@@ -472,12 +509,15 @@ int block_cache_free(struct block_cache *bc)
             seg->in_use = false;
         }
     }
-    free_page_aligned(bc->temp);
+    free_page_aligned(bc->read_temp);
+    if (bc->verify_writes)
+        free_page_aligned(bc->verify_temp);
 
     free(bc->trimmed);
 
     bc->trimmed = NULL;
-    bc->temp = NULL;
+    bc->read_temp = NULL;
+    bc->verify_temp = NULL;
     bc->fd = -1;
     return 0;
 }

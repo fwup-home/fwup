@@ -1,0 +1,56 @@
+#!/bin/sh
+
+#
+# Verify can detect corruption of the most basic type
+#
+# Requires libwrite_shim.so helper
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+$HAS_WRITE_SHIM || exit 77
+
+cat >$CONFIG <<EOF
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource 1K.bin {
+                raw_write(0)
+        }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Sanity check that there are no issues normally
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+
+# Check that corruption is various places is detected
+if WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
+    echo "Expected MBR corruption to be detected."
+    exit 1
+fi
+
+if WRITE_SHIM_CORRUPT_OFFSET=512 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
+    echo "Expected MBR corruption to be detected."
+    exit 1
+fi
+
+if WRITE_SHIM_CORRUPT_OFFSET=1023 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
+    echo "Expected MBR corruption to be detected."
+    exit 1
+fi
+
+# Check that corruption isn't detected when verify-writes is off.
+WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+WRITE_SHIM_CORRUPT_OFFSET=512 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+WRITE_SHIM_CORRUPT_OFFSET=1023 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+
+# Check that default for regular files is off. I.e., this next line will pass.
+WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
