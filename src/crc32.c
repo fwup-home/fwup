@@ -1,5 +1,3 @@
-#include "crc32.h"
-
 // See https://github.com/panzi/CRC-and-checksum-functions
 
 /* Crc - 32 BIT ANSI X3.66 CRC checksum files */
