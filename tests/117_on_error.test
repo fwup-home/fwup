@@ -14,11 +14,14 @@ file-resource 1K.bin {
 	host-path = "${TESTFILE_1K}"
 }
 
-task complete {
+task mkfs {
     on-init {
         fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
     }
+}
+task complete {
     on-resource 1K.bin {
+        fat_touch(\${BOOT_PART_OFFSET}, "wont_make_it_out_of_cache")
         fat_write(\${BOOT_PART_OFFSET}, "this/will/fail/1k.bin")
     }
     on-error {
@@ -29,6 +32,7 @@ EOF
 
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t mkfs
 echo $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
     echo "The fat_write should have failed."

@@ -390,6 +390,24 @@ static int lrucompare(const void *pa, const void *pb)
     return a->last_access < b->last_access ? -1 : 1;
 }
 
+void block_cache_reset(struct block_cache *bc)
+{
+    // Throw away everything in the cache. This is only called on errors so
+    // that any writes that we still control can be cancelled to minimize
+    // changes. The block cache can be used again for error handling code.
+
+    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+        struct block_cache_segment *seg = &bc->segments[i];
+        if (seg->in_use) {
+            wait_for_write_completion(bc, seg);
+            seg->in_use = false;
+        }
+    }
+#if USE_PTHREADS
+    bc->bad_offset = -1;
+#endif
+}
+
 int block_cache_flush(struct block_cache *bc)
 {
     // Blocks must be written back from the one that was written first to the one that

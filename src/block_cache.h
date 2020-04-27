@@ -105,6 +105,7 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);
 int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset);
 int block_cache_flush(struct block_cache *bc);
+void block_cache_reset(struct block_cache *bc);
 int block_cache_free(struct block_cache *bc);
 
 #endif // BLOCK_CACHE_H

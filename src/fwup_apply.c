@@ -437,8 +437,16 @@ cleanup:
         // Do a best attempt at running any error handling code
         fctx->type = FUN_CONTEXT_ERROR;
 
-        // Ignore errors from on-error
-        apply_event(fctx, fctx->task, "on-error", NULL, fun_run);
+        // Since there's an error, throw out anything that's in the cache so
+        // that the error handler can start fresh.
+        fatfs_closefs();
+        block_cache_reset(fctx->output);
+
+        if (apply_event(fctx, fctx->task, "on-error", NULL, fun_run) < 0) {
+            // Yet another error so throw out the cache again.
+            fatfs_closefs();
+            block_cache_reset(fctx->output);
+        }
     }
     rlist_free(resources);
     return rc;
@@ -528,10 +536,9 @@ int fwup_apply(const char *fw_filename,
 cleanup:
     // Close the output
     if (fctx.output) {
-        // Even in the case of an error, flush to disk
-        // This makes failures slightly more predictable in
-        // how they'll turn out since we don't need to think
-        // about the caching.
+        // In the error case, flush in case the on-error
+        // handler left something. Errors in on-error are
+        // handled with the on-error call.
         fatfs_closefs();
         block_cache_flush(fctx.output); // Ignore errors
 
