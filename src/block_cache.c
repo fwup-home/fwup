@@ -392,19 +392,20 @@ static int lrucompare(const void *pa, const void *pb)
 
 int block_cache_flush(struct block_cache *bc)
 {
-    // Blocks must be written back from oldest to newest. This has one important
-    // purpose:
+    // Blocks must be written back from the one that was written first to the one that
+    // was written most recently. This has one important purpose:
     //
     // The ordering specified in the fwup.conf file is mostly preserved.
     // E.g., if there's an A/B partition switch done last in the fwup.conf,
     // it will be done last as part of the flush. This provides some
     // confidence that if the system crashes before the final write, the
-    // A/B switch won't occur. I said "mostly" preserved, since cache hits
-    // remove writes by design.
+    // A/B switch won't occur.
     //
-    // A related observation is that the write to a block has an error, the user
-    // can have confidence that the subsequent writes as specifed in the fwup.conf
-    // did not occur.
+    // Note that write order is "mostly" preserved since the cache converts the
+    // fwup configuration's view of writes (mkfs, MBR operations, raw writes, etc.)
+    // into 128 KB block operations. One 128 KB block can be the target of more
+    // than FAT operation or raw write, and when that happens, the most recent one
+    // drives the final sort order.
 
     struct block_cache_segment *sorted_segments[BLOCK_CACHE_NUM_SEGMENTS];
     for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++)
