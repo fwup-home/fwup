@@ -188,6 +188,7 @@ TESTS = 001_simple_fw.test \
 	172_delta_upgrade.test \
 	173_bad_delta_upgrades.test \
 	174_streamed_delta_upgrade.test \
-	175_sign_delta_upgrade.test
+	175_sign_delta_upgrade.test \
+	176_newline_in_key.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

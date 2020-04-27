@@ -1,0 +1,36 @@
+#!/bin/sh
+
+#
+# Test that having an extraneous whitespace in a public key is ok
+#
+# This fixes a slightly hard-to-debug issue when whitespace creeps into a key.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+# Create a key pair and put whitespace in it
+cd $WORK
+$FWUP_CREATE -g
+echo " \t\n" >> fwup-key.priv
+echo "\n" >> fwup-key.pub
+cd -
+
+# Create a test firmware file that's signed
+$FWUP_CREATE -s $WORK/fwup-key.priv -c -f $CONFIG -o $FWFILE
+
+# Whitespace in a file should work
+$FWUP_VERIFY -V -p $WORK/fwup-key.pub -i $FWFILE
+
+# Whitespace on the commandline should work
+KEY1=$(cat $WORK/fwup-key.pub)
+$FWUP_VERIFY -V --public-key "$KEY1" -i $FWFILE
