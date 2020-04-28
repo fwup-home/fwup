@@ -52,27 +52,6 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     # Build Windows package
     rm -f fwup.exe
     cp $FWUP_INSTALL_DIR/bin/fwup.exe .
-
-    mkdir -p $FWUP_INSTALL_DIR/fwup/tools
-    cp -f scripts/fwup.nuspec $FWUP_INSTALL_DIR/fwup/
-    sed -i "s/%VERSION%/$FWUP_VERSION/" $FWUP_INSTALL_DIR/fwup/fwup.nuspec
-    cp $FWUP_INSTALL_DIR/bin/fwup.exe $FWUP_INSTALL_DIR/fwup/tools/
-
-    cp -f scripts/VERIFICATION.txt $FWUP_INSTALL_DIR/fwup/tools/
-    sed -i "s/%VERSION%/$FWUP_VERSION/" $FWUP_INSTALL_DIR/fwup/tools/VERIFICATION.txt
-    cat scripts/LICENSE.txt LICENSE > $FWUP_INSTALL_DIR/fwup/tools/LICENSE.txt
-
-    # Wait to the last minute to build and install chocolatey since it's
-    # such a pain and kills Travis builds randomly and frequently.
-    $BASE_DIR/scripts/ubuntu_install_chocolatey.sh
-
-    cd $FWUP_INSTALL_DIR/fwup/
-    rm -f *.nupkg
-    export ChocolateyInstall=$DEPS_INSTALL_DIR/chocolatey
-    $ChocolateyInstall/console/choco.exe pack --allow-unofficial fwup.nuspec
-    cd $BASE_DIR
-    rm -f *.nupkg
-    cp $FWUP_INSTALL_DIR/fwup/*.nupkg .
 elif [ "$CROSS_COMPILE" = "arm-linux-gnueabihf" ]; then
     # Build Raspberry Pi package
 
