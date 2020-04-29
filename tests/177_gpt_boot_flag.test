@@ -1,0 +1,80 @@
+#!/bin/sh
+
+#
+# Test that "boot = true" sets bit 2 of the flags
+# This tests both using "boot = true" in isolation and with "flags = x"
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(EFI_TYPE, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b")
+define(LINUX_TYPE, "44479540-f297-41b2-9af7-d131d5f0458a")
+
+define(DISK_UUID, "b443fbeb-2c93-481b-88b3-0ecb0aeba911")
+define(EFI_PART_UUID, "5278721d-0089-4768-85df-b8f1b97e6684")
+define(ROOTFS_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
+
+define(EFI_PART_OFFSET, 64)
+define(EFI_PART_COUNT, 32768)
+define-eval(ROOTFS_PART_OFFSET, "\${EFI_PART_OFFSET} + \${EFI_PART_COUNT}")
+define(ROOTFS_PART_COUNT, 65536)
+
+gpt gpt-a {
+    guid = \${DISK_UUID}
+
+    partition 0 {
+        block-offset = \${EFI_PART_OFFSET}
+        block-count = \${EFI_PART_COUNT}
+        type = \${EFI_TYPE}
+        guid = \${EFI_PART_UUID}
+        name = "efi-part.vfat"
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_PART_OFFSET}
+        block-count = \${ROOTFS_PART_COUNT}
+        type = \${LINUX_TYPE}
+        guid = \${ROOTFS_PART_UUID}
+        name = "rootfs.ext2"
+        boot = true
+        flags = 0xc000000000000
+    }
+}
+task complete {
+	on-init {
+                gpt_write(gpt-a)
+        }
+}
+EOF
+
+# Create the expected output from sfdisk by running ./177_gpt_boot_flag-generate.sh on
+# Linux.
+base64_decodez >$WORK/expected-primary-gpt.img <<EOF
+H4sIAAAAAAAAA+3QwSuDcRzH8e+z5iKpnZHlJA1xVTyL2SSlxW0Hz2FPnGhbWkTPgcJVWs3Fjhxt
+B3ZQczJyoJz9ASshRVGPn/yect0OpN6vX0/P9/v7/Z7fp98jgv/MJw+u6xqqshyj7q9njyLjE8Hp
+cHxGxJCEmilUVta+VryzvFO7dG/qvvY+WtoNtcW2iq1XzbXDgE+vO/qx54r7jd0Iv6k73VPpfLsN
+lCfloDpcHepIZePbMh/dvD95Ol23N0y9b8T5fvt1nxRbFqRXlsSSlGSkT5bVjKWq+ph70bHc83E4
+/3ozcPcY2bloOv9o77+eOntZDeYLiUvT8fKNH/ktKnNRjYzKTKvspGRVPdj4bwAAAAAAAAAAAAAA
+AAAAAAAAAAAAAACAP/cJQQaM2gBCAAA=
+EOF
+base64_decodez >$WORK/expected-secondary-gpt.img <<EOF
+H4sIAAAAAAAAA+3bsUtCURTH8fOglohAaLNImiJKsTXI9yiziCCk0aE3+LApUQkhiDcUVGtEYEuN
+rdlQDkJNWTgUNIuzi4qQUIM3vEGrDeHw/Vwu59zDhR/3D7hT6emHifabp7Aml6WF0vx4Khs9lkTk
+sHLXuN93DkzpCrndOqDPcXFkW2YlKbakJCN+2VUTW3W9Mc8iS+fNGyv38Rp8r4dPngYfv8YC5fVi
+a8+Xu4o9m+5PvvErf1hl7qiVUZlplR2XrOrneswGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKBfhJdX
+fRtWdFPEkJg6G6PV9vfc1v/tDX1vUldTz2ufi7enM96Vo/zIy1Dt2mPpuau3s5W/+K834O86+NTZ
+EABCAAA=
+EOF
+cp $WORK/expected-primary-gpt.img $WORK/expected.img
+dd if=$WORK/expected-secondary-gpt.img of=$WORK/expected.img bs=512 seek=98369 conv=notrunc
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# The firmware file is equivalent to the following dd call
+cmp_bytes 50381824 $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

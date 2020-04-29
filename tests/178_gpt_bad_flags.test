@@ -1,0 +1,43 @@
+#!/bin/sh
+
+#
+# Test that an invalidate flags field in the GPT header errors out.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(EFI_TYPE, "c12a7328-f81f-11d2-ba4b-00a0c93ec93b")
+define(LINUX_TYPE, "44479540-f297-41b2-9af7-d131d5f0458a")
+
+define(DISK_UUID, "b443fbeb-2c93-481b-88b3-0ecb0aeba911")
+define(EFI_PART_UUID, "5278721d-0089-4768-85df-b8f1b97e6684")
+define(ROOTFS_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
+
+define(EFI_PART_OFFSET, 64)
+define(EFI_PART_COUNT, 32768)
+define-eval(ROOTFS_PART_OFFSET, "\${EFI_PART_OFFSET} + \${EFI_PART_COUNT}")
+define(ROOTFS_PART_COUNT, 65536)
+
+gpt gpt-a {
+    guid = \${DISK_UUID}
+
+    partition 0 {
+        block-offset = \${EFI_PART_OFFSET}
+        block-count = \${EFI_PART_COUNT}
+        type = \${EFI_TYPE}
+        guid = \${EFI_PART_UUID}
+        flags = nono
+    }
+}
+task complete {
+	on-init {
+                gpt_write(gpt-a)
+        }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected fwup to detect the bad gpt flags field."
+fi
+

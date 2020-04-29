@@ -545,12 +545,21 @@ gpt my-gpt {
         type = 44479540-f297-41b2-9af7-d131d5f0458a # Rootfs type UUID
         guid = fcc205c8-2f1c-4dcd-bef4-7b209aa15cca # Another uuidgen'd UUID
         name = "rootfs.ext2"
+        flags = 0xc000000000000
+        boot = true
     }
 }
 ```
 
-Call `gpt_write` to tell `fwup` to write the protective MBR and primary and backup
-GPT tables.
+See the GPT partition entry header specification for what `partition` fields
+mean and how to use them. Of the fields, `name`, `flags`, and `boot` are
+optional and default to an empty string, zero, or false. The `flags` field holds
+the integer value of the partition attribute field. It is a 64-bit number. Bit
+2, the legacy BIOS bootable flag, can also be set by specifying `boot = true`.
+Both `boot` and `flags` can be specified in a `partition` block.
+
+Call `gpt_write` to tell `fwup` to write the protective MBR and primary and
+backup GPT tables.
 
 ## U-Boot environment
 

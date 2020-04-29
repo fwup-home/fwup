@@ -19,6 +19,7 @@
 #include "util.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -229,11 +230,6 @@ static int gpt_cfg_to_partitions(cfg_t *cfg, struct gpt_partition *partitions, i
         char *endptr;
         unsigned long block_offset = strtoul(unverified_block_offset, &endptr, 0);
 
-        const char *unverified_flags = cfg_getstr(partition, "flags");
-        if (!unverified_flags)
-            ERR_RETURN("partition %d's flags is required", partition_ix);
-        uint64_t flags = strtoull(unverified_flags, &endptr, 0);
-
         // strtoul returns error by returning ULONG_MAX and setting errno.
         // Values bigger than 2^32-1 won't fit in the MBR, so report an
         // error for those too.
@@ -249,6 +245,29 @@ static int gpt_cfg_to_partitions(cfg_t *cfg, struct gpt_partition *partitions, i
             ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
 
         partitions[partition_ix].expand_flag = cfg_getbool(partition, "expand");
+
+        const char *unverified_flags_str = cfg_getstr(partition, "flags");
+        uint64_t flags = 0;
+        if (unverified_flags_str) {
+            uint64_t unverified_flags = strtoull(unverified_flags_str, &endptr, 0);
+            if ((unverified_flags == ULLONG_MAX && errno != 0) || *endptr != '\0')
+                ERR_RETURN("error parsing partition %d's flags", partition_ix);
+            flags = unverified_flags;
+        }
+
+        // Boot for GPT partitions means bit 2 of the attribute flags is set.
+        if (cfg_getbool(partition, "boot")) {
+            flags |= 0x4;
+
+            // Support for "boot" was not added until after 1.6.0. To support
+            // older versions of fwup, update the "flags" field with the bit
+            // on.
+            char new_flags_str[32];
+            sprintf(new_flags_str, "0x%" PRIx64, flags);
+            cfg_setstr(partition, "flags", new_flags_str);
+            cfg_setbool(partition, "boot", cfg_false);
+        }
+
         partitions[partition_ix].flags = flags;
         partitions[partition_ix].valid = true;
     }

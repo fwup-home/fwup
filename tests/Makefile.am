@@ -41,18 +41,18 @@ TESTS = 001_simple_fw.test \
 	024_metadata_sig.test \
 	025_bad_sig.test \
 	026_sign_again.test \
-        027_fat_timestamp.test \
-        028_osip.test \
+	027_fat_timestamp.test \
+	028_osip.test \
 	029_5G_offset.test \
 	030_2T_offset.test \
 	031_fat_mkfs_5G.test \
 	032_fat_2T_offset.test \
 	033_bad_host_path.test \
-        034_missing_host_path.test \
-        035_streaming.test \
-        036_streaming_signed_fw.test \
-        037_streaming_bad_sig.test \
-        038_write_15M.test \
+	034_missing_host_path.test \
+	035_streaming.test \
+	036_streaming_signed_fw.test \
+	037_streaming_bad_sig.test \
+	038_write_15M.test \
 	039_upgrade.test \
 	041_version.test \
 	042_fat_am335x.test \
@@ -158,7 +158,7 @@ TESTS = 001_simple_fw.test \
 	142_file_resource_size.test \
 	143_include_path.test \
 	144_require_version.test \
-        145_require_path_at_offset.test \
+	145_require_path_at_offset.test \
 	146_deploy_variables.test \
 	147_multiple_keys.test \
 	148_config_from_stdin.test \
@@ -189,6 +189,8 @@ TESTS = 001_simple_fw.test \
 	173_bad_delta_upgrades.test \
 	174_streamed_delta_upgrade.test \
 	175_sign_delta_upgrade.test \
-	176_newline_in_key.test
+	176_newline_in_key.test \
+	177_gpt_boot_flag.test \
+	178_gpt_bad_flags.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
