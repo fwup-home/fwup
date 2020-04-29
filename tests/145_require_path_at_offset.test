@@ -12,11 +12,11 @@ case $HOST_OS in
     Darwin|Windows)
         # require-path-on-device not implemented due to not
 	# expecting it to be needed.
-        exit 0
+        exit 77
         ;;
     FreeBSD|NetBSD|OpenBSD|DragonFly)
         # find_rdev doesn't work due to stat calls.
-        exit 0
+        exit 77
         ;;
     *)
         ;;
@@ -25,7 +25,7 @@ esac
 if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
     # Try to detect the cross-compile for Windows case since
     # this really doesn't make sense for this test.
-    exit 0
+    exit 77
 fi
 
 # Figure out where the root filesystem is. Sadly, we can't
@@ -45,7 +45,7 @@ find_rdev() {
 RDEV=$(find_rdev)
 if [ -z $RDEV ]; then
     echo "The root filesystem doesn't map to one device file, so can't test for rdev"
-    exit 0
+    exit 77
 fi
 
 # Get the major and minor number in decimal
@@ -55,7 +55,7 @@ RDEV_MINOR=$(printf "%d" 0x$(stat $RDEV -c "%T"))
 RDEV_START_FILE=/sys/dev/block/$RDEV_MAJOR:$RDEV_MINOR/start
 if [ ! -e "$RDEV_START_FILE" ]; then
     echo "Couldn't open $RDEV_START_FILE so likely non-trivial rootfs. Skipping test"
-    exit 0
+    exit 77
 fi
 
 # Get the start block offset

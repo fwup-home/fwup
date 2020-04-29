@@ -16,7 +16,7 @@ SPARSE_FILE=$WORK/sparse.bin
 
 if ! $FWUP_CREATE --sparse-check "$SPARSE_FILE" --sparse-check-size 4096; then
     echo "Skipping sparse file tests since OS or filesystem lacks support"
-    exit 0
+    exit 77
 fi
 
 TESTFILE_4K=$WORK/4k.bin

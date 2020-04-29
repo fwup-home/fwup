@@ -13,7 +13,7 @@
 # sparse file support.
 if ! $FWUP_CREATE --sparse-check "$IMGFILE" --sparse-check-size 4096; then
     echo "Skipping media size tests since OS or filesystem lacks sparse file support"
-    exit 0
+    exit 77
 fi
 
 cat >$CONFIG <<EOF

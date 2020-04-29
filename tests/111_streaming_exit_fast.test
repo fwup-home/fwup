@@ -11,7 +11,7 @@
 
 if [ -z $TIMEOUT ]; then
     echo "GNU coreutils' timeout command unavailable so skipping test."
-    exit 0
+    exit 77
 fi
 
 cat >$CONFIG <<EOF

@@ -11,7 +11,7 @@
 # at least 1 MB hole size support)
 if ! $FWUP_CREATE --sparse-check "$WORK/sparse.bin" --sparse-check-size 0x100000; then
     echo "Skipping test since OS or filesystem lacks sparse file support"
-    exit 0
+    exit 77
 fi
 
 cat >$CONFIG <<EOF
