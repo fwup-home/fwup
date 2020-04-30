@@ -116,8 +116,7 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 #
 # verify-syscalls - requires ptrace so Linux-only
 # write_shim - shared library. Hasn't been ported to OSX.
-AM_CONDITIONAL([IS_CROSSCOMPILING], [test x$cross_compiling = x"yes"])
-AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu"])
+AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no"])
 AM_CONDITIONAL([HAS_WRITE_SHIM], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no" -a x$enable_shared = x"yes"])
 
 # Scripts
