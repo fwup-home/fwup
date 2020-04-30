@@ -89,14 +89,14 @@ if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY_NO_CHECK ]; then FWUP_APPLY_NO_CHECK=$FWUP_APPLY; fi
 if [ -z $FWUP_VERIFY ]; then FWUP_VERIFY=$FWUP_DEFAULT; fi
 
-FRAMING_HELPER=$TESTS_DIR/framing-helper$EXEEXT
+FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper$EXEEXT
 
 # The syscall verification code only runs on a subset of
 # platforms. Let autoconf figure out which ones and run it
 # if the verify-syscalls program built.
-if [ -e $TESTS_DIR/verify-syscalls ]; then
+if [ -e $TESTS_DIR/fixture/verify-syscalls ]; then
     export VERIFY_SYSCALLS_CMD=$FWUP_APPLY
-    FWUP_APPLY=$TESTS_DIR/verify-syscalls
+    FWUP_APPLY=$TESTS_DIR/fixture/verify-syscalls
 fi
 
 WORK=$TESTS_DIR/work-$(basename "$0")

@@ -127,6 +127,6 @@ AC_MSG_CHECKING([whether to enable gcov])
 AS_IF([test "x${enable_gcov}" = "xyes" ], AC_MSG_RESULT([yes]), AC_MSG_RESULT([no]))
 AM_CONDITIONAL([ENABLE_GCOV],[test "x${enable_gcov}" = "xyes"])
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile docs/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile docs/Makefile tests/fixture/Makefile])
 
 AC_OUTPUT
