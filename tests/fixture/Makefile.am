@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 
-noinst_PROGRAMS=framing-helper
+check_PROGRAMS=framing-helper
 framing_helper_SOURCES=framing-helper.c
 
 if HAS_VERIFY_SYSCALLS
@@ -10,7 +10,7 @@ if HAS_VERIFY_SYSCALLS
 # through qemu. Also, Windows doesn't have the same constraints
 # as Linux, so verify-syscalls may be overly picky.
 if !IS_CROSSCOMPILING
-noinst_PROGRAMS+=verify-syscalls
+check_PROGRAMS+=verify-syscalls
 verify_syscalls_SOURCES=verify-syscalls.c
 endif
 endif
