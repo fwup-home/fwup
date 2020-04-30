@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_SIGN(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_SIGN(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_SIGN(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_sign</b>,
+  <b class="Nm" title="Nm">crypto_check</b>,
+  <b class="Nm" title="Nm">crypto_sign_public_key</b> &#x2014;
+  <span class="Nd" title="Nd">public key signatures</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_sign_public_key</b>(<var class="Fa" title="Fa">uint8_t
+  public_key[32]</var>, <var class="Fa" title="Fa">const uint8_t
+  secret_key[32]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_sign</b>(<var class="Fa" title="Fa">uint8_t
+  signature[64]</var>, <var class="Fa" title="Fa">const uint8_t
+  secret_key[32]</var>, <var class="Fa" title="Fa">const uint8_t
+  public_key[32]</var>, <var class="Fa" title="Fa">const uint8_t *message</var>,
+  <var class="Fa" title="Fa">size_t message_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_check</b>(<var class="Fa" title="Fa">const
+  uint8_t signature[64]</var>, <var class="Fa" title="Fa">const uint8_t
+  public_key[32]</var>, <var class="Fa" title="Fa">const uint8_t *message</var>,
+  <var class="Fa" title="Fa">size_t message_size</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b class="Fn" title="Fn">crypto_sign</b>() and
+  <b class="Fn" title="Fn">crypto_check</b>() provide EdDSA public key
+  signatures and verification.
+<div class="Pp"></div>
+The arguments are:
+<dl class="Bl-tag">
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">signature</var></dt>
+  <dd class="It-tag">The signature.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">secret_key</var></dt>
+  <dd class="It-tag">A 32-byte random number, known only to you. See
+      <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a> about
+      random number generation (use your operating system's random number
+      generator). Do not use the same private key for both signatures and key
+      exchanges. The public keys are different, and revealing both may leak
+      information.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">public_key</var></dt>
+  <dd class="It-tag">The public key, generated from
+      <var class="Fa" title="Fa">secret_key</var> with
+      <b class="Fn" title="Fn">crypto_sign_public_key</b>().</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">message</var></dt>
+  <dd class="It-tag">Message to sign.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">message_size</var></dt>
+  <dd class="It-tag">Length of <var class="Fa" title="Fa">message</var>, in
+      bytes.</dd>
+</dl>
+<div class="Pp"></div>
+<var class="Fa" title="Fa">signature</var> and
+  <var class="Fa" title="Fa">message</var> may overlap.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_sign_public_key</b>() computes the public key of
+  the specified secret key.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_sign</b>() signs a message with
+  <var class="Fa" title="Fa">secret_key</var>. The public key is optional, and
+  will be recomputed if not provided. This recomputation doubles the execution
+  time.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_check</b>() checks that a given signature is
+  genuine. Meaning, only someone who had the private key could have signed the
+  message. <b class="Sy" title="Sy">It does not run in constant time</b>. It
+  does not have to in most threat models, because nothing is secret: everyone
+  knows the public key, and the signature and message are rarely secret. If the
+  message needs to be secret, use
+  <a class="Xr" title="Xr" href="crypto_key_exchange.html">crypto_key_exchange(3monocypher)</a>
+  and
+  <a class="Xr" title="Xr" href="crypto_lock_aead.html">crypto_lock_aead(3monocypher)</a>
+  instead.
+<div class="Pp"></div>
+An incremental interface is available; see
+  <a class="Xr" title="Xr" href="crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<b class="Fn" title="Fn">crypto_sign_public_key</b>() and
+  <b class="Fn" title="Fn">crypto_sign</b>() return nothing.
+<div class="Pp"></div>
+<b class="Fn" title="Fn">crypto_check</b>() returns 0 for legitimate messages
+  and -1 for forgeries.
+<h1 class="Sh" title="Sh" id="EXAMPLES"><a class="selflink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following examples assume the existence of
+  <b class="Fn" title="Fn">arc4random_buf</b>(), which fills the given buffer
+  with cryptographically secure random bytes. If
+  <b class="Fn" title="Fn">arc4random_buf</b>() does not exist on your system,
+  see <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a> for
+  advice about how to generate cryptographically secure random bytes.
+<div class="Pp"></div>
+Generate a public key from a random secret key:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+uint8_t       sk[32]; /* Random secret key   */ 
+uint8_t       pk[32]; /* Matching public key */ 
+arc4random_buf(sk, 32); 
+crypto_sign_public_key(pk, sk); 
+/* Wipe the secret key if it is no longer needed */ 
+crypto_wipe(sk, 32);
+</pre>
+</div>
+<div class="Pp"></div>
+Sign a message:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+uint8_t       sk       [32]; /* Secret key from above          */ 
+const uint8_t pk       [32]; /* Matching public key            */ 
+const uint8_t message  [11] = &quot;Lorem ipsu&quot;; /* Message to sign */ 
+uint8_t       signature[64]; 
+crypto_sign(signature, sk, pk, message, 10); 
+/* Wipe the secret key if it is no longer needed */ 
+crypto_wipe(sk, 32);
+</pre>
+</div>
+<div class="Pp"></div>
+Check the above:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t pk       [32]; /* Their public key              */ 
+const uint8_t message  [11] = &quot;Lorem ipsu&quot;; /* Signed message */ 
+const uint8_t signature[64]; /* Signature to check            */ 
+if (crypto_check(signature, pk, message, 10)) { 
+    /* Message is corrupted, abort processing */ 
+} else { 
+    /* Message is genuine */ 
+}
+</pre>
+</div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_blake2b.html">crypto_blake2b(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_key_exchange.html">crypto_key_exchange(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="STANDARDS"><a class="selflink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement PureEdDSA with Curve25519 and Blake2b, as described in
+  RFC 8032. This is the same as Ed25519, with Blake2b instead of SHA-512.
+<h1 class="Sh" title="Sh" id="HISTORY"><a class="selflink" href="#HISTORY">HISTORY</a></h1>
+The <b class="Fn" title="Fn">crypto_sign</b>(),
+  <b class="Fn" title="Fn">crypto_check</b>(), and
+  <b class="Fn" title="Fn">crypto_sign_public_key</b>() functions appeared in
+  Monocypher 0.2.
+<div class="Pp"></div>
+<b class="Sy" title="Sy">A critical security vulnerability</b> that caused
+  all-zero signatures to be accepted was introduced in Monocypher 0.3; it was
+  fixed in Monocypher 1.1.1 and 2.0.4.
+<h1 class="Sh" title="Sh" id="SECURITY_CONSIDERATIONS"><a class="selflink" href="#SECURITY_CONSIDERATIONS">SECURITY
+  CONSIDERATIONS</a></h1>
+<h2 class="Ss" title="Ss" id="Signature_malleability"><a class="selflink" href="#Signature_malleability">Signature
+  malleability</a></h2>
+EdDSA signatures are not unique like cryptographic hashes. For any given public
+  key and message, there are many possible valid signatures. Some of them
+  require knowledge of the private key. Others only require knowledge of an
+  existing signature. Observing a valid signature only proves that someone with
+  knowledge of the private key signed the message at some point. Do not rely on
+  any other security property.
+<h2 class="Ss" title="Ss" id="Fault_injection_and_power_analysis"><a class="selflink" href="#Fault_injection_and_power_analysis">Fault
+  injection and power analysis</a></h2>
+Fault injection (also known as glitching) and power analysis may be used to
+  manipulate the resulting signature and recover the secret key in some cases.
+  This requires hardware access. If attackers are expected to have such access
+  and have the relevant equipment, you may try use the incremental interface
+  provided by
+  <a class="Xr" title="Xr" href="crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>
+  to mitigate the side channel attacks. Note that there may still be other
+  power-related side channels (such as if the CPU leaks information when an
+  operation overflows a register) that must be considered.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">March 31, 2020</td>
+    <td class="foot-os">Linux 4.15.0-91-generic</td>
+  </tr>
+</table>
+</body>
+</html>

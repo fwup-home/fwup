@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_POLY1305(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_POLY1305(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_POLY1305(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_poly1305</b>,
+  <b class="Nm" title="Nm">crypto_poly1305_init</b>,
+  <b class="Nm" title="Nm">crypto_poly1305_update</b>,
+  <b class="Nm" title="Nm">crypto_poly1305_final</b> &#x2014;
+  <span class="Nd" title="Nd">Poly1305 one-time message authentication
+  codes</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_poly1305</b>(<var class="Fa" title="Fa">uint8_t
+  mac[16]</var>, <var class="Fa" title="Fa">const uint8_t *message</var>,
+  <var class="Fa" title="Fa">size_t message_size</var>,
+  <var class="Fa" title="Fa">const uint8_t key[32]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_poly1305_init</b>(<var class="Fa" title="Fa">crypto_poly1305_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_poly1305_update</b>(<var class="Fa" title="Fa">crypto_poly1305_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t *message</var>,
+  <var class="Fa" title="Fa">size_t message_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_poly1305_final</b>(<var class="Fa" title="Fa">crypto_poly1305_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t mac[16]</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+Poly1305 is a one-time message authentication code. &#x201C;One-time&#x201D;
+  means the authentication key can be used only once.
+  <b class="Sy" title="Sy">This makes Poly1305 easy to misuse</b>. On the other
+  hand, Poly1305 is fast, and provably secure if used correctly.
+<div class="Pp"></div>
+Poly1305 is a low-level primitive. Consider using authenticated encryption,
+  implemented by
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>.
+<div class="Pp"></div>
+The arguments are:
+<dl class="Bl-tag">
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">mac</var></dt>
+  <dd class="It-tag">The authentication code.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">key</var></dt>
+  <dd class="It-tag">The secret authentication key. Use only once per message.
+      Do not use the session key to authenticate messages. It should be wiped
+      with
+      <a class="Xr" title="Xr" href="crypto_wipe.html">crypto_wipe(3monocypher)</a>
+      after use.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">message</var></dt>
+  <dd class="It-tag">The message to authenticate. May overlap with the
+      <var class="Fa" title="Fa">mac</var> argument.</dd>
+  <dt class="It-tag">&#x00A0;</dt>
+  <dd class="It-tag">&#x00A0;</dd>
+  <dt class="It-tag"><var class="Fa" title="Fa">message_size</var></dt>
+  <dd class="It-tag">Length of <var class="Fa" title="Fa">message</var>, in
+      bytes.</dd>
+</dl>
+<h2 class="Ss" title="Ss" id="Direct_interface"><a class="selflink" href="#Direct_interface">Direct
+  interface</a></h2>
+<b class="Fn" title="Fn">crypto_poly1305</b>() produces a message authentication
+  code for the given message and authentication key. To verify the integrity of
+  a message, use
+  <a class="Xr" title="Xr" href="crypto_verify16.html">crypto_verify16(3monocypher)</a>
+  to compare the received MAC to the output
+  <var class="Fa" title="Fa">mac</var>.
+<h2 class="Ss" title="Ss" id="Incremental_interface"><a class="selflink" href="#Incremental_interface">Incremental
+  interface</a></h2>
+<b class="Fn" title="Fn">crypto_poly1305_init</b>() initialises a context.
+  <var class="Fa" title="Fa">key</var> should be wiped once the context is
+  initialised. Then, <b class="Fn" title="Fn">crypto_poly1305_update</b>()
+  authenticates the message chunk by chunk. Once the message is entirely
+  processed, <b class="Fn" title="Fn">crypto_poly1305_final</b>() yields the
+  message authentication code.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+These functions return nothing.
+<h1 class="Sh" title="Sh" id="EXAMPLES"><a class="selflink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following examples assume the existence of
+  <b class="Fn" title="Fn">arc4random_buf</b>(), which fills the given buffer
+  with cryptographically secure random bytes. If
+  <b class="Fn" title="Fn">arc4random_buf</b>() does not exist on your system,
+  see <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a> for
+  advice about how to generate cryptographically secure random bytes.
+<div class="Pp"></div>
+To authenticate a message:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t msg[ 5] = &quot;Lorem&quot;; /* Message to authenticate */ 
+uint8_t       key[32]; /* Random secret key (use only once) */ 
+uint8_t       mac[16]; /* Message authentication code (MAC) */ 
+arc4random_buf(key, 32); 
+crypto_poly1305(mac, msg, 5, key); 
+/* Wipe the key */ 
+crypto_wipe(key, 32);
+</pre>
+</div>
+<div class="Pp"></div>
+To verify the above message:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t msg     [ 5] = &quot;Lorem&quot;; /* Message to verify */ 
+uint8_t       key     [32];           /* The above key     */ 
+const uint8_t mac     [16];           /* The above MAC     */ 
+uint8_t       real_mac[16];           /* The actual MAC    */ 
+crypto_poly1305(real_mac, msg, 5, key); 
+/* Wipe the key */ 
+crypto_wipe(key, 32); 
+if (crypto_verify16(mac, real_mac)) { 
+    /* Corrupted message, abort processing */ 
+} else { 
+    /* Genuine message */ 
+} 
+/* The real mac is secret.  Wipe it */ 
+crypto_wipe(real_mac, 16);
+</pre>
+</div>
+<div class="Pp"></div>
+Incremental authentication:
+<div class="Pp"></div>
+<div class="Bd" style="margin-left: 5.00ex;">
+<pre class="Li">
+const uint8_t msg[500]= {1}; /* Message to authenticate      */ 
+uint8_t       key[ 32]; /* Random secret key (use only once) */ 
+uint8_t       mac[ 16]; /* Message authentication code (MAC) */ 
+crypto_poly1305_ctx ctx; 
+arc4random_buf(key, 32); 
+crypto_poly1305_init(&amp;ctx, key); 
+/* Wipe the key */ 
+crypto_wipe(key, 32); 
+for (int i = 0; i &lt; 500; i += 100) { 
+    crypto_poly1305_update(&amp;ctx, msg, 100); 
+} 
+crypto_poly1305_final(&amp;ctx, mac);
+</pre>
+</div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_blake2b.html">crypto_blake2b(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_verify16.html">crypto_verify16(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="STANDARDS"><a class="selflink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement Poly1305, described in RFC 8439.
+<h1 class="Sh" title="Sh" id="HISTORY"><a class="selflink" href="#HISTORY">HISTORY</a></h1>
+The <b class="Fn" title="Fn">crypto_poly1305_init</b>(),
+  <b class="Fn" title="Fn">crypto_poly1305_update</b>(), and
+  <b class="Fn" title="Fn">crypto_poly1305_final</b>() functions first appeared
+  in Monocypher 0.1. <b class="Fn" title="Fn">crypto_poly1305</b>() first
+  appeared in Monocypher 1.1.0.
+<h1 class="Sh" title="Sh" id="SECURITY_CONSIDERATIONS"><a class="selflink" href="#SECURITY_CONSIDERATIONS">SECURITY
+  CONSIDERATIONS</a></h1>
+Poly1305 is difficult to use correctly. Do not use it unless you are absolutely
+  sure what you are doing. Use authenticated encryption instead; see
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>.
+  If you are certain you do not want encryption, refer to
+  <a class="Xr" title="Xr" href="crypto_blake2b.html">crypto_blake2b(3monocypher)</a>
+  on how to use Blake2b to generate message authentication codes.
+<h2 class="Ss" title="Ss" id="Authentication_key_requirements"><a class="selflink" href="#Authentication_key_requirements">Authentication
+  key requirements</a></h2>
+Poly1305 is a <i class="Em" title="Em">one-time</i> authenticator. This puts
+  rather stringent constraints on the authentication key:
+<ul class="Bl-bullet">
+  <li class="It-bullet">Any given key must be used only once. Using the same key
+      for two different messages reveals it to the attacker. Do not use the
+      session key, or it will void all security.</li>
+  <li class="It-bullet">Authentication keys must be random, and independent from
+      each other. Do not use non-random nonces. Do not use related keys. Use
+      fresh, unpredictable, uniformly distributed random numbers.</li>
+  <li class="It-bullet">The key must be transmitted to the recipient without
+      revealing it to the attacker. Somehow.</li>
+</ul>
+<div class="Pp"></div>
+The only practical source for the authentication key is a chunk of the
+  encryption stream used to encrypt the message. That chunk must be
+  <i class="Em" title="Em">dedicated</i> to the authentication key: if it is
+  reused to encrypt the message itself, the attacker may recover that chunk by
+  guessing the message, then forge arbitrary messages.
+<div class="Pp"></div>
+To get this right, you need a session key, a <i class="Em" title="Em">unique</i>
+  nonce, and a stream cipher. Generate a stream with the session key and nonce.
+  Take the first 32 bytes of that stream as your authentication key, then use
+  the <i class="Em" title="Em">rest</i> of the stream to encrypt your message.
+  This is the approach used by
+  <a class="Xr" title="Xr" href="crypto_lock_aead.html">crypto_lock_aead(3monocypher)</a>.
+<h2 class="Ss" title="Ss" id="Protection_against_side_channels"><a class="selflink" href="#Protection_against_side_channels">Protection
+  against side channels</a></h2>
+Use
+  <a class="Xr" title="Xr" href="crypto_verify16.html">crypto_verify16(3monocypher)</a>
+  to compare message authentication codes. Avoid standard buffer comparison
+  functions. They may not run in constant time, enabling an attacker to exploit
+  timing attacks to recover the MAC.
+<div class="Pp"></div>
+The authentication key should be wiped with
+  <a class="Xr" title="Xr" href="crypto_wipe.html">crypto_wipe(3monocypher)</a>
+  after use.
+<div class="Pp"></div>
+The incremental interface automatically wipes its context when finished so users
+  do not need to do it themselves.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">March 31, 2020</td>
+    <td class="foot-os">Linux 4.15.0-91-generic</td>
+  </tr>
+</table>
+</body>
+</html>

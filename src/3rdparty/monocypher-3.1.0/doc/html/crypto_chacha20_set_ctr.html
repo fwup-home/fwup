@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_CHACHA20_ENCRYPT(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_CHACHA20_ENCRYPT(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_CHACHA20_ENCRYPT(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_chacha20_encrypt</b>,
+  <b class="Nm" title="Nm">crypto_chacha20_init</b>,
+  <b class="Nm" title="Nm">crypto_chacha20_x_init</b>,
+  <b class="Nm" title="Nm">crypto_chacha20_stream</b>,
+  <b class="Nm" title="Nm">crypto_chacha20_set_ctr</b> &#x2014;
+  <span class="Nd" title="Nd">deprecated Chacha20 and XChacha20 encryption
+  functions</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_chacha20_init</b>(<var class="Fa" title="Fa">crypto_chacha_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[8]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_chacha20_x_init</b>(<var class="Fa" title="Fa">crypto_chacha_ctx
+  *ctx</var>, <var class="Fa" title="Fa">const uint8_t key[32]</var>,
+  <var class="Fa" title="Fa">const uint8_t nonce[24]</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_chacha20_encrypt</b>(<var class="Fa" title="Fa">crypto_chacha_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t *cipher_text</var>,
+  <var class="Fa" title="Fa">const uint8_t *plain_text</var>,
+  <var class="Fa" title="Fa">size_t text_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_chacha20_stream</b>(<var class="Fa" title="Fa">crypto_chacha_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint8_t *stream</var>,
+  <var class="Fa" title="Fa">size_t stream_size</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<b class="Fn" title="Fn">crypto_chacha20_set_ctr</b>(<var class="Fa" title="Fa">crypto_chacha_ctx
+  *ctx</var>, <var class="Fa" title="Fa">uint64_t ctr</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+These functions provided an incremental interface for the Chacha20 cipher. They
+  are deprecated in favor of
+  <a class="Xr" title="Xr" href="crypto_chacha20.html">crypto_chacha20(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_chacha20_ctr.html">crypto_chacha20_ctr(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_xchacha20.html">crypto_xchacha20(3monocypher)</a>,
+  and
+  <a class="Xr" title="Xr" href="crypto_xchacha20_ctr.html">crypto_xchacha20_ctr(3monocypher)</a>.
+<div class="Pp"></div>
+For encryption, you can achieve an identical effect as the deprecated functions
+  by using
+  <a class="Xr" title="Xr" href="crypto_chacha20_ctr.html">crypto_chacha20_ctr(3monocypher)</a>
+  or
+  <a class="Xr" title="Xr" href="crypto_xchacha20_ctr.html">crypto_xchacha20_ctr(3monocypher)</a>.
+  Care needs to be taken with regards to handling the counter value when
+  migrating old code to use the new functions. The new functions
+  <i class="Em" title="Em">always return next counter value</i>. This means that
+  input ciphertexts or plaintexts whose lengths are not exactly multiples of 64
+  bytes advance the counter, even though there is theoretically some space left
+  in a Chacha20 block. New applications should design their code so that either
+  the protocl is not reliant on the counter covering the entire text (e.g. by
+  cutting input into independent chunks) or inputs are always such that their
+  lengths are multiples of 64 bytes (e.g. by buffering input until 64 bytes have
+  been obtained).
+<div class="Pp"></div>
+To obtain the raw Chacha20 stream previously provided by
+  <b class="Fn" title="Fn">crypto_chacha20_stream</b>(), pass
+  <code class="Dv" title="Dv">NULL</code> to
+  <a class="Xr" title="Xr" href="crypto_chacha20.html">crypto_chacha20</a> as
+  plaintext.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="selflink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+These functions return nothing.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_chacha20.html">crypto_chacha20(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_chacha20_ctr.html">crypto_chacha20_ctr(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_xchacha20.html">crypto_xchacha20(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_xchacha20_ctr.html">crypto_xchacha20_ctr(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="HISTORY"><a class="selflink" href="#HISTORY">HISTORY</a></h1>
+The <b class="Fn" title="Fn">crypto_chacha20_encrypt</b>(),
+  <b class="Fn" title="Fn">crypto_chacha20_init</b>(), functions first appeared
+  in Monocypher 0.1. <b class="Fn" title="Fn">crypto_chacha20_stream</b>() was
+  added in Monocypher 0.2. <b class="Fn" title="Fn">crypto_chacha20_x_init</b>()
+  and <b class="Fn" title="Fn">crypto_chacha20_set_ctr</b>() were added in
+  Monocypher 1.0. They were deprecated in Monocypher 3.0.0 and will be removed
+  in Monocypher 4.0.0.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">December 2, 2019</td>
+    <td class="foot-os">Linux 4.15.0-91-generic</td>
+  </tr>
+</table>
+</body>
+</html>

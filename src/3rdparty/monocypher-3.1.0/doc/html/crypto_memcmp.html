@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_MEMCMP(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_MEMCMP(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_MEMCMP(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="selflink" href="#NAME">NAME</a></h1>
+<b class="Nm" title="Nm">crypto_memcmp</b>,
+  <b class="Nm" title="Nm">crypto_zerocmp</b> &#x2014;
+  <span class="Nd" title="Nd">deprecated timing-safe data comparisons</span>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="selflink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b class="In" title="In">#include
+  &lt;<a class="In" title="In">monocypher.h</a>&gt;</b>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_memcmp</b>(<var class="Fa" title="Fa">const
+  uint8_t *p1</var>, <var class="Fa" title="Fa">const uint8_t *p2</var>,
+  <var class="Fa" title="Fa">size_t n</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<b class="Fn" title="Fn">crypto_zerocmp</b>(<var class="Fa" title="Fa">const
+  uint8_t *p</var>, <var class="Fa" title="Fa">size_t n</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="selflink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b class="Fn" title="Fn">crypto_memcmp</b>() and
+  <b class="Fn" title="Fn">crypto_zerocmp</b>() were meant to provide
+  timing-safe data comparison. They have been removed from Monocypher because
+  they could not uphold those guarantees when compiled with
+  <b class="Fl" title="Fl">-O3</b> on common compilers. Use
+  <a class="Xr" title="Xr" href="crypto_verify16.html">crypto_verify16(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="crypto_verify32.html">crypto_verify32(3monocypher)</a>
+  and
+  <a class="Xr" title="Xr" href="crypto_verify64.html">crypto_verify64(3monocypher)</a>
+  instead.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="selflink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="crypto_verify16.html">crypto_verify16(3monocypher)</a>,
+  <a class="Xr" title="Xr" href="intro.html">intro(3monocypher)</a>
+<h1 class="Sh" title="Sh" id="HISTORY"><a class="selflink" href="#HISTORY">HISTORY</a></h1>
+The <b class="Fn" title="Fn">crypto_memcmp</b>() function first appeared in
+  Monocypher 0.1. <b class="Fn" title="Fn">crypto_zerocmp</b>() was introduced
+  in Monocypher 0.6. These functions were removed in Monocypher 1.1.0.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">December 28, 2017</td>
+    <td class="foot-os">Linux 4.15.0-65-generic</td>
+  </tr>
+</table>
+</body>
+</html>
