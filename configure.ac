@@ -113,7 +113,7 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 
 # Ptrace checks in regression tests
 AM_CONDITIONAL([IS_CROSSCOMPILING], [test x$cross_compiling = x"yes"])
-AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu"])
+AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu"])
 
 # Scripts
 AC_ARG_ENABLE(scripts,[AS_HELP_STRING([--disable-scripts], [do not install img2fwup and any other helper scripts])])
