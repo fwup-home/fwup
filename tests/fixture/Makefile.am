@@ -15,3 +15,12 @@ verify_syscalls_SOURCES=verify-syscalls.c
 endif
 endif
 
+if HAS_WRITE_SHIM
+check_LTLIBRARIES = libwrite_shim.la
+libwrite_shim_la_SOURCES = write_shim.c
+
+# The "-rpath /nowhere" is the trick to getting libtool to create a shared library for
+# "check" LTLIBRARIES.
+libwrite_shim_la_LDFLAGS = ${AM_LDFLAGS} -ldl -module -avoid-version -shared -rpath /nowhere
+libwrite_shim_la_CFLAGS = ${AM_CFLAGS}
+endif

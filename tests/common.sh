@@ -99,6 +99,17 @@ if [ -e $TESTS_DIR/fixture/verify-syscalls ]; then
     FWUP_APPLY=$TESTS_DIR/fixture/verify-syscalls
 fi
 
+# The write fault simulator only runs only runs on a subset of
+# platforms. Let autoconf figure out which ones.
+WRITE_SHIM="$TESTS_DIR/fixture/.libs/libwrite_shim.so"
+if [ -e "$WRITE_SHIM" ]; then
+    export HAS_WRITE_SHIM=true
+    export LD_PRELOAD="$WRITE_SHIM"
+    export DYLD_INSERT_LIBRARIES="$WRITE_SHIM"
+else
+    export HAS_WRITE_SHIM=false
+fi
+
 WORK=$TESTS_DIR/work-$(basename "$0")
 RESULTS=$WORK/results
 

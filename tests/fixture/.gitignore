@@ -1,2 +1,4 @@
 /framing-helper
 /verify-syscalls
+/.libs
+/libwrite_shim*

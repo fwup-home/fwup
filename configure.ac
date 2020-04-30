@@ -10,6 +10,7 @@ AC_CANONICAL_HOST
 
 # Check for programs
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_LIBTOOL
 AC_PATH_PROG([HELP2MAN], help2man)
 AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
@@ -111,9 +112,13 @@ fi
 AC_SUBST([BASH_COMPLETION_DIR])
 AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "xno"])
 
-# Ptrace checks in regression tests
+# Test for whether it's possible to build test fixtures
+#
+# verify-syscalls - requires ptrace so Linux-only
+# write_shim - shared library. Hasn't been ported to OSX.
 AM_CONDITIONAL([IS_CROSSCOMPILING], [test x$cross_compiling = x"yes"])
 AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu"])
+AM_CONDITIONAL([HAS_WRITE_SHIM], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no" -a x$enable_shared = x"yes"])
 
 # Scripts
 AC_ARG_ENABLE(scripts,[AS_HELP_STRING([--disable-scripts], [do not install img2fwup and any other helper scripts])])
