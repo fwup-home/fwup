@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.7.0
+
+In this release, `fwup` will verify writes to raw devices. Regular files are not
+verified unless forced with the `--verify-writes` option. Writes are verified as
+they're written. Since the final write with `fwup` firmware updates is usually
+to toggle the active partition, corruption can fail an update before the toggle
+occurs.
+
+* New features
+  * Writes verification on raw devices. This may be forced with
+    `--verify-writes` or disabled with `--no-verify-writes`.
+  * The `boot` option works for GPT partitions now. `boot=true` will set the GPT
+    attribute flags appropriately. Since the archive creation process replaces
+    the `boot` parameter with raw flags, older versions of `fwup` can apply
+    updates that use this.
+
+* Bug fixes
+  * After a write error was detected, `fwup` would continue to try to write a
+    few more blocks before exiting. Now it no longer writes after an error. An
+    `on-error` handle can perform a write, but it will start from a clean slate
+    now.
+
 ## v1.6.0
 
 This release adds beta support for VCDIFF delta updates. This makes it possible
