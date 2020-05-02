@@ -102,11 +102,11 @@ time_t get_creation_time_t()
 
 void time_t_to_string(time_t t, char *str, size_t len)
 {
-    struct tm *tm_now = gmtime(&t);
-    if (tm_now == NULL)
-        fwup_err(EXIT_FAILURE, "gmtime");
+    struct tm tm_now;
+    if (gmtime_r(&t, &tm_now) == NULL)
+        fwup_err(EXIT_FAILURE, "gmtime_r");
 
-    strftime(str, len, timestamp_format, tm_now);
+    strftime(str, len, timestamp_format, &tm_now);
 }
 
 int timestamp_to_tm(const char *timestamp, struct tm *tmp)
