@@ -38,14 +38,22 @@ int uboot_env_verify_cfg(cfg_t *cfg)
     if (block_count <= 0 || block_count >= UINT16_MAX)
         ERR_RETURN("block-count must be specified, greater than 0 and less than 2^16 - 1");
 
+    int block_offset_redund = cfg_getint(cfg, "block-offset-redund");
+    if (block_offset_redund != -1 && block_offset_redund >= INT32_MAX)
+        ERR_RETURN("block-offset-redund must be less than 2^31 - 1");
+
+    if (block_offset_redund > block_offset && block_offset_redund < block_offset + block_count)
+        ERR_RETURN("block-offset-redund can't be between block-offset and block-offset + block-count");
+
     return 0;
 }
 
-int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
+int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output, struct uboot_env *output_redund)
 {
     output->block_offset = cfg_getint(cfg, "block-offset");
     output->block_count = cfg_getint(cfg, "block-count");
     output->env_size = output->block_count * FWUP_BLOCK_SIZE;
+    output->flags = 1;
     output->vars = NULL;
 
     // This condition should only be hit if the .fw file was manually
@@ -54,20 +62,38 @@ int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
     if (output->block_count <= 0 || output->block_count >= UINT16_MAX)
         ERR_RETURN("invalid u-boot environment block count");
 
+    if (output_redund) {
+        output_redund->block_offset = cfg_getint(cfg, "block-offset-redund");
+        output_redund->vars = NULL;
+
+        if (output_redund->block_offset == -1)
+            return 0;
+
+        output_redund->block_count = output->block_count;
+        output_redund->env_size = output->env_size;
+        output_redund->flags = 1;
+
+        return 1;
+    }
+
     return 0;
 }
 
-int uboot_env_read(struct uboot_env *env, const char *buffer)
+int uboot_env_read(struct uboot_env *env, const char *buffer, int redundant)
 {
     uboot_env_free(env);
 
     uint32_t expected_crc32 = ((uint8_t) buffer[0] | ((uint8_t) buffer[1] << 8) | ((uint8_t) buffer[2] << 16) | ((uint8_t) buffer[3] << 24));
-    uint32_t actual_crc32 = crc32buf(buffer + 4, env->env_size - 4);
+    uint32_t actual_crc32 = crc32buf(buffer + 4 + redundant, env->env_size - 4 - redundant);
     if (expected_crc32 != actual_crc32)
         ERR_RETURN("U-boot environment (block %" PRIu64 ") CRC32 mismatch (expected 0x%08x; got 0x%08x)", env->block_offset, expected_crc32, actual_crc32);
 
+    if (redundant) {
+        env->flags = buffer[4];
+    }
+
     const char *end = buffer + env->env_size;
-    const char *name = buffer + 4;
+    const char *name = buffer + 4 + redundant;
     while (name != end && *name != '\0') {
         const char *endname = name + 1;
         for (;;) {
@@ -191,7 +217,7 @@ static void uboot_env_sort(struct uboot_env *env)
     free(pairarray);
 }
 
-int uboot_env_write(struct uboot_env *env, char *buffer)
+int uboot_env_write(struct uboot_env *env, char *buffer, int redundant)
 {
     if (env->env_size < 8)
         ERR_RETURN("u-boot environment block size too small");
@@ -200,7 +226,7 @@ int uboot_env_write(struct uboot_env *env, char *buffer)
     memset(buffer, 0xff, env->env_size);
 
     // Skip over the CRC until the end.
-    char *p = buffer + 4;
+    char *p = buffer + 4 + redundant;
     char *end = buffer + env->env_size - 2;
 
     // Sort the name/value pairs so that their ordering is
@@ -229,11 +255,15 @@ int uboot_env_write(struct uboot_env *env, char *buffer)
     *p = 0;
 
     // Calculate and add the CRC-32
-    uint32_t crc32 = crc32buf(buffer + 4, env->env_size - 4);
+    uint32_t crc32 = crc32buf(buffer + 4 + redundant, env->env_size - 4 - redundant);
     buffer[0] = crc32 & 0xff;
     buffer[1] = (crc32 >> 8) & 0xff;
     buffer[2] = (crc32 >> 16) & 0xff;
     buffer[3] = crc32 >> 24;
+
+    if (redundant) {
+        buffer[4] = env->flags;
+    }
 
     return 0;
 }

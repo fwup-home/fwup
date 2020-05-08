@@ -1,0 +1,27 @@
+#!/bin/sh
+
+#
+# Test U-boot support for setting variables
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+uboot-environment uboot-env {
+    block-offset = 0
+    block-count = 128
+    block-offset-redund = 64
+}
+
+task complete {
+    on-finish {
+       uboot_clearenv(uboot-env)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected this to fail?"
+    exit 1
+fi

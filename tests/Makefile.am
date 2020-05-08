@@ -180,6 +180,15 @@ TESTS = 001_simple_fw.test \
 	177_gpt_boot_flag.test \
 	178_gpt_bad_flags.test \
 	179_verify_detects_raw_corruption.test \
-	180_verify_detects_fat_corruption.test
+	180_verify_detects_fat_corruption.test \
+	181_uboot_overflow.test \
+	182_uboot_redundant_setenv.test \
+	183_uboot_redundant_empty_env.test \
+	184_uboot_redundant_clearenv.test \
+	185_uboot_redundant_upgrade.test \
+	186_uboot_redundant_unsetenv.test \
+	187_corrupt_uboot_redundant.test \
+	188_uboot_redundant_bad_param.test \
+	189_uboot_redundant_recover.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

@@ -31,17 +31,20 @@ struct uboot_env {
     uint32_t block_count;
     size_t env_size;
 
+    // Ignored if the environment is not redundant
+    uint8_t flags;
+
     struct uboot_name_value *vars;
 };
 
 int uboot_env_verify_cfg(cfg_t *cfg);
-int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output);
+int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output, struct uboot_env *output_redund);
 
-int uboot_env_read(struct uboot_env *env, const char *buffer);
+int uboot_env_read(struct uboot_env *env, const char *buffer, int redundant);
 int uboot_env_setenv(struct uboot_env *env, const char *name, const char *value);
 int uboot_env_unsetenv(struct uboot_env *env, const char *name);
 int uboot_env_getenv(struct uboot_env *env, const char *name, char **value);
-int uboot_env_write(struct uboot_env *env, char *buffer);
+int uboot_env_write(struct uboot_env *env, char *buffer, int redundant);
 void uboot_env_free(struct uboot_env *env);
 
 #endif // UBOOT_ENV_H

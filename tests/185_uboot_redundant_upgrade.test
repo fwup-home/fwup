@@ -1,0 +1,154 @@
+#!/bin/sh
+
+#
+# Write a firmware image that uses U-boot environment variables
+# to select which partition to use, and then test upgrading it
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | U-boot environment          |
+# +-----------------------------+
+# | p0: Rootfs A (Simulated)    |
+# +-----------------------------+
+# | p1: Rootfs B (Simulated)    |
+# +-----------------------------+
+# | p2: Data (Simulated)        |
+# +-----------------------------+
+
+define(UBOOT_ENV_OFFSET, 256)
+define(UBOOT_ENV_COUNT, 2)
+define(UBOOT_ENV_REDUND_OFFSET, 512)
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+define(APP_PART_OFFSET, 4096)
+define(APP_PART_COUNT, 1024)
+
+uboot-environment uboot-env {
+    block-offset = \${UBOOT_ENV_OFFSET}
+    block-count = \${UBOOT_ENV_COUNT}
+    block-offset-redund = \${UBOOT_ENV_REDUND_OFFSET}
+}
+
+file-resource data.stuff {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.stuff {
+        host-path = "${TESTFILE_150K}"
+}
+
+mbr mbr {
+    partition 0 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr)
+        uboot_clearenv(uboot-env)
+        uboot_setenv(uboot-env, "active_partition", 0)
+    }
+    on-resource data.stuff { raw_write(\${APP_PART_OFFSET}) }
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-uboot-variable(uboot-env, "active_partition", 1)
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+    on-finish { uboot_setenv(uboot-env, "active_partition", 0) }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition A
+    # is being used.
+    require-uboot-variable(uboot-env, "active_partition", 0)
+    on-resource rootfs.stuff { raw_write(\${ROOTFS_B_PART_OFFSET}) }
+    on-finish { uboot_setenv(uboot-env, "active_partition", 1) }
+}
+
+# The following are just needed to support the test
+uboot-environment check-env {
+    block-offset = 0
+    block-count = \${UBOOT_ENV_COUNT}
+    block-offset-redund = 256
+}
+task dump_uboot_a {
+    on-init {
+        uboot_clearenv(check-env)
+        uboot_setenv(check-env, "active_partition", 0)
+    }
+}
+task dump_uboot_b {
+    on-init {
+        uboot_clearenv(check-env)
+        uboot_setenv(check-env, "active_partition", 0)
+        uboot_setenv(check-env, "active_partition", 1)
+    }
+}
+task dump_uboot_c {
+    on-init {
+        uboot_clearenv(check-env)
+        uboot_setenv(check-env, "active_partition", 0)
+        uboot_setenv(check-env, "active_partition", 1)
+        uboot_setenv(check-env, "active_partition", 0)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Create the U-boot environments using fwup
+VERIFY_SYSCALLS_CHECKPATH=$WORK/uboota.bin $FWUP_APPLY -a -d $WORK/uboota.bin -i $FWFILE -t dump_uboot_a
+VERIFY_SYSCALLS_CHECKPATH=$WORK/ubootb.bin $FWUP_APPLY -a -d $WORK/ubootb.bin -i $FWFILE -t dump_uboot_b
+VERIFY_SYSCALLS_CHECKPATH=$WORK/ubootc.bin $FWUP_APPLY -a -d $WORK/ubootc.bin -i $FWFILE -t dump_uboot_c
+
+# The firmware file is equivalent to the following dd calls
+# Assume that previous tests make sure that the MBR is correct and just
+# copy it over.
+dd if=$IMGFILE of=$WORK/check.bin count=1 2>/dev/null
+dd if=$WORK/uboota.bin seek=256 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_150K seek=1024 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+dd if=$TESTFILE_1K seek=4096 of=$WORK/check.bin conv=sync,notrunc 2>/dev/null
+cmp_bytes 2098176 $WORK/check.bin $IMGFILE
+
+# Now upgrade the IMGFILE file
+# NOTE: The last write should be to the u-boot environment
+VERIFY_SYSCALLS_LAST_WRITE=262144 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+
+cp $WORK/check.bin $WORK/check-upgraded.bin
+dd if=$WORK/ubootb.bin seek=256 of=$WORK/check-upgraded.bin conv=notrunc 2>/dev/null
+dd if=$TESTFILE_150K seek=2048 of=$WORK/check-upgraded.bin conv=sync,notrunc 2>/dev/null
+cmp_bytes 2098176 $WORK/check-upgraded.bin $IMGFILE
+
+# Upgrade the IMGFILE file again
+VERIFY_SYSCALLS_LAST_WRITE=131072 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade
+cp $WORK/check-upgraded.bin $WORK/check-upgraded2.bin
+dd if=$WORK/ubootc.bin seek=256 of=$WORK/check-upgraded2.bin conv=sync,notrunc 2>/dev/null
+cmp_bytes 2098176 $WORK/check-upgraded2.bin $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

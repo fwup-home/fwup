@@ -1,0 +1,43 @@
+#!/bin/sh
+
+#
+# Test that corrupt U-boot redundant environment fails when both are corrupted
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(UBOOT_ENV_OFFSET, 32)
+define(UBOOT_ENV_REDUND_OFFSET, 64)
+
+file-resource uboot-env.img {
+    host-path = "${TESTFILE_1K}"
+}
+
+uboot-environment uboot-env {
+    block-offset = \${UBOOT_ENV_OFFSET}
+    block-count = 2
+    block-offset-redund = \${UBOOT_ENV_REDUND_OFFSET}
+}
+
+task complete {
+    on-resource uboot-env.img {
+        raw_write(\${UBOOT_ENV_OFFSET})
+    }
+
+    on-finish {
+       uboot_setenv(uboot-env, "a", 1) # this should fail
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+    echo "Expecting firmware apply to fail with an incorrect CRC-32!"
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

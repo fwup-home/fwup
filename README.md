@@ -579,12 +579,22 @@ uboot-environment my_uboot_env {
 }
 ```
 
+To use the redundant environment block style, add block-offset-redund with the
+address where the redundant copy is located:
+
+```conf
+uboot-environment my_uboot_env {
+    block-offset = 2048
+    block-count = 16
+    block-offset-redund = 2064
+}
+```
+
 See the functions in the task section for getting and setting U-Boot variables.
 
 NOTE: Currently, I've only implemented support for U-Boot environments that I
-use. Notably, this doesn't support redundant environments, big endian targets,
-and writes to raw NAND parts. Please consider contributing back support for
-these if you use them.
+use. Notably, this doesn't support big endian targets, and writes to raw NAND 
+parts. Please consider contributing back support for these if you use them.
 
 If `fwup`'s U-Boot support does not meet your needs, it is always possible to
 create environment images using the `mkenvimage` utility and `raw_write` them
