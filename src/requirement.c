@@ -252,16 +252,23 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
     const char *uboot_env_name = fctx->argv[1];
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
+    struct uboot_env env_redund;
+    struct uboot_env *valid_env;
+    int redundant;
 
-    OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
+    if ((redundant = uboot_env_create_cfg(ubootsec, &env, &env_redund)) < 0)
+        return -1;
 
-    char *buffer = (char *) malloc(env.env_size);
-    OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE));
+    if (uboot_read_env_and_return_valid(fctx, &env, &env_redund, redundant, &valid_env) < 0)
+        return -1;
 
-    OK_OR_CLEANUP(uboot_env_read(&env, buffer));
+    char *buffer = (char *) malloc(valid_env->env_size);
+    OK_OR_CLEANUP(block_cache_pread(fctx->output, buffer, valid_env->env_size, valid_env->block_offset * FWUP_BLOCK_SIZE));
+
+    OK_OR_CLEANUP(uboot_env_read(valid_env, buffer, redundant));
 
     char *current_value;
-    OK_OR_CLEANUP(uboot_env_getenv(&env, fctx->argv[2], &current_value));
+    OK_OR_CLEANUP(uboot_env_getenv(valid_env, fctx->argv[2], &current_value));
 
     if (strcmp(current_value, fctx->argv[3]) != 0)
         rc = -1;
@@ -270,6 +277,7 @@ int require_uboot_variable_requirement_met(struct fun_context *fctx)
 
 cleanup:
     uboot_env_free(&env);
+    uboot_env_free(&env_redund);
     free(buffer);
     return rc;
 }

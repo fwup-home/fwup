@@ -496,6 +496,7 @@ static cfg_opt_t gpt_opts[] = {
 static cfg_opt_t uboot_environment_opts[] = {
     CFG_INT("block-offset", -1, CFGF_NONE),
     CFG_INT("block-count", INT32_MAX, CFGF_NONE),
+    CFG_INT("block-offset-redund", -1, CFGF_NONE),
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };

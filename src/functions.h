@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <confuse.h>
+#include "uboot_env.h"
 
 enum fun_context_type {
     FUN_CONTEXT_INIT,
@@ -73,5 +74,6 @@ int fun_validate(struct fun_context *fctx);
 int fun_compute_progress(struct fun_context *fctx);
 int fun_run(struct fun_context *fctx);
 int fun_apply_funlist(struct fun_context *fctx, cfg_opt_t *funlist, int (*fun)(struct fun_context *fctx));
+int uboot_read_env_and_return_valid(struct fun_context *fctx, struct uboot_env *env, struct uboot_env *env_redund, int redundant, struct uboot_env **valid_env);
 
 #endif // FUNCTIONS_H
