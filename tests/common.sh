@@ -88,15 +88,27 @@ if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
 if [ -z $FWUP_APPLY_NO_CHECK ]; then FWUP_APPLY_NO_CHECK=$FWUP_APPLY; fi
 if [ -z $FWUP_VERIFY ]; then FWUP_VERIFY=$FWUP_DEFAULT; fi
-
 FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper$EXEEXT
 
+[ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
+[ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
+[ -e $FWUP_VERIFY ] || ( echo "Can't find $FWUP_VERIFY"; exit 1 )
+[ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
+
+if [ -n "$VALGRIND" ]; then
+    # Example:
+    #  VALGRIND="valgrind -s --leak-check=full --error-exitcode=1 --track-origins=yes
+    FWUP_CREATE="$VALGRIND $FWUP_CREATE"
+    FWUP_APPLY="$VALGRIND $FWUP_APPLY"
+    FWUP_VERIFY="$VALGRIND $FWUP_VERIFY"
+else
 # The syscall verification code only runs on a subset of
 # platforms. Let autoconf figure out which ones and run it
 # if the verify-syscalls program built.
 if [ -e $TESTS_DIR/fixture/verify-syscalls ]; then
     export VERIFY_SYSCALLS_CMD=$FWUP_APPLY
     FWUP_APPLY=$TESTS_DIR/fixture/verify-syscalls
+fi
 fi
 
 # The write fault simulator only runs only runs on a subset of
@@ -112,11 +124,6 @@ fi
 
 WORK=$TESTS_DIR/work-$(basename "$0")
 RESULTS=$WORK/results
-
-[ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
-[ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
-[ -e $FWUP_VERIFY ] || ( echo "Can't find $FWUP_VERIFY"; exit 1 )
-[ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
 
 CONFIG=$WORK/fwup.conf
 FWFILE=$WORK/fwup.fw
