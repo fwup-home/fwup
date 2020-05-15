@@ -32,6 +32,7 @@ int fwfile_add_meta_conf(cfg_t *cfg, struct archive *a, const unsigned char *sig
 
     configtxt_len = fwup_cfg_to_string(cfg, &configtxt);
     if (configtxt_len == 0) {
+        free(configtxt);
         configtxt = strdup("# Empty file\n");
         configtxt_len = strlen(configtxt);
     }
