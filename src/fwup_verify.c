@@ -155,12 +155,16 @@ static int check_resource(struct resource_list *list, const char *file_resource_
     sparse_file_init(&sfm);
     OK_OR_RETURN(sparse_file_get_map_from_resource(item->resource, &sfm));
 
+    int sparse_segments = sfm.map_len;
     off_t expected_length = sparse_file_data_size(&sfm);
+
+    sparse_file_free(&sfm);
+
     off_t archive_length = archive_entry_size(ae);
     if (archive_length < 0)
         ERR_RETURN("Missing file length in archive for %s", file_resource_name);
 
-    if (sfm.map_len == 1 && archive_entry_size_is_set(ae) && archive_length != expected_length) {
+    if (sparse_segments == 1 && archive_entry_size_is_set(ae) && archive_length != expected_length) {
         // Possible xdelta3 patch
         return check_xdelta3_resource(item, file_resource_name, a, ae);
     } else {
