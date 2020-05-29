@@ -1,0 +1,65 @@
+#!/bin/sh
+
+#
+# Test that there's an error report if the U-boot environment overflows
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+# Create a starter uboot environment block
+# This is created by running:
+#
+# $ printf "var1=This is a string\nvar2=2\nvar3=A string with =\nvar4=4" | mkenvimage -s "512" - | gzip | base64
+base64_decodez >$WORK/starting-uboot-env.img <<EOF
+H4sIAAAAAAAAAztuldNdllhkaBuSkVmsAESJCsUlRZl56QxAUSNbIxBlbOsIFVQozyzJULAFCZrY
+mjAw/B8FQxwAAEOPa2kAAgAA
+EOF
+
+cat >$CONFIG <<EOF
+define(UBOOT_ENV_OFFSET, 32)
+
+file-resource uboot-env.img {
+    host-path = "$WORK/starting-uboot-env.img"
+}
+
+uboot-environment uboot-env {
+    block-offset = \${UBOOT_ENV_OFFSET}
+    block-count = 1
+}
+
+task works {
+    on-resource uboot-env.img {
+        raw_write(\${UBOOT_ENV_OFFSET})
+    }
+
+    on-finish {
+       uboot_setenv(uboot-env, "hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+       uboot_setenv(uboot-env, "two_hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+       uboot_setenv(uboot-env, "three_hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+    }
+}
+
+task overflow {
+    on-resource uboot-env.img {
+        raw_write(\${UBOOT_ENV_OFFSET})
+    }
+
+    on-finish {
+       uboot_setenv(uboot-env, "hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+       uboot_setenv(uboot-env, "two_hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+       uboot_setenv(uboot-env, "three_hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+       uboot_setenv(uboot-env, "four_hundred", "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t works
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t overflow; then
+    echo "Expected a U-Boot overflow to be detected?"
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
