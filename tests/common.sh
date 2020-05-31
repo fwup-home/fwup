@@ -154,8 +154,12 @@ check_meta_conf() {
 }
 
 cleanup() {
-    if [ $? = "0" ]; then
+    rc=$?
+    if [ $rc = "0" ]; then
         echo "Test succeeded"
+        rm -fr $WORK
+    elif [ $rc = "77" ]; then
+        echo "Test skipped"
         rm -fr $WORK
     else
         echo
