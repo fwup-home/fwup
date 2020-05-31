@@ -873,48 +873,7 @@ int trim_run(struct fun_context *fctx)
     return 0;
 }
 
-int uboot_read_env_and_return_valid(struct fun_context *fctx, struct uboot_env *env, struct uboot_env *env_redund, int redundant, struct uboot_env **valid_env) {
-    int rc = 0;
 
-    char *buffer = (char *) malloc(env->env_size);
-
-    OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env->env_size, env->block_offset * FWUP_BLOCK_SIZE),
-                      "unexpected error reading uboot environment: %s", strerror(errno));
-
-    int uboot_1_result = uboot_env_read(env, buffer, redundant);
-    if (redundant) {
-        OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, env_redund->env_size, env_redund->block_offset * FWUP_BLOCK_SIZE),
-                      "unexpected error reading uboot redundant environment: %s", strerror(errno));
-
-        int uboot_2_result = uboot_env_read(env_redund, buffer, redundant);
-        if (uboot_1_result < 0 && uboot_2_result < 0) {
-            OK_OR_CLEANUP(uboot_1_result);
-        } else if (uboot_1_result == 0 && uboot_2_result < 0) {
-            *valid_env = env;
-        } else if (uboot_1_result < 0 && uboot_2_result == 0) {
-            *valid_env = env_redund;
-        } else {
-            if (env->flags == 255 && env_redund->flags == 0) {
-                *valid_env = env_redund;
-            } else if (env_redund->flags == 255 && env->flags == 0) {
-                *valid_env = env;
-            } else if (env->flags > env_redund->flags) {
-                *valid_env = env;
-            } else if (env_redund->flags > env->flags) {
-                *valid_env = env_redund;
-            } else {
-                *valid_env = env;
-            }
-        }
-    } else {
-        OK_OR_CLEANUP(uboot_1_result);
-        *valid_env = env;
-    }
-
-    cleanup:
-    free(buffer);
-    return rc;
-}
 int uboot_recover_validate(struct fun_context *fctx)
 {
     if (fctx->argc != 2)
@@ -939,31 +898,22 @@ int uboot_recover_run(struct fun_context *fctx)
     const char *uboot_env_name = fctx->argv[1];
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
-    struct uboot_env env_redund;
     struct uboot_env clean_env;
-    int redundant = 0;
-    struct uboot_env *valid_env = &env;
 
-    if ((redundant = uboot_env_create_cfg(ubootsec, &env, &env_redund)) < 0 ||
-        uboot_env_create_cfg(ubootsec, &clean_env, NULL) < 0)
+    if (uboot_env_create_cfg(ubootsec, &env) < 0 ||
+        uboot_env_create_cfg(ubootsec, &clean_env) < 0)
         return -1;
 
-    char *buffer = malloc(env.env_size);
-    if (uboot_read_env_and_return_valid(fctx, &env, &env_redund, redundant, &valid_env) < 0) {
+    if (uboot_env_read(fctx->output, &env) < 0) {
         // Corrupt, so make a clean environment and write it.
-        OK_OR_CLEANUP(uboot_env_write(&clean_env, buffer, redundant));
-
-        OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, env.env_size, env.block_offset * FWUP_BLOCK_SIZE, false),
-                      "unexpected error writing uboot environment: %s", strerror(errno));
+        OK_OR_CLEANUP(uboot_env_write(fctx->output, &clean_env));
     }
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
-    uboot_env_free(&env_redund);
     uboot_env_free(&clean_env);
-    free(buffer);
     return rc;
 }
 
@@ -991,40 +941,16 @@ int uboot_clearenv_run(struct fun_context *fctx)
     const char *uboot_env_name = fctx->argv[1];
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
-    struct uboot_env env_redund;
-    int redundant = 0;
-    struct uboot_env *valid_env = &env;
 
-    if ((redundant = uboot_env_create_cfg(ubootsec, &env, &env_redund)) < 0)
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
-
-    if (uboot_read_env_and_return_valid(fctx, &env, &env_redund, redundant, &valid_env) < 0) {
-        valid_env = &env;
-        valid_env->flags++;
-    }
-
-    char *buffer = (char *) malloc(valid_env->env_size);
-
-    OK_OR_CLEANUP(uboot_env_write(valid_env, buffer, redundant));
-
-    if (redundant) {
-        // Get the block_offset to write to
-        if (valid_env == &env)
-            valid_env = &env_redund;
-        else
-            valid_env = &env;
-    }
-
-    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, valid_env->env_size, valid_env->block_offset * FWUP_BLOCK_SIZE, false),
-                      "unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
-    uboot_env_free(&env_redund);
-    free(buffer);
     return rc;
 }
 
@@ -1052,41 +978,20 @@ int uboot_setenv_run(struct fun_context *fctx)
     const char *uboot_env_name = fctx->argv[1];
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
-    struct uboot_env env_redund;
-    int redundant = 0;
-    struct uboot_env *valid_env = &env;
 
-    if ((redundant = uboot_env_create_cfg(ubootsec, &env, &env_redund)) < 0)
+    if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
-    if (uboot_read_env_and_return_valid(fctx, &env, &env_redund, redundant, &valid_env) < 0)
-        return -1;
+    OK_OR_CLEANUP(uboot_env_read(fctx->output, &env));
 
-    char *buffer = (char *) malloc(env.env_size);
+    OK_OR_CLEANUP(uboot_env_setenv(&env, fctx->argv[2], fctx->argv[3]));
 
-    valid_env->flags++;
-
-    OK_OR_CLEANUP(uboot_env_setenv(valid_env, fctx->argv[2], fctx->argv[3]));
-
-    OK_OR_CLEANUP(uboot_env_write(valid_env, buffer, redundant));
-
-    if (redundant) {
-        // Get the block_offset to write to
-        if (valid_env == &env)
-            valid_env = &env_redund;
-        else
-            valid_env = &env;
-    }
-
-    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, valid_env->env_size, valid_env->block_offset * FWUP_BLOCK_SIZE, false),
-                      "unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
-    uboot_env_free(&env_redund);
-    free(buffer);
     return rc;
 }
 
@@ -1114,45 +1019,19 @@ int uboot_unsetenv_run(struct fun_context *fctx)
     const char *uboot_env_name = fctx->argv[1];
     cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
-    struct uboot_env env_redund;
-    int redundant = 0;
-    struct uboot_env *valid_env = &env;
 
-    if ((redundant = uboot_env_create_cfg(ubootsec, &env, &env_redund)) < 0)
-        return -1;
+    OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
 
-    if (uboot_read_env_and_return_valid(fctx, &env, &env_redund, redundant, &valid_env) < 0)
-        return -1;
+    OK_OR_CLEANUP(uboot_env_read(fctx->output, &env));
 
-    char *buffer = (char *) malloc(valid_env->env_size);
-    OK_OR_CLEANUP_MSG(block_cache_pread(fctx->output, buffer, valid_env->env_size, valid_env->block_offset * FWUP_BLOCK_SIZE),
-                      "unexpected error reading uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP(uboot_env_unsetenv(&env, fctx->argv[2]));
 
-    OK_OR_CLEANUP(uboot_env_read(valid_env, buffer, redundant));
-
-    valid_env->flags++;
-
-    OK_OR_CLEANUP(uboot_env_unsetenv(valid_env, fctx->argv[2]));
-
-    OK_OR_CLEANUP(uboot_env_write(valid_env, buffer, redundant));
-
-    if (redundant) {
-        // Get the block_offset to write to
-        if (valid_env == &env)
-            valid_env = &env_redund;
-        else
-            valid_env = &env;
-    }
-
-    OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, buffer, valid_env->env_size, valid_env->block_offset * FWUP_BLOCK_SIZE, false),
-                      "unexpected error writing uboot environment: %s", strerror(errno));
+    OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
 
 cleanup:
     uboot_env_free(&env);
-    uboot_env_free(&env_redund);
-    free(buffer);
     return rc;
 }
 

@@ -593,12 +593,12 @@ uboot-environment my_uboot_env {
 See the functions in the task section for getting and setting U-Boot variables.
 
 NOTE: Currently, I've only implemented support for U-Boot environments that I
-use. Notably, this doesn't support big endian targets, and writes to raw NAND 
+use. Notably, this doesn't support big endian targets, and writes to raw NAND
 parts. Please consider contributing back support for these if you use them.
 
 If `fwup`'s U-Boot support does not meet your needs, it is always possible to
-create environment images using the `mkenvimage` utility and `raw_write` them
-to the proper locations. This is probably more appropriate when setting lots of
+create environment images using the `mkenvimage` utility and `raw_write` them to
+the proper locations. This is probably more appropriate when setting lots of
 variables.
 
 ## task
