@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.8.0
+
+* New features
+  * U-Boot redundant environment support - Thanks to Davide Pianca, `fwup` can
+    read and update devices with redundant U-Boot environments. Add the
+    `block-offset-redund` to your fwup.conf U-Boot environment specification to
+    enable and use.
+
+* Bug fixes
+  * Fixed memory leaks in archive verification and when processing empty
+    `fwup.conf` files. Neither of these leaks were in code paths that would
+    normally be exercised on devices.
+
 ## v1.7.0
 
 In this release, `fwup` will verify writes to raw devices. Regular files are not
