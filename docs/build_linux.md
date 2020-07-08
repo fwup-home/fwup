@@ -2,12 +2,13 @@
 
 ## TLDR
 
-This works on Ubuntu 19.10:
+This works on Ubuntu 20.04:
 
 ```sh
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev xdelta3
 ./configure
 make -j4
+make check
 sudo make install
 ```
 
@@ -36,7 +37,7 @@ At least the following are required for building and running the regression
 tests:
 
 ```sh
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man xdelta3
 ```
 
 ## Static build
