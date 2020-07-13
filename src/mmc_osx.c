@@ -104,9 +104,9 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
 
         CFRelease(info);
 
-        // Filter out large devices (> 65 GiB) since those are probably backup drives
+        // Filter out large devices since those are probably backup drives
         // and not SDCards.
-        if (size > (65 * ONE_GiB))
+        if (size > MMC_MAX_AUTODETECTED_SIZE)
             return;
 
         context->count++;

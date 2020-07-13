@@ -22,9 +22,16 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "util.h"
+
 #define MMC_DEVICE_NAME_LEN 64
 #define MMC_DEVICE_PATH_LEN 64
 #define MMC_MAX_DEVICES 16
+
+// NOTE: The rationale for this check is that the user's main drives will be
+//       large capacity and we don't want to autodetect them when looking for
+//       SDCards.
+#define MMC_MAX_AUTODETECTED_SIZE (129 * ONE_GiB)
 
 struct mmc_device {
     char name[MMC_DEVICE_NAME_LEN];

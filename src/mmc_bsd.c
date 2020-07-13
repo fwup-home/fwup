@@ -63,7 +63,7 @@ static bool mmc_get_device_stats(const char *devpath_pattern,
     return true;
 }
 
-static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, 
+static bool is_autodetectable_mmc_device(const struct mmc_device_info *info,
                                          const struct stat *rootdev)
 {
     // Check 1: Not on the device containing the root fs
@@ -80,11 +80,8 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info,
     if (info->device_size <= 0)
         return false;
 
-    // Check 3: Capacity larger than 65 GiB -> false
-    // NOTE: The rationale for this check is that the user's main drives will be
-    //       large capacity and we don't want to autodetect them when looking for
-    //       SDCards.
-    if (info->device_size > (65 * ONE_GiB))
+    // Check 3: Capacity larger than max autodetectable size -> false
+    if (info->device_size > MMC_MAX_AUTODETECTED_SIZE)
         return false;
 
     return true;
