@@ -188,6 +188,8 @@ static dev_t root_disk_device()
 
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
+    memset(devices, 0, max_devices * sizeof(struct mmc_device));
+
     enumerate_mmc_devices();
 
     // Get the root device so that we can filter

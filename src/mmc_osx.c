@@ -94,10 +94,14 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
         snprintf(context->devices[ix].path, sizeof(context->devices[ix].path), "/dev/r%s", DADiskGetBSDName(disk));
 
         CFDictionaryRef info = DADiskCopyDescription(disk);
-        CFNumberRef cfsize = CFDictionaryGetValue(info, kDADiskDescriptionMediaSizeKey);
+        CFNumberRef cf_size = CFDictionaryGetValue(info, kDADiskDescriptionMediaSizeKey);
         int64_t size;
-        CFNumberGetValue(cfsize, kCFNumberSInt64Type, &size);
+        CFNumberGetValue(cf_size, kCFNumberSInt64Type, &size);
         context->devices[ix].size = size;
+
+        CFStringRef cf_name = CFDictionaryGetValue(info, kDADiskDescriptionMediaNameKey);
+        CFStringGetCString(cf_name, context->devices[ix].name, MMC_DEVICE_NAME_LEN, kCFStringEncodingISOLatin1);
+
         CFRelease(info);
 
         // Filter out large devices (> 65 GiB) since those are probably backup drives
@@ -135,6 +139,8 @@ static int run_loop_for_time(double duration)
 
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
+    memset(devices, 0, max_devices * sizeof(struct mmc_device));
+
     // Only look for removable media
     CFMutableDictionaryRef toMatch =
             CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);

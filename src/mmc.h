@@ -22,10 +22,12 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#define MMC_DEVICE_NAME_LEN 64
 #define MMC_DEVICE_PATH_LEN 64
 #define MMC_MAX_DEVICES 16
 
 struct mmc_device {
+    char name[MMC_DEVICE_NAME_LEN];
     char path[MMC_DEVICE_PATH_LEN];
     off_t size;
 };

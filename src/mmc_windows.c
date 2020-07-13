@@ -41,6 +41,8 @@ void mmc_finalize()
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
+    memset(devices, 0, max_devices * sizeof(struct mmc_device));
+
     // There's not an API to request all the PhysicalDrives, but they are
     // sequentially enumerated and become invalid if they're removed.
     // So we just scan the first 256 of them until we find enough matches

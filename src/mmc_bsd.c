@@ -121,6 +121,8 @@ static void mmc_scan_by_pattern(struct mmc_device *devices,
  */
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
+    memset(devices, 0, max_devices * sizeof(struct mmc_device));
+
     // Get the root device so that we can filter
     // it's drive out of the autodetected list
     struct stat rootdev;

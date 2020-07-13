@@ -313,7 +313,8 @@ static void autoselect_mmc_device(struct mmc_device *device)
         for (int i = 0; i < found_devices; i++) {
             char sizestr[16];
             format_pretty_auto(devices[i].size, sizestr, sizeof(sizestr));
-            fprintf(stderr, "  %s (%s)\n", devices[i].path, sizestr);
+            bool print_name = (devices[i].name[0] != '\0');
+            fprintf(stderr, "  %s (%s%s%s)\n", devices[i].path, sizestr, print_name ? "; " : "", print_name ? devices[i].name : "");
         }
         fprintf(stderr, "Automatic selection not possible. Specify one using the -d option.\n");
         fwup_exit(EXIT_FAILURE);
