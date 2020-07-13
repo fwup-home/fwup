@@ -100,10 +100,6 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
         context->devices[ix].size = size;
         CFRelease(info);
 
-        // Filter out small devices (< 128M) since those are mounted .dmg files
-        if (size < 128000000)
-            return;
-
         // Filter out large devices (> 65 GiB) since those are probably backup drives
         // and not SDCards.
         if (size > (65 * ONE_GiB))
@@ -144,6 +140,7 @@ int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
             CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     CFDictionaryAddValue(toMatch, kDADiskDescriptionMediaWholeKey, kCFBooleanTrue);
     CFDictionaryAddValue(toMatch, kDADiskDescriptionMediaRemovableKey, kCFBooleanTrue);
+    CFDictionaryAddValue(toMatch, kDADiskDescriptionMediaWritableKey, kCFBooleanTrue);
 
     struct scan_context context;
     context.devices = devices;
