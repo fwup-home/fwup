@@ -47,6 +47,7 @@ struct mmc_device_info
 
     off_t device_size;
     struct stat st;
+    bool removable;
 };
 
 static struct mmc_device_info mmc_devices[MMC_MAX_DEVICES];
@@ -89,6 +90,24 @@ static off_t mmc_device_size_sysfs(const char *name)
 }
 
 /**
+ * @brief Return whether the device is removable
+ * @param sysfspath
+ * @return
+ */
+static bool mmc_device_removable_sysfs(const char *name)
+{
+    char sysfspath[32];
+    snprintf(sysfspath, sizeof(sysfspath), "/sys/block/%s/removable", name);
+
+    char sizestr[4];
+    int rc = readsysfs(sysfspath, sizestr, sizeof(sizestr));
+    if (rc <= 0)
+        return false;
+
+    return sizestr[0] == '1';
+}
+
+/**
  * @brief Return the device size by seeking to the end (requires root permissions)
  * @param devpath device path
  * @return >0 if it worked, 0 if it didn't
@@ -119,6 +138,8 @@ static bool mmc_get_device_stats(const char *name, struct mmc_device_info *info)
     if (info->device_size == 0)
         info->device_size = mmc_device_size_sysfs(name);
 
+    info->removable = mmc_device_removable_sysfs(name);
+
     return true;
 }
 
@@ -132,11 +153,8 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, dev
     if (info->device_size <= 0)
         return false;
 
-    // Check 3: Capacity larger than 65 GiB -> false
-    // NOTE: The rationale for this check is that the user's main drives will be
-    //       large capacity and we don't want to autodetect them when looking for
-    //       SDCards.
-    if (info->device_size > (65 * ONE_GiB))
+    // Check 3: Only allow removable drives
+    if (!info->removable)
         return false;
 
     return true;
