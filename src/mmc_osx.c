@@ -20,6 +20,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
+#include <IOKit/storage/IOStorageProtocolCharacteristics.h>
 
 #include <sys/socket.h>
 #include <sys/param.h>
@@ -102,11 +103,14 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
         CFStringRef cf_name = CFDictionaryGetValue(info, kDADiskDescriptionMediaNameKey);
         CFStringGetCString(cf_name, context->devices[ix].name, MMC_DEVICE_NAME_LEN, kCFStringEncodingISOLatin1);
 
+        CFStringRef cf_device_protocol = CFDictionaryGetValue(info, kDADiskDescriptionDeviceProtocolKey);
+        const char *protocol = CFStringGetCStringPtr(cf_device_protocol, kCFStringEncodingUTF8);
+        bool is_virtual = protocol != 0 && strcmp(protocol, kIOPropertyPhysicalInterconnectTypeVirtual) == 0;
+
         CFRelease(info);
 
-        // Filter out large devices since those are probably backup drives
-        // and not SDCards.
-        if (size > MMC_MAX_AUTODETECTED_SIZE)
+        // Filter out virtual devices like Time Machine network backup drives
+        if (is_virtual)
             return;
 
         context->count++;
