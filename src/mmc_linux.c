@@ -72,11 +72,14 @@ static int readsysfs(const char *path, char *buffer, int maxlen)
 
 /**
  * @brief Return the device size by using the sysfs
- * @param sysfspath
+ * @param name
  * @return
  */
-static off_t mmc_device_size_sysfs(const char *sysfspath)
+static off_t mmc_device_size_sysfs(const char *name)
 {
+    char sysfspath[32];
+    snprintf(sysfspath, sizeof(sysfspath), "/sys/block/%s/size", name);
+
     char sizestr[16];
     int rc = readsysfs(sysfspath, sizestr, sizeof(sizestr));
     if (rc <= 0)
@@ -105,22 +108,17 @@ static off_t mmc_device_size_raw(const char *devpath)
     return len < 0 ? 0 : len;
 }
 
-static bool mmc_get_device_stats(const char *devpath_pattern,
-                                 const char *sysfs_size_pattern,
-                                 int instance,
-                                 struct mmc_device_info *info)
+static bool mmc_get_device_stats(const char *name, struct mmc_device_info *info)
 {
-    snprintf(info->devpath, sizeof(info->devpath), devpath_pattern, instance);
+    snprintf(info->devpath, sizeof(info->devpath), "/dev/%s", name);
 
     if (stat(info->devpath, &info->st) < 0)
         return false;
 
     info->device_size = mmc_device_size_raw(info->devpath);
-    if (info->device_size == 0) {
-        char sysfspath[32];
-        snprintf(sysfspath, sizeof(sysfspath), sysfs_size_pattern, instance);
-        info->device_size = mmc_device_size_sysfs(sysfspath);
-    }
+    if (info->device_size == 0)
+        info->device_size = mmc_device_size_sysfs(name);
+
     return true;
 }
 
@@ -153,19 +151,17 @@ static void enumerate_mmc_devices()
 
     // Scan memory cards connected via USB. These are /dev/sd_ devices.
     for (char c = 'a'; c != 'z' && mmc_device_count < MMC_MAX_DEVICES; c++) {
-        if (mmc_get_device_stats("/dev/sd%c",
-                                 "/sys/block/sd%c/size",
-                                 c,
-                                 &mmc_devices[mmc_device_count]))
+        char name[4];
+        sprintf(name, "sd%c", c);
+        if (mmc_get_device_stats(name, &mmc_devices[mmc_device_count]))
             mmc_device_count++;
     }
 
     // Scan the mmcblk devices
     for (int i = 0; i < 16 && mmc_device_count < MMC_MAX_DEVICES; i++) {
-        if (mmc_get_device_stats("/dev/mmcblk%d",
-                                 "/sys/block/mmcblk%d/size",
-                                 i,
-                                 &mmc_devices[mmc_device_count]))
+        char name[12];
+        sprintf(name, "mmcblk%d", i);
+        if (mmc_get_device_stats(name, &mmc_devices[mmc_device_count]))
             mmc_device_count++;
     }
 }
