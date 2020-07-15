@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.8.1
+
+This release only contains meaningful changes for the host side. There is no
+need to upgrade devices.
+
+* Bug fixes
+  * Improved automatic detection of SD Cards on Linux and OSX. This includes
+    checks for whether they're writable, removable and non-virtual on Mac so
+    that a number of false positive drives can be removed from the list.
+  * Remove arbitrary 64 GB max SD card size for automatic detection for OSX and
+    Linux. If you have a 128 GB or larger SD Card, you no longer have to force
+    it to be selected. The previous change makes this behavior less risky.
+
 ## v1.8.0
 
 * New features
