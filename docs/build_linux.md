@@ -126,9 +126,9 @@ On Linux:
 
 ```sh
 cd fwup
+./autogen.sh
 ./configure
 make
 make check
 sudo make install
 ```
-
