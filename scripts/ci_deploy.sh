@@ -43,6 +43,7 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
         ;;
     linux-windows)
         cp fwup.exe artifacts/$ARTIFACT_SUBDIR/
+        cp fwup.*.nupkg artifacts/$ARTIFACT_SUBDIR/
         ;;
     linux-raspberrypi)
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
