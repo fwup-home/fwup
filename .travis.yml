@@ -73,6 +73,7 @@ deploy:
       file_glob: true
       file:
           - "artifacts/fwup.exe"
+          - "artifacts/fwup.*.nupkg"
       skip_cleanup: true
       on:
           repo: fhunleth/fwup
