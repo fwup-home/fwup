@@ -41,7 +41,8 @@ if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
         windows)
             sudo dpkg --add-architecture i386
             sudo apt-get update
-            sudo apt-get install -qq gcc-mingw-w64-x86-64 wine
+            sudo apt-get install -qq gcc-mingw-w64-x86-64 wine wine-binfmt
+            sudo update-binfmts --import /usr/share/binfmts/wine
             ;;
         singlethread|dynamic|minimal)
             sudo apt-get install -qq libarchive-dev
