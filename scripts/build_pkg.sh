@@ -69,6 +69,7 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     cd $FWUP_INSTALL_DIR/fwup/
     rm -f *.nupkg
     export ChocolateyInstall=$DEPS_INSTALL_DIR/chocolatey
+    chmod +x $ChocolateyInstall/console/choco.exe
     $ChocolateyInstall/console/choco.exe pack --allow-unofficial fwup.nuspec
     cd $BASE_DIR
     rm -f *.nupkg
