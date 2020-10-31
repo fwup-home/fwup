@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.8.2
+
+This release brings back and updates the Windows Chocolatey package.
+
 ## v1.8.1
 
 This release only contains meaningful changes for the host side. There is no
