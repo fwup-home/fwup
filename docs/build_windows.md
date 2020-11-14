@@ -9,7 +9,7 @@ First, make sure that 32-bit builds work and install dependencies:
 ```sh
 sudo dpkg --add-architecture i386
 sudo apt-get update
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip wine wine-binfmt gcc-mingw-w64-x86-64
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip xdelta3 wine wine-binfmt gcc-mingw-w64-x86-64
 
 # I had to manually import the wine binfmt description on one install. You'll
 # know this is an issue if running `fwup.exe` doesn't work.
