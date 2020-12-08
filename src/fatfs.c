@@ -76,6 +76,7 @@ static FRESULT fatfs_error(const char *context, const char *filename, FRESULT rc
 #define CHECK(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) return -1; } while (0)
 #define CHECK_CLEANUP(CONTEXT, FILENAME, CMD) do { if (fatfs_error(CONTEXT, FILENAME, CMD) != FR_OK) { rc = -1; goto cleanup; } } while (0)
 #define MAYBE_MOUNT(BLOCK_CACHE, BLOCK_OFFSET) do { if (output_ != BLOCK_CACHE || block_offset_ != BLOCK_OFFSET) { output_ = BLOCK_CACHE; block_offset_ = BLOCK_OFFSET; CHECK("fat_mount", NULL, f_mount(&fs_, "", 0)); } } while (0)
+#define CHECK_SYNC(FILENAME, FIL) CHECK("sync", FILENAME, f_sync(FIL))
 
 /**
  * @brief fatfs_mkfs Make a new FAT filesystem
@@ -243,6 +244,7 @@ int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_na
     FIL tofil;
     CHECK("fatfs_cp can't open file", from_name, f_open(&fromfil, from_name, FA_READ));
     CHECK("fatfs_cp can't open file", to_name, f_open(&tofil, to_name, FA_CREATE_ALWAYS | FA_WRITE));
+    CHECK_SYNC(to_name, &tofil);
 
     for (;;) {
         char buffer[4096];
@@ -255,7 +257,7 @@ int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_na
         CHECK("fatfs_cp can't write", to_name, f_write(&tofil, buffer, br, &bw));
         if (br != bw)
             ERR_RETURN("Error copying file to FAT");
-
+        CHECK_SYNC(to_name, &tofil);
     }
     f_close(&fromfil);
     f_close(&tofil);
@@ -398,6 +400,7 @@ int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *f
     if (!current_file_) {
         // FA_CREATE_ALWAYS truncates if the file exists
         CHECK("Can't open file on FAT partition", filename, f_open(&fil_, filename, FA_CREATE_ALWAYS | FA_WRITE));
+        CHECK_SYNC(filename, &fil_);
 
         // Assuming it opens ok, cache the filename for future writes.
         current_file_ = strdup(filename);
@@ -405,6 +408,7 @@ int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *f
         // Truncate an already open file
         CHECK("Can't seek to the beginning", filename, f_lseek(&fil_, 0));
         CHECK("Can't truncate file on FAT partition", filename, f_truncate(&fil_));
+        CHECK_SYNC(filename, &fil_);
     }
 
     // Leave the file open since the main use case is to start writing to it afterwards.
@@ -421,6 +425,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
 
     if (!current_file_) {
         CHECK("fat_write can't open file", filename, f_open(&fil_, filename, FA_OPEN_ALWAYS | FA_WRITE));
+        CHECK_SYNC(filename, &fil_);
 
         // Assuming it opens ok, cache the filename for future writes.
         current_file_ = strdup(filename);
@@ -444,6 +449,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
                 CHECK("fat_write can't write", filename, f_write(&fil_, zero_buffer, btw, &bw));
                 if (btw != bw)
                     ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+                CHECK_SYNC(filename, &fil_);
                 zero_count -= bw;
             }
         } else {
@@ -453,9 +459,9 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
 
     UINT bw;
     CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
-
     if (size != bw)
         ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+    CHECK_SYNC(filename, &fil_);
 
     return 0;
 }
