@@ -21,7 +21,7 @@ FRESULT test_contiguous_file (
 #else
     clsz = (DWORD)fp->obj.fs->csize * fp->obj.fs->ssize;
 #endif
-    fsz = fp->obj.objsize;
+    fsz = f_size(fp);
     if (fsz > 0) {
         clst = fp->obj.sclust - 1;  /* A cluster leading the first cluster for first test */
         while (fsz) {

@@ -118,7 +118,7 @@
 <h3>Namespace and Locale Configurations</h3>
 
 <h4 id="code_page">FF_CODE_PAGE</h4>
-<p>This option specifies the OEM code page to be used on the target system. Incorrect setting of the code page can cause a file open failure. If any non-ASCII character is not used for the path name, there is no difference between any code page settings. Set it 437 anyway.</p>
+<p>This option specifies the OEM code page used on the target system. Incorrect setting of the code page can cause a file open failure. If any non-ASCII character is not used for the path name or character encoding is in Unicode, there is no difference between any code page settings. Set it 437 anyway.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Code page</th></tr>
 <tr><td>0</td><td>Includes all code pages below and set by <tt>f_setcp()</tt></td></tr>
@@ -156,10 +156,10 @@
 </table>
 
 <h4 id="max_lfn">FF_MAX_LFN</h4>
-<p>LFN function requiers certain internal working buffer for the file name. This option defines size of the buffer and the value can be in range of 12 to 255 in UTF-16 encoding unit of the LFN. The buffer occupies <tt>(FF_MAX_LFN + 1) * 2</tt> bytes and additional <tt>(FF_MAX_LFN + 44) / 15 * 32</tt> bytes when exFAT is enabled. It is recommended to be set 255 to fully support the LFN specification. This option has no effect when LFN is not enabled.</p>
+<p>LFN function requiers certain internal working buffer for the file name. This option defines size of the buffer and the value can be in range of 12 to 255 characters (actually in UTF-16 code units) of the LFN. The buffer occupies <tt>(FF_MAX_LFN + 1) * 2</tt> bytes and additional <tt>(FF_MAX_LFN + 44) / 15 * 32</tt> bytes when exFAT is enabled. It is recommended to be set 255 to fully support the LFN specification. This option has no effect when LFN is not enabled.</p>
 
 <h4 id="lfn_unicode">FF_LFN_UNICODE</h4>
-<p>This option switches character encoding for the file name on the API. When Unicode is selected, <tt>FF_CODE_PAGE</tt> has actually no meaning except for compatibility with legacy systems, such as MS-DOS and any system without support for LFN. FatFs supports the code point up to U+10FFFF.</p>
+<p>This option switches character encoding for the file name on the API. FatFs supports the code point up to U+10FFFF. This option also affects behavior of string I/O functions (see <tt>FF_STRF_ENCODE</tt>).</p>
 <table class="lst2">
 <tr><th>Value</th><th>Character Encoding</th><th><tt>TCHAR</tt></th></tr>
 <tr><td>0</td><td>ANSI/OEM in current CP</td><td>char</td></tr>
@@ -167,14 +167,15 @@
 <tr><td>2</td><td>Unicode in UTF-8</td><td>char</td></tr>
 <tr><td>3</td><td>Unicode in UTF-32</td><td>DWORD</td></tr>
 </table>
-<p>This option also affects behavior of string I/O functions (see <tt>FF_STRF_ENCODE</tt>). When LFN is not enabled, this option has no effect and FatFs works at ANSI/OEM code on the API. For more information, read <a href="filename.html#uni">here</a>.</p>
+<p>When Unicode is selected, <tt>FF_CODE_PAGE</tt> has actually no meaning except for compatibility with legacy systems, such as MS-DOS and any system without support for LFN.</p>
+<p>When LFN is not enabled, this option has no effect and FatFs works in ANSI/OEM code on the API. For more information, read <a href="filename.html#uni">here</a>.</p>
 
 <h4 id="lfn_buf">FF_LFN_BUF, FF_SFN_BUF</h4>
-<p>This set of options defines size of file name members, <tt>fname[]</tt> and <tt>altname[]</tt>, in the <tt><a href="sfileinfo.html">FILINFO</a></tt> structure which is used to read out the directory items. These values should be suffcient for the file names to read. The maximum possible length of read file name depends on the character encoding on the API as follows:</p>
+<p>This set of options defines size of file name members, <tt>fname[]</tt> and <tt>altname[]</tt>, in the <tt><a href="sfileinfo.html">FILINFO</a></tt> structure which is used to read out the directory items. These values should be suffcient for the file names to read. The maximum possible length of read file name depends on the character encoding scheme on the API as follows:</p>
 <table class="lst2">
 <tr><th>Encoding</th><th>LFN length</th><th>SFN length</th></tr>
-<tr><td>ANSI/OEM at SBCS</td><td>255 items</td><td>12 items</td></tr>
-<tr><td>ANSI/OEM at DBCS</td><td>510 items</td><td>12 items</td></tr>
+<tr><td>ANSI/OEM in SBCS</td><td>255 items</td><td>12 items</td></tr>
+<tr><td>ANSI/OEM in DBCS</td><td>510 items</td><td>12 items</td></tr>
 <tr><td>Unicode in UTF-16/32</td><td>255 items</td><td>12 items</td></tr>
 <tr><td>Unicode in UTF-8</td><td>765 items</td><td>34 items</td></tr>
 </table>
@@ -249,16 +250,16 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sdc","usb"};
 <p>Normal (0) or Tiny (1). The tiny configuration reduces size of the <tt>FIL</tt> structure, file object, <tt>FF_MAX_SS</tt> bytes each. Instead of private sector buffer eliminated from the file object, common sector buffer in the <tt>FATFS</tt> structure, filesystem object, is used for the file data transfer.</p>
 
 <h4 id="fs_exfat">FF_FS_EXFAT</h4>
-<p>This option switches support for exFAT filesystem in addition to the FAT/FAT32 filesystem, Enabled (1) or Disabled (0). To enable exFAT, also LFN must be enabled and configureing <tt>FF_LFN_UNICODE &gt;= 1</tt> and <tt>FF_MAX_LFN == 255</tt> is recommended for full-featured exFAT function. Note that enabling exFAT discards ANSI C (C89) compatibility because of need for 64-bit integer type.</p>
+<p>This option switches support for exFAT filesystem in addition to the FAT/FAT32 filesystem, Enabled (1) or Disabled (0). To enable exFAT, also LFN must be enabled and configureing <tt>FF_LFN_UNICODE &gt;= 1</tt> and <tt>FF_MAX_LFN == 255</tt> is recommended for full-featured exFAT function. Note that enabling exFAT discards ANSI C (C89) compatibility and wants C99 because of need for 64-bit integer type.</p>
 
 <h4 id="fs_nortc">FF_FS_NORTC</h4>
-<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp function. If the system does not have any RTC function or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a fixed timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp function, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect at read-only configuration.</p>
+<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp function. If the system does not have any RTC function or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a fixed timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp function, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect in read-only configuration.</p>
 
 <h4 id="nortc_time">FF_NORTC_MON, FF_NORTC_MDAY, FF_NORTC_YEAR</h4>
-<p>This set of options defines the time to be used at no RTC systems. This option has no effect at read-only configuration or <tt>FF_FS_NORTC == 0</tt>.</p>
+<p>This set of options defines the time to be used in no RTC systems. This option has no effect in read-only configuration or <tt>FF_FS_NORTC == 0</tt>.</p>
 
 <h4 id="fs_nofsinfo">FF_FS_NOFSINFO</h4>
-<p>0 to 3. If you need to know correct free space on the FAT32 volume, set bit 0 of this option, and <tt>f_getfree</tt> function at first time after volume mount will force a full FAT scan. Bit 1 controls the use of last allocated cluster number.</p>
+<p>0 to 3. If you need to know correct free space on the FAT32 volume, set bit 0 of this option, and <tt>f_getfree</tt> function at first time after volume mount will force a full FAT scan. Bit 1 controls the use of last allocated cluster number for new allocation.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
 <tr><td>bit0=0</td><td>Use free cluster count in the FSINFO if available.</td></tr>
@@ -268,7 +269,7 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sdc","usb"};
 </table>
 
 <h4 id="fs_lock">FF_FS_LOCK</h4>
-<p>This option switches file lock function to control duplicated file open and illegal operations to open objects. Note that the file lock function is independent of re-entrancy. This option must be 0 at read-only configuration.</p>
+<p>This option switches file lock function to control duplicated file open and illegal operations to open objects. Note that the file lock function is independent of re-entrancy. This option must be 0 in read-only configuration.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
 <tr><td>0</td><td>Disable file lock function. To avoid collapsing file by wrong file operation, application program needs to avoid illegal open, remove and rename to the open objects.</td></tr>

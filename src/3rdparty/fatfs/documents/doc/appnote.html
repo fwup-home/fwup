@@ -54,7 +54,7 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <dt><tt>DWORD</tt></dt><dd>32-bit unsigned integer in range of 0 to 2<sup>32</sup> - 1.</dd>
 <dt><tt>QWORD</tt></dt><dd>64-bit unsigned integer in range of 0 to 2<sup>64</sup> - 1.</dd>
 <dt><tt>UINT</tt></dt><dd>Alias of <tt>unsigned int</tt> used to specify any number.</dd>
-<dt><tt>WCHAR</tt></dt><dd>Alias of <tt>WORD</tt> used to specify a UTF-16 encoding unit.</dd>
+<dt><tt>WCHAR</tt></dt><dd>Alias of <tt>WORD</tt> used to specify a UTF-16 code unit.</dd>
 <dt><tt>TCHAR</tt></dt><dd>Alias of <tt>char</tt>, <tt>WCHAR</tt> or <tt>DWORD</tt> used to specify a character encoding unit.</dd>
 <dt><tt>FSIZE_t</tt></dt><dd>Alias of <tt>DWORD</tt> or <tt>QWORD</tt> used to address file offset and to specify file size.</dd>
 <dt><tt>LBA_t</tt></dt><dd>Alias of <tt>DWORD</tt> or <tt>QWORD</tt> used to address sectors in LBA and to specify number of sectors.</dd>
@@ -67,7 +67,7 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <p><img src="../res/funcs.png" width="750" height="420" alt="functional diagram"></p>
 
 <h4>Required Functions</h4>
-<p>You need to provide only low level disk I/O functions required by FatFs module and nothing else. If a working disk I/O module for the target system is already provided, you need to write only glue functions to attach it to the FatFs module. If not, you need to port another disk I/O module or write it from scratch. Most of defined functions are not that always required. For instance, any write function is not required at read-only configuration. Following table shows which function is required depends on the configuration options.</p>
+<p>You need to provide only MAI functions required by FatFs module and nothing else. If any working device control module for the target system is available, you need to write only glue functions to attach it to the FatFs module. If not, you need to port another device control module or write it from scratch. Most of MAI functions are not that always required. For instance, any write function is not required in read-only configuration. Following table shows which function is required depends on the configuration options.</p>
 <table class="lst2">
 <tr><th>Function</th><th>Required when</th><th>Note</th></tr>
 <tr><td>disk_status<br>disk_initialize<br>disk_read</td><td>Always</td><td rowspan="5">Disk I/O functions.<br>Samples available in ffsample.zip.<br>There are many implementations on the web.</td></tr>
@@ -103,17 +103,17 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <tr><th></th><th>ARM7<small><br>32bit</small></th><th>ARM7<small><br>Thumb</small></th><th>CM3<small><br>Thumb-2</small></th><th>AVR</th><th>H8/300H</th><th>PIC24</th><th>RL78</th><th>V850ES</th><th>SH-2A</th><th>RX600</th><th>IA-32</th></tr>
 <tr class="cal">     <td>Compiler</td><td>GCC</td><td>GCC</td><td>GCC</td><td>GCC</td><td>CH38</td><td>C30</td><td>CC78K0R</td><td>CA850</td><td>SHC</td><td>RXC</td><td>MSC</td></tr>
 <!--                                                      ARM        Thumb          CM3           AVR            H8          PIC24          RL78       V850ES        SH-2A        RX600        IA-32   -->
-<tr class="ral"><td class="cal">text (Full, R/W)</td><td>10.4k</td><td>6.7k</td><td>6.3k</td><td>12.4k</td> <td>9.9k</td><td>11.2k</td><td>13.0k</td><td>8.7k</td><td>9.0k</td><td>6.5k</td><td>8.9k</td></tr>
-<tr class="ral"><td class="cal">text (Min, R/W)</td>  <td>7.0k</td><td>4.7k</td><td>4.4k</td> <td>8.4k</td> <td>6.9k</td> <td>7.8k</td> <td>9.4k</td><td>6.0k</td><td>6.2k</td><td>4.6k</td><td>6.3k</td></tr>
-<tr class="ral"><td class="cal">text (Full, R/O)</td> <td>4.8k</td><td>3.1k</td><td>2.8k</td> <td>5.7k</td> <td>4.7k</td> <td>5.3k</td> <td>6.4k</td><td>4.2k</td><td>4.0k</td><td>3.1k</td><td>4.2k</td></tr>
-<tr class="ral"><td class="cal">text (Min, R/O)</td>  <td>3.6k</td><td>2.4k</td><td>2.2k</td> <td>4.4k</td> <td>3.6k</td> <td>4.1k</td> <td>5.0k</td><td>3.3k</td><td>3.1k</td><td>2.4k</td><td>3.3k</td></tr>
+<tr class="ral"><td class="cal">text (Full, R/W)</td><td>10.6k</td><td>6.8k</td><td>6.4k</td><td>12.4k</td><td>10.1k</td><td>11.4k</td><td>13.1k</td><td>8.9k</td><td>9.1k</td><td>6.5k</td><td>9.0k</td></tr>
+<tr class="ral"><td class="cal">text (Min, R/W)</td>  <td>7.2k</td><td>4.8k</td><td>4.6k</td> <td>8.5k</td> <td>7.1k</td> <td>8.0k</td> <td>9.6k</td><td>6.3k</td><td>6.3k</td><td>4.7k</td><td>6.4k</td></tr>
+<tr class="ral"><td class="cal">text (Full, R/O)</td> <td>5.0k</td><td>3.2k</td><td>2.9k</td> <td>6.0k</td> <td>4.8k</td> <td>5.5k</td> <td>6.6k</td><td>4.4k</td><td>4.1k</td><td>3.2k</td><td>4.3k</td></tr>
+<tr class="ral"><td class="cal">text (Min, R/O)</td>  <td>3.8k</td><td>2.5k</td><td>2.3k</td> <td>4.4k</td> <td>3.8k</td> <td>4.2k</td> <td>5.2k</td><td>3.4k</td><td>3.3k</td><td>2.5k</td><td>3.5k</td></tr>
 <tr class="ral"><td class="cal">bss</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*2 + 2</td><td>V*4 + 2</td><td>V*2 + 2</td><td>V*2 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td></tr>
 <tr class="ral"><td class="cal">Work area<br><small>(FF_FS_TINY == 0)</small></td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td></tr>
 <tr class="ral"><td class="cal">Work area<br><small>(FF_FS_TINY == 1)</small></td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td></tr>
 </table>
 <p>These are the memory usage of FatFs module without lower layer on some target systems in following condition. <em>V</em> denotes number of mounted volumes and <em>F</em> denotes number of open files. Every samples here are optimezed in code size.</p>
 <pre>
-FatFs R0.13a options:
+FatFs R0.14a options:
 FF_FS_READONLY   0 (Read/Write) or 1 (Read only)
 FF_FS_MINIMIZE   0 (Full, with all basic functions) or 3 (Min, with fully minimized)
 FF_FS_TINY       0 (Default) or 1 (Tiny file object)
@@ -185,7 +185,7 @@ And any other options are left unchanged from original setting.
 
 <div class="para doc" id="unicode">
 <h3>Unicode API</h3>
-<p>By default, FatFs uses ANSI/OEM code set on the API even at LFN configuration. FatFs can also switch the character encoding on the API to Unicode by configuration option <tt><a href="config.html#lfn_unicode">FF_LFN_UNICODE</a></tt>. This means that FatFs is compliant with the full featured LFN specification. The data type <tt>TCHAR</tt> specifies path name strings on the API is an alias of either <tt>char</tt>(ANSI/OEM or UTF-8), <tt>WCHAR</tt>(UTF-16) or <tt>DWORD</tt>(UTF-32) depends on that option. For more information, refer to the description in the <a href="filename.html#uni">file name</a>.</p>
+<p>By default, FatFs uses ANSI/OEM code set on the API even in LFN configuration. FatFs can also switch the character encoding on the API to Unicode by configuration option <tt><a href="config.html#lfn_unicode">FF_LFN_UNICODE</a></tt>. This means that FatFs is compliant with the full featured LFN specification. The data type <tt>TCHAR</tt> specifies path name strings on the API is an alias of either <tt>char</tt>(ANSI/OEM or UTF-8), <tt>WCHAR</tt>(UTF-16) or <tt>DWORD</tt>(UTF-32) depends on that option. For more information, refer to the description in the <a href="filename.html#uni">file name</a>.</p>
 <p>Note that setting of code page, <tt><a href="config.html#code_page">FF_CODE_PAGE</a></tt>, has actually no meaning when FatFs is configured for the Unicode API. It should be set 437 anyway. However it still affects code conversion of string I/O functions at <tt><a href="config.html#strf_encode">FF_STRF_ENCODE</a> == 0</tt> and backward compatibility with legacy systems, so that code page may need to be configured properly if it is considered a problem.</p>
 </div>
 
@@ -198,8 +198,8 @@ And any other options are left unchanged from original setting.
 
 <div class="para doc" id="lba64">
 <h3>64-bit LBA</h3>
-<p>LBA (Logical Block Addressing) is an addressing method to specify the location of data block, called sector, on the storage media. It is a simple linear address beginning from 0 as the first block of data. The host system does not need to consider how the data block is located and managed in the storage device. FatFs supports only LBA for the media access. 32-bit LBA is a common size at the interface of the most storage devices. It can address up to 2<sup>32</sup> blocks, 2 TB in 512 bytes/sector. When a storage device beyond 2 TB is used, increasing sector size or 64-bit LBA will be needed to address the entire block of the storage device.</p>
-<p>By default, FatFs uses 32-bit LBA for media access interface. FatFs can also switch it to 64-bit LBA by a configuration option <tt><a href="config.html#fs_lba64">FF_LBA64</a></tt>. It also enables GPT (GUID Partition Table) for partiotion management on the storage media. For further information about GPT, refer to <tt><a href="mkfs.html">f_mkfs</a></tt> and <tt><a href="fdisk.html">f_fdisk</a></tt> function.</p>
+<p>LBA (Logical Block Addressing) is an addressing method to specify the location of data block, called sector, on the storage media. It is a simple linear address beginning from 0 as the first block of data. The host system does not need to consider how the data block is located and managed in the storage device. FatFs supports only LBA for the media access. 32-bit LBA is a common size at the interface of the most storage devices. It can address up to 2<sup>32</sup> blocks, 2 TB in 512 bytes/sector. When a storage device larger than 2 TB is used, larger sector size or 64-bit LBA will be needed to address the entire block of the storage device.</p>
+<p>By default, FatFs works in 32-bit LBA for media access interface. FatFs can also switch it to 64-bit LBA by a configuration option <tt><a href="config.html#fs_lba64">FF_LBA64</a></tt>. It also enables GPT (GUID Partition Table) for partiotion management on the storage device. For further information about GPT, refer to <tt><a href="mkfs.html">f_mkfs</a></tt> and <tt><a href="fdisk.html">f_fdisk</a></tt> function.</p>
 </div>
 
 <div class="para doc" id="reentrant">
@@ -224,7 +224,7 @@ Case 3: Different volume on the different drive.<br>
 (*) In only different drive number.
 </small>
 </div>
-<p>Remarks: This section describes on the re-entrancy of the FatFs module itself. The <tt>FF_FS_REENTRANT</tt> option enables only exclusive use of each filesystem objects and FatFs does not that prevent to re-enter the low level disk functions. Thus the low level disk I/O layer needs to be always thread-safe when FatFs API is re-entered for different volumes. Right table shows which low level function can be re-entered when FatFs API is re-entered on some conditions.</p>
+<p>Remarks: This section describes on the re-entrancy of the FatFs module itself. The <tt>FF_FS_REENTRANT</tt> option enables only exclusive use of each filesystem objects and FatFs does not that prevent to re-enter the storage device control functions. Thus the device control layer needs to be always thread-safe when FatFs API is re-entered for different volumes. Right table shows which control function can be re-entered when FatFs API is re-entered on some conditions.</p>
 </div>
 
 <div class="para doc" id="dup">
@@ -291,12 +291,12 @@ Figure 5. Minimized critical section<br>
 <h3>Extended Use of FatFs API</h3>
 <p>These are examples of extended use of FatFs APIs. New item will be added when useful code example is found.</p>
 <ol>
-<li><a href="http://elm-chan.org/fsw/ff/res/app1.c">Open or create a file for append</a> (for R0.12 and earlier)</li>
+<li><a href="http://elm-chan.org/fsw/ff/res/app1.c">Open or create a file for append</a> (superseded by FA_APPEND flag added in R0.12)</li>
 <li><a href="http://elm-chan.org/fsw/ff/res/app2.c">Delete a non-empty sub-directory</a> (for R0.12 and later)</li>
-<li><a href="http://elm-chan.org/fsw/ff/res/app3.c">Allocate contiguous area to the file</a> (for R0.11a and earlier)</li>
+<li><a href="http://elm-chan.org/fsw/ff/res/app3.c">Create a contiguous file</a> (superseded by f_expand function added in R0.12)</li>
 <li><a href="http://elm-chan.org/fsw/ff/res/app5.c">Test if the file is contiguous or not</a></li>
-<li><a href="http://elm-chan.org/fsw/ff/res/app4.c">Compatibility checker for low level disk I/O module</a></li>
-<li><a href="http://elm-chan.org/fsw/ff/res/app6.c">Performance checker for low level disk I/O module</a></li>
+<li><a href="http://elm-chan.org/fsw/ff/res/app4.c">Compatibility checker for storage device control module</a></li>
+<li><a href="http://elm-chan.org/fsw/ff/res/app6.c">Performance checker for storage device control module</a></li>
 <li><a href="http://elm-chan.org/fsw/ff/res/mkfatimg.zip">FAT volume image creator</a></li>
 <li>Virtual drive feature (refer to lpc176x/ in <a href="../ffsample.zip">ffsample.zip</a>)</li>
 </ol>
@@ -325,7 +325,7 @@ Figure 5. Minimized critical section<br>
 / by use of this software.
 /----------------------------------------------------------------------------*/
 </pre>
-<p>Therefore FatFs license is one of the BSD-style licenses but there is a significant feature. FatFs is mainly intended for embedded systems. In order to extend the usability for commercial products, the redistributions of FatFs in binary form, such as embedded code, binary library and any forms without source code, does not need to include about FatFs in the documentations. This is equivalent to the 1-clause BSD license. Of course FatFs is compatible with the most of open source software licenses including GNU GPL. When you redistribute the FatFs source code with any changes or create a fork, the license can also be changed to GNU GPL, BSD-style license or any open source software license that not conflict with FatFs license.</p>
+<p>Therefore FatFs license is one of the BSD-style licenses but there is a significant feature. FatFs is mainly intended for embedded systems. In order to extend the usability for commercial products, the redistributions of FatFs in binary form, such as embedded code, binary library and any forms without source code, does not need to include about FatFs in the documentations. This is equivalent to the 1-clause BSD license. Of course FatFs is compatible with the most of open source software licenses including GNU GPL. When you redistribute the FatFs source code with any changes or create a fork, the license can also be changed to GNU GPL, BSD-style license or any open source software license that compatible with FatFs license.</p>
 </div>
 
 <p class="foot"><a href="../00index_e.html">Return Home</a></p>

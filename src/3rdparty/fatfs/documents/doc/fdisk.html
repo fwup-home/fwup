@@ -29,7 +29,7 @@ FRESULT f_fdisk (
 <dt>pdrv</dt>
 <dd>Specifies the <em>physical drive</em> to be divided. This is not the logical drive number but the drive identifier passed to the low level disk functions.</dd>
 <dt>ptbl</dt>
-<dd>List of partitions to create on the drive. The data type <tt>LBA_t</tt> is alias of <tt>DWORD</tt> or <tt>QWORD</tt> depends on the configuration option <tt><a href="config.html#fs_lba64">FF_LBA64</a></tt>.</dd>
+<dd>List of partition size to create on the drive. The data type <tt>LBA_t</tt> is an alias of <tt>DWORD</tt> or <tt>QWORD</tt> depends on the configuration option <tt><a href="config.html#fs_lba64">FF_LBA64</a></tt>.</dd>
 <dt>work</dt>
 <dd>Pointer to the function work area. The size must be at least <tt><a href="config.html#max_ss">FF_MAX_SS</a></tt> bytes. When a null pointer is given with <tt><a href="config.html#use_lfn">FF_USE_LFN</a> = 3</tt>, a memory block is obtained in this function for the working buffer.</dd>
 </dl>

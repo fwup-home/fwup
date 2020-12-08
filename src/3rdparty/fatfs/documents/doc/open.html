@@ -42,7 +42,7 @@ FRESULT f_open (
 <tr><td>FA_OPEN_ALWAYS</td><td>Opens the file if it is existing. If not, a new file will be created.</td></tr>
 <tr><td>FA_OPEN_APPEND</td><td>Same as <tt>FA_OPEN_ALWAYS</tt> except the read/write pointer is set end of the file.</td></tr>
 </table>
-Mode flags of POSIX fopen() corresponds to FatFs mode flags as follows:<br>
+Mode flags in POSIX fopen() function corresponds to FatFs mode flags as follows:<br>
 <table class="lst2">
 <tr><th>POSIX</th><th>FatFs</th></tr>
 <tr><td>"r"</td><td>FA_READ</td></tr>
@@ -111,7 +111,7 @@ int main (void)
     FRESULT fr;     <span class="c">/* FatFs return code */</span>
 
 
-    <span class="c">/* Register work area to the default drive */</span>
+    <span class="c">/* Gives a work area to the default drive */</span>
     f_mount(&amp;FatFs, "", 0);
 
     <span class="c">/* Open a text file */</span>
@@ -141,7 +141,7 @@ int main (void)
     UINT br, bw;         <span class="c">/* File read/write count */</span>
 
 
-    <span class="c">/* Register work area for each logical drive */</span>
+    <span class="c">/* Gives work area to each logical drive */</span>
     f_mount(&amp;fs0, "0:", 0);
     f_mount(&amp;fs1, "1:", 0);
 
@@ -155,10 +155,10 @@ int main (void)
 
     <span class="c">/* Copy source to destination */</span>
     for (;;) {
-        fr = f_read(&amp;fsrc, buffer, sizeof buffer, &amp;br);  <span class="c">/* Read a chunk of source file */</span>
-        if (fr || br == 0) break; <span class="c">/* error or eof */</span>
-        fr = f_write(&amp;fdst, buffer, br, &amp;bw);            <span class="c">/* Write it to the destination file */</span>
-        if (fr || bw &lt; br) break; <span class="c">/* error or disk full */</span>
+        f_read(&amp;fsrc, buffer, sizeof buffer, &amp;br);  <span class="c">/* Read a chunk of data from the source file */</span>
+        if (br == 0) break; <span class="c">/* error or eof */</span>
+        f_write(&amp;fdst, buffer, br, &amp;bw);            <span class="c">/* Write it to the destination file */</span>
+        if (bw &lt; br) break; <span class="c">/* error or disk full */</span>
     }
 
     <span class="c">/* Close open files */</span>
@@ -166,8 +166,8 @@ int main (void)
     f_close(&amp;fdst);
 
     <span class="c">/* Unregister work area prior to discard it */</span>
-    f_mount(0, "0:", 0);
-    f_mount(0, "1:", 0);
+    f_unmount("0:");
+    f_unmount("1:");
 
     return (int)fr;
 }
