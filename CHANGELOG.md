@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.8.3
+
+This release updates FatFS (the FAT filesystem library) to the latest patch
+release, R0.14a.
+
+It also updates how fwup calls into the library to reduce the time window where
+fwup can be responsible for FAT filesystem corruption. The incident that
+prompted this change was a device that had repeated firmware update
+interruptions had accumulated enough orphaned FAT clusters to fill the partition
+and prevent an update. `fsck.fat` can fix this easily, but it's better if this
+doesn't happen and this update should reduce the probability.
+
 ## v1.8.2
 
 This release brings back and updates the Windows Chocolatey package.
