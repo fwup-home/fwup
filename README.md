@@ -237,7 +237,7 @@ may not be what you want.
 # Configuration file format
 
 `fwup` uses the Unix configuration library,
-[libconfuse](http://www.nongnu.org/confuse/), so its configuration has some
+[libconfuse](https://github.com/libconfuse/libconfuse), so its configuration has some
 similarities to other programs. The configuration file is used to create
 firmware archives. During creation, `fwup` embeds a processed version of the
 configuration file into the archive that has been stripped of comments, has had
