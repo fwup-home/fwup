@@ -1,13 +1,14 @@
 name: C/C++ CI
 
-on: [push, pull_request]
+#on: [push, pull_request]
+on: push
 
 jobs:
   build:
     strategy:
       matrix:
         include:
-          - os: [ubuntu-16.04]
+          - os: [ubuntu-18.04]
             mode: "minimal"
           - os: [ubuntu-20.04]
             mode: "windows"
@@ -15,6 +16,7 @@ jobs:
             mode: "dynamic"
 
     runs-on: ${{ matrix.os }}
+    fail-fast: false
     env:
         MODE: ${{ matrix.mode }}
 
