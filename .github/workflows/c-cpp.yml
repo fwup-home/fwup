@@ -16,7 +16,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-        MODE: ${{{ matrix.mode }}}
+        MODE: ${{ matrix.mode }}
 
     steps:
     - uses: actions/checkout@v2
