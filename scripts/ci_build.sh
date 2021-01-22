@@ -4,7 +4,6 @@
 # Build script for Travis
 #
 # Inputs:
-#    TRAVIS_OS_NAME - "linux" or "osx"
 #    MODE           - "static", "dynamic", "windows", "raspberrypi", or "minimal"
 #
 # Static builds use scripts to download libarchive and libconfuse, so those are
@@ -15,40 +14,41 @@ set -e
 set -v
 
 FWUP_VERSION=$(cat VERSION)
+OS_NAME="$(uname -s)"
 
 # Create ./configure
 ./autogen.sh
 
-case "${TRAVIS_OS_NAME}-${MODE}" in
+case "${OS_NAME}-${MODE}" in
     *-static)
         # If this is a static build, run 'build_pkg.sh'
         bash -v scripts/build_pkg.sh
         exit 0
         ;;
-    linux-minimal)
+    Linux-minimal)
         bash -v scripts/build_and_test_minimal.sh
         exit 0
         ;;
-    linux-dynamic)
+    Linux-dynamic)
         ./configure --enable-gcov
         ;;
-    linux-singlethread)
+    Linux-singlethread)
         # The verify-syscalls script can't follow threads, so
         # single thread builds are the only way to verify that
         # the issued read and write calls follow the expected
         # alignment, size and order
         ./configure --enable-gcov --without-pthreads
         ;;
-    osx-dynamic)
+    Darwin-dynamic)
         PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;
         ;;
-    linux-windows)
+    Linux-windows)
         CC=x86_64-w64-mingw32-gcc \
             CROSS_COMPILE=x86_64-w64-mingw32 \
             bash -v scripts/build_pkg.sh
         exit 0
         ;;
-    linux-raspberrypi)
+    Linux-raspberrypi)
         CC=arm-linux-gnueabihf-gcc \
             CROSS_COMPILE=arm-linux-gnueabihf \
             PATH=~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin:$PATH \
@@ -57,7 +57,7 @@ case "${TRAVIS_OS_NAME}-${MODE}" in
         exit 0
         ;;
     *)
-        echo "Unexpected build option: ${TRAVIS_OS_NAME}-${MODE}"
+        echo "Unexpected build option: ${OS_NAME}-${MODE}"
         exit 1
 esac
 
@@ -73,7 +73,7 @@ make dist
 # Check that the distribution version works by building it again
 tar xf fwup-$FWUP_VERSION.tar.gz
 cd fwup-$FWUP_VERSION
-if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+if [ "$OS_NAME" = "Linux" ]; then
     ./configure;
 else
     PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure;

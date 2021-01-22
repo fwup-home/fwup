@@ -1,0 +1,34 @@
+name: C/C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: [ubuntu-16.04]
+            mode: "minimal"
+          - os: [ubuntu-20.04]
+            mode: "windows"
+          - os: [macos-latest]
+            mode: "dynamic"
+
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    env:
+        MODE: ${{{ matrix.mode }}}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: scripts/ci_install_deps.sh
+    - name: Build
+      run: scripts/ci_build.sh
+    - name: After success
+      run: scripts/ci_after_success.sh
+    - name: Deploy
+      run: scripts/ci_deploy.sh

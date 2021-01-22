@@ -4,8 +4,7 @@
 # Install dependencies on Travis
 #
 # Inputs:
-#    TRAVIS_OS_NAME - "linux" or "osx"
-#    BUILD_STATIC   - "true" or "false"
+#    MODE   - dynamic, static, singlethread, minimal, windows, raspberrypi
 #
 # Static builds use scripts to download libarchive and libconfuse
 # so those are only installed on shared library builds.
@@ -17,24 +16,26 @@ set -v
 source scripts/third_party_versions.sh
 
 MAKE_FLAGS=-j4
-if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
+OS_NAME="$(uname -s)"
+
+if [[ "$OS_NAME" = "Linux" ]]; then
     DEPS_INSTALL_DIR=/usr
 else
     DEPS_INSTALL_DIR=/usr/local
 fi
 
 install_confuse() {
-    echo Downloading and installing libconfuse $CONFUSE_VERSION...
-    curl -LO https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
-    tar xf confuse-$CONFUSE_VERSION.tar.xz
-    pushd confuse-$CONFUSE_VERSION
+    echo "Downloading and installing libconfuse $CONFUSE_VERSION..."
+    curl -LO "https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz"
+    tar xf "confuse-$CONFUSE_VERSION.tar.xz"
+    pushd "confuse-$CONFUSE_VERSION"
     ./configure --prefix=$DEPS_INSTALL_DIR --disable-examples
     make $MAKE_FLAGS
     sudo make install
     popd
 }
 
-if [[ "$TRAVIS_OS_NAME" = "linux" ]]; then
+if [[ "$OS_NAME" = "Linux" ]]; then
     sudo apt-get update -qq
     sudo apt-get install -qq autopoint mtools unzip zip help2man xdelta3
     case $MODE in
