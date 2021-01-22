@@ -14,10 +14,6 @@ jobs:
           - os: [macos-latest]
             mode: "dynamic"
 
-
-jobs:
-  build:
-
     runs-on: ${{ matrix.os }}
     env:
         MODE: ${{{ matrix.mode }}}
