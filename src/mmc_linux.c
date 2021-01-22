@@ -36,6 +36,7 @@
 #include <unistd.h>
 
 #include <linux/fs.h>
+#include <linux/major.h>
 
 #ifndef BLKDISCARD
 #define BLKDISCARD _IO(0x12,119)
@@ -138,7 +139,11 @@ static bool mmc_get_device_stats(const char *name, struct mmc_device_info *info)
     if (info->device_size == 0)
         info->device_size = mmc_device_size_sysfs(name);
 
-    info->removable = mmc_device_removable_sysfs(name);
+    // See https://elixir.bootlin.com/linux/v5.8.18/source/drivers/mmc/core/block.c#L2335 for
+    // why mmc devices (e.g., built-in SDCard readers are marked non-removable). For fwup's
+    // purposes, though, it makes more sense to count them as removable.
+    info->removable = major(info->st.st_rdev) == MMC_BLOCK_MAJOR ||
+        mmc_device_removable_sysfs(name);
 
     return true;
 }
