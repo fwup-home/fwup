@@ -11,7 +11,7 @@
 
 FWUP_MAINTAINER="Frank Hunleth <fhunleth@troodon-software.com>"
 FWUP_DESCRIPTION="Configurable embedded Linux firmware update creator and runner"
-FWUP_HOMEPAGE="https://github.com/fhunleth/fwup"
+FWUP_HOMEPAGE="https://github.com/fwup-home/fwup"
 FWUP_VENDOR="fhunleth@troodon-software.com"
 FWUP_LICENSE="Apache-2.0"
 

@@ -8,16 +8,16 @@
     <owners>Greg Mefford,Michael Schmidt</owners>
     <summary>Configurable embedded Linux firmware update creator and runner</summary>
     <description>The fwup utility is a configurable image-based firmware update utility for embedded Linux-based systems. It has two modes of operation. The first mode creates compressed archives containing root file system images, bootloaders, and other image material. These can be distributed via websites, email or update servers. The second mode applies the firmware images in a robust and repeatable way.</description>
-    <releaseNotes>https://github.com/fhunleth/fwup/releases</releaseNotes>
-    <projectUrl>https://github.com/fhunleth/fwup</projectUrl>
+    <releaseNotes>https://github.com/fwup-home/fwup/releases</releaseNotes>
+    <projectUrl>https://github.com/fwup-home/fwup</projectUrl>
     <tags>flash sdcard embedded linux iot nerves</tags>
-    <packageSourceUrl>https://github.com/fhunleth/fwup</packageSourceUrl>
-    <docsUrl>https://github.com/fhunleth/fwup/blob/master/README.md</docsUrl>
-    <bugTrackerUrl>https://github.com/fhunleth/fwup/issues</bugTrackerUrl>
-    <projectSourceUrl>https://github.com/fhunleth/fwup</projectSourceUrl>
-    <licenseUrl>https://github.com/fhunleth/fwup/blob/master/LICENSE</licenseUrl>
+    <packageSourceUrl>https://github.com/fwup-home/fwup</packageSourceUrl>
+    <docsUrl>https://github.com/fwup-home/fwup/blob/main/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/fwup-home/fwup/issues</bugTrackerUrl>
+    <projectSourceUrl>https://github.com/fwup-home/fwup</projectSourceUrl>
+    <licenseUrl>https://github.com/fwup-home/fwup/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>https://cdn.rawgit.com/fhunleth/fwup/v%VERSION%/docs/fwup-pup256x256.png</iconUrl>
+    <iconUrl>https://cdn.rawgit.com/fwup-home/fwup/v%VERSION%/docs/fwup-pup256x256.png</iconUrl>
   </metadata>
   <files>
     <file src="tools/**" target="tools" />

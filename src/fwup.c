@@ -155,7 +155,7 @@ static void print_usage()
     printf("  $ %s -S -s fwup-key.priv -i myfirmware.fw -o signedfirmware.fw\n", program_name);
     printf("\n");
     printf("Also see the unit tests that come with fwup source code for more examples.\n");
-    printf("Obtain source code and report bugs at https://github.com/fhunleth/fwup.\n");
+    printf("Obtain source code and report bugs at https://github.com/fwup-home/fwup.\n");
 #endif
 }
 

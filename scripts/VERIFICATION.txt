@@ -3,4 +3,4 @@ Verification is intended to assist the Chocolatey moderators and community
 in verifying that this package's contents are trustworthy.
 
 The binary fwup %VERSION% can be directly downloaded from:
-https://github.com/fhunleth/fwup/releases/download/%VERSION%/fwup.exe
+https://github.com/fwup-home/fwup/releases/download/%VERSION%/fwup.exe

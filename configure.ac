@@ -1,4 +1,4 @@
-AC_INIT([fwup], m4_esyscmd_s(cat VERSION), [https://github.com/fhunleth/fwup/issues])
+AC_INIT([fwup], m4_esyscmd_s(cat VERSION), [https://github.com/fwup-home/fwup/issues])
 AC_CONFIG_SRCDIR([src/fwup_metadata.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])

@@ -266,7 +266,7 @@ bool will_be_regular_file(const char *path)
     // pretty much never their intention. This will eventually cause
     // an error since the code that calls this won't create files unless
     // this function returns true.
-    // See https://github.com/fhunleth/fwup/issues/35.
+    // See https://github.com/fwup-home/fwup/issues/35.
 
     if (strncmp(path, "/dev/", 5) == 0)
         is_in_dev = true;
