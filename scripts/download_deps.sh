@@ -11,7 +11,7 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 source $BASE_DIR/scripts/common.sh
 
 if [ $(uname -s) = "Darwin" ]; then
-    SHA256SUM=/usr/local/bin/gsha256sum
+    SHA256SUM="$(brew --prefix)/bin/gsha256sum"
 
     if [ ! -f $SHA256SUM ]; then
         echo "Please run 'brew install coreutils' for gsha256sum"

@@ -16,7 +16,7 @@ $ brew install coreutils mtools xdelta
 
 $ cd fwup
 $ ./autogen.sh
-$ PKG_CONFIG_PATH="/usr/local/opt/libarchive/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure
+$ PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig:$PKG_CONFIG_PATH" ./configure
 $ make
 $ sudo make install
 

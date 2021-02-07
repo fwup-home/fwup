@@ -28,9 +28,10 @@ case "$HOST_OS" in
 	# Not -d?
         BASE64_DECODE=-D
 
-        READLINK=/usr/local/bin/greadlink
-        [ -e $READLINK ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
-        [ -e /usr/local/bin/mdir ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
+        BREW_PREFIX=$(brew --prefix)
+        READLINK="$BREW_PREFIX"/bin/greadlink
+        [ -e "$READLINK" ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
+        [ -e "$BREW_PREFIX/bin/mdir" ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
 
         FSCK_FAT=fsck_msdos
         TIMEOUT=gtimeout
