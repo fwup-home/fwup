@@ -78,23 +78,27 @@ TESTS_DIR=$(pwd)
 # but it is possible to define the version of fwup used for
 # the create and apply steps separately.
 FWUP_DEFAULT=$TESTS_DIR/../src/fwup
+FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper
 if [ ! -e $FWUP_DEFAULT ]; then
     if [ -e $FWUP_DEFAULT.exe ]; then
         EXEEXT=.exe
-        FWUP_DEFAULT=$FWUP_DEFAULT.exe
+        FWUP_DEFAULT="wine $FWUP_DEFAULT.exe"
+        FRAMING_HELPER="wine $TESTS_DIR/fixture/framing-helper.exe"
     fi
 fi
 
-if [ -z $FWUP_CREATE ]; then FWUP_CREATE=$FWUP_DEFAULT; fi
-if [ -z $FWUP_APPLY ]; then FWUP_APPLY=$FWUP_DEFAULT; fi
-if [ -z $FWUP_APPLY_NO_CHECK ]; then FWUP_APPLY_NO_CHECK=$FWUP_APPLY; fi
-if [ -z $FWUP_VERIFY ]; then FWUP_VERIFY=$FWUP_DEFAULT; fi
-FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper$EXEEXT
+if [ -z $FWUP_CREATE ]; then FWUP_CREATE="$FWUP_DEFAULT"; fi
+if [ -z $FWUP_APPLY ]; then FWUP_APPLY="$FWUP_DEFAULT"; fi
+if [ -z $FWUP_APPLY_NO_CHECK ]; then FWUP_APPLY_NO_CHECK="$FWUP_APPLY"; fi
+if [ -z $FWUP_VERIFY ]; then FWUP_VERIFY="$FWUP_DEFAULT"; fi
 
-[ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
-[ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
-[ -e $FWUP_VERIFY ] || ( echo "Can't find $FWUP_VERIFY"; exit 1 )
-[ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
+if [ -z $EXEEXT ]; then
+    # No sanity check for windows builds.
+    [ -e $FWUP_CREATE ] || ( echo "Can't find $FWUP_CREATE"; exit 1 )
+    [ -e $FWUP_APPLY ] || ( echo "Can't find $FWUP_APPLY"; exit 1 )
+    [ -e $FWUP_VERIFY ] || ( echo "Can't find $FWUP_VERIFY"; exit 1 )
+    [ -e $FRAMING_HELPER ] || ( echo "Can't find $FRAMING_HELPER"; exit 1 )
+fi
 
 if [ -n "$VALGRIND" ]; then
     # Example:

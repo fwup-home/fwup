@@ -41,8 +41,7 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
         windows)
             dpkg --add-architecture i386
             apt-get update
-            apt-get install -qq gcc-mingw-w64-x86-64 wine wine-binfmt
-            update-binfmts --import /usr/share/binfmts/wine
+            apt-get install -qq gcc-mingw-w64-x86-64 wine
             ;;
         singlethread|dynamic|minimal)
             apt-get install -qq libarchive-dev python-pip python-dev
