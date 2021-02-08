@@ -25,6 +25,11 @@ if [ "$HOST_OS" = "Darwin" ]; then
     exit 77
 fi
 
+if [ -n "$CIRCLECI" ]; then
+    echo "Skipping test on CircleCI"
+    exit 77
+fi
+
 TESTFILE_4K=$WORK/4k.bin
 cat $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K $TESTFILE_1K > $TESTFILE_4K
 
