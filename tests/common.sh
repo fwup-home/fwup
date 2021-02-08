@@ -78,11 +78,13 @@ TESTS_DIR=$(pwd)
 # but it is possible to define the version of fwup used for
 # the create and apply steps separately.
 FWUP_DEFAULT=$TESTS_DIR/../src/fwup
+FWUP_BINARY=$TESTS_DIR/../src/fwup
 FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper
 if [ ! -e $FWUP_DEFAULT ]; then
     if [ -e $FWUP_DEFAULT.exe ]; then
         EXEEXT=.exe
-        FWUP_DEFAULT="wine $FWUP_DEFAULT.exe"
+        FWUP_BINARY="$FWUP_DEFAULT.exe"
+        FWUP_DEFAULT="wine $FWUP_BINARY"
         FRAMING_HELPER="wine $TESTS_DIR/fixture/framing-helper.exe"
     fi
 fi

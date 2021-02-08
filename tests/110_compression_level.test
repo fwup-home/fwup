@@ -14,7 +14,7 @@
 # corrupt or anything.
 cat >$CONFIG <<EOF
 file-resource file {
-        host-path = "${FWUP_CREATE}"
+        host-path = "${FWUP_BINARY}"
 }
 task complete {
 	on-resource file { raw_write(0) }
@@ -45,7 +45,7 @@ VERIFY_SYSCALLS_CHECKPATH=$IMGFILE.9 $FWUP_APPLY -a -d $IMGFILE.9 -i $FWFILE.9 -
 
 # The firmware file is equivalent to the following dd call
 # (The conv=sync makes sure that the output is a multiple of 128K bytes)
-dd if=$FWUP_CREATE seek=0 of=$WORK/check.bin bs=128k conv=sync 2>/dev/null
+dd if=$FWUP_BINARY seek=0 of=$WORK/check.bin bs=128k conv=sync 2>/dev/null
 cmp $WORK/check.bin $IMGFILE.1
 cmp $WORK/check.bin $IMGFILE.2
 cmp $WORK/check.bin $IMGFILE.3
