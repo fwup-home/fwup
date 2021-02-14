@@ -44,9 +44,10 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
             apt-get install -qq gcc-mingw-w64-x86-64 wine
             ;;
         singlethread|dynamic|minimal)
-            apt-get install -qq libarchive-dev python-pip python-dev
+            apt-get install -qq libarchive-dev python-dev
             install_confuse
-            pip install --upgrade pip
+            curl https://bootstrap.pypa.io/2.7/get-pip.py --output get-pip.py
+            python get-pip.py
             pip install --user cpp-coveralls
             ;;
         static)
