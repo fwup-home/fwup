@@ -61,6 +61,11 @@ fi
 
 if [ "$CROSS_COMPILE" != "arm-linux-gnueabihf" ]; then
     # Run the regression tests
+    if [ "$MODE" = "windows" ]; then
+        # Make sure that wine is initialized by running it once.
+        wine src/fwup.exe || true
+    fi
+
     if ! make $MAKE_FLAGS check; then
         cat tests/test-suite.log
         exit 1
