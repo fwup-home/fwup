@@ -23,11 +23,19 @@ defaults_osx: &defaults_osx
   environment:
     HOMEBREW_NO_AUTO_UPDATE: 1
 
+install_ghr: &install_ghr
+  run:
+    name: Install ghr (Github Releases)
+    command: |
+      wget https://github.com/tcnksm/ghr/releases/download/v0.9.0/ghr_v0.9.0_linux_amd64.tar.gz
+      tar xf ghr_v0.9.0_linux_amd64.tar.gz
+      ln -sf ghr_v0.9.0_linux_amd64/ghr .
+
 build: &build
   steps:
     - checkout
     - restore_cache:
-        key: dl-{{ .Branch }}
+        key: fwup-{{ .Revision }}-{{ .Environment.CIRCLE_TAG }}
     - run:
         name: Install Deps
         command: scripts/ci_install_deps.sh
@@ -35,13 +43,10 @@ build: &build
         name: Build
         command: scripts/ci_build.sh
     - store_artifacts:
-        path: tests
-        destination: tests
-    - store_artifacts:
         path: artifacts
         destination: artifacts
     - save_cache:
-        key: dl-{{ .Branch }}
+        key: fwup-{{ .Revision }}-{{ .Environment.CIRCLE_TAG }}
         paths:
           - dl
 
@@ -113,6 +118,18 @@ jobs:
       CIRCLE_OS_NAME: osx
       MODE: static
     <<: *build
+  deploy:
+    <<: *defaults
+    steps:
+      - restore_cache:
+          key: fwup-{{ .Revision }}-{{ .Environment.CIRCLE_TAG }}
+      - <<: *install_ghr
+      - run:
+          name: Create release notes
+          command: grep -Pazo "(?s)(?<=## ${CIRCLE_TAG})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
+      - run:
+          name: Deploy artifacts to Github
+          command: ./ghr -draft -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME -b "$(cat /tmp/RELEASE_NOTES)" -replace $CIRCLE_TAG artifacts
 
 workflows:
   version: 2
@@ -134,3 +151,18 @@ workflows:
           <<: *build_workflow
       - osx_clang_static:
           <<: *build_workflow
+      - deploy:
+          requires:
+            - linux_gcc_static
+            - linux_gcc_dynamic
+            - linux_gcc_windows
+            - linux_gcc_raspberrypi
+            - linux_gcc_singlethread
+            - linux_gcc_minimal
+            - osx_clang_dynamic
+            - osx_clang_static
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v.*/
