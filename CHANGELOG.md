@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.8.4
+
+* Bug fixes
+  * Fix autodetection of built-in SDCard readers on Linux. These are the devices
+    that show up as `mmcblk0`, etc. You shouldn't have to manually specify them
+    any more.
+  * Ensure that FAT filesystems created by `fat_mkfs` are the right size even
+    when fwup creates disk images. This adds a write to the very last block in
+    FAT filesystem.
+  * Fix unit test failures related to improved fsck.fat checks in dosfstools
+    v4.2. The failures involved volume labels and having a properly sized disk
+    image. These particular issues don't affect real world use of fwup, but were
+    concerning since they caused quite a few tests to fail.
+  * Documentation updates for building on Apple M1 hardware.
+
 ## v1.8.3
 
 This release updates FatFS (the FAT filesystem library) to the latest patch
