@@ -510,11 +510,11 @@ DRESULT disk_write(BYTE pdrv,			/* Physical drive number (0..) */
     if (pdrv != 0 || output_ == NULL)
         return RES_PARERR;
 
-    // Arbitrarily tell the cache that any sector within 1 MB of the edges
-    // is a "streamed write". This means that it will be optimistically
-    // written to disk and not cached. There are two copies of the FAT,
-    // at the beginning and end of the disk, so try to keep those around.
-    bool streamed = (sector > 2048 && sector < block_count_ - 2048);
+    // Arbitrarily tell the cache that any sector after 1 MB is a "streamed
+    // write". This means that it will be optimistically written to disk and
+    // not cached. There are two copies of the FAT at the beginning so try to
+    // keep in memory as those change frequently.
+    bool streamed = (sector > 2048);
     if (block_cache_pwrite(output_, buff, FWUP_BLOCK_SIZE * count, FWUP_BLOCK_SIZE * (block_offset_ + sector), streamed) < 0)
         return RES_ERROR;
     else
