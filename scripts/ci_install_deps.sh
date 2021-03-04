@@ -67,7 +67,7 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
 else
     # OSX
     # CircleCI: automake is already installed
-    BREW_PACKAGES="pkg-config coreutils mtools xdelta libtool"
+    BREW_PACKAGES="pkg-config coreutils mtools dosfstools xdelta libtool"
     if [[ "$MODE" = "dynamic" ]]; then
         BREW_PACKAGES="$BREW_PACKAGES libarchive confuse"
     fi

@@ -8,7 +8,6 @@ export LC_ALL=C
 # Linux command line tools that may be different on other OSes
 READLINK=readlink
 BASE64_DECODE=-d
-FSCK_FAT=fsck.fat
 TIMEOUT=timeout
 
 if [ -d "/mnt/c/Users" ]; then
@@ -33,7 +32,14 @@ case "$HOST_OS" in
         [ -e "$READLINK" ] || ( echo "Please run 'brew install coreutils' to install greadlink"; exit 1 )
         [ -e "$BREW_PREFIX/bin/mdir" ] || ( echo "Please run 'brew install mtools' to install mdir"; exit 1 )
 
-        FSCK_FAT=fsck_msdos
+        FSCK_FAT="$(brew --prefix dosfstools)/sbin/fsck.fat"
+        if [ -f "$FSCK_FAT" ]; then
+            FSCK_FAT="$FSCK_FAT -n"
+        else
+            # Fall back to the OSX fsck_msdos which isn't as picky, but still catches issues.
+            FSCK_FAT=fsck_msdos
+        fi
+
         TIMEOUT=gtimeout
         ;;
     FreeBSD|NetBSD|OpenBSD|DragonFly)
@@ -51,6 +57,9 @@ case "$HOST_OS" in
     *)
 	# GNU stat
 	STAT_FILESIZE_FLAGS=-c%s
+
+        # dosfstools
+        FSCK_FAT="fsck.fat -n"
 
         # Check for Busybox timeout which is a symlink
 	if [ -L $(which $TIMEOUT) ]; then
