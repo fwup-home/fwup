@@ -27,6 +27,8 @@ install_ghr: &install_ghr
   run:
     name: Install ghr (Github Releases)
     command: |
+      apt update
+      apt install -qq wget --yes
       wget https://github.com/tcnksm/ghr/releases/download/v0.9.0/ghr_v0.9.0_linux_amd64.tar.gz
       tar xf ghr_v0.9.0_linux_amd64.tar.gz
       ln -sf ghr_v0.9.0_linux_amd64/ghr .
@@ -42,6 +44,9 @@ build: &build
     - run:
         name: Build
         command: scripts/ci_build.sh
+    - run:
+        name: Copy out artifacts
+        command: scripts/ci_deploy.sh
     - store_artifacts:
         path: artifacts
         destination: artifacts
@@ -126,7 +131,7 @@ jobs:
       - <<: *install_ghr
       - run:
           name: Create release notes
-          command: grep -Pazo "(?s)(?<=## ${CIRCLE_TAG})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
+          command: grep -Pazo "(?s)(?<=## ${CIRCLE_TAG})[^#]+" artifacts/$CIRCLE_TAG/CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
       - run:
           name: Deploy artifacts to Github
           command: ./ghr -draft -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME -b "$(cat /tmp/RELEASE_NOTES)" -replace $CIRCLE_TAG artifacts
