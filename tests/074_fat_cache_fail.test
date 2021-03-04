@@ -52,7 +52,6 @@ task step1 {
 	on-init {
                 mbr_write(mbr-a)
                 fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
-                fat_setlabel(\${BOOT_PART_OFFSET}, "BOOT")
         }
         on-resource MLO { fat_write(\${BOOT_PART_OFFSET}, "MLO") }
         on-resource u-boot.img { fat_write(\${BOOT_PART_OFFSET}, "u-boot.img") }
@@ -93,7 +92,7 @@ EXPECTED_OUTPUT=$WORK/expected.out
 ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
- Volume in drive : is BOOT
+ Volume in drive : has no label
   Volume Serial Number is 0021-0000
   Directory for ::/
 
