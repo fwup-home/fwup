@@ -102,6 +102,16 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * FWUP_BLOCK_SIZE, block_count * FWUP_BLOCK_SIZE, true),
                      "Error trimming blocks affacted by fat_mkfs");
 
+    // Clear out the final block. This has to purposes:
+    //
+    // 1. To check that it can be written and isn't past the end of the device.
+    // 2. If writing a disk image, this expands the disk image so that other
+    //    tools are happy writing to the FAT filesystem created here.
+    uint8_t ones[FWUP_BLOCK_SIZE];
+    memset(ones, 0xff, sizeof(ones));
+    OK_OR_RETURN_MSG(block_cache_pwrite(output, ones, FWUP_BLOCK_SIZE, FWUP_BLOCK_SIZE * (block_offset + block_count - 1), true),
+                     "Error clearing final FAT sector");
+
     // The au_size is the cluster size. We set it low so
     // that we have enough clusters to easily bump the cluster count
     // above the FAT32 threshold. The minimum number of clusters to
