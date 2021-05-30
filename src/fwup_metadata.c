@@ -46,9 +46,12 @@ static void list_metadata(cfg_t *cfg, struct simple_string *s)
  * @brief Dump the metadata in a firmware update file
  * @param fw_filename the firmware update filename
  * @param public_keys a list of public keys
+ * @param metadata_key if non-NULL, then print the value of the specified key
  * @return 0 if successful
  */
-int fwup_metadata(const char *fw_filename, unsigned char * const *public_keys)
+int fwup_metadata(const char *fw_filename,
+                  unsigned char * const *public_keys,
+                  const char *metadata_key)
 {
     cfg_t *cfg;
     if (cfgfile_parse_fw_meta_conf(fw_filename, &cfg, public_keys) < 0)
@@ -56,7 +59,13 @@ int fwup_metadata(const char *fw_filename, unsigned char * const *public_keys)
 
     struct simple_string s;
     simple_string_init(&s);
-    list_metadata(cfg, &s);
+
+    if (metadata_key) {
+        ssprintf(&s, "%s\n", cfg_opt_getnstr(cfg_getopt(cfg, metadata_key), 0));
+    } else {
+        list_metadata(cfg, &s);
+    }
+
     cfgfile_free(cfg);
 
     fwup_output(FRAMING_TYPE_SUCCESS, 0, s.str);
