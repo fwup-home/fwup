@@ -96,6 +96,7 @@ static void print_usage()
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
     printf("  -l, --list   List the available tasks in a firmware update\n");
     printf("  -m, --metadata   Print metadata in the firmware update\n");
+    printf("  --metadata-key <key> Only output the specified key's value when printing metadata\n");
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates (can specify multiple times)\n");
@@ -168,6 +169,7 @@ enum fwup_long_option_only_value {
     OPTION_NO_EJECT = 0x1000,
     OPTION_ENABLE_TRIM,
     OPTION_EXIT_HANDSHAKE,
+    OPTION_METADATA_KEY,
     OPTION_PRIVATE_KEY,
     OPTION_PUBLIC_KEY,
     OPTION_PROGRESS_LOW,
@@ -191,6 +193,7 @@ static struct option long_options[] = {
     {"framing",  no_argument,       0, 'F'},
     {"gen-keys", no_argument,       0, 'g'},
     {"help",     no_argument,       0, 'h'},
+    {"metadata-key", required_argument, 0, OPTION_METADATA_KEY},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
     {"private-key", required_argument, 0, OPTION_PRIVATE_KEY},
@@ -383,6 +386,7 @@ int main(int argc, char **argv)
     unsigned char *signing_key = NULL;
     unsigned char *public_keys[FWUP_MAX_PUBLIC_KEYS + 1] = {NULL};
     int num_public_keys = 0;
+    const char *metadata_key = NULL;
 #if __APPLE__
     // On hosts, the right behavior for almost all use cases is to eject
     // so that the user can plug the SDCard into their board. Detecting
@@ -490,6 +494,9 @@ int main(int argc, char **argv)
         case 'm': // --metadata
             command = CMD_METADATA;
             easy_mode = false;
+            break;
+        case OPTION_METADATA_KEY: // --metadata-key
+            metadata_key = optarg;
             break;
         case 'o':
             output_filename = optarg;
@@ -759,7 +766,7 @@ int main(int argc, char **argv)
         break;
 
     case CMD_METADATA:
-        if (fwup_metadata(input_filename, public_keys) < 0)
+        if (fwup_metadata(input_filename, public_keys, metadata_key) < 0)
             fwup_errx(EXIT_FAILURE, "%s", last_error());
 
         break;
