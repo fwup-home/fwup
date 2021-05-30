@@ -1,0 +1,79 @@
+#!/bin/sh
+
+#
+# Test that metadata can be retrieved from the commandline one by one
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+EXPECTED_OUTPUT=$WORK/expected_output
+ACTUAL_OUTPUT=$WORK/actual_output
+
+cat >$CONFIG <<EOF
+meta-product = "product name"
+meta-description = "product description"
+meta-version = "some version"
+meta-platform = "a platform"
+meta-architecture = "an architecture"
+meta-author = "someone"
+EOF
+
+cat >$EXPECTED_OUTPUT.product <<EOF
+product name
+EOF
+cat >$EXPECTED_OUTPUT.description <<EOF
+product description
+EOF
+cat >$EXPECTED_OUTPUT.version <<EOF
+some version
+EOF
+cat >$EXPECTED_OUTPUT.author <<EOF
+someone
+EOF
+cat >$EXPECTED_OUTPUT.platform <<EOF
+a platform
+EOF
+cat >$EXPECTED_OUTPUT.architecture <<EOF
+an architecture
+EOF
+cat >$EXPECTED_OUTPUT.creation_date <<EOF
+2018-05-05T18:10:16Z
+EOF
+cat >$EXPECTED_OUTPUT.uuid <<EOF
+ded51581-3c37-5dd5-d1b6-cd8503e4cfc4
+EOF
+cat >$EXPECTED_OUTPUT.unknown <<EOF
+(null)
+EOF
+
+# Create the test archive
+SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Test every key that should work
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-product> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.product $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-description> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.description $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-version> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.version $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-author> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.author $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-platform> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.platform $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-architecture> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.architecture $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-creation-date> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.creation_date $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key meta-uuid> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.uuid $ACTUAL_OUTPUT
+
+# Test keys that shouldn't work
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key bad-key> $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.unknown $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key 1 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.unknown $ACTUAL_OUTPUT
+$FWUP_APPLY_NO_CHECK -i $FWFILE -m --metadata-key "" > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT.unknown $ACTUAL_OUTPUT
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

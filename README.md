@@ -140,6 +140,7 @@ Options:
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
   -l, --list   List the available tasks in a firmware update
   -m, --metadata   Print metadata in the firmware update
+  --metadata-key <key> Only output the specified key's value when printing metadata
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -p, --public-key-file <keyfile> A public key file for verifying firmware updates
