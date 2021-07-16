@@ -21,17 +21,18 @@ if [[ "$CIRCLECI" != "true" ]]; then
 fi
 
 if [[ -n "$CIRCLE_PULL_REQUEST" ]]; then
-    echo "Not supposed to be deploying pull requests!!"
-    exit 1
+    echo "Skipping deploy since this is a pull request"
+    exit 0
 fi
 
-if [[ -n "$CIRCLE_TAG" ]]; then
-    ARTIFACT_SUBDIR=.
-else
-    ARTIFACT_SUBDIR=$CIRCLE_BRANCH
+if [[ -z "$CIRCLE_TAG" ]]; then
+    echo "Skipping deploy since this is not a tagged build"
+    exit 0
 fi
 
-# Copy the artifacts to a location that's easy to reference in the .travis.yml
+ARTIFACT_SUBDIR=.
+
+# Copy the artifacts to a location that's easy to reference
 rm -fr artifacts
 mkdir -p artifacts/$ARTIFACT_SUBDIR
 
