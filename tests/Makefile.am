@@ -189,6 +189,8 @@ TESTS = 001_simple_fw.test \
 	186_uboot_redundant_unsetenv.test \
 	187_corrupt_uboot_redundant.test \
 	188_uboot_redundant_bad_param.test \
-	189_uboot_redundant_recover.test
+	189_uboot_redundant_recover.test \
+	190_one_metadata_cmdline.test \
+	191_disk_crypto_via_env.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

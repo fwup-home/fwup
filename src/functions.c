@@ -376,13 +376,10 @@ int raw_write_validate(struct fun_context *fctx)
     struct raw_write_options options;
     OK_OR_RETURN(parse_raw_write_options(fctx, &options));
 
-    if (options.cipher) {
-        struct disk_crypto dc;
-        if (disk_crypto_init(&dc, options.cipher, options.secret, 0) < 0)
-            return -1;
-
-        disk_crypto_free(&dc);
-    }
+    // If there's a cipher, then there must be a secret
+    if ((options.cipher && !options.secret) ||
+        (options.secret && !options.cipher))
+        ERR_RETURN("raw_write requires both a cipher and secret if one is supplied");
 
     return 0;
 }
@@ -430,8 +427,8 @@ int raw_write_run(struct fun_context *fctx)
     struct disk_crypto dc_info;
     struct disk_crypto *dc = NULL;
     if (options.cipher) {
-        // Can't fail since checked above
-        disk_crypto_init(&dc_info, options.cipher, options.secret, rwc.dest_offset);
+        if (disk_crypto_init(&dc_info, options.cipher, options.secret, rwc.dest_offset) < 0)
+            return -1;
         dc = &dc_info;
     }
 

@@ -21,12 +21,12 @@ fi
 cat >$CONFIG <<EOF
 file-resource test { contents = "Hello!" }
 task complete {
-    on-resource test { raw_write(1, "cipher=aes-cbc-plain", "secret=123") }
+    on-resource test { raw_write(1, "secret=123") }
 }
 EOF
 
 if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
-    echo "Expecting short secret to fail"
+    echo "Expecting missing cipher to fail"
     exit 1
 fi
 
