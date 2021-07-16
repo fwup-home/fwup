@@ -1,0 +1,251 @@
+.\" This file is dual-licensed.  Choose whichever you want.
+.\"
+.\" The first licence is a regular 2-clause BSD licence.  The second licence
+.\" is the CC-0 from Creative Commons. It is intended to release Monocypher
+.\" to the public domain.  The BSD licence serves as a fallback option.
+.\"
+.\" SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+.\"
+.\" ----------------------------------------------------------------------------
+.\"
+.\" Copyright (c) 2017-2019 Loup Vaillant
+.\" Copyright (c) 2017-2018 Michael Savage
+.\" Copyright (c) 2017, 2019-2020 Fabio Scotoni
+.\" All rights reserved.
+.\"
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions are
+.\" met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\"
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the
+.\"    distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.\" "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.\" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+.\" A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+.\" HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+.\" SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+.\" OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" ----------------------------------------------------------------------------
+.\"
+.\" Written in 2017-2020 by Loup Vaillant, Michael Savage and Fabio Scotoni
+.\"
+.\" To the extent possible under law, the author(s) have dedicated all copyright
+.\" and related neighboring rights to this software to the public domain
+.\" worldwide.  This software is distributed without any warranty.
+.\"
+.\" You should have received a copy of the CC0 Public Domain Dedication along
+.\" with this software.  If not, see
+.\" <https://creativecommons.org/publicdomain/zero/1.0/>
+.\"
+.Dd September 26, 2020
+.Dt CRYPTO_SIGN 3MONOCYPHER
+.Os
+.Sh NAME
+.Nm crypto_sign ,
+.Nm crypto_check ,
+.Nm crypto_sign_public_key
+.Nd public key signatures
+.Sh SYNOPSIS
+.In monocypher.h
+.Ft void
+.Fo crypto_sign_public_key
+.Fa "uint8_t public_key[32]"
+.Fa "const uint8_t secret_key[32]"
+.Fc
+.Ft void
+.Fo crypto_sign
+.Fa "uint8_t signature[64]"
+.Fa "const uint8_t secret_key[32]"
+.Fa "const uint8_t public_key[32]"
+.Fa "const uint8_t *message"
+.Fa "size_t message_size"
+.Fc
+.Ft int
+.Fo crypto_check
+.Fa "const uint8_t signature[64]"
+.Fa "const uint8_t public_key[32]"
+.Fa "const uint8_t *message"
+.Fa "size_t message_size"
+.Fc
+.Sh DESCRIPTION
+.Fn crypto_sign
+and
+.Fn crypto_check
+provide EdDSA public key signatures and verification.
+.Pp
+The arguments are:
+.Bl -tag -width Ds
+.It Fa signature
+The signature.
+.It Fa secret_key
+A 32-byte random number, known only to you.
+See
+.Xr intro 3monocypher
+about random number generation (use your operating system's random
+number generator).
+Do not use the same private key for both signatures and key exchanges.
+The public keys are different, and revealing both may leak information.
+.It Fa public_key
+The public key, generated from
+.Fa secret_key
+with
+.Fn crypto_sign_public_key .
+.It Fa message
+Message to sign.
+.It Fa message_size
+Length of
+.Fa message ,
+in bytes.
+.El
+.Pp
+.Fa signature
+and
+.Fa message
+may overlap.
+.Pp
+.Fn crypto_sign_public_key
+computes the public key of the specified secret key.
+.Pp
+.Fn crypto_sign
+signs a message with
+.Fa secret_key .
+The public key is optional, and will be recomputed if not provided.
+This recomputation doubles the execution time.
+.Pp
+.Fn crypto_check
+checks that a given signature is genuine.
+Meaning, only someone who had the private key could have signed the
+message.
+.Sy \&It does not run in constant time .
+It does not have to in most threat models, because nothing is secret:
+everyone knows the public key, and the signature and message are
+rarely secret.
+If the message needs to be secret, use
+.Xr crypto_key_exchange 3monocypher
+and
+.Xr crypto_lock_aead 3monocypher
+instead.
+.Pp
+An incremental interface is available; see
+.Xr crypto_sign_init_first_pass 3monocypher .
+.Sh RETURN VALUES
+.Fn crypto_sign_public_key
+and
+.Fn crypto_sign
+return nothing.
+.Pp
+.Fn crypto_check
+returns 0 for legitimate messages and -1 for forgeries.
+.Sh EXAMPLES
+The following examples assume the existence of
+.Fn arc4random_buf ,
+which fills the given buffer with cryptographically secure random bytes.
+If
+.Fn arc4random_buf
+does not exist on your system, see
+.Xr intro 3monocypher
+for advice about how to generate cryptographically secure random bytes.
+.Pp
+Generate a public key from a random secret key:
+.Bd -literal -offset indent
+uint8_t       sk[32]; /* Random secret key   */
+uint8_t       pk[32]; /* Matching public key */
+arc4random_buf(sk, 32);
+crypto_sign_public_key(pk, sk);
+/* Wipe the secret key if it is no longer needed */
+crypto_wipe(sk, 32);
+.Ed
+.Pp
+Sign a message:
+.Bd -literal -offset indent
+uint8_t       sk       [32]; /* Secret key from above          */
+const uint8_t pk       [32]; /* Matching public key            */
+const uint8_t message  [11] = "Lorem ipsu"; /* Message to sign */
+uint8_t       signature[64];
+crypto_sign(signature, sk, pk, message, 10);
+/* Wipe the secret key if it is no longer needed */
+crypto_wipe(sk, 32);
+.Ed
+.Pp
+Check the above:
+.Bd -literal -offset indent
+const uint8_t pk       [32]; /* Their public key              */
+const uint8_t message  [11] = "Lorem ipsu"; /* Signed message */
+const uint8_t signature[64]; /* Signature to check            */
+if (crypto_check(signature, pk, message, 10)) {
+    /* Message is corrupted, abort processing */
+} else {
+    /* Message is genuine */
+}
+.Ed
+.Sh SEE ALSO
+.Xr crypto_blake2b 3monocypher ,
+.Xr crypto_key_exchange 3monocypher ,
+.Xr crypto_lock 3monocypher ,
+.Xr intro 3monocypher
+.Sh STANDARDS
+These functions implement PureEdDSA with Curve25519 and Blake2b, as
+described in RFC 8032.
+This is the same as Ed25519, with Blake2b instead of SHA-512.
+.Sh HISTORY
+The
+.Fn crypto_sign ,
+.Fn crypto_check ,
+and
+.Fn crypto_sign_public_key
+functions appeared in Monocypher 0.2.
+.Pp
+Starting with Monocypher 2.0.5, modified signatures abusing the inherent
+signature malleability property of EdDSA now cause a non-zero return
+value of
+.Fn crypto_check ;
+in prior versions, such signatures would be accepted.
+.Pp
+.Sy A critical security vulnerability
+that caused all-zero signatures to be accepted was introduced in
+Monocypher 0.3;
+it was fixed in Monocypher 1.1.1 and 2.0.4.
+.Sh SECURITY CONSIDERATIONS
+.Ss Signature malleability
+Signature malleability is the ability of an attacker to produce a valid
+signature with knowledge of only an existing signature and the public
+key.
+That is, given a message, a signature and a public key,
+an attacker could generate a new signature for the same message that
+is valid under the same public key.
+Monocypher prevents signature malleability by only accepting
+signatures in canonical form.
+.Pp
+On the other hand, EdDSA signatures are not unique like cryptographic
+hashes.
+The signing procedure is deterministic by specification and
+.Fn crypto_sign
+follows this specification.
+However, someone with the private key can generate arbitrarily many
+valid, canonical, different signatures of the same message.
+Because of this, never assume that signatures are unique.
+.Ss Fault injection and power analysis
+Fault injection (also known as glitching) and power analysis may be used
+to manipulate the resulting signature and recover the secret key in
+some cases.
+This requires hardware access.
+If attackers are expected to have such access and have the relevant
+equipment, you may try use the incremental interface provided by
+.Xr crypto_sign_init_first_pass 3monocypher
+to mitigate the side channel attacks.
+Note that there may still be other power-related side channels (such as
+if the CPU leaks information when an operation overflows a register)
+that must be considered.
