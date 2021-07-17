@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.9.0
+
+This release updates FatFS (the FAT filesystem library) to R0.14b and updates
+Monocypher to v3.1.2. Both updates were patch releases, but the FATFS update
+changed the FAT serial number calculation so you may notice that those change.
+
+* New features
+  * Added the `--metadata-key` option to pull out single metadata values for
+    convenience. E.g., `fwup -m -i fwup.fw --metadata-key meta-uuid`
+
+* Bug fixes
+  * Fixed an issue preventing filesystem encryption secrets from being passed
+    via environment variables.
+
 ## v1.8.4
 
 * Bug fixes
