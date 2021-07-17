@@ -18,12 +18,12 @@
 <pre>
 FRESULT f_lseek (
   FIL*    <span class="arg">fp</span>,  <span class="c">/* [IN] File object */</span>
-  FSIZE_t <span class="arg">ofs</span>  <span class="c">/* [IN] File read/write pointer */</span>
+  FSIZE_t <span class="arg">ofs</span>  <span class="c">/* [IN] Offset of file read/write pointer to be set */</span>
 );
 </pre>
 <pre>
 FRESULT f_rewind (
-  FIL*    <span class="arg">fp</span>,  <span class="c">/* [IN] File object */</span>
+  FIL*    <span class="arg">fp</span>   <span class="c">/* [IN] File object */</span>
 );
 </pre>
 </div>
@@ -57,9 +57,9 @@ FRESULT f_rewind (
 <pre>
 #define <em>f_rewind</em>(fp) f_lseek((fp), 0)
 </pre>
-<p>If an offset beyond the file size is specified in write mode, the file size is expanded to the specified offset. The file data in the expanded part is <em>undefined</em> because no data is written to the file in this process. This is suitable to pre-allocate a data area to the file quickly for fast write operation. When a contiguous data area needs to be allocated to the file, use <tt>f_expand</tt> function instead. After the <tt>f_lseek</tt> function succeeded, the current read/write pointer should be checked in order to make sure the read/write pointer has been moved correctry. In case of the read/write pointer is not the expected value, either of followings has been occured.</p>
+<p>If an offset beyond the file size is specified in write mode, the file size is expanded to the specified offset. The file data in the expanded part is <em>undefined</em>, because no data is written to the file in this process. This is suitable to pre-allocate a data area to the file quickly for fast write operation. When a contiguous data area needs to be allocated to the file, use <tt>f_expand</tt> function instead. After the <tt>f_lseek</tt> function succeeded, the current read/write pointer should be checked in order to make sure the read/write pointer has been moved correctry. In case of the read/write pointer is not pointing expected offset, either of followings has been occured.</p>
 <ul>
-<li>End of file. The specified <tt class="arg">ofs</tt> was clipped at end of the file because the file has been opened in read-only mode.</li>
+<li>End of file. The specified <tt class="arg">ofs</tt> was clipped at end of the file in read-only mode.</li>
 <li>Disk full. There is no free space on the volume to expand the file.</li>
 </ul>
 <p>The fast seek feature enables fast backward/long seek operations without FAT access by using an on-memory CLMT (cluster link map table). It is applied to <tt>f_read</tt> and <tt>f_write</tt> function as well, however, the file size cannot be expanded by <tt>f_write</tt>, <tt>f_lseek</tt> function while the file is at fast seek mode.</p>
@@ -101,11 +101,11 @@ FRESULT f_rewind (
     res = <em>f_lseek</em>(fp, PRE_SIZE);             <span class="c">/* Expand file size (cluster pre-allocation) */</span>
     if (res || f_tell(fp) != PRE_SIZE) ...   <span class="c">/* Check if the file has been expanded successfly */</span>
 
-    res = <em>f_lseek</em>(fp, DATA_START);           <span class="c">/* Record data stream WITHOUT cluster allocation delay */</span>
+    res = <em>f_lseek</em>(fp, OFS_DATA);             <span class="c">/* Record data stream with free from cluster allocation delay */</span>
     ...                                      <span class="c">/* Write operation should be aligned to sector boundary to optimize the write throughput */</span>
 
     res = f_truncate(fp);                    <span class="c">/* Truncate unused area */</span>
-    res = <em>f_lseek</em>(fp, 0);                    <span class="c">/* Set file header */</span>
+    res = <em>f_lseek</em>(fp, OFS_HEADER);           <span class="c">/* Set file header */</span>
     ...
 
     res = f_close(fp);

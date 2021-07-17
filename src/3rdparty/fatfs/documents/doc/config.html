@@ -17,7 +17,6 @@
  <ul>
    <li><a href="#fs_readonly">FF_FS_READONLY</a></li>
    <li><a href="#fs_minimize">FF_FS_MINIMIZE</a></li>
-   <li><a href="#use_strfunc">FF_USE_STRFUNC</a></li>
    <li><a href="#use_find">FF_USE_FIND</a></li>
    <li><a href="#use_mkfs">FF_USE_MKFS</a></li>
    <li><a href="#use_fastseek">FF_USE_FASTSEEK</a></li>
@@ -25,6 +24,10 @@
    <li><a href="#use_chmod">FF_USE_CHMOD</a></li>
    <li><a href="#use_label">FF_USE_LABEL</a></li>
    <li><a href="#use_forward">FF_USE_FORWARD</a></li>
+   <li><a href="#use_strfunc">FF_USE_STRFUNC</a></li>
+   <li><a href="#print_lli">FF_PRINT_LLI</a></li>
+   <li><a href="#print_fp">FF_PRINT_FLOAT</a></li>
+   <li><a href="#strf_encode">FF_STRF_ENCODE</a></li>
  </ul>
 </li>
 <li>Namespace and Locale Configurations
@@ -34,7 +37,6 @@
    <li><a href="#max_lfn">FF_MAX_LFN</a></li>
    <li><a href="#lfn_unicode">FF_LFN_UNICODE</a></li>
    <li><a href="#lfn_buf">FF_LFN_BUF, FF_SFN_BUF</a></li>
-   <li><a href="#strf_encode">FF_STRF_ENCODE</a></li>
    <li><a href="#fs_rpath">FF_FS_RPATH</a></li>
  </ul>
 </li>
@@ -81,15 +83,6 @@
 <tr><td>3</td><td><tt>f_lseek</tt> function is removed in addition to 2.</td></tr>
 </table>
 
-<h4 id="use_strfunc">FF_USE_STRFUNC</h4>
-<p>This option switches string functions, <tt>f_gets</tt>, <tt>f_putc</tt>, <tt>f_puts</tt> and <tt>f_printf</tt>.</p>
-<table class="lst1">
-<tr><th>Value</th><th>Description</th></tr>
-<tr><td>0</td><td>Disable string functions.</td></tr>
-<tr><td>1</td><td>Enable string functions without LF-CRLF conversion.</td></tr>
-<tr><td>2</td><td>Enable string functions with LF-CRLF conversion.</td></tr>
-</table>
-
 <h4 id="use_find">FF_USE_FIND</h4>
 <p>Disable (0) or Enable (1) filtered directory read functions, <tt>f_findfirst</tt> and <tt>f_findnext</tt>. Also <tt>FF_FS_MINIMIZE</tt> needs to be 0 or 1.</p>
 
@@ -111,6 +104,38 @@
 <h4 id="use_forward">FF_USE_FORWARD</h4>
 <p>Disable (0) or Enable (1) <tt>f_forward</tt> function.</p>
 
+<h4 id="use_strfunc">FF_USE_STRFUNC</h4>
+<p>This option switches string functions, <tt>f_gets</tt>, <tt>f_putc</tt>, <tt>f_puts</tt> and <tt>f_printf</tt>. These functions are equivalents of regular string stream I/O functions in POSIX. If <tt>sprintf</tt> is available and code conversion is not needed, <tt>f_write</tt> with <tt>sprintf</tt> will be efficient in code size and performance rather than <tt>f_printf</tt>.</p>
+<table class="lst1">
+<tr><th>Value</th><th>Description</th></tr>
+<tr><td>0</td><td>Disable string functions.</td></tr>
+<tr><td>1</td><td>Enable string functions without LF-CRLF conversion.</td></tr>
+<tr><td>2</td><td>Enable string functions with LF-CRLF conversion.</td></tr>
+</table>
+
+<h4 id="print_lli">FF_PRINT_LLI</h4>
+<p>This option switches support for long long integer argument in <tt>f_printf</tt>.</p>
+<p>Disable (0) or Enable (1). C standard needs to be C99 or later to enable this feature.</p>
+
+<h4 id="print_fp">FF_PRINT_FLOAT</h4>
+<p>This option switches support for floating point argument in <tt>f_printf</tt>. C standard needs to be C99 or later to enable this feature.</p>
+<table class="lst1">
+<tr><th>Value</th><th>Description</th></tr>
+<tr><td>0</td><td>Disable floating point argument.</td></tr>
+<tr><td>1</td><td>Enable floating point argument in type <tt>'f'</tt>, <tt>'e'</tt> and <tt>'E'</tt>.</td></tr>
+<tr><td>2</td><td>Enable with decimal separator <tt>','</tt> instead of <tt>'.'</tt>.</td></tr>
+</table>
+
+<h4 id="strf_encode">FF_STRF_ENCODE</h4>
+<p>When character encoding on the API is Unicode (<tt>FF_LFN_UNICODE &gt;= 1</tt>), string I/O functions enabled by <tt>FF_USE_STRFUNC</tt> convert the character encoding in it. This option defines the assumption of character encoding <em>on the file</em> to be read/written via those functions. When LFN is not enabled or <tt>FF_LFN_UNICODE == 0</tt>, the string functions work without any code conversion and this option has no effect.</p>
+<table class="lst2">
+<tr><th>Value</th><th>Character encoding on the file</th></tr>
+<tr><td>0</td><td>ANSI/OEM in current code page</td></tr>
+<tr><td>1</td><td>Unicode in UTF-16LE</td></tr>
+<tr><td>2</td><td>Unicode in UTF-16BE</td></tr>
+<tr><td>3</td><td>Unicode in UTF-8</td></tr>
+</table>
+
 </div>
 
 
@@ -118,7 +143,7 @@
 <h3>Namespace and Locale Configurations</h3>
 
 <h4 id="code_page">FF_CODE_PAGE</h4>
-<p>This option specifies the OEM code page used on the target system. Incorrect setting of the code page can cause a file open failure. If any non-ASCII character is not used for the path name or character encoding is in Unicode, there is no difference between any code page settings. Set it 437 anyway.</p>
+<p>This option specifies the OEM code page used on the target system. Incorrect setting of the code page can cause a file open failure. If any non-ASCII character is not used for the path name or <tt>FF_LFN_UNICODE != 0</tt>, there is no difference between any code page settings. Set it 437 anyway.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Code page</th></tr>
 <tr><td>0</td><td>Includes all code pages below and set by <tt>f_setcp()</tt></td></tr>
@@ -181,16 +206,6 @@
 </table>
 <p>If the size of name member is insufficient for the LFN, the item is treated as without LFN. When LFN is not enabled, these options have no effect.</p>
 
-<h4 id="strf_encode">FF_STRF_ENCODE</h4>
-<p>When character encoding on the API is Unicode (<tt>FF_LFN_UNICODE &gt;= 1</tt>), string I/O functions, <tt>f_gets</tt>, <tt>f_putc</tt>, <tt>f_puts</tt> and <tt>f_printf</tt>, convert the character encoding in it. This option defines the assumption of character encoding <em>on the file</em> to be read/written via those functions. When LFN is not enabled or <tt>FF_LFN_UNICODE == 0</tt>, the string functions work without any encoding conversion and this option has no effect.</p>
-<table class="lst2">
-<tr><th>Value</th><th>Character encoding on the file</th></tr>
-<tr><td>0</td><td>ANSI/OEM in current code page</td></tr>
-<tr><td>1</td><td>Unicode in UTF-16LE</td></tr>
-<tr><td>2</td><td>Unicode in UTF-16BE</td></tr>
-<tr><td>3</td><td>Unicode in UTF-8</td></tr>
-</table>
-
 <h4 id="fs_rpath">FF_FS_RPATH</h4>
 <p>This option configures relative path function. For more information, read <a href="filename.html#nam">here</a>.</p>
 <table class="lst1">
@@ -213,7 +228,7 @@
 <p>This option switches the support for string volume ID. When arbitrary string for the volume ID is enabled for the drive prefix, also pre-defined strings by <tt>FF_VOLUME_STRS</tt> or user defined strings can be used as drive prefix in the path name. Numeric drive number is always valid regardless of this option, and also either format of drive prefix can be enabled by this option.</p>
 <table class="lst2">
 <tr><th>Value</th><th>Description</th><th>Example</th></tr>
-<tr><td>0</td><td>Only DOS/Windows style drive prefix in numeric ID can be used.</td><td>0:/filename</td></tr>
+<tr><td>0</td><td>Only DOS/Windows style drive prefix in numeric ID can be used.</td><td>1:/filename</td></tr>
 <tr><td>1</td><td>Also DOS/Windows style drive prefix in string ID can be used.</td><td>flash:/filename</td></tr>
 <tr><td>2</td><td>Also Unix style drive prefix in string ID can be used.</td><td>/flash/filename</td></tr>
 </table>
@@ -221,8 +236,8 @@
 <h4 id="volume_strs">FF_VOLUME_STRS</h4>
 <p>This option defines the volume ID strings for each logical drives. Number of items must not be less than <tt>FF_VOLUMES</tt>. Valid characters for the volume ID string are A-Z, a-z and 0-9, however, they are compared in case-insensitive. If <tt>FF_STR_VOLUME_ID == 0</tt>, this option has no effect. If <tt>FF_STR_VOLUME_ID &gt;= 1</tt> and this option is not defined, a user defined volume string table needs to be defined as shown below. The table should not be modified on the fly.</p>
 <pre>
-<span class="c">/* User defined volume ID strings for 0:    1:      2:    3:   ... */</span>
-const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sdc","usb"};
+<span class="c">/* User defined volume ID strings for 0: to 3: */</span>
+const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb"};
 </pre>
 
 <h4 id="multi_partition">FF_MULTI_PARTITION</h4>

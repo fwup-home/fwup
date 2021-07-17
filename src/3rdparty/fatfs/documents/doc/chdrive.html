@@ -41,7 +41,7 @@ FRESULT f_chdrive (
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_chdrive</tt> function changes only the current drive. The initial value of the current drive number is 0. Note that the current drive is retained in a static variable, so that it also affects other tasks that using the file functions.</p>
+<p>The <tt>f_chdrive</tt> function changes only the current drive. The initial value of the current drive number is 0. In Unix style drive prefix configuration, this function will not be needed because <tt>f_chdir</tt> function changes also the current drive. Note that the current drive is retained in a static variable, so that it also affects other tasks that using the file functions.</p>
 </div>
 
 <div class="para comp">
@@ -56,8 +56,6 @@ FRESULT f_chdrive (
     <em>f_chdrive</em>("2:");  <span class="c">/* Set drive 2 as current drive */</span>
 
     <em>f_chdrive</em>("");    <span class="c">/* No effect (set current drive as current drive) */</span>
-
-    <em>f_chdrive</em>("/flash");  <span class="c">/* Set drive "flash" as current drive (at Unix style volume ID) */</span>
 </pre>
 </div>
 

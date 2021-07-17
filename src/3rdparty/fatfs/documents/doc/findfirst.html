@@ -65,15 +65,15 @@ FRESULT f_findfirst (
 <p>The matching pattern string can contain wildcard terms. For example:</p>
 <ul>
 <li><tt>?</tt> - An any character.</li>
-<li><tt>???</tt> - Any string in length of three characters.</li>
-<li><tt>*</tt> - Any string in length of zero or longer.</li>
-<li><tt>????*</tt> - Any string in length of four characters or longer.</li>
+<li><tt>???</tt> - An any string in length of three characters.</li>
+<li><tt>*</tt> - An any string in length of zero or longer.</li>
+<li><tt>????*</tt> - An any string in length of four characters or longer.</li>
 </ul>
-<p>Since the matching algorithm uses recursion, number of wildcard terms in the matching pattern is limited to four. Any pattern with too many wildcard terms does not match any name. In LFN configuration, only <tt>fname[]</tt> is tested when <tt>FF_USE_FIND == 1</tt> and also <tt>altname[]</tt> is tested when <tt>FF_USE_FIND == 2</tt>. There are some differences listed below between FatFs and standard systems in matching condition.</p>
+<p>Since the matching algorithm uses recursion, number of wildcard terms in the matching pattern is limited to four to limit the stack usage. Any pattern with too many wildcard terms does not match any name. In LFN configuration, only <tt>fname[]</tt> is tested when <tt>FF_USE_FIND == 1</tt> and also <tt>altname[]</tt> is tested when <tt>FF_USE_FIND == 2</tt>. There are some differences listed below between FatFs and standard systems in matching condition.</p>
 <ul>
 <li><tt>"*.*"</tt> never matches any name without extension while it matches any name with or without extension in standard systems.</li>
-<li>Any pattern terminated with a period never matches any name while it matches the name without extensiton in standard systems.</li>
-<li><a href="filename.html#case">DBCS extended characters</a> are compared in case-sensitive when LFN is enabled with ANSI/OEM API.</li>
+<li>Any pattern terminated with a dot never matches any name while it matches the name without extensiton in standard systems.</li>
+<li><a href="filename.html#case">DBCS extended characters</a> are compared in case-sensitive when LFN is enabled with ANSI/OEM code API.</li>
 </ul>
 </div>
 
@@ -95,7 +95,7 @@ void find_image_file (void)
     DIR dj;         <span class="c">/* Directory object */</span>
     FILINFO fno;    <span class="c">/* File information */</span>
 
-    fr = <em>f_findfirst</em>(&amp;dj, &amp;fno, "", "dsc*.jp*");  <span class="c">/* Start to search for photo files */</span>
+    fr = <em>f_findfirst</em>(&amp;dj, &amp;fno, "", "????????.JPG"); <span class="c">/* Start to search for photo files */</span>
 
     while (fr == FR_OK &amp;&amp; fno.fname[0]) {         <span class="c">/* Repeat while an item is found */</span>
         printf("%s\n", fno.fname);                <span class="c">/* Print the object name */</span>

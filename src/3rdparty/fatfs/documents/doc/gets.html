@@ -45,7 +45,7 @@ TCHAR* f_gets (
 <div class="para desc">
 <h4>Description</h4>
 <p>The read operation continues until a <tt>'\n'</tt> is stored, reached end of the file or the buffer is filled with <tt>len - 1</tt> characters. The read string is terminated with a <tt>'\0'</tt>. When no character to read or any error occured during read operation, it returns a null pointer. The status of EOF and error can be examined with <tt>f_eof</tt> and <tt>f_error</tt> function.</p>
-<p>When FatFs is configured to Unicode API (<tt><a href="config.html#lfn_unicode">FF_LFN_UNICODE</a> >= 1</tt>), data types on the srting fuctions, <tt>f_putc</tt>, <tt>f_puts</tt>, <tt>f_printf</tt> and <tt>f_gets</tt>, is also switched to Unicode. The character encoding <em>on the file</em> to be read via this function is assumed as <a href="config.html#strf_encode"><tt>FF_STRF_ENCODE</tt></a>. If the character encoding on the file differs from that on the API, it is converted in this function. In this case, input characters with wrong encoding will be lost.<p>
+<p>When FatFs is configured to Unicode API (<tt><a href="config.html#lfn_unicode">FF_LFN_UNICODE</a> >= 1</tt>), data types on the srting fuctions, <tt>f_putc</tt>, <tt>f_puts</tt>, <tt>f_printf</tt> and <tt>f_gets</tt>, is also switched to Unicode. The character encoding <em>on the file</em> to be read via this function is assumed as <a href="config.html#strf_encode"><tt>FF_STRF_ENCODE</tt></a>. If the character encoding on the file differs from that on the API, it is converted in this function. In this case, input characters with wrong encoding will be lost.</p>
 </div>
 
 

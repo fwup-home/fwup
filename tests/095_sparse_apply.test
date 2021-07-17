@@ -107,7 +107,7 @@ ACTUAL_FAT_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_FAT_OUTPUT << EOF
  Volume in drive : has no label
- Volume Serial Number is 0021-0000
+ Volume Serial Number is 0021-7FF8
 Directory for ::/
 
 sparse   bin   9234631 1980-01-01   0:00

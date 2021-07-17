@@ -22,7 +22,7 @@ FRESULT f_readdir (
 </pre>
 <pre>
 FRESULT f_rewinddir (
-  DIR* <span class="arg">dp</span>,      <span class="c">/* [IN] Directory object */</span>
+  DIR* <span class="arg">dp</span>       <span class="c">/* [IN] Directory object */</span>
 );
 </pre>
 </div>
@@ -103,7 +103,7 @@ FRESULT scan_files (
                 printf("%s/%s\n", path, fno.fname);
             }
         }
-        f_closedir(&amp;dir)
+        f_closedir(&amp;dir);
     }
 
     return res;

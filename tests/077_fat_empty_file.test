@@ -76,7 +76,7 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
  Volume in drive : has no label
- Volume Serial Number is 0021-0000
+ Volume Serial Number is 0022-2DB6
 Directory for ::/
 
 empty                0 1980-01-01   0:00

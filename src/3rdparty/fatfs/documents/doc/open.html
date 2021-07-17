@@ -34,9 +34,9 @@ FRESULT f_open (
 <dd>Mode flags that specifies the type of access and open method for the file. It is specified by a combination of following flags.<br>
 <table class="lst">
 <tr><th>Flags</th><th>Meaning</th></tr>
-<tr><td>FA_READ</td><td>Specifies read access to the object. Data can be read from the file.</tr>
-<tr><td>FA_WRITE</td><td>Specifies write access to the object. Data can be written to the file. Combine with <tt>FA_READ</tt> for read-write access.</td></tr>
-<tr><td>FA_OPEN_EXISTING</td><td>Opens the file. The function fails if the file is not existing. (Default)</td></tr>
+<tr><td>FA_READ</td><td>Specifies read access to the file. Data can be read from the file.</tr>
+<tr><td>FA_WRITE</td><td>Specifies write access to the file. Data can be written to the file. Combine with <tt>FA_READ</tt> for read-write access.</td></tr>
+<tr><td>FA_OPEN_EXISTING</td><td>Opens a file. The function fails if the file is not existing. (Default)</td></tr>
 <tr><td>FA_CREATE_NEW</td><td>Creates a new file. The function fails with <tt>FR_EXIST</tt> if the file is existing.</td></tr>
 <tr><td>FA_CREATE_ALWAYS</td><td>Creates a new file. If the file is existing, it will be truncated and overwritten.</td></tr>
 <tr><td>FA_OPEN_ALWAYS</td><td>Opens the file if it is existing. If not, a new file will be created.</td></tr>

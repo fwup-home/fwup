@@ -103,7 +103,7 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT.1 << EOF
  Volume in drive : has no label
- Volume Serial Number is 0021-0000
+ Volume Serial Number is 0021-03E8
 Directory for ::/
 
 PI3-MI~1 DTB      1446 1980-01-01   0:00  pi3-miniuart-bt.dtbo
@@ -113,7 +113,7 @@ PI3-MI~1 DTB      1446 1980-01-01   0:00  pi3-miniuart-bt.dtbo
 EOF
 cat >$EXPECTED_OUTPUT.2 << EOF
  Volume in drive : has no label
- Volume Serial Number is 0021-0000
+ Volume Serial Number is 0021-03E8
 Directory for ::/
 
 WPA_SU~1 CON       101 1980-01-01   0:00  wpa_supplicant.conf

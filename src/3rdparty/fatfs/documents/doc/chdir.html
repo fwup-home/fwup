@@ -50,7 +50,7 @@ FRESULT f_chdir (
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_chdir</tt> function changes the current directory of the logical drive. Also the current drive will be changed when Unix style volume ID, <tt><a href="config.html#str_volume_id">FF_STR_VOLUME_ID</a> == 2</tt>, is selected. The current directory of each logical drive is initialized to the root directory on mount.</p>
+<p>The <tt>f_chdir</tt> function changes the current directory of the logical drive. Also the current drive will be changed when in Unix style drive prefix, <tt><a href="config.html#str_volume_id">FF_STR_VOLUME_ID</a> == 2</tt>. The current directory of each logical drive is initialized to the root directory on mount.</p>
 <p>Note that the current directory is retained in the each file system object and the current drive is retained in a static variable, so that it also affects other tasks that use the file functions.</p>
 </div>
 

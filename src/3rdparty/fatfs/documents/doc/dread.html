@@ -32,7 +32,7 @@ DRESULT disk_read (
 <dt>buff</dt>
 <dd>Pointer to the first item of the <em>byte array</em> to store read data. Size of read data will be the sector size * <tt class="arg">count</tt> bytes.</dd>
 <dt>sector</dt>
-<dd>Start sector number in 32-bit or 64-bit LBA. The data type <tt>LBA_t</tt> is an alias of <tt>DWORD</tt> or <tt>QWORD</tt> depends on the configuration option.</dd>
+<dd>Start sector number in LBA. The data type <tt>LBA_t</tt> is an alias of <tt>DWORD</tt> or <tt>QWORD</tt> depends on the configuration option.</dd>
 <dt>count</dt>
 <dd>Number of sectors to read.</dd>
 </dl>
@@ -57,7 +57,7 @@ DRESULT disk_read (
 <div class="para desc">
 <h4>Description</h4>
 <p>Read/write operation to the generic storage devices, such as memory card, hadddisk and optical disk, is done in unit of block of data bytes called <em>sector</em>. FatFs supports the sector size in range of 512 to 4096 bytes. When FatFs is configured for fixed sector size (<tt>FF_MIN_SS == FF_MAX_SS</tt>, this is the most case), the generic read/write function must work at the sector size only. When FatFs is configured for variable sector size (<tt>FF_MIN_SS &lt; FF_MAX_SS</tt>), the sector size of medium is inquired with <tt>disk_ioctl</tt> function after <tt>disk_initialize</tt> function succeeded.</p>
-<p>There are some considerations about the memory addres passed via <tt class="arg">buff</tt>. It is not that always aligned with the word boundary because the argument is defined as <tt>BYTE*</tt>. The unaligned transfer request can occure at <a href="appnote.html#fs1">direct transfer</a>. If the bus architecture, especially DMA controller, does not allow unaligned memory access, it should be solved in this function. If it is the case, there are some workarounds described below to avoid this issue.</p>
+<p>There are some considerations about the memory addres passed via <tt class="arg">buff</tt>. It is not that always aligned with the word boundary, because the argument is defined as <tt>BYTE*</tt>. The unaligned transfer request can occure at <a href="appnote.html#fs1">direct transfer</a>. If the bus architecture, especially DMA controller, does not allow unaligned memory access, it should be solved in this function. If it is the case, there are some workarounds described below to avoid this issue.</p>
 <ul>
 <li>Convert word transfer to byte transfer with some trick in this function. - Recommended.</li>
 <li>On the <tt>f_read()</tt> calls, avoid long read request that includes a whole of sector. - Any direct transfer never occures.</li>

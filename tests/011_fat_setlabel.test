@@ -37,7 +37,7 @@ ACTUAL_OUTPUT=$WORK/actual.out
 
 cat >$EXPECTED_OUTPUT << EOF
  Volume in drive : is TESTLABL
- Volume Serial Number is 0021-0000
+ Volume Serial Number is 0022-2DB6
 Directory for ::/
 
 No files

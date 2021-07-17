@@ -52,7 +52,7 @@ FRESULT f_expand (
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_expand</tt> function prepares or allocates a contiguous data area to the file. When <tt class="arg">opt</tt> is 1, the data area is allocated to the file in this function. Unlike expansion of file size by <tt>f_lseek</tt> function, the file must be truncated prior to use this function and read/write pointer of the file stays at offset 0 after the function call. The file content allocated with this function is <em>undefined</em> because no data is written to the file in this process. The function can fail with <tt>FR_DENIED</tt> due to some reasons below.</p>
+<p>The <tt>f_expand</tt> function prepares or allocates a contiguous data area to the file. When <tt class="arg">opt</tt> is 1, the data area is allocated to the file in this function. Unlike expansion of file size by <tt>f_lseek</tt> function, the file must be truncated prior to use this function and read/write pointer of the file stays at offset 0 after the function call. The file content allocated with this function is <em>undefined</em>, because no data is written to the file in this process. The function can fail with <tt>FR_DENIED</tt> due to some reasons below.</p>
 <ul>
 <li>No free contiguous space was found.</li>
 <li>Size of the file was not zero.</li>
