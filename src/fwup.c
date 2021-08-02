@@ -680,7 +680,7 @@ int main(int argc, char **argv)
             }
 
             if (mmc_device_size(mmc_device_path, &end_offset) < 0)
-                fwup_warnx("Error deterimining the size of %s", mmc_device_path);
+                fwup_warnx("Error determining the size of %s", mmc_device_path);
 
             // Call out to platform-specific code to obtain a filehandle
             output_fd = mmc_open(mmc_device_path);
