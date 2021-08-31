@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # Build both full featured and minimal versions of fwup and test the minimal one
