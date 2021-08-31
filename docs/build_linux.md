@@ -5,7 +5,7 @@
 This works on Ubuntu 20.04:
 
 ```sh
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev xdelta3
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev xdelta3 dosfstools
 ./configure
 make -j4
 make check
@@ -37,7 +37,7 @@ At least the following are required for building and running the regression
 tests:
 
 ```sh
-sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man xdelta3
+sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man xdelta3 dosfstools
 ```
 
 ## Static build
