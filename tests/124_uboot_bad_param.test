@@ -6,6 +6,7 @@
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
+# Bad block count
 cat >$CONFIG <<EOF
 uboot-environment uboot-env {
     block-offset = 0
@@ -18,8 +19,45 @@ task complete {
     }
 }
 EOF
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected this to fail?"
+    exit 1
+fi
 
-# Create the firmware file, then "burn it"
+# Missing U-Boot environment - uboot_clearenv
+cat >$CONFIG <<EOF
+task complete {
+    on-finish {
+       uboot_clearenv(uboot-env)
+    }
+}
+EOF
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected this to fail?"
+    exit 1
+fi
+
+# Missing U-Boot environment - uboot_setenv
+cat >$CONFIG <<EOF
+task complete {
+    on-finish {
+       uboot_setenv(uboot-env, "var1", 2000)
+    }
+}
+EOF
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+    echo "Expected this to fail?"
+    exit 1
+fi
+
+# Missing U-Boot environment - uboot_unsetenv
+cat >$CONFIG <<EOF
+task complete {
+    on-finish {
+       uboot_unsetenv(uboot-env, "var1")
+    }
+}
+EOF
 if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
     echo "Expected this to fail?"
     exit 1
