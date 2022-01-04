@@ -55,6 +55,18 @@ int uboot_env_verify_cfg(cfg_t *cfg)
     return 0;
 }
 
+int uboot_env_block_count(cfg_t *cfg)
+{
+    // This assumes a valid configuration as checked by uboot_env_verify_cfg.
+    int block_count = cfg_getint(cfg, "block-count");
+
+    int block_offset_redund = cfg_getint(cfg, "block-offset-redund");
+    if (block_offset_redund >= 0)
+        block_count = block_count * 2;
+
+    return block_count;
+}
+
 int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
 {
     memset(output, 0, sizeof(struct uboot_env));

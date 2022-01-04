@@ -46,6 +46,7 @@ struct uboot_env {
 };
 
 int uboot_env_verify_cfg(cfg_t *cfg);
+int uboot_env_block_count(cfg_t *cfg);
 int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output);
 
 int uboot_env_setenv(struct uboot_env *env, const char *name, const char *value);

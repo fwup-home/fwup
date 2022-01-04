@@ -870,43 +870,73 @@ int trim_run(struct fun_context *fctx)
     return 0;
 }
 
+static int uboot_get_info(struct fun_context *fctx, cfg_t **ubootsec)
+{
+    if (fctx->argc < 2)
+        ERR_RETURN("%s requires uboot-environment", fctx->argv[0]);
+
+    const char *uboot_env_name = fctx->argv[1];
+
+    cfg_t *sec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
+    if (!sec)
+        ERR_RETURN("%s can't find uboot-environment reference %s", fctx->argv[0], uboot_env_name);
+
+    *ubootsec = sec;
+    return 0;
+}
+
+static uint64_t uboot_block_count(struct fun_context *fctx)
+{
+    // Return the number of blocks that should get written.
+    // Assume:
+    //   * First argument is uboot environment name
+    //   * Everything is valid in the configuration
+    //   * Errors are handled elsewhere so they can be ignored here
+    if (fctx->argc < 2)
+        return FWUP_BLOCK_SIZE;
+
+    cfg_t *ubootsec;
+    if (uboot_get_info(fctx, &ubootsec) < 0)
+        return FWUP_BLOCK_SIZE;
+
+    return (uint64_t)uboot_env_block_count(ubootsec) * FWUP_BLOCK_SIZE;
+}
 
 int uboot_recover_validate(struct fun_context *fctx)
 {
     if (fctx->argc != 2)
         ERR_RETURN("uboot_recover requires a uboot-environment reference");
 
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
-
-    if (!ubootsec)
-        ERR_RETURN("uboot_recover can't find uboot-environment reference");
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     return 0;
 }
 int uboot_recover_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += uboot_block_count(fctx);
     return 0;
 }
 int uboot_recover_run(struct fun_context *fctx)
 {
     int rc = 0;
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
     struct uboot_env clean_env;
+
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     if (uboot_env_create_cfg(ubootsec, &env) < 0 ||
         uboot_env_create_cfg(ubootsec, &clean_env) < 0)
         return -1;
 
-    if (uboot_env_read(fctx->output, &env) < 0) {
+    if (uboot_env_read(fctx->output, &env) < 0)
+    {
         // Corrupt, so make a clean environment and write it.
         OK_OR_CLEANUP(uboot_env_write(fctx->output, &clean_env));
     }
 
-    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
+    progress_report(fctx->progress, uboot_block_count(fctx));
 
 cleanup:
     uboot_env_free(&env);
@@ -919,32 +949,30 @@ int uboot_clearenv_validate(struct fun_context *fctx)
     if (fctx->argc != 2)
         ERR_RETURN("uboot_clearenv requires a uboot-environment reference");
 
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
-
-    if (!ubootsec)
-        ERR_RETURN("uboot_clearenv can't find uboot-environment reference");
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     return 0;
 }
 int uboot_clearenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += uboot_block_count(fctx);
     return 0;
 }
 int uboot_clearenv_run(struct fun_context *fctx)
 {
     int rc = 0;
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
+
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
 
     OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
-    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
+    progress_report(fctx->progress, uboot_block_count(fctx));
 
 cleanup:
     uboot_env_free(&env);
@@ -956,25 +984,22 @@ int uboot_setenv_validate(struct fun_context *fctx)
     if (fctx->argc != 4)
         ERR_RETURN("uboot_setenv requires a uboot-environment reference, variable name and value");
 
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
-
-    if (!ubootsec)
-        ERR_RETURN("uboot_setenv can't find uboot-environment reference");
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     return 0;
 }
 int uboot_setenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += uboot_block_count(fctx);
     return 0;
 }
 int uboot_setenv_run(struct fun_context *fctx)
 {
     int rc = 0;
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     if (uboot_env_create_cfg(ubootsec, &env) < 0)
         return -1;
@@ -985,7 +1010,7 @@ int uboot_setenv_run(struct fun_context *fctx)
 
     OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
-    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
+    progress_report(fctx->progress, uboot_block_count(fctx));
 
 cleanup:
     uboot_env_free(&env);
@@ -997,25 +1022,23 @@ int uboot_unsetenv_validate(struct fun_context *fctx)
     if (fctx->argc != 3)
         ERR_RETURN("uboot_unsetenv requires a uboot-environment reference and a variable name");
 
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
-
-    if (!ubootsec)
-        ERR_RETURN("uboot_unsetenv can't find uboot-environment reference");
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     return 0;
 }
 int uboot_unsetenv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += uboot_block_count(fctx);
     return 0;
 }
 int uboot_unsetenv_run(struct fun_context *fctx)
 {
     int rc = 0;
-    const char *uboot_env_name = fctx->argv[1];
-    cfg_t *ubootsec = cfg_gettsec(fctx->cfg, "uboot-environment", uboot_env_name);
     struct uboot_env env;
+
+    cfg_t *ubootsec;
+    OK_OR_RETURN(uboot_get_info(fctx, &ubootsec));
 
     OK_OR_RETURN(uboot_env_create_cfg(ubootsec, &env));
 
@@ -1025,7 +1048,7 @@ int uboot_unsetenv_run(struct fun_context *fctx)
 
     OK_OR_CLEANUP(uboot_env_write(fctx->output, &env));
 
-    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
+    progress_report(fctx->progress, uboot_block_count(fctx));
 
 cleanup:
     uboot_env_free(&env);
