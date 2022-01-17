@@ -23,6 +23,7 @@ struct fwup_progress;
 
 int fwup_apply(const char *fw_filename,
                const char *task,
+               const char *fb_task,
                int output_fd,
                off_t end_offset,
                struct fwup_progress *progress,

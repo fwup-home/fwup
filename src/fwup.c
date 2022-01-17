@@ -110,6 +110,7 @@ static void print_usage()
     printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
     printf("  --sparse-check-size <bytes> Hole size to check for --sparse-check\n");
     printf("  -t, --task <task> Task to apply within the firmware update\n");
+    printf("  -T, --fallback-task <task> Fallback task to apply within the firmware update if the first task fails\n");
     printf("  -u, --unmount Unmount all partitions on device first\n");
     printf("  -U, --no-unmount Do not try to unmount partitions on device\n");
     printf("  --unsafe Allow unsafe commands (consider applying only signed archives)\n");
@@ -207,6 +208,7 @@ static struct option long_options[] = {
     {"sparse-check-size", required_argument, 0, OPTION_SPARSE_CHECK_SIZE},
     {"sign",     no_argument,       0, 'S'},
     {"task",     required_argument, 0, 't'},
+    {"fallback-task", required_argument, 0, 'T'},
     {"unmount",  no_argument,       0, 'u'},
     {"no-unmount", no_argument,     0, 'U'},
     {"unsafe",   no_argument,       0, OPTION_UNSAFE},
@@ -376,6 +378,7 @@ int main(int argc, char **argv)
     const char *input_filename = NULL;
     const char *output_filename = NULL;
     const char *task = NULL;
+    const char *fallback_task = NULL;
 #ifndef FWUP_MINIMAL
     const char *configfile = "fwupdate.conf";
     const char *sparse_check = NULL;
@@ -413,7 +416,7 @@ int main(int argc, char **argv)
     atexit(mmc_finalize);
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "acd:DEf:Fghi:lmno:p:qSs:t:VvUuyZz123456789", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "acd:DEf:Fghi:lmno:p:qSs:t:T:VvUuyZz123456789", long_options, NULL)) != -1) {
         switch (opt) {
         case 'a': // --apply
             command = CMD_APPLY;
@@ -519,6 +522,9 @@ int main(int argc, char **argv)
             break;
         case 't': // --task
             task = optarg;
+            break;
+        case 'T': // --fallback-task
+            fallback_task = optarg;
             break;
         case 'v': // --verbose
             fwup_verbose = true;
@@ -713,6 +719,7 @@ int main(int argc, char **argv)
 
         if (fwup_apply(input_filename,
                        task,
+                       fallback_task,
                        output_fd,
                        end_offset,
                        &progress,

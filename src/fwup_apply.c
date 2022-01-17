@@ -454,6 +454,7 @@ cleanup:
 
 int fwup_apply(const char *fw_filename,
                const char *task_prefix,
+               const char *fb_task_prefix,
                int output_fd,
                off_t end_offset,
                struct fwup_progress *progress,
@@ -512,14 +513,28 @@ int fwup_apply(const char *fw_filename,
 
     // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);
-    if (fctx.task == 0)
+    cfg_t *fallback_task = 0;
+    if (fb_task_prefix != NULL) {
+        fallback_task = find_task(&fctx, fb_task_prefix);
+    }
+
+    if (fctx.task == 0 && fb_task_prefix == NULL)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s'. If task is available, the task's requirements may not be met.", task_prefix);
 
-    // Compute the total progress units
-    OK_OR_CLEANUP(compute_progress(&fctx));
+    if (fctx.task == 0 && fallback_task == 0)
+        ERR_CLEANUP_MSG("Couldn't find applicable task '%s' or fallback task '%s'. If either task is available, the requirements may not be met.", task_prefix, fb_task_prefix);
 
-    // Run
-    OK_OR_CLEANUP(run_task(&fctx, &pd));
+    if (fctx.task == 0) {
+        fctx.task = fallback_task;
+        fwup_warnx("'%s' task not found. Using fallback task '%s'", task_prefix, fb_task_prefix);
+    }
+
+    fallback:
+        // Compute the total progress units
+        OK_OR_CLEANUP(compute_progress(&fctx));
+
+        // Run
+        OK_OR_CLEANUP(run_task(&fctx, &pd));
 
     // Flush everything
     fatfs_closefs();
@@ -535,6 +550,11 @@ int fwup_apply(const char *fw_filename,
     progress_report_complete(fctx.progress);
 
 cleanup:
+    if (fallback_task != 0 && fctx.task != fallback_task) {
+        fctx.task = fallback_task;
+        goto fallback;
+    }
+
     // Close the output
     if (fctx.output) {
         // In the error case, flush in case the on-error
