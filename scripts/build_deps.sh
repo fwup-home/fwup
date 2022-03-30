@@ -51,7 +51,7 @@ fi
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
     echo Building libarchive...
     rm -fr libarchive-*
-    tar xf $DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.gz
+    tar xf $DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.xz
     cd libarchive-$LIBARCHIVE_VERSION
     PKG_CONFIG_PATH=$PKG_CONFIG_PATH LDFLAGS=-L$DEPS_INSTALL_DIR/lib CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure \
         $CONFIGURE_ARGS \
