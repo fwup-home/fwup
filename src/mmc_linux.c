@@ -35,7 +35,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <linux/fs.h>
 #include <linux/major.h>
 
 #ifndef BLKDISCARD
