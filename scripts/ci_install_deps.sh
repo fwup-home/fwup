@@ -50,10 +50,12 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
         static)
             # Need fpm when building static so that we can make the .deb and .rpm packages
             apt-get install -qq rpm rubygems ruby-dev
+            gem install public_suffix -v 4.0.7 --no-ri --no-rdoc
             gem install fpm --no-ri --no-rdoc
             ;;
         raspberrypi)
             apt-get install -qq libarchive-dev qemu binfmt-support qemu-user-static rpm rubygems ruby-dev
+            gem install public_suffix -v 4.0.7 --no-ri --no-rdoc
             gem install fpm --no-ri --no-rdoc
             pushd ~
             git clone https://github.com/raspberrypi/tools.git --depth 1
