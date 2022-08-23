@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.9.1
+
+* Bug fixes
+  * Fix compilation error when using glibc 2.36. Thanks to @linusdm for
+    debugging this.
+  * Fix progress reporting and some error handling when updating U-Boot
+    environment blocks.
+  * Bump libarchive and zlib versions for static builds to 3.6.1 and 1.2.12
+    respectively.
+
 ## v1.9.0
 
 This release updates FatFS (the FAT filesystem library) to R0.14b and updates
