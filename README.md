@@ -75,7 +75,6 @@ On Linux, download and install the appropriate package for your platform:
 * Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
 * [RedHat/CentOS x86\_64 .rpm](https://github.com/fwup-home/fwup/releases/download/v1.9.1/fwup-1.9.1-1.x86_64.rpm)
 * Arch Linux - See [fwup-git package](https://aur.archlinux.org/packages/fwup-git/) on AUR
-  * The build for the `fwup-git` package will fail if you don't have `xdelta3` installed, `sudo pacman -S xdelta3`
 * Buildroot - Support is included upstream since the 2016.05 release
 * Yocto - See [meta-fwup](https://github.com/fwup-home/meta-fwup)
 
