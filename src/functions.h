@@ -49,6 +49,9 @@ struct fun_context {
     // Task configuration
     cfg_t *task;
 
+    // Lists of task configurations
+    cfg_t *tasks[16];
+
     // When processing events (on-init, on-resource, on-finish, etc.) this is that configuration
     cfg_t *on_event;
 
