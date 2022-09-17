@@ -1,0 +1,42 @@
+#/bin/sh
+
+#
+# Test that multiple tasks are attempted until success with a task list
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+on-resource TEST { raw_write(0) }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "TEST" {
+length=1024
+blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "complete" {
+on-resource "TEST" {
+funlist = {"2", "raw_write", "0"}
+}
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that the zip file was created as expected
+check_meta_conf
+cmp $TESTFILE_1K $UNZIPDIR/data/TEST
+
+# The upgrade task does not exist, so it should fallback to the complete task
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade:complete
+cmp_bytes 1024 $IMGFILE $TESTFILE_1K
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

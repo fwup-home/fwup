@@ -99,6 +99,22 @@ static cfg_t *find_task(struct fun_context *fctx, const char *task_prefix)
     return 0;
 }
 
+static int find_tasks(struct fun_context *fctx, const char *tasks_prefix)
+{
+    int rc = -1;
+    int i = 0;
+    char *tasks_copy = strdup(tasks_prefix);
+    for (char *task_prefix = strtok(tasks_copy, ":"); task_prefix != NULL; task_prefix = strtok(NULL, ";")) {
+        fctx->tasks[i] = find_task(fctx, task_prefix);
+        // First task found sets return code as successful
+        if (rc < 0 && fctx->tasks[i] != 0)
+            rc = 0;
+        i++;
+    }
+    free(tasks_copy);
+    return rc;
+}
+
 static int apply_event(struct fun_context *fctx, cfg_t *task, const char *event_type, const char *event_parameter, int (*fun)(struct fun_context *fctx))
 {
     if (event_parameter)
@@ -452,6 +468,20 @@ cleanup:
     return rc;
 }
 
+static int run_tasks(struct fun_context *fctx, struct fwup_apply_data *pd)
+{
+    int rc = 0;
+    for (int i = 0; fctx->tasks[i] != 0; i++) {
+        fctx->task = fctx->tasks[i];
+        rc = run_task(fctx, pd);
+        if (rc == 0)
+            return 0;
+        // Maybe we should report this task failed and moving on to the next one?
+    }
+    // No task was successful
+    return -1;
+}
+
 int fwup_apply(const char *fw_filename,
                const char *task_prefix,
                int output_fd,
@@ -511,15 +541,17 @@ int fwup_apply(const char *fw_filename,
     OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, end_offset, enable_trim, verify_writes));
 
     // Go through all of the tasks and find a matcher
-    fctx.task = find_task(&fctx, task_prefix);
-    if (fctx.task == 0)
+    // fctx.task = find_task(&fctx, task_prefix);
+    int task_rc = find_tasks(&fctx, task_prefix);
+    if (task_rc < 0)
         ERR_CLEANUP_MSG("Couldn't find applicable task '%s'. If task is available, the task's requirements may not be met.", task_prefix);
 
     // Compute the total progress units
     OK_OR_CLEANUP(compute_progress(&fctx));
 
     // Run
-    OK_OR_CLEANUP(run_task(&fctx, &pd));
+    // OK_OR_CLEANUP(run_task(&fctx, &pd));
+    OK_OR_CLEANUP(run_tasks(&fctx, &pd));
 
     // Flush everything
     fatfs_closefs();
