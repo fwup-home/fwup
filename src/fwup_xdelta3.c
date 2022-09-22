@@ -68,10 +68,10 @@ static int xdelta_read_source_block(struct xdelta_state *xd, xoff_t blkno)
                               (void *) xd->source.curblk,
                               xd->source.blksize,
                               xd->source.blksize * blkno);
-    if (rc)
+    if (rc < 0)
         return -1;
 
-    xd->source.onblk = xd->source.blksize;
+    xd->source.onblk = rc;
     xd->source.curblkno = blkno;
 
     return 1;
