@@ -247,8 +247,12 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
     struct fun_context *fctx = (struct fun_context *) cookie;
 
     if (offset < 0 ||
-        offset + count > fctx->xd_source_count)
+        offset > fctx->xd_source_count)
         ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %d", fctx->xd_source_count, offset, count);
+
+    if (count > fctx->xd_source_count ||
+        offset > fctx->xd_source_count - count)
+        count = fctx->xd_source_count - offset;
 
     return block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
 }
