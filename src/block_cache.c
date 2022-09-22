@@ -786,30 +786,31 @@ static int block_segment_pread(struct block_cache *bc, struct block_cache_segmen
 int block_cache_pread(struct block_cache *bc, void *buf, size_t count, off_t offset)
 {
     // Break into segment-sized chunks
+    size_t count_left = count;
     off_t first = offset & BLOCK_CACHE_SEGMENT_MASK;
     if (first != offset) {
         struct block_cache_segment *seg;
         OK_OR_RETURN(get_segment(bc, first, &seg));
         size_t offset_into_segment = offset - first;
-        size_t segcount = min(count, BLOCK_CACHE_SEGMENT_SIZE - offset_into_segment);
+        size_t segcount = min(count_left, BLOCK_CACHE_SEGMENT_SIZE - offset_into_segment);
         OK_OR_RETURN(block_segment_pread(bc, seg, buf, segcount, offset_into_segment));
 
-        count -= segcount;
+        count_left -= segcount;
         offset += segcount;
         buf = (char *) buf + segcount;
     }
 
-    while (count > 0) {
+    while (count_left > 0) {
         struct block_cache_segment *seg;
         OK_OR_RETURN(get_segment(bc, offset, &seg));
 
-        size_t segcount = min(count, BLOCK_CACHE_SEGMENT_SIZE);
+        size_t segcount = min(count_left, BLOCK_CACHE_SEGMENT_SIZE);
         OK_OR_RETURN(block_segment_pread(bc, seg, buf, segcount, 0));
 
-        count -= segcount;
+        count_left -= segcount;
         offset += segcount;
         buf = (char *) buf + segcount;
     }
 
-    return 0;
+    return count;
 }
