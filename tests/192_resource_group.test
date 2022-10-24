@@ -1,0 +1,82 @@
+#!/bin/sh
+
+#
+# Test resources in subdirectories
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource-group a_resource_group {
+  host-path-match = "${TESTS_SRC_DIR}/*"
+}
+
+task complete {
+	on-init {
+    mbr_write(mbr-a)
+    fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+  }
+  on-resource-group a_resource_group {
+    fat_write(\${BOOT_PART_OFFSET})
+  }
+}
+EOF
+
+cat >$EXPECTED_META_CONF <<EOF
+file-resource "subdir/onesubdir" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+file-resource "/rootfile" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+file-resource "subdir1/subdir2/twosubdir" {
+  length=1024
+  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+}
+task "complete" {
+  on-resource "subdir/onesubdir" {
+    funlist = {"2", "raw_write", "0"}
+  }
+  on-resource "/rootfile" {
+    funlist = {"2", "raw_write", "4"}
+  }
+  on-resource "subdir1/subdir2/twosubdir" {
+    funlist = {"2", "raw_write", "8"}
+  }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0022-2DB6
+Directory for ::/
+
+1K       bin      1024 1980-01-01   0:00
+        1 file                1 024 bytes
+                         38 909 440 bytes free
+
+EOF
+
+# Check that the directory looks right
+mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+mcopy -n -i $WORK/fwup.img@@32256 ::/1K.bin $WORK/actual.1K.bin
+diff $TESTFILE_1K $WORK/actual.1K.bin
+
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

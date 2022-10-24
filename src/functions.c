@@ -564,8 +564,16 @@ int fat_write_validate(struct fun_context *fctx)
     if (fctx->type != FUN_CONTEXT_FILE)
         ERR_RETURN("fat_write only usable in on-resource");
 
-    if (fctx->argc != 3)
-        ERR_RETURN("fat_write requires a block offset and destination filename");
+    if (fctx->argc == 2) {
+        // Default the filename to the resource name. This is quite common.
+        // Making this change at the validation stage means that the update is
+        // reflected in the output .fw file and it will be compatible with older
+        // versions of fwup.
+        fctx->argc = 3;
+        fctx->argv[2] = fctx->task->title;
+    } else if (fctx->argc != 3) {
+        ERR_RETURN("fat_write requires a block offset and optional destination filename");
+    }
 
     CHECK_ARG_UINT64(fctx->argv[1], "fat_write requires a non-negative integer block offset");
 

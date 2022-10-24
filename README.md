@@ -649,6 +649,7 @@ error(message)                          | 0.12.0 | Immediately fail a firmware u
 execute(command)                        | 0.16.0 | Execute a command on the host. Requires the `--unsafe` flag
 fat_mkfs(block_offset, block_count)     | 0.1.0 | Create a FAT file system at the specified block offset and count
 fat_write(block_offset, filename)       | 0.1.0 | Write the resource to the FAT file system at the specified block offset
+fat_write(block_offset)                 | 1.10.0 | Same as the two argument fat_write except the filename is the resource name. This is handled when creating the archive, so it's backwards compatible.
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
 fat_mv(block_offset, oldname, newname)  | 0.1.0 | Rename the specified file on a FAT file system
 fat_mv!(block_offset, oldname, newname) | 0.14.0 | Rename the specified file even if newname already exists.
