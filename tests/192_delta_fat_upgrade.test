@@ -1,0 +1,74 @@
+#!/bin/sh
+
+#
+# Write a firmware image and then test upgrading it with
+# an xdelta3-encoded update, on FAT-stored files.
+#
+# brew install xdelta
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+FWFILE2="${WORK}/fwup2.fw"
+
+cat >"$CONFIG" <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+file-resource 1k.cur {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource 1k.new {
+        host-path = "${TESTFILE_1K}"
+}
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+    }
+    on-resource 1k.cur { fat_write(\${BOOT_PART_OFFSET}, "1k.cur") }
+}
+task upgrade {
+    on-resource 1k.new {
+        delta-source-fat-offset=\${BOOT_PART_OFFSET}
+        delta-source-fat-path="1k.cur"
+        fat_write(\${BOOT_PART_OFFSET}, "1k.new")
+    }
+}
+EOF
+
+offset_bytes=$(( 63*512 ))
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete
+
+# Check the content of current firmware content
+mcopy -n -i "${IMGFILE}@@${offset_bytes}" ::/1k.cur "${WORK}/1k.cur"
+diff "${TESTFILE_1K}" "${WORK}/1k.cur"
+
+# Manually create the delta upgrade by replacing 1k.new
+# with the delta3 version
+mkdir -p "$WORK/data"
+xdelta3 -A -S -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/1k.new"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/1k.new)
+
+# Now upgrade the IMGFILE file
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade
+
+# Check the content of new firmware content
+mcopy -i "${IMGFILE}@@${offset_bytes}" ::/1k.new "${WORK}/1k.new"
+diff "${TESTFILE_1K}" "${WORK}/1k.new"
+
+# Check that the verify logic works on both files
+$FWUP_VERIFY -V -i "$FWFILE"
+$FWUP_VERIFY -V -i "$FWFILE2"
