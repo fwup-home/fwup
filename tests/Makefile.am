@@ -192,6 +192,7 @@ TESTS = 001_simple_fw.test \
 	189_uboot_redundant_recover.test \
 	190_one_metadata_cmdline.test \
 	191_disk_crypto_via_env.test \
-	192_delta_out_of_bound.test
+	192_delta_out_of_bound.test \
+	193_delta_fat_upgrade.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

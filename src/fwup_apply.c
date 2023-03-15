@@ -257,6 +257,17 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
     return block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
 }
 
+static int xdelta_read_fat_callback(void *cookie, void *buf, size_t count, off_t offset)
+{
+    struct fun_context *fctx = (struct fun_context *) cookie;
+    size_t br;
+
+    if (offset < 0)
+        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 ")", fctx->xd_source_count);
+
+    return fatfs_pread(fctx->output, fctx->xd_source_offset, fctx->xd_source_path, offset, count, buf, &br);
+}
+
 static int read_callback_xdelta(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
 {
     struct fwup_apply_data *p = (struct fwup_apply_data *) fctx->cookie;
@@ -391,17 +402,31 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
         off_t expected_size_in_archive = sparse_file_data_size(&pd->sfm);
 
         if (pd->sfm.map_len == 1 && archive_entry_size_is_set(ae) && size_in_archive != expected_size_in_archive) {
+            // Size in archive is different from expected size
             const char *source_raw_offset_str = cfg_getstr(on_resource, "delta-source-raw-offset");
             int source_raw_count = cfg_getint(on_resource, "delta-source-raw-count");
+
+            const char *source_fat_offset_str = cfg_getstr(on_resource, "delta-source-fat-offset");
+            const char *source_fat_path = cfg_getstr(on_resource, "delta-source-fat-path");
+
             if (source_raw_count > 0 && source_raw_offset_str != NULL) {
+                // Found delta-source-raw-offset and delta-source-raw-count directives
                 off_t source_raw_offset = strtoul(source_raw_offset_str, NULL, 0);
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
                 xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
                 fctx->xd_source_offset = source_raw_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_count = source_raw_count * FWUP_BLOCK_SIZE;
+            } else if (source_fat_offset_str != NULL && source_fat_path != NULL) {
+                // Found delta-source-fat-offset and delta-source-fat-path directives
+                off_t source_fat_offset = strtoul(source_fat_offset_str, NULL, 0);
+
+                fctx->xd = malloc(sizeof(struct xdelta_state));
+                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_fat_callback, fctx);
+                fctx->xd_source_offset = source_fat_offset;
+                fctx->xd_source_path = source_fat_path;
             } else {
-                ERR_CLEANUP_MSG("File '%s' isn't expected size (%d vs %d) and xdelta3 patch support not enabled on it. (Add delta-source-raw-offset or delta-source-raw-count at least)", resource_name, (int) size_in_archive, (int) expected_size_in_archive);
+                ERR_CLEANUP_MSG("File '%s' isn't expected size (%d vs %d) and xdelta3 patch support not enabled on it. (Add delta-source-raw-offset / delta-source-raw-count or delta-source-fat-offset / delta-source-fat-path)", resource_name, (int) size_in_archive, (int) expected_size_in_archive);
             }
         }
     }

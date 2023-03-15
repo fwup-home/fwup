@@ -66,6 +66,7 @@ struct fun_context {
     struct xdelta_state *xd;
     off_t xd_source_offset;
     size_t xd_source_count;
+    const char *xd_source_path;
 
     void *cookie;
 };
