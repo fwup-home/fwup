@@ -13,7 +13,7 @@ FRESULT test_contiguous_file (
 
 
     *cont = 0;
-    fr = f_lseek(fp, 0);            /* Validates and prepares the file */
+    fr = f_rewind(fp);              /* Validates and prepares the file */
     if (fr != FR_OK) return fr;
 
 #if FF_MAX_SS == FF_MIN_SS

@@ -41,8 +41,13 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <ul>
 <li>Size of <tt>char</tt> must be 8-bit.</li>
 <li>Size of <tt>int</tt>, as well as integer promotion, must be 16-bit or 32-bit.</li>
-<li>When the C standard is in C89, size of <tt>short</tt> and <tt>long</tt> must be 16-bit and 32-bit respectively.</li>
-<li>When it is in C99 or later, <tt>stdint.h</tt> is used to obtain the integer sizes.</li>
+<li>Size of <tt>short</tt> and <tt>long</tt> must be 16-bit and 32-bit respectively. (in C89 only)</li>
+</ul>
+<li>Dependency<br>
+<ul>
+<li>C89: <tt>string.h</tt>.</li>
+<li>C99: <tt>string.h</tt> and <tt>stdint.h</tt>.</li>
+<li>Optional: <tt>stdarg.h</tt> and <tt>math.h</tt>.</li>
 </ul>
 </ul>
 
@@ -76,7 +81,7 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <tr><td>disk_ioctl (GET_SECTOR_SIZE)</td><td><a href="config.html#max_ss">FF_MAX_SS != FF_MIN_SS</a></td></tr>
 <tr><td>disk_ioctl (CTRL_TRIM)</td><td><a href="config.html#use_trim">FF_USE_TRIM == 1</a></td></tr>
 <tr><td>ff_uni2oem<br>ff_oem2uni<br>ff_wtoupper</td><td><a href="config.html#use_lfn">FF_USE_LFN != 0</a></td><td>Unicode support functions.<br>Add optional module ffunicode.c to the project.</td></tr>
-<tr><td>ff_cre_syncobj<br>ff_del_syncobj<br>ff_req_grant<br>ff_rel_grant</td><td><a href="config.html#fs_reentrant">FF_FS_REENTRANT == 1</a></td><td rowspan="2">O/S dependent functions.<br>Sample code is available in ffsystem.c.</td></tr>
+<tr><td>ff_mutex_create<br>ff_mutex_delete<br>ff_mutex_take<br>ff_mutex_give</td><td><a href="config.html#fs_reentrant">FF_FS_REENTRANT == 1</a></td><td rowspan="2">O/S dependent functions.<br>Sample code is available in ffsystem.c.</td></tr>
 <tr><td>ff_mem_alloc<br>ff_mem_free</td><td>FF_USE_LFN == 3</td></tr>
 </table>
 <p>FatFs cares about neither what kind of storage device is used nor how it is implemented. Only a requirement is that it is a block device read/written in fixed-size blocks that accessible via the disk I/O functions defined above.</p>
@@ -103,19 +108,19 @@ The FatFs module is a middleware written in ANSI C (C89). There is no platform d
 <tr><th></th><th>ARM7<small><br>32bit</small></th><th>ARM7<small><br>Thumb</small></th><th>CM3<small><br>Thumb-2</small></th><th>AVR</th><th>H8/300H</th><th>PIC24</th><th>RL78</th><th>V850ES</th><th>SH-2A</th><th>RX600</th><th>IA-32</th></tr>
 <tr class="cal">     <td>Compiler</td><td>GCC</td><td>GCC</td><td>GCC</td><td>GCC</td><td>CH38</td><td>C30</td><td>CC78K0R</td><td>CA850</td><td>SHC</td><td>RXC</td><td>MSC</td></tr>
 <!--                                                      ARM        Thumb          CM3           AVR            H8          PIC24          RL78       V850ES        SH-2A        RX600        IA-32   -->
-<tr class="ral"><td class="cal">.text (Full, R/W)</td><td>10.4k</td><td>6.7k</td><td>6.1k</td><td>12.5k</td><td>11.0k</td><td>11.6k</td><td>13.0k</td><td>8.9k</td><td>9.2k</td><td>6.5k</td><td>8.9k</td></tr>
-<tr class="ral"><td class="cal">.text (Min, R/W)</td>  <td>7.0k</td><td>4.7k</td><td>4.2k</td> <td>8.5k</td> <td>7.6k</td> <td>8.1k</td> <td>9.5k</td><td>6.2k</td><td>6.4k</td><td>4.6k</td><td>6.4k</td></tr>
-<tr class="ral"><td class="cal">.text (Full, R/O)</td> <td>4.9k</td><td>3.2k</td><td>2.7k</td> <td>6.1k</td> <td>5.2k</td> <td>5.5k</td> <td>6.5k</td><td>4.3k</td><td>4.2k</td><td>3.2k</td><td>4.3k</td></tr>
-<tr class="ral"><td class="cal">.text (Min, R/O)</td>  <td>3.7k</td><td>2.5k</td><td>2.1k</td> <td>4.4k</td> <td>4.0k</td> <td>4.3k</td> <td>5.1k</td><td>3.4k</td><td>3.3k</td><td>2.5k</td><td>3.5k</td></tr>
+<tr class="ral"><td class="cal">.text (Def, R/W)</td><td>10.4k</td><td>6.7k</td><td>6.1k</td><td>12.5k</td><td>11.0k</td><td>11.4k</td><td>13.0k</td><td>8.9k</td><td>9.2k</td><td>6.5k</td><td>8.9k</td></tr>
+<tr class="ral"><td class="cal">.text (Min, R/W)</td> <td>7.0k</td><td>4.7k</td><td>4.2k</td> <td>8.5k</td> <td>7.6k</td> <td>7.9k</td> <td>9.5k</td><td>6.3k</td><td>6.4k</td><td>4.7k</td><td>6.4k</td></tr>
+<tr class="ral"><td class="cal">.text (Def, R/O)</td> <td>4.9k</td><td>3.2k</td><td>2.7k</td> <td>6.1k</td> <td>5.2k</td> <td>5.4k</td> <td>6.5k</td><td>4.3k</td><td>4.2k</td><td>3.2k</td><td>4.3k</td></tr>
+<tr class="ral"><td class="cal">.text (Min, R/O)</td> <td>3.7k</td><td>2.5k</td><td>2.1k</td> <td>4.4k</td> <td>4.0k</td> <td>4.2k</td> <td>5.1k</td><td>3.4k</td><td>3.3k</td><td>2.5k</td><td>3.5k</td></tr>
 <tr class="ral"><td class="cal">.bss</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*2 + 2</td><td>V*4 + 2</td><td>V*2 + 2</td><td>V*2 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td><td>V*4 + 2</td></tr>
 <tr class="ral"><td class="cal">Work area<br><small>(FF_FS_TINY == 0)</small></td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*560<br>+ F*546</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td><td>V*564<br>+ F*552</td></tr>
 <tr class="ral"><td class="cal">Work area<br><small>(FF_FS_TINY == 1)</small></td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*560<br>+ F*34</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td><td>V*564<br>+ F*40</td></tr>
 </table>
 <p>These are the memory usage of FatFs module without lower layer on some target systems in following condition. <em>V</em> denotes number of mounted volumes and <em>F</em> denotes number of open files. Every samples here are optimezed in code size.</p>
 <pre>
-FatFs R0.14b options:
-FF_FS_READONLY   0 (Read/Write) or 1 (Read only)
-FF_FS_MINIMIZE   0 (Full, with all basic functions) or 3 (Min, with fully minimized)
+FatFs R0.15 options:
+FF_FS_READONLY   0 (R/W, read/write) or 1 (R/O, read only)
+FF_FS_MINIMIZE   0 (Def, with all basic functions) or 3 (Min, with fully minimized)
 FF_FS_TINY       0 (Default) or 1 (Tiny file object)
 And any other options are left unchanged from original setting.
 </pre>
@@ -204,9 +209,9 @@ And any other options are left unchanged from original setting.
 
 <div class="para doc" id="reentrant">
 <h3>Re-entrancy</h3>
-<p>The file operations of two tasks to the <em>different volumes</em> each other is always re-entrant regardless of the configurations except when LFN is enabled with static working buffer (<tt>FF_USE_LFN = 1</tt>). It can work concurrently without any mutual exclusion.</p>
-<p>The file operations of two tasks to the <em>same volume</em> is not re-entrant in default. FatFs can also be configured to make it thread-safe by option <tt><a href="config.html#fs_reentrant">FF_FS_REENTRANT</a></tt>. In this case, also the OS dependent synchronization control functions, <tt>ff_cre_syncobj/ff_del_syncobj/ff_req_grant/ff_rel_grant</tt>, need to be added to the project. There are some examples in the <tt>ffsystem.c</tt>. When a file function is called while the volume is being accessed by another task, the file function to the volume will be suspended until that task leaves the file function. If the wait time exceeded a period defined by <tt>FF_TIMEOUT</tt>, the file function will abort with <tt>FR_TIMEOUT</tt>. The timeout feature might not be supported on the some RTOSs.</p>
-<p>There is an exception on the re-entrancy for <tt>f_mount/f_mkfs</tt> function. These volume management functions are not re-entrant to the same volume. When use these functions, other tasks need to avoid to access the volume.</p>
+<p>The file operations of two tasks to the <em>different volumes</em> each other is always re-entrant and it can work concurrently without any mutual exclusion regardless of the configurations except when LFN is enabled with static working buffer (<tt>FF_USE_LFN = 1</tt>).</p>
+<p>The file operations of two tasks to the <em>same volume</em> is not thread-safe by default. FatFs can also be configured to make it thread-safe by an option <tt><a href="config.html#fs_reentrant">FF_FS_REENTRANT</a></tt>. When a file function is called while the volume is being accessed by another task, the file function to the volume will be suspended until that task leaves the file function. If the wait time exceeded a period defined by <tt>FF_TIMEOUT</tt>, the file function will abort with <tt>FR_TIMEOUT</tt>. The timeout feature might not be supported on the some OSs. To enable this feature, OS dependent synchronization control functions, <tt>ff_mutex_create/ff_mutex_delete/ff_mutex_take/ff_mutex_give</tt>, need to be added to the project. There is an example code in the <tt>ffsystem.c</tt> for some OSs.</p>
+<p>Note that there is an exception on the re-entrancy for <tt>f_mount</tt> and <tt>f_mkfs</tt> function. You will know why it is. These volume management functions are always not thread-safe to the volume being processed. When use these functions, other tasks need to avoid to access the corresponding volume.</p>
 <div class="rset">
 <table class="lst2">
 <tr><th><tt>Function</tt></th><th>Case 1</th><th>Case 2</th><th>Case 3</th></tr>
@@ -261,7 +266,7 @@ Figure 6. Comparison between Multiple/Single Sector Write<br>
 <p>The write throughput of the flash memory media becomes the worst at single sector write transaction. The write throughput increases as the number of sectors per a write transaction as shown in Figure 6. This effect more appers at faster interface speed and the performance ratio often becomes grater than ten. <a href="../res/rwtest2.png">This result</a> is clearly explaining how fast is multiple block write (W:16K, 32 sectors) than single block write (W:100, 1 sector), and also larger card tends to be slow at single block write. Number of write transactions also affects life time of the flash memory media. When compared at same amount of write data, the single sector write in Figure 6 above wears flash memory media 16 times more than multiple sector write in Figure 6 below. Single sector write is pretty pain for the flash memory media.</p>
 <p>Therefore the application program should write the data in large block as possible. The ideal write chunk size and alighment is size of sector, and size of cluster is the best. Of course all layers between the application and the storage device must have consideration on multiple sector write, however most of open-source memory card drivers lack it. Do not split a multiple sector write request into single sector write transactions or the write throughput gets poor. Note that FatFs module and its sample disk drivers supprt multiple sector read/write operation. </p>
 <h4>Forcing Memory Erase</h4>
-<p>When remove a file with <tt>f_unlink</tt> function, the data clusters occupied by the file are marked 'free' on the FAT. But the data sectors containing the file data are not that applied any process, so that the file data left occupies a part of the flash memory array as 'live block'. If the file data can be erased on removing the file, those data blocks will be turned into the free block pool. This may skip internal block erase operation to the data block on next write operation. As the result the write performance might be improved. FatFs can manage this function by setting <tt><a href="config.html#use_trim">FF_USE_TRIM</a></tt> to 1. Note that this is an expectation of internal process of the storage device and not that always effective. Most applications will not need this function. Also <tt>f_unlink</tt> function can take a time when remove a large file.</p>
+<p>When remove a file with <tt>f_unlink</tt> function, the data clusters occupied by the file are marked 'free' on the FAT. But the data sectors containing the file data are not that applied any process, so that the file data left occupies a part of the flash memory array as 'live block'. If the file data can be erased on removing the file, those data blocks will be turned into the free block pool. This may skip internal block erase operation to the data block on next write operation. As the result the write performance might be improved. FatFs can manage this function by setting <tt><a href="config.html#use_trim">FF_USE_TRIM</a></tt> to 1. Note that because this effect is from an expectation of internal process of the storage device, it is not that always effective. Most applications will not need this function. Also <tt>f_unlink</tt> function can take a time when remove a large file.</p>
 </div>
 
 <div class="para doc" id="critical">
@@ -326,7 +331,7 @@ Figure 5. Minimized critical section<br>
 / by use of this software.
 /----------------------------------------------------------------------------*/
 </pre>
-<p>Therefore FatFs license is one of the BSD-style licenses but there is a significant feature. FatFs is mainly intended for embedded systems. In order to extend the usability for commercial products, the redistributions of FatFs in binary form, such as embedded code, binary library and any forms without source code, does not need to include about FatFs in the documentations. This is equivalent to the 1-clause BSD license. Of course FatFs is compatible with the most of open source software licenses includs GNU GPL. When you redistribute the FatFs source code with any changes or create a fork, the license can also be changed to GNU GPL, BSD-style license or any open source software license that compatible with FatFs license.</p>
+<p>Therefore FatFs license is one of the BSD-style licenses but there is a significant feature. FatFs is mainly intended for embedded systems. In order to extend the usability for commercial products, the redistributions of FatFs in binary form, such as embedded code, binary library and any forms without source code, does not need to include about FatFs in the documentations. This is equivalent to the 1-clause BSD license. Of course FatFs is compatible with the most of open source software licenses includes GNU GPL. When you redistribute the FatFs source code with any changes or create a fork, the license can also be changed to GNU GPL, BSD-style license or any open source software license that compatible with FatFs license.</p>
 </div>
 
 <p class="foot"><a href="../00index_e.html">Return Home</a></p>

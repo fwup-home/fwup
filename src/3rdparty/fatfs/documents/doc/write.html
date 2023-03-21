@@ -32,7 +32,7 @@ FRESULT f_write (
 <dt>buff</dt>
 <dd>Pointer to the data to be written.</dd>
 <dt>btw</dt>
-<dd>Specifies number of bytes to write in range of <tt>UINT</tt> type.</dd>
+<dd>Specifies number of bytes to write in range of <tt>UINT</tt> type. If the data needs to be written fast, it should be written in large chunk as possible.</dd>
 <dt>bw</dt>
 <dd>Pointer to the <tt>UINT</tt> variable that receives the number of bytes written. This value is always valid after the function call regardless of the function return code. If the return value is equal to <tt class="arg">btw</tt>, the function return code should be <tt>FR_OK</tt>.</dd>
 </dl>

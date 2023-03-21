@@ -62,18 +62,18 @@ FRESULT f_findfirst (
 <div class="para desc">
 <h4>Description</h4>
 <p>After the directory specified by <tt class="arg">path</tt> could be opened, it starts to search the directory for items with the matching pattern specified by <tt class="arg">pattern</tt>. If the first item is found, the information about the item is stored into the file information structure <tt class="arg">fno</tt>. If not found, <tt>fno-&gt;fname[]</tt> has a null string.</p>
-<p>The matching pattern string can contain wildcard terms. For example:</p>
+<p>The matching pattern string can contain wildcards. For example:</p>
 <ul>
 <li><tt>?</tt> - An any character.</li>
 <li><tt>???</tt> - An any string in length of three characters.</li>
 <li><tt>*</tt> - An any string in length of zero or longer.</li>
 <li><tt>????*</tt> - An any string in length of four characters or longer.</li>
 </ul>
-<p>Since the matching algorithm uses recursion, number of wildcard terms in the matching pattern is limited to four to limit the stack usage. Any pattern with too many wildcard terms does not match any name. In LFN configuration, only <tt>fname[]</tt> is tested when <tt>FF_USE_FIND == 1</tt> and also <tt>altname[]</tt> is tested when <tt>FF_USE_FIND == 2</tt>. There are some differences listed below between FatFs and standard systems in matching condition.</p>
+<p>Since the matching algorithm uses recursion, number of wildcards in the matching pattern is limited to four to limit the stack usage. Any pattern with too many wildcards does not match any name. In LFN configuration, only <tt>fname[]</tt> is tested when <tt>FF_USE_FIND == 1</tt> and also <tt>altname[]</tt> is tested when <tt>FF_USE_FIND == 2</tt>. There are some differences listed below between FatFs and standard systems in matching condition.</p>
 <ul>
-<li><tt>"*.*"</tt> never matches any name without extension while it matches any name with or without extension in standard systems.</li>
-<li>Any pattern terminated with a dot never matches any name while it matches the name without extensiton in standard systems.</li>
-<li><a href="filename.html#case">DBCS extended characters</a> are compared in case-sensitive when LFN is enabled with ANSI/OEM code API.</li>
+<li><tt>"*.*"</tt> does not match any name without extension while it matches any name with or without extension in standard systems.</li>
+<li>Any pattern terminated with a dot does not match any name while it matches the name without extensiton in standard systems.</li>
+<li><a href="filename.html#case">DBCS extended characters</a> are compared in case-sensitive when LFN is enabled with <tt>!FF_LFN_UNICODE</tt>.</li>
 </ul>
 </div>
 

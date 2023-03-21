@@ -11,7 +11,7 @@
 
 <body>
 <h1>Configuration Options</h1>
-<p>There are many options to configure the functions of FatFs for requirement of each project. The configuration options are defined in the <em><tt>ffconf.h</tt></em>.</p>
+<p>There are many options to configure the features of FatFs for various requirements of each project. The configuration options are defined in <em><tt>ffconf.h</tt></em>.</p>
 <ul>
 <li>Function Configurations
  <ul>
@@ -105,7 +105,7 @@
 <p>Disable (0) or Enable (1) <tt>f_forward</tt> function.</p>
 
 <h4 id="use_strfunc">FF_USE_STRFUNC</h4>
-<p>This option switches string functions, <tt>f_gets</tt>, <tt>f_putc</tt>, <tt>f_puts</tt> and <tt>f_printf</tt>. These functions are equivalents of regular string stream I/O functions in POSIX. If <tt>sprintf</tt> is available and code conversion is not needed, <tt>f_write</tt> with <tt>sprintf</tt> will be efficient in code size and performance rather than <tt>f_printf</tt>.</p>
+<p>This option switches string functions, <tt>f_gets</tt>, <tt>f_putc</tt>, <tt>f_puts</tt> and <tt>f_printf</tt>. These functions are equivalents of regular string stream I/O functions in POSIX. If <tt>sprintf</tt> is available and code conversion is not needed, <tt>f_write</tt> with <tt>sprintf</tt> will be efficient in code size and performance rather than <tt>f_printf</tt>. When enable this feature, <tt>stdarg.h</tt> is included in <tt>ff.c</tt>.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
 <tr><td>0</td><td>Disable string functions.</td></tr>
@@ -115,15 +115,15 @@
 
 <h4 id="print_lli">FF_PRINT_LLI</h4>
 <p>This option switches support for long long integer argument in <tt>f_printf</tt>.</p>
-<p>Disable (0) or Enable (1). C standard needs to be C99 or later to enable this feature.</p>
+<p>Disable (0) or Enable (1). When enable this feature, C standard needs to be C99 or later.</p>
 
 <h4 id="print_fp">FF_PRINT_FLOAT</h4>
-<p>This option switches support for floating point argument in <tt>f_printf</tt>. C standard needs to be C99 or later to enable this feature.</p>
+<p>This option switches support for floating point argument in <tt>f_printf</tt>. When enable this feature, C standard needs to be C99 or later and <tt>math.h</tt> is included in <tt>ff.c</tt>.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
 <tr><td>0</td><td>Disable floating point argument.</td></tr>
 <tr><td>1</td><td>Enable floating point argument in type <tt>'f'</tt>, <tt>'e'</tt> and <tt>'E'</tt>.</td></tr>
-<tr><td>2</td><td>Enable with decimal separator <tt>','</tt> instead of <tt>'.'</tt>.</td></tr>
+<tr><td>2</td><td>Enable it with decimal separator <tt>','</tt> instead of <tt>'.'</tt>.</td></tr>
 </table>
 
 <h4 id="strf_encode">FF_STRF_ENCODE</h4>
@@ -210,8 +210,8 @@
 <p>This option configures relative path function. For more information, read <a href="filename.html#nam">here</a>.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
-<tr><td>0</td><td>Disable relative path function and remove related functions.</td></tr>
-<tr><td>1</td><td>Enable relative path function. <tt>f_chdir</tt> and <tt>f_chdrive</tt> function is available.</td></tr>
+<tr><td>0</td><td>Disable relative path and remove related functions.</td></tr>
+<tr><td>1</td><td>Enable relative path. <tt>f_chdir</tt> and <tt>f_chdrive</tt> function is available.</td></tr>
 <tr><td>2</td><td><tt>f_getcwd</tt> function is available in addition to 1</td></tr>
 </table>
 
@@ -250,7 +250,7 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb"};
 <p>This option switches media access interface to 64-bit LBA and enables GUID Partition Table (GPT) for partition management, Enabled (1) or Disabled (0). exFAT filesystem needs to be enabled to enable this feature.</p>
 
 <h4 id="fs_gptmin">FF_MIN_GPT</h4>
-<p>This option specifies the threshold of determination of partitioning format when create patitions on the drive in <tt>f_mkfs</tt> and <tt>f_fdisk</tt> function. When number of sectors on the drive is equal or larger than this value, the drive will be partitioned in GPT. This option has no effect when <tt>FF_LBA64 == 0</tt>.</p>
+<p>This option specifies the threshold of determination of partitioning format when create patitions on the drive in <tt>f_mkfs</tt> and <tt>f_fdisk</tt> function. When number of available sectors is equal or larger than this value, the drive will be partitioned in GPT. This option has no effect when <tt>FF_LBA64 == 0</tt>.</p>
 
 <h4 id="use_trim">FF_USE_TRIM</h4>
 <p>Disable (0) or Enable (1). This option switches ATA-TRIM function. To enable Trim function, also <tt>CTRL_TRIM</tt> command should be implemented to the <tt>disk_ioctl</tt> function.</p>
@@ -268,13 +268,13 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb"};
 <p>This option switches support for exFAT filesystem in addition to the FAT/FAT32 filesystem, Enabled (1) or Disabled (0). To enable exFAT, also LFN must be enabled and configureing <tt>FF_LFN_UNICODE &gt;= 1</tt> and <tt>FF_MAX_LFN == 255</tt> is recommended for full-featured exFAT function. Note that enabling exFAT discards ANSI C (C89) compatibility and wants C99 because of need for 64-bit integer type.</p>
 
 <h4 id="fs_nortc">FF_FS_NORTC</h4>
-<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp function. If the system does not have any RTC function or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a fixed timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp function, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect in read-only configuration.</p>
+<p>Use RTC (0) or Do not use RTC (1). This option controls timestamp featuer. If the system does not have an RTC or valid timestamp is not needed, set <tt>FF_FS_NORTC</tt> to 1 to disable the timestamp function. Every objects modified by FatFs will have a constant timestamp defined by <tt>FF_NORTC_MON</tt>, <tt>FF_NORTC_MDAY</tt> and <tt>FF_NORTC_YEAR</tt>. To use the timestamp featuer, set <tt>FF_FS_NORTC == 0</tt> and add <tt>get_fattime</tt> function to the project to get current time form the RTC. This option has no effect in read-only configuration.</p>
 
 <h4 id="nortc_time">FF_NORTC_MON, FF_NORTC_MDAY, FF_NORTC_YEAR</h4>
 <p>This set of options defines the time to be used in no RTC systems. This option has no effect in read-only configuration or <tt>FF_FS_NORTC == 0</tt>.</p>
 
 <h4 id="fs_nofsinfo">FF_FS_NOFSINFO</h4>
-<p>0 to 3. If you need to know correct free space on the FAT32 volume, set bit 0 of this option, and <tt>f_getfree</tt> function at first time after volume mount will force a full FAT scan. Bit 1 controls the use of last allocated cluster number for new allocation.</p>
+<p>0 to 3. If you need to know correct free space on the FAT32 volume, set bit 0 of this option, and <tt>f_getfree</tt> function at first time after the volume mounted will force a full FAT scan. Bit 1 controls the use of last allocated cluster number for new allocation.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
 <tr><td>bit0=0</td><td>Use free cluster count in the FSINFO if available.</td></tr>
@@ -284,21 +284,18 @@ const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb"};
 </table>
 
 <h4 id="fs_lock">FF_FS_LOCK</h4>
-<p>This option switches file lock function to control duplicated file open and illegal operations to open objects. Note that the file lock function is independent of re-entrancy. This option must be 0 in read-only configuration.</p>
+<p>This option switches file lock feature to control duplicated file open and illegal operations to the open objects. Note that this feature is independent of re-entrancy. This option must be 0 in read-only configuration.</p>
 <table class="lst1">
 <tr><th>Value</th><th>Description</th></tr>
-<tr><td>0</td><td>Disable file lock function. To avoid collapsing file by wrong file operation, application program needs to avoid illegal open, remove and rename to the open objects.</td></tr>
-<tr><td>&gt;0</td><td>Enable file lock function. The value defines how many files/sub-directories can be opened simultaneously under the file lock control. Illigal operations to the open object will be rejected with <tt>FR_LOCKED</tt>.</td></tr>
+<tr><td>0</td><td>Disable file lock feature. To avoid to collapse files due to wrong file operations, application program needs to avoid illegal open, remove and rename to the open objects.</td></tr>
+<tr><td>&gt;0</td><td>Enable file lock feature. The value defines how many files/sub-directories can be opened simultaneously under the file lock feature. Illigal operations to the open object will be rejected with <tt>FR_LOCKED</tt>.</td></tr>
 </table>
 
 <h4 id="fs_reentrant">FF_FS_REENTRANT</h4>
-<p>Disable (0) or Enable (1). This option switches the re-entrancy (thread safe) of the FatFs module itself. Note that file/directory access to the different volume is always re-entrant and it can work simultaneously regardless of this option, however, volume management functions, <tt>f_mount</tt>, <tt>f_mkfs</tt> and <tt>f_fdisk</tt>, are always not re-entrant. Only file/directory access to the same volume, in other words, exclusive use of each filesystem object, is under control of this function. To enable this feature, also user provided synchronization handlers, <tt>ff_req_grant</tt>, <tt>ff_rel_grant</tt>, <tt>ff_del_syncobj</tt> and <tt>ff_cre_syncobj</tt>, need to be added to the project. Sample code is available in <tt>ffsystem.c</tt>.</p>
+<p>Disable (0) or Enable (1). This option switches the re-entrancy (thread safe) of the FatFs module itself. Note that file/directory access to the different volume is always re-entrant and it can work simultaneously regardless of this option, however, volume management functions, <tt>f_mount</tt>, <tt>f_mkfs</tt> and <tt>f_fdisk</tt>, are <em>always not re-entrant</em>. Only file/directory access to the same volume, in other words, exclusive use of each filesystem object, is under control in this feature. To enable this feature, also user provided synchronization handlers, <tt>ff_mutex_take</tt>, <tt>ff_mutex_give</tt>, <tt>ff_mutex_create</tt> and <tt>ff_mutex_delete</tt>, need to be added to the project. Sample code is available in <tt>ffsystem.c</tt>.</p>
 
 <h4 id="fs_timeout">FF_FS_TIMEOUT</h4>
-<p>Number of time ticks to abort the file function with <tt>FR_TIMEOUT</tt> when wait time is too long. This option has no effect when <tt>FF_FS_REENTRANT == 0</tt>.</p>
-
-<h4 id="sync_t">FF_SYNC_t</h4>
-<p>This option defines O/S dependent sync object type. e.g. <tt>HANDLE</tt>, <tt>ID</tt>, <tt>OS_EVENT*</tt>, <tt>SemaphoreHandle_t</tt> and etc. A header file for O/S definitions needs to be included somewhere in the scope of <tt>ff.c</tt>. This option has no effect when <tt>FF_FS_REENTRANT == 0</tt>.</p>
+<p>Number of O/S time ticks to abort the file function with <tt>FR_TIMEOUT</tt> when the wait time exceeds this period. This option has no effect when <tt>FF_FS_REENTRANT == 0</tt>.</p>
 
 </div>
 

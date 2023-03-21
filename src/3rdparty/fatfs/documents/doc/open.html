@@ -86,7 +86,7 @@ Mode flags in POSIX fopen() function corresponds to FatFs mode flags as follows:
 
 <div class="para desc">
 <h4>Description</h4>
-<p>The <tt>f_open</tt> function opens a file and creates a <em>file object</em>. The file object is used for subsequent read/write operations to the file to identify the file. Open file should be closed with <a href="close.html"><tt>f_close</tt></a> function after the session of the file access. If any change to the file is made and not closed prior to power down, media removal or re-mount, or the file can be collapsed.</p>
+<p>The <tt>f_open</tt> function opens a file and creates a <em>file object</em>. The file object is an identifier for subsequent operations to the file. Open file should be closed with <a href="close.html"><tt>f_close</tt></a> function after the session of the file access. If any change to the file has been made and not closed prior to power off, media removal or re-mount, or the file can be collapsed.</p>
 <p>If duplicated file open is needed, read <a href="appnote.html#dup">here</a> carefully. However duplicated open of a file with any write mode flag is always prohibited.</p>
 </div>
 
@@ -111,7 +111,7 @@ int main (void)
     FRESULT fr;     <span class="c">/* FatFs return code */</span>
 
 
-    <span class="c">/* Gives a work area to the default drive */</span>
+    <span class="c">/* Give a work area to the default drive */</span>
     f_mount(&amp;FatFs, "", 0);
 
     <span class="c">/* Open a text file */</span>
@@ -141,7 +141,7 @@ int main (void)
     UINT br, bw;         <span class="c">/* File read/write count */</span>
 
 
-    <span class="c">/* Gives work area to each logical drive */</span>
+    <span class="c">/* Give work areas to each logical drive */</span>
     f_mount(&amp;fs0, "0:", 0);
     f_mount(&amp;fs1, "1:", 0);
 
@@ -155,9 +155,9 @@ int main (void)
 
     <span class="c">/* Copy source to destination */</span>
     for (;;) {
-        f_read(&amp;fsrc, buffer, sizeof buffer, &amp;br);  <span class="c">/* Read a chunk of data from the source file */</span>
+        fr = f_read(&amp;fsrc, buffer, sizeof buffer, &amp;br); <span class="c">/* Read a chunk of data from the source file */</span>
         if (br == 0) break; <span class="c">/* error or eof */</span>
-        f_write(&amp;fdst, buffer, br, &amp;bw);            <span class="c">/* Write it to the destination file */</span>
+        fr = f_write(&amp;fdst, buffer, br, &amp;bw);           <span class="c">/* Write it to the destination file */</span>
         if (bw &lt; br) break; <span class="c">/* error or disk full */</span>
     }
 
