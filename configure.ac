@@ -1,4 +1,4 @@
-AC_INIT([fwup], m4_esyscmd_s(cat VERSION), [https://github.com/fwup-home/fwup/issues])
+AC_INIT([fwup],[m4_esyscmd_s(cat VERSION)],[https://github.com/fwup-home/fwup/issues])
 AC_CONFIG_SRCDIR([src/fwup_metadata.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -11,7 +11,7 @@ AC_CANONICAL_HOST
 # Check for programs
 AC_PROG_CC
 AM_PROG_AR
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PATH_PROG([HELP2MAN], help2man)
 AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 
@@ -30,7 +30,7 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_SYS_LARGEFILE
-AC_PROG_CC_C99
+m4_version_prereq([2.70], [], [AC_PROG_CC_C99])
 
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
