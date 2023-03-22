@@ -15,7 +15,7 @@ if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
     exit 77
 fi
 
-cat >$CONFIG <<EOF
+cat >"$CONFIG" <<EOF
 file-resource TEST {
 	host-path = "${TESTFILE_1K}"
 }
@@ -34,26 +34,33 @@ task short_command {
 EOF
 
 # Create the firmware file like normal
-$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
 
 # Check that pipe_write fails w/o --unsafe
-if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete; then
     echo "No --unsafe:  The pipe_write should have failed."
     exit 1
 fi
 
 # Pipe the contents of the firmware file through fwup
-$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
-cmp $TESTFILE_1K $OUTFILE
+rm -f "$OUTFILE"
+$FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t complete
+cmp "$TESTFILE_1K" "$OUTFILE"
+
+# Try it again, but use /dev/null since that's a thing people do with pipe_write
+# (This whole test doesn't run on Windows, so Windows check for /dev/null isn't necessary)
+rm -f "$OUTFILE"
+$FWUP_APPLY_NO_CHECK --unsafe -a -d /dev/null -i "$FWFILE" -t complete
+cmp "$TESTFILE_1K" "$OUTFILE"
 
 # Try applying the update to a bogus command (should fail)
-if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_command; then
+if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t bad_command; then
     echo "Expected pipe_write to fail when invoking an unknown command."
     exit 1
 fi
 
 # Try applying the update to a failing command (should fail)
-if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t failing_command; then
+if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t failing_command; then
     echo "Expected pipe_write to fail when the command failed."
     exit 1
 fi

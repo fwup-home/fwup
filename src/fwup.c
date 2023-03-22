@@ -668,6 +668,9 @@ int main(int argc, char **argv)
                 fwup_warnx("ignoring --enable_trim since operating on a regular file");
                 enable_trim = false;
             }
+        } else if (is_device_null(mmc_device_path)) {
+            output_fd = open(mmc_device_path, O_WRONLY);
+            verify_writes = 0;
         } else {
             // Attempt to unmount everything using the device to avoid corrupting partitions.
             // For partial updates, this just unmounts everything that can be unmounted. Errors

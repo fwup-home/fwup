@@ -283,6 +283,19 @@ bool will_be_regular_file(const char *path)
 }
 
 /**
+ * Return true if the file is the special null device.
+ */
+bool is_device_null(const char *path)
+{
+#ifdef _WIN32
+    // NUL not supported on Windows
+    return false;
+#else
+    return strcmp(path, "/dev/null") == 0;
+#endif
+}
+
+/**
  * Return true if the file exists.
  */
 bool file_exists(const char *path)

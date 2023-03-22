@@ -9,7 +9,7 @@
 OUTFILE1=$WORK/output1k
 OUTFILE2=$WORK/output1k_2
 
-cat >$CONFIG <<EOF
+cat >"$CONFIG" <<EOF
 file-resource TEST1 {
 	host-path = "${TESTFILE_1K}"
 }
@@ -26,22 +26,35 @@ task bad_file {
 EOF
 
 # Create the firmware file like normal
-$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
 
-if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete; then
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete; then
     echo "No --unsafe:  The path_write should have failed."
     exit 1
 fi
 
 # Try applying the update
-$FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t complete
+rm -f "$OUTFILE1" "$OUTFILE2"
+$FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t complete
 
 # Check that the files were updated
-cmp $TESTFILE_1K $OUTFILE1
-cmp $TESTFILE_150K $OUTFILE2
+cmp "$TESTFILE_1K" "$OUTFILE1"
+cmp "$TESTFILE_150K" "$OUTFILE2"
+
+# Try again, but specify /dev/null since that's a thing that people do
+# with firmware updates that are just use path_write.
+if [ "$CC" != "x86_64-w64-mingw32-gcc" -a "$MODE" != "windows" ]; then
+    # /dev/null only support on non-Windows platforms
+    rm -f "$OUTFILE1" "$OUTFILE2"
+    $FWUP_APPLY_NO_CHECK --unsafe -a -d /dev/null -i "$FWFILE" -t complete
+
+    # Check that the files were updated
+    cmp "$TESTFILE_1K" "$OUTFILE1"
+    cmp "$TESTFILE_150K" "$OUTFILE2"
+fi
 
 # Try applying the update to a directory (should fail)
-if $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t bad_file; then
+if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t bad_file; then
     echo "Expected path_write to an existing directory to fail."
     exit 1
 fi

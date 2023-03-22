@@ -659,7 +659,7 @@ fat_touch(block_offset, filename)       | 0.7.0 | Create an empty file if the fi
 gpt_write(gpt)                          | 1.4.0 | Write the specified GPT to the target
 info(message)                           | 0.13.0 | Print out an informational message
 mbr_write(mbr)                          | 0.1.0 | Write the specified mbr to the target
-path_write(destination_path)            | 0.16.0 | Write a resource to a path on the host. Requires the `--unsafe` flag
+path_write(destination_path)            | 0.16.0 | Write a resource to a path on the host. Requires the `--unsafe` flag. Passing `-d /dev/null` works if no destination image.
 pipe_write(command)                     | 0.16.0 | Pipe a resource through a command on the host. Requires the `--unsafe` flag
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset, options)        | 0.1.0 | Write the resource to the specified block offset. Options include `cipher` and `secret`.
