@@ -482,13 +482,11 @@ int raw_memset_run(struct fun_context *fctx)
     char buffer[block_size];
     memset(buffer, value, sizeof(buffer));
 
-    off_t len_written = 0;
     off_t offset;
     for (offset = 0; offset < count; offset += block_size) {
         OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, block_size, dest_offset + offset, true),
                          "raw_memset couldn't write %d bytes to offset %" PRId64, block_size, dest_offset + offset);
 
-        len_written += block_size;
         progress_report(fctx->progress, block_size);
     }
 
