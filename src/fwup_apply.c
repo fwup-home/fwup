@@ -260,12 +260,9 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
 static int xdelta_read_fat_callback(void *cookie, void *buf, size_t count, off_t offset)
 {
     struct fun_context *fctx = (struct fun_context *) cookie;
-    size_t br;
 
-    if (offset < 0)
-        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 ")", fctx->xd_source_count);
-
-    return fatfs_pread(fctx->output, fctx->xd_source_offset, fctx->xd_source_path, offset, count, buf, &br);
+    // fatfs_pread checks bounds so it will catch xdelta3 errors
+    return fatfs_pread(fctx->output, fctx->xd_source_offset / FWUP_BLOCK_SIZE, fctx->xd_source_path, offset, count, buf);
 }
 
 static int read_callback_xdelta(struct fun_context *fctx, const void **buffer, size_t *len, off_t *offset)
@@ -417,14 +414,16 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
                 fctx->xd_source_offset = source_raw_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_count = source_raw_count * FWUP_BLOCK_SIZE;
+                fctx->xd_source_path = NULL;
             } else if (source_fat_offset_str != NULL && source_fat_path != NULL) {
                 // Found delta-source-fat-offset and delta-source-fat-path directives
                 off_t source_fat_offset = strtoul(source_fat_offset_str, NULL, 0);
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
                 xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_fat_callback, fctx);
-                fctx->xd_source_offset = source_fat_offset;
+                fctx->xd_source_offset = source_fat_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_path = source_fat_path;
+                fctx->xd_source_count = 0; // unused
             } else {
                 ERR_CLEANUP_MSG("File '%s' isn't expected size (%d vs %d) and xdelta3 patch support not enabled on it. (Add delta-source-raw-offset / delta-source-raw-count or delta-source-fat-offset / delta-source-fat-path)", resource_name, (int) size_in_archive, (int) expected_size_in_archive);
             }

@@ -433,34 +433,21 @@ int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *f
  * @param offset offset inside file
  * @param size number of bytes to read
  * @param buffer buffer where to put read data
- * @param br pointer to the variable that receives number of byters actually read
- * @return 0 on success
+ * @return bytes read on success, -1 on error
  */
-int fatfs_pread(struct block_cache *output, off_t block_offset, const char *filename, int offset, size_t size, void *buffer, size_t *br)
+int fatfs_pread(struct block_cache *output, off_t block_offset, const char *filename, int offset, size_t size, void *buffer)
 {
-    // Check if this is the same file as a previous pwrite call
-    if (current_file_ && strcmp(current_file_, filename) != 0)
-        close_open_files();
-
     MAYBE_MOUNT(output, block_offset);
 
-    if (!current_file_) {
-        CHECK("fat_read can't open file", filename, f_open(&fil_, filename, FA_READ));
-        CHECK_SYNC(filename, &fil_);
+    FIL tmp_fil;
+    CHECK("fat_pread can't open file", filename, f_open(&tmp_fil, filename, FA_READ));
+    CHECK("fat_pread can't seek to end of file", filename, f_lseek(&tmp_fil, offset));
 
-        // Assuming it opens ok, cache the filename for future reads.
-        current_file_ = strdup(filename);
-    }
+    UINT br = 0;
+    CHECK("fat_read can't read", filename, f_read(&tmp_fil, buffer, (UINT) size, &br));
+    f_close(&tmp_fil);
 
-    // Check if this pread requires a seek.
-    FSIZE_t desired_offset = offset;
-    if (desired_offset != f_tell(&fil_))
-        CHECK("fat_read can't seek to end of file", filename, f_lseek(&fil_, f_size(&fil_)));
-
-    CHECK("fat_read can't read", filename, f_read(&fil_, buffer, (uint)size, (uint*)br));
-    CHECK_SYNC(filename, &fil_);
-
-    return 0;
+    return (int) br;
 }
 
 int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *filename, int offset, const char *buffer, off_t size)
@@ -509,37 +496,6 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
     CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
     if (size != bw)
         ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
-    CHECK_SYNC(filename, &fil_);
-
-    return 0;
-}
-
-/**
- * @brief fatfs_size read file size
- * 
- * @param fc the current FAT session
- * @param filename an existing file
- * @param size pointer to the variable that receives file size
- * @return 0 on success
- */
-int fatfs_size(struct block_cache *output, off_t block_offset, const char *filename, size_t *size)
-{
-    // Check if this is the same file as a previous size call
-    if (current_file_ && strcmp(current_file_, filename) != 0)
-        close_open_files();
-
-    MAYBE_MOUNT(output, block_offset);
-
-    if (!current_file_) {
-        CHECK("fat_size can't open file", filename, f_open(&fil_, filename, FA_READ));
-        CHECK_SYNC(filename, &fil_);
-
-        // Assuming it opens ok, cache the filename for future calls.
-        current_file_ = strdup(filename);
-    }
-
-    size = malloc(sizeof(off_t));
-    *size = (size_t)f_size(&fil_);
     CHECK_SYNC(filename, &fil_);
 
     return 0;

@@ -38,13 +38,12 @@ int fatfs_setlabel(struct block_cache *output, off_t block_offset, const char *l
 int fatfs_mv(struct block_cache *output, off_t block_offset, const char *cmd, const char *from_name, const char *to_name, bool force);
 int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, const char *filename, bool file_must_exist);
 int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *filename);
-int fatfs_pread(struct block_cache *output, off_t block_offset, const char *filename, int offset, size_t size, void *buffer, size_t *br);
+int fatfs_pread(struct block_cache *output, off_t block_offset, const char *filename, int offset, size_t size, void *buffer);
 int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *filename, int offset, const char *buffer, off_t size);
 int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_name, const char *to_name);
 int fatfs_touch(struct block_cache *output, off_t block_offset, const char *filename);
 int fatfs_exists(struct block_cache *output, off_t block_offset, const char *filename);
 int fatfs_file_matches(struct block_cache *output, off_t block_offset, const char *filename, const char *pattern);
-int fatfs_size(struct block_cache *output, off_t block_offset, const char *filename, size_t *size);
 void fatfs_closefs();
 
 #endif // FATFS_H
