@@ -55,8 +55,8 @@ if WRITE_SHIM_CORRUPT_OFFSET=32256 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t comp
     exit 1
 fi
 
-# Corrupt boot partition in FAT block that's beyond 128KB (256 * 1024)
-if WRITE_SHIM_CORRUPT_OFFSET=131072 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
+# Corrupt boot partition in FAT block that's beyond 256KB (512 * 512)
+if WRITE_SHIM_CORRUPT_OFFSET=262144 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
     echo "Expected FAT header corruption to be detected."
     exit 1
 fi
