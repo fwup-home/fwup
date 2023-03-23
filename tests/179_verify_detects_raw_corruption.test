@@ -29,27 +29,34 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
 
 # Check that corruption is various places is detected
+rm "$IMGFILE"
 if WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
     echo "Expected MBR corruption to be detected."
     exit 1
 fi
 
+rm "$IMGFILE"
 if WRITE_SHIM_CORRUPT_OFFSET=512 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
     echo "Expected MBR corruption to be detected."
     exit 1
 fi
 
+rm "$IMGFILE"
 if WRITE_SHIM_CORRUPT_OFFSET=1023 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes; then
     echo "Expected MBR corruption to be detected."
     exit 1
 fi
 
 # Check that corruption isn't detected when verify-writes is off.
+rm "$IMGFILE"
 WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+rm "$IMGFILE"
 WRITE_SHIM_CORRUPT_OFFSET=512 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+rm "$IMGFILE"
 WRITE_SHIM_CORRUPT_OFFSET=1023 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
 
 # Check that default for regular files is off. I.e., this next line will pass.
+rm "$IMGFILE"
 WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that the verify logic works on this file
