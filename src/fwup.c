@@ -97,6 +97,8 @@ static void print_usage()
     printf("  -l, --list   List the available tasks in a firmware update\n");
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  --metadata-key <key> Only output the specified key's value when printing metadata\n");
+    printf("  --minimize-writes Skip write if contents match destination\n");
+    printf("  --no-minimize-writes Don't try to minimize writes when applying firmware updates (default)\n");
     printf("  -n   Report numeric progress\n");
     printf("  -o <output.fw> Specify the output file when creating an update (Use - for stdout)\n");
     printf("  -p, --public-key-file <keyfile> A public key file for verifying firmware updates (can specify multiple times)\n");
@@ -170,6 +172,8 @@ enum fwup_long_option_only_value {
     OPTION_ENABLE_TRIM,
     OPTION_EXIT_HANDSHAKE,
     OPTION_METADATA_KEY,
+    OPTION_MINIMIZE_WRITES,
+    OPTION_NO_MINIMIZE_WRITES,
     OPTION_PRIVATE_KEY,
     OPTION_PUBLIC_KEY,
     OPTION_PROGRESS_LOW,
@@ -196,6 +200,8 @@ static struct option long_options[] = {
     {"metadata-key", required_argument, 0, OPTION_METADATA_KEY},
     {"list",     no_argument,       0, 'l'},
     {"metadata", no_argument,       0, 'm'},
+    {"minimize-writes", no_argument,  0, OPTION_MINIMIZE_WRITES},
+    {"no-minimize-writes", no_argument,  0, OPTION_NO_MINIMIZE_WRITES},
     {"private-key", required_argument, 0, OPTION_PRIVATE_KEY},
     {"private-key-file", required_argument, 0, 's'},
     {"public-key", required_argument, 0, OPTION_PUBLIC_KEY},
@@ -403,6 +409,7 @@ int main(int argc, char **argv)
     int progress_low = 0;    // 0%
     int progress_high = 100; // to 100%
     int verify_writes = -1; // Use default (yes unless writing to a regular file)
+    int minimize_writes = false; // Default to off. FUTURE: Turn on for device files if performance impact continues to be minimal
 
     if (argc == 1) {
         print_usage();
@@ -572,6 +579,12 @@ int main(int argc, char **argv)
         case OPTION_NO_VERIFY_WRITES: // --no-verify-writes
             verify_writes = false;
             break;
+        case OPTION_MINIMIZE_WRITES: // --minimize-writes
+            minimize_writes = true;
+            break;
+        case OPTION_NO_MINIMIZE_WRITES: // --no-minimize-writes
+            minimize_writes = false;
+            break;
         default: /* '?' */
             print_usage();
             fwup_exit(EXIT_FAILURE);
@@ -670,7 +683,8 @@ int main(int argc, char **argv)
             }
         } else if (is_device_null(mmc_device_path)) {
             output_fd = open(mmc_device_path, O_WRONLY);
-            verify_writes = 0;
+            verify_writes = false;
+            minimize_writes = false;
         } else {
             // Attempt to unmount everything using the device to avoid corrupting partitions.
             // For partial updates, this just unmounts everything that can be unmounted. Errors
@@ -721,7 +735,8 @@ int main(int argc, char **argv)
                        &progress,
                        public_keys,
                        enable_trim,
-                       verify_writes) < 0) {
+                       verify_writes,
+                       minimize_writes) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
             fwup_errx(EXIT_FAILURE, "%s", last_error());

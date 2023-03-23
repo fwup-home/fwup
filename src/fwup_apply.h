@@ -28,6 +28,7 @@ int fwup_apply(const char *fw_filename,
                struct fwup_progress *progress,
                unsigned char *const* public_keys,
                bool enable_trim,
-               bool verify_writes);
+               bool verify_writes,
+               bool minimize_writes);
 
 #endif // FWUP_APPLY_H

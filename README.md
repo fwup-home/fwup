@@ -141,6 +141,8 @@ Options:
   -l, --list   List the available tasks in a firmware update
   -m, --metadata   Print metadata in the firmware update
   --metadata-key <key> Only output the specified key's value when printing metadata
+  --minimize-writes Skip write if contents match destination
+  --no-minimize-writes Don't try to minimize writes when applying firmware updates (default)
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
   -p, --public-key-file <keyfile> A public key file for verifying firmware updates
@@ -669,6 +671,30 @@ uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is 
 uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
 uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name)      | 0.10.0 | Unset the specified U-boot variable
+
+## Minimizing writes to the destination
+
+Fwup tries to reduce the writes to the destination media using the following mechanisms:
+
+1. An internal block cache summarizes writes to individual blocks. This is
+   outside of OS caching that `fwup` tries to disable to ensure ordering of
+   writes. (i.e., switching the active filesystem needs to be after the
+   filesystem writes get made)
+2. The `--minimize-writes` option causes `fwup` to check if a block on the
+   destination has actually changed before writing it.
+
+The motivation for these features is reduce the number of changes to the disk
+since each change could be interrupted by a system reset or result in a write
+failure or corruption. While the chance is remote, some users find peace of mind
+in the reduced write cycles on FLASH media.
+
+Performance-wise, the internal block caching is almost improves update times.
+Minimizing writes incurs a block read operation before every write. As one would
+expect, if the writes are actually redundant, it improves firmware update time.
+For completely different content, it appears that the additional read does not
+noticeably affect firmware update time on relatively fast embedded devices (600+
+MHz 4-core in testing). Slower single core devices have slightly longer firmware
+update times.
 
 ## Delta firmware updates (BETA)
 

@@ -202,6 +202,13 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
     off_t offset = seg->offset;
     const uint8_t *data = seg->data;
 
+    if (bc->minimize_writes) {
+        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) == BLOCK_CACHE_SEGMENT_SIZE &&
+            memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) == 0) {
+            return 0;
+        }
+    }
+
     if (pwrite(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
         ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", offset);
 
@@ -343,13 +350,15 @@ cleanup:
  * @param end_offset the size of the destination in bytes
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @param verify_writes true to verify writes
+ * @param minimize_writes true to read the block before writing and skip the write if it's the same
  * @return
  */
 int block_cache_init(struct block_cache *bc,
         int fd,
         off_t end_offset,
         bool enable_trim,
-        bool verify_writes)
+        bool verify_writes,
+        bool minimize_writes)
 {
     memset(bc, 0, sizeof(struct block_cache));
 
@@ -365,9 +374,10 @@ int block_cache_init(struct block_cache *bc,
 
     bc->fd = fd;
     bc->verify_writes = verify_writes;
+    bc->minimize_writes = minimize_writes;
     alloc_page_aligned((void **) &bc->read_temp, BLOCK_CACHE_SEGMENT_SIZE);
 
-    if (verify_writes)
+    if (verify_writes || minimize_writes)
         alloc_page_aligned((void **) &bc->verify_temp, BLOCK_CACHE_SEGMENT_SIZE);
 
     // Initialized to nothing trimmed. I.e. every write that doesn't fall on a
@@ -384,7 +394,7 @@ int block_cache_init(struct block_cache *bc,
 
     // Set the trim points based on the file size
     if (end_offset > 0) {
-        // Mark the trim datastructure that everything past the end has been trimmed.
+        // Mark the trim data structure that everything past the end has been trimmed.
         off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
         OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
 
@@ -496,7 +506,7 @@ int block_cache_free(struct block_cache *bc)
         fwup_errx(EXIT_FAILURE, "pthread_join");
     pthread_mutex_destroy(&bc->mutex);
     pthread_cond_destroy(&bc->cond);
-    if (bc->verify_writes)
+    if (bc->thread_verify_temp)
         free_page_aligned(bc->thread_verify_temp);
     bc->thread_verify_temp = NULL;
 #endif
@@ -510,9 +520,8 @@ int block_cache_free(struct block_cache *bc)
         }
     }
     free_page_aligned(bc->read_temp);
-    if (bc->verify_writes)
+    if (bc->verify_temp)
         free_page_aligned(bc->verify_temp);
-
     free(bc->trimmed);
 
     bc->trimmed = NULL;

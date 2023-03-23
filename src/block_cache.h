@@ -70,6 +70,9 @@ struct block_cache {
     // Read everything back after its written
     bool verify_writes;
 
+    // Read the block first before writing it to avoid an unnecessary write operation.
+    bool minimize_writes;
+
     // Counter for maintaining LRU
     uint32_t timestamp;
 
@@ -106,7 +109,7 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim, bool verify_writes);
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool enable_trim, bool verify_writes, bool minimize_writes);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);

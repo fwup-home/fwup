@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#
+# Verify that minimize writes will skip unnecessary writes
+#
+# This test works by writing an image twice, but the second time, it tells
+# the test fixure to corrupt the writes. Since the second write doesn't
+# happen, everything will be ok.
+#
+# Requires libwrite_shim.so helper
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+$HAS_WRITE_SHIM || exit 77
+
+cat >$CONFIG <<EOF
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource 1K.bin {
+                raw_write(0)
+        }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Write the file the first time.
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-verify-writes
+cp $IMGFILE $WORK/expected.img
+
+# Check that corruption is various places is detected
+if ! WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --minimize-writes --verify-writes; then
+    echo "Expected the write to be skipped, but it wasn't!"
+    exit 1
+fi
+cmp $IMGFILE $WORK/expected.img
+
+# Check that if minimize writes is off that the file gets corrupted
+if WRITE_SHIM_CORRUPT_OFFSET=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --no-minimize-writes --verify-writes; then
+    echo "Expected the file corruption to be detected when not skipping redundant writes"
+    exit 1
+fi
+if cmp $IMGFILE $WORK/expected.img; then
+    echo "Expected the file to be corrupted when not skipping redundant writes"
+    exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
