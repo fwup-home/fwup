@@ -201,22 +201,23 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
 {
     off_t offset = seg->offset;
     const uint8_t *data = seg->data;
+    size_t segment_size = block_cache_segment_size(bc, offset);
 
     if (bc->minimize_writes) {
-        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) == BLOCK_CACHE_SEGMENT_SIZE &&
-            memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) == 0) {
+        if (pread(bc->fd, temp, segment_size, offset) == segment_size &&
+            memcmp(data, temp, segment_size) == 0) {
             return 0;
         }
     }
 
-    if (pwrite(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
+    if (pwrite(bc->fd, data, segment_size, offset) != segment_size)
         ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", offset);
 
     if (bc->verify_writes) {
-        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
+        if (pread(bc->fd, temp, segment_size, offset) != segment_size)
             ERR_RETURN("read back failed at offset %" PRId64, offset);
 
-        if (memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) != 0)
+        if (memcmp(data, temp, segment_size) != 0)
             ERR_RETURN("write verification failed at offset %" PRId64, offset);
     }
 
@@ -719,6 +720,11 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim)
     }
 
     return block_cache_trim(bc, offset, bc->trimmed_end_offset - (size_t) offset, hwtrim);
+}
+
+size_t block_cache_segment_size(struct block_cache *bc, off_t offset)
+{
+    return min(BLOCK_CACHE_SEGMENT_SIZE, bc->num_blocks * FWUP_BLOCK_SIZE - offset);
 }
 
 static int block_segment_pwrite(struct block_cache *bc, struct block_cache_segment *seg, const void *buf, size_t count, size_t offset_into_segment, bool streamed)

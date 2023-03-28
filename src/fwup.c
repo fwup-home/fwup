@@ -703,11 +703,6 @@ int main(int argc, char **argv)
             output_fd = mmc_open(mmc_device_path);
         }
 
-        // Trim the detected image size down to a multiple of the block cache
-        // segment size (128 KB) since since fwup only writes full blocks. If
-        // this isn't done, it is possible to write beyond the end of file.
-        end_offset &= ~(BLOCK_CACHE_SEGMENT_SIZE - 1);
-
         // Make sure that the output opened successfully and don't allow the
         // filehandle to be passed to child processes.
         if (output_fd < 0) {
