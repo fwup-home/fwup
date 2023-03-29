@@ -1,3 +1,5 @@
+# Remember to run "make check" to build these. "make" and "make all" won't rebuild them.
+
 ACLOCAL_AMFLAGS=-I m4
 
 check_PROGRAMS=framing-helper
