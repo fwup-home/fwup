@@ -749,8 +749,8 @@ Key                               | Description
 ----------------------------------|------------
 delta-source-raw-offset           | Set to the starting block offset
 delta-source-raw-count            | Set to the number of blocks in the source region. No reads will be allowed outside of this area.
-delta-source-fat-offset           | Not implemented yet
-delta-source-fat-path             | Not implemented yet
+delta-source-fat-offset           | Set to the starting block offset of the source FAT partition
+delta-source-fat-path             | Set to the path inside the FAT partition of the source file
 
 ## Sparse files
 
