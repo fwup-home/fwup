@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#
+# Test writing to destination who's last bytes are in a partial 128KB segment
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(256) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Create the expected output with dd
+dd if=/dev/zero count=256 of=$WORK/expected.img 2>/dev/null
+cat $TESTFILE_1K >> $WORK/expected.img
+
+# Constrain the firmware update to write to 128KB+1KB destination
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --verify-writes --max-size=258
+
+cmp $IMGFILE $WORK/expected.img
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

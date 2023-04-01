@@ -793,9 +793,10 @@ int gpt_write_run(struct fun_context *fctx)
 
     uint8_t *mbr_and_primary_gpt = malloc(FWUP_BLOCK_SIZE + GPT_SIZE);
     uint8_t *secondary_gpt = malloc(GPT_SIZE);
+    uint32_t num_blocks = fctx->output->end_offset / FWUP_BLOCK_SIZE; // end_offset can be 0 for unknown
 
     off_t secondary_gpt_offset;
-    OK_OR_CLEANUP(gpt_create_cfg(gptsec, fctx->output->num_blocks, mbr_and_primary_gpt, secondary_gpt, &secondary_gpt_offset));
+    OK_OR_CLEANUP(gpt_create_cfg(gptsec, num_blocks, mbr_and_primary_gpt, secondary_gpt, &secondary_gpt_offset));
 
     OK_OR_CLEANUP_MSG(block_cache_pwrite(fctx->output, mbr_and_primary_gpt, FWUP_BLOCK_SIZE + GPT_SIZE, 0, false),
                      "unexpected error writing protective mbr and primary gpt: %s", strerror(errno));
@@ -832,9 +833,10 @@ int mbr_write_run(struct fun_context *fctx)
 {
     const char *mbr_name = fctx->argv[1];
     cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
+    uint32_t num_blocks = fctx->output->end_offset / FWUP_BLOCK_SIZE; // end_offset can be 0 for unknown
 
     uint8_t buffer[FWUP_BLOCK_SIZE];
-    OK_OR_RETURN(mbr_create_cfg(mbrsec, fctx->output->num_blocks, buffer));
+    OK_OR_RETURN(mbr_create_cfg(mbrsec, num_blocks, buffer));
 
     OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, FWUP_BLOCK_SIZE, 0, false),
                      "unexpected error writing mbr: %s", strerror(errno));

@@ -195,6 +195,8 @@ TESTS = 001_simple_fw.test \
 	192_delta_out_of_bound.test \
 	193_delta_fat_upgrade.test \
 	194_implicit_fat_write.test \
-	195_minimize_writes.test
+	195_minimize_writes.test \
+	196_small_destination.test \
+	197_fractional_end_segment.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

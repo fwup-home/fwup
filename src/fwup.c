@@ -95,6 +95,7 @@ static void print_usage()
     printf("  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv, or specify with -o)\n");
     printf("  -i <input.fw> Specify the input firmware update file (Use - for stdin)\n");
     printf("  -l, --list   List the available tasks in a firmware update\n");
+    printf("  --max-size <blocks> Max size of the destination in 512-byte blocks (usually automatic)\n");
     printf("  -m, --metadata   Print metadata in the firmware update\n");
     printf("  --metadata-key <key> Only output the specified key's value when printing metadata\n");
     printf("  --minimize-writes Skip write if contents match destination\n");
@@ -171,6 +172,7 @@ enum fwup_long_option_only_value {
     OPTION_NO_EJECT = 0x1000,
     OPTION_ENABLE_TRIM,
     OPTION_EXIT_HANDSHAKE,
+    OPTION_MAX_SIZE,
     OPTION_METADATA_KEY,
     OPTION_MINIMIZE_WRITES,
     OPTION_NO_MINIMIZE_WRITES,
@@ -199,6 +201,7 @@ static struct option long_options[] = {
     {"help",     no_argument,       0, 'h'},
     {"metadata-key", required_argument, 0, OPTION_METADATA_KEY},
     {"list",     no_argument,       0, 'l'},
+    {"max-size", required_argument, 0, OPTION_MAX_SIZE},
     {"metadata", no_argument,       0, 'm'},
     {"minimize-writes", no_argument,  0, OPTION_MINIMIZE_WRITES},
     {"no-minimize-writes", no_argument,  0, OPTION_NO_MINIMIZE_WRITES},
@@ -410,6 +413,7 @@ int main(int argc, char **argv)
     int progress_high = 100; // to 100%
     int verify_writes = -1; // Use default (yes unless writing to a regular file)
     int minimize_writes = false; // Default to off. FUTURE: Turn on for device files if performance impact continues to be minimal
+    uint32_t max_size_blocks = 0; // Force a max size for the device if it can't be automatically determined
 
     if (argc == 1) {
         print_usage();
@@ -585,6 +589,9 @@ int main(int argc, char **argv)
         case OPTION_NO_MINIMIZE_WRITES: // --no-minimize-writes
             minimize_writes = false;
             break;
+        case OPTION_MAX_SIZE: // --max-size
+            max_size_blocks = strtoul(optarg, 0, 0);
+            break;
         default: /* '?' */
             print_usage();
             fwup_exit(EXIT_FAILURE);
@@ -655,17 +662,12 @@ int main(int argc, char **argv)
         // everything using it.
         bool is_regular_file = will_be_regular_file(mmc_device_path);
         int output_fd = -1;
-        off_t end_offset = -1;
+        off_t end_offset = 0;
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
 
             if (output_fd >= 0) {
-                // Get the original file length
-                // NOTE: this call is not so interesting. The interesting one is for real
-                //       media, but we need to do it anyway. <= 0 means unknown.
-                end_offset = lseek(output_fd, 0, SEEK_END);
-
                 struct stat st;
                 if (fstat(output_fd, &st) < 0 || (st.st_mode & 0222) == 0) {
                     // The file permissions are read-only, but the user was able to
@@ -681,6 +683,8 @@ int main(int argc, char **argv)
                 fwup_warnx("ignoring --enable_trim since operating on a regular file");
                 enable_trim = false;
             }
+            if (max_size_blocks > 0)
+                end_offset = FWUP_BLOCK_SIZE * max_size_blocks;
         } else if (is_device_null(mmc_device_path)) {
             output_fd = open(mmc_device_path, O_WRONLY);
             verify_writes = false;
@@ -699,14 +703,16 @@ int main(int argc, char **argv)
             if (mmc_device_size(mmc_device_path, &end_offset) < 0)
                 fwup_warnx("Error determining the size of %s", mmc_device_path);
 
+            // Shrink the file size if the user forces it via the --max-size option
+            if (max_size_blocks > 0) {
+                if (end_offset == 0 || max_size_blocks * FWUP_BLOCK_SIZE < end_offset) {
+                    end_offset = FWUP_BLOCK_SIZE * max_size_blocks;
+                }
+            }
+
             // Call out to platform-specific code to obtain a filehandle
             output_fd = mmc_open(mmc_device_path);
         }
-
-        // Trim the detected image size down to a multiple of the block cache
-        // segment size (128 KB) since since fwup only writes full blocks. If
-        // this isn't done, it is possible to write beyond the end of file.
-        end_offset &= ~(BLOCK_CACHE_SEGMENT_SIZE - 1);
 
         // Make sure that the output opened successfully and don't allow the
         // filehandle to be passed to child processes.

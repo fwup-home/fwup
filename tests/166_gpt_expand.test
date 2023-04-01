@@ -119,9 +119,9 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 cmp_bytes 6308864 $WORK/unexpanded.img $IMGFILE
 
-# Now make the image file larger to see that the final partition is larger
-dd if=/dev/zero of=$IMGFILE bs=512 count=20736 2>/dev/null
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+# Repeat the test, but specify a max size so that the final partition is larger
+rm $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE --max-size=20736 -t complete
 cmp $WORK/expanded.img $IMGFILE
 
 # Check that the verify logic works on this file

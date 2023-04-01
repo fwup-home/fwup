@@ -201,22 +201,41 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
 {
     off_t offset = seg->offset;
     const uint8_t *data = seg->data;
+    size_t count = BLOCK_CACHE_SEGMENT_SIZE;
+
+    // If there's a max destination size, then check if it's been hit or
+    // whether this should be a partial write.
+    if (bc->end_offset > 0) {
+        off_t last_offset = offset + count;
+        if (last_offset > bc->end_offset) {
+            // Fail if the write is completely past the end
+            if (offset > bc->end_offset)
+                ERR_RETURN("write failed at offset %" PRId64 " since past end of media (%" PRId64 ").", offset, bc->end_offset);
+
+            // Succeed if writing 0 bytes
+            if (offset == bc->end_offset)
+               return 0;
+
+            // Shrink the read/write count to support the partial block write
+            count = bc->end_offset - offset;
+        }
+    }
 
     if (bc->minimize_writes) {
-        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) == BLOCK_CACHE_SEGMENT_SIZE &&
-            memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) == 0) {
+        if (pread(bc->fd, temp, count, offset) == count &&
+            memcmp(data, temp, count) == 0) {
             return 0;
         }
     }
 
-    if (pwrite(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
-        ERR_RETURN("write failed at offset %" PRId64 ". Check media size.", offset);
+    if (pwrite(bc->fd, data, count, offset) != count)
+        ERR_RETURN("writing %u bytes failed at offset %" PRId64 ". Check media size.", count, offset);
 
     if (bc->verify_writes) {
-        if (pread(bc->fd, temp, BLOCK_CACHE_SEGMENT_SIZE, offset) != BLOCK_CACHE_SEGMENT_SIZE)
+        if (pread(bc->fd, temp, count, offset) != count)
             ERR_RETURN("read back failed at offset %" PRId64, offset);
 
-        if (memcmp(data, temp, BLOCK_CACHE_SEGMENT_SIZE) != 0)
+        if (memcmp(data, temp, count) != 0)
             ERR_RETURN("write verification failed at offset %" PRId64, offset);
     }
 
@@ -347,7 +366,7 @@ cleanup:
  * @brief block_cache_init
  * @param bc
  * @param fd the file descriptor of the destination
- * @param end_offset the size of the destination in bytes
+ * @param end_offset the size of the destination in bytes or 0 if unknown
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @param verify_writes true to verify writes
  * @param minimize_writes true to read the block before writing and skip the write if it's the same
@@ -390,21 +409,18 @@ int block_cache_init(struct block_cache *bc,
         fwup_err(EXIT_FAILURE, "malloc");
     memset(bc->trimmed, 0, bc->trimmed_len);
     bc->hw_trim_enabled = enable_trim;
-    bc->num_blocks = 0;
+    bc->end_offset = end_offset;
 
     // Set the trim points based on the file size
     if (end_offset > 0) {
         // Mark the trim data structure that everything past the end has been trimmed.
         off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
         OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
-
-        // Save away the file size in blocks if needed later
-        bc->num_blocks = (uint32_t) (end_offset / FWUP_BLOCK_SIZE);
     } else {
-        // When the device size is unknown, don't try to initialize the trim bit
-        // vector to support to optimize reads past the end. This really only helps
-        // for regular files with partial segment writes at the end, so not a big deal.
-        bc->num_blocks = 0;
+        // When the device size is unknown, don't try to initialize the trim
+        // bit vector to optimize reads past the end. This really only helps
+        // for regular files with partial segment writes at the end, so not a
+        // big deal.
     }
 
     // Start async writer thread if available
