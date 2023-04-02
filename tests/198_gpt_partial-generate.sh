@@ -19,12 +19,15 @@ efi_part_size=32768
 
 # Rootfs partition offset and size, in 512-byte sectors
 root_part_start=$(( efi_part_start + efi_part_size ))
-root_part_size=65504
+root_part_size=65536
+
+# Padding to push the entire size to a non-128K byte offset
+padding=32
 
 gpt_size=33
 
 first_lba=$(( 1 + gpt_size ))
-last_lba=$(( root_part_start + root_part_size ))
+last_lba=$(( root_part_start + root_part_size + padding))
 
 # Disk image size in 512-byte sectors
 image_size=$(( last_lba + gpt_size + 1 ))

@@ -20,7 +20,7 @@ define(ROOTFS_PART_UUID, "fcc205c8-2f1c-4dcd-bef4-7b209aa15cca")
 define(EFI_PART_OFFSET, 64)
 define(EFI_PART_COUNT, 32768)
 define-eval(ROOTFS_PART_OFFSET, "\${EFI_PART_OFFSET} + \${EFI_PART_COUNT}")
-define(ROOTFS_PART_COUNT, 65504)
+define(ROOTFS_PART_COUNT, 65536)
 
 gpt gpt-a {
     guid = \${DISK_UUID}
@@ -50,27 +50,27 @@ EOF
 # Create the expected output from sfdisk by running ./198_gpt_partial-generate.sh on
 # Linux.
 base64_decodez >$WORK/expected-primary-gpt.img <<EOF
-H4sIAAAAAAAAA+3SzyuDcRzA8c+zcnFQOzmgPSkl+dFcFc8TM0tKi9suO2zZyXq2WCk9Bwq3Jamd
-OM4RBxyUnYwcppz9ASuxFEU9vuq7A7fHQdT79e1bn8/316dPfUXwnwXkwfM8Q0W2a/i+PX8QmYyZ
-s3Z8TsSQhFrpKS63f+4032q+2q1zU+f1t/Hj7f6OqY2jtuvWejkY0PuunuFaJfuzjvCbenN9F6HX
-2+DZtOxVR6sjXU4hvikL0fX7k6fT1fSapc+NuV/vpSQtGRmQrCTFkbwMypJaSarIH2snOrHbOLRL
-L7Xw3WNk67Kl8t45dDNz/rxilvYTV5auG/r2ux1ZVCOvauZU7ZQUVDzsv30AAAAAAAAAAAAAAAAA
-AAAAAAAAAAAA+DM+AHVn3/EAQgAA
+H4sIAAAAAAAAA+3SzyuDcRzA8c+z2sVB7WyynJBNc1U8w4y00uJkBztscaJno5XSoyhcJbUTR444
+2A6Kk/mRKGd/wEpIUdTjq77PYcfHQdT79e1bn8/316dPfUXwn/nk0XEcQ0XLtuH59sR+fGgkNBZL
+jYsYklYrV+3R+e8d9y331VadT+m89jFwtNnZNLx22HjZUNsL+PS+refNZLD/Zx3hN7XlO05b3u8C
+lVHZqfZWe5qtYmpdphOrD8fP5aXciqnP9dn197KSkxkJy5xkxJKCRGRBrWRU5I25lRjcfjmIld5u
+o/dP8Y1z/9lnsOs6efK6GCrtpi9M261f/7stmVWjoGrmVe2sFFXc7b19AAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAPgzvgCgS9s5AEIAAA==
 EOF
 base64_decodez >$WORK/expected-secondary-gpt.img <<EOF
-H4sIAAAAAAAAA+3bPUsDQRSF4ZNCBAshtUpWqyB+EFtBd9EYRQQJlmlSbNDKsAkSEGQLBbUVEbbS
-0lYt1EIwlVEsIlj7A9KoCApaOOJYpIyFWLzPMMydC8NhfsBNlvovE2938fNZ7dfGaqM9QSW7pcXM
-xsPp09laYd3Vt/FQTXwVtKRBFZVXoLKGtGI6eVO1xt3NTO49H3nRaz11/5jevmqrfnQP385dvKw6
-0UHu2rW5iTDW9C7Qslllk1ky2b4qph5pMRsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP8iPTXjzHvZ
-BSmmnLn7yfboq+/Zefufqfs+ezq233ifONkZ6JrePO686WgcxnttP7Q7Va8W/+oP+L1PgzKlBABC
+H4sIAAAAAAAAA+3bsSvEYRzH8c8NFoO62V0uk+SIVfE7nHNJ6bK5wW+4i4l+d+mi9FMU1iN1E6MV
+AwbF5EiilM0fcAtSFINHnhtuPIMM79fT0/N9vvX06fkDvm259rOW97vgyah2yn3l3rBXSK1rOrH6
+ePR8vJRdcfSj31eNjLKaUVRzcuUpr07Nm45rqvo4W4mh7Zf9WOnttvv+Kb5x0XD+Geq6Hjt9XYyU
+dtOXjl/ND9S88zRrVt5k5kx2RgVT99SZDQAAAAAAAAAAAAAAAAAAAAAAAAAAAADAfxEfTkbGY6kJ
+KaC0uW8uPIS/+8t23r46dd9qzynbr3wMHhY7mkfWDpquGit7Qdf2fbtvJkMDf/UH/N4XQ6EbhABC
 AAA=
 EOF
 cp $WORK/expected-primary-gpt.img $WORK/expected.img
-dd if=$WORK/expected-secondary-gpt.img of=$WORK/expected.img bs=512 seek=98337 conv=notrunc
+dd if=$WORK/expected-secondary-gpt.img of=$WORK/expected.img bs=512 seek=98401 conv=notrunc
 
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
-$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --max-size=98370
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --max-size=98434
 
 cmp $WORK/expected.img $IMGFILE
 
