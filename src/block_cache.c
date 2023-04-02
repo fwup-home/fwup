@@ -152,16 +152,48 @@ static void init_segment(struct block_cache *bc, off_t offset, struct block_cach
     seg->streamed = true;
 }
 
+static int calculate_io_size(struct block_cache *bc, off_t offset, size_t *count)
+{
+    // If there's a max destination size, then check if it's been hit or
+    // whether this should be a partial write.
+    if (bc->end_offset > 0) {
+        off_t last_offset = offset + BLOCK_CACHE_SEGMENT_SIZE;
+        if (last_offset <= bc->end_offset) {
+            // Common case: reading or writing before the end
+            *count = BLOCK_CACHE_SEGMENT_SIZE;
+        } else if (last_offset > bc->end_offset) {
+            // At least some reads or writes are after the end
+            if (offset <= bc->end_offset) {
+                // Shrink the read/write count to support the partial segment
+                *count = bc->end_offset - offset;
+            } else {
+                // Fail if the write is completely past the end
+                *count = 0;
+                ERR_RETURN("read/write failed at offset %" PRId64 " since past end of media (%" PRId64 ").", offset, bc->end_offset);
+            }
+        }
+    } else {
+        // Regular file with unknown max size. Just read or write 128KB and see
+        // what happens. Reads will be truncated by the OS and writes will
+        // extend the file.
+        *count = BLOCK_CACHE_SEGMENT_SIZE;
+    }
+
+    return 0;
+}
+
 static int read_segment(struct block_cache *bc, struct block_cache_segment *seg, void *data)
 {
     if (is_trimmed(bc, seg->offset)) {
         // Trimmed, so we'd be reading uninitialized data (in theory), if we called pread.
         memset(data, 0, BLOCK_CACHE_SEGMENT_SIZE);
     } else {
-        ssize_t bytes_read = pread(bc->fd, data, BLOCK_CACHE_SEGMENT_SIZE, seg->offset);
+        size_t count;
+        OK_OR_RETURN(calculate_io_size(bc, seg->offset, &count));
+        ssize_t bytes_read = pread(bc->fd, data, count, seg->offset);
         if (bytes_read < 0) {
             ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s.\nPossible causes are that the destination is too small, the device (e.g., an SD card) is going bad, or the connection to it is flaky.",
-                    BLOCK_CACHE_SEGMENT_SIZE, seg->offset, strerror(errno));
+                    count, seg->offset, strerror(errno));
         } else if (bytes_read < BLOCK_CACHE_SEGMENT_SIZE) {
             // Didn't read enough bytes. This occurs if the destination media is
             // not a multiple of the segment size. Fill the remainder with zeros
@@ -201,25 +233,9 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
 {
     off_t offset = seg->offset;
     const uint8_t *data = seg->data;
-    size_t count = BLOCK_CACHE_SEGMENT_SIZE;
 
-    // If there's a max destination size, then check if it's been hit or
-    // whether this should be a partial write.
-    if (bc->end_offset > 0) {
-        off_t last_offset = offset + count;
-        if (last_offset > bc->end_offset) {
-            // Fail if the write is completely past the end
-            if (offset > bc->end_offset)
-                ERR_RETURN("write failed at offset %" PRId64 " since past end of media (%" PRId64 ").", offset, bc->end_offset);
-
-            // Succeed if writing 0 bytes
-            if (offset == bc->end_offset)
-               return 0;
-
-            // Shrink the read/write count to support the partial block write
-            count = bc->end_offset - offset;
-        }
-    }
+    size_t count;
+    OK_OR_RETURN(calculate_io_size(bc, seg->offset, &count));
 
     if (bc->minimize_writes) {
         if (pread(bc->fd, temp, count, offset) == count &&

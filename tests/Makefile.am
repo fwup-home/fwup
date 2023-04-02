@@ -198,6 +198,7 @@ TESTS = 001_simple_fw.test \
 	195_minimize_writes.test \
 	196_small_destination.test \
 	197_fractional_end_segment.test \
-	198_gpt_partial.test
+	198_gpt_partial.test \
+	199_partial_read.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

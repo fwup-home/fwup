@@ -1,0 +1,117 @@
+#!/bin/sh
+
+#
+# Exercise reading a partial segment using require-partition on a silly small
+# disk.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+
+# +-----------------------------+
+# | MBR                         |
+# +-----------------------------+
+# | p0: Boot (Simulated)        |
+# +-----------------------------+
+# | p1*: Rootfs A (Simulated)   |
+# +-----------------------------+
+# | p1*: Rootfs B (Simulated)   |
+# +-----------------------------+
+# | p2: Data (Simulated)        |
+# +-----------------------------+
+
+define(BOOT_PART_OFFSET, 2)
+define(BOOT_PART_COUNT, 4)
+define(ROOTFS_A_PART_OFFSET, 8)
+define(ROOTFS_A_PART_COUNT, 8)
+define(ROOTFS_B_PART_OFFSET, 16)
+define(ROOTFS_B_PART_COUNT, 8)
+define(APP_PART_OFFSET, 24)
+define(APP_PART_COUNT, 16)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+mbr mbr-b {
+    partition 0 {
+        block-offset = \${BOOT_PART_OFFSET}
+        block-count = \${BOOT_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 2 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    # partition 3 is unused
+}
+
+# This firmware task writes everything to the destination media
+task complete {
+    on-init {
+        mbr_write(mbr-a)
+    }
+}
+task upgrade.a {
+    # This task upgrades the A partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_B_PART_OFFSET})
+    on-finish { mbr_write(mbr-a) }
+}
+task upgrade.b {
+    # This task upgrades the B partition and runs when partition B
+    # is being used.
+    require-partition-offset(1, \${ROOTFS_A_PART_OFFSET})
+    on-finish { mbr_write(mbr-b) }
+}
+
+# This task is just needed to help support the unit test
+task dump_mbr_b {
+    on-init {
+        mbr_write(mbr-b)
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --max-size=64
+cp $IMGFILE $WORK/mbr_a.bin
+
+# Now upgrade the IMGFILE file
+# VERIFY_LAST_WRITE checks that MBR is written last
+VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade --max-size=64
+
+VERIFY_SYSCALLS_CHECKPATH=$WORK/mbr_b.bin $FWUP_APPLY -a -d $WORK/mbr_b.bin -i $FWFILE -t dump_mbr_b --max-size=64
+cmp_bytes 512 $WORK/mbr_b.bin $IMGFILE 0 0         # Updated
+
+# Do it again
+VERIFY_LAST_WRITE=0 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t upgrade --max-size=64
+cmp_bytes 512 $WORK/mbr_a.bin $IMGFILE 0 0         # Updated
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
