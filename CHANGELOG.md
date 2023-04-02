@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.10.0
+
+This is a substantial release with improvements to delta updates and destination
+write handling.
+
+There's support for writing a final block that's not a multiple of 128KB now.
+The 128KB write size was a previous limitation of fwup's caching mechanism.
+The limitation was mostly invisible. GPT secondary headers were adjusted rather
+than being in the final blocks. If the destination wasn't a multiple of 128KB,
+it wasn't possible to use the last partial block of bytes. This release changes
+that. Especially if you are using GPT partitions, you may notice this change if
+you are comparing disk images.
+
+* New features
+  * Support delta firmware updates of files on FAT file systems. See the
+    `delta-source-fat-offset` and `delta-source-fat-path` and the unit test for
+    details. Thanks to Jean Parpaillon for this feature.
+  * Support writing to destinations that are not multiples of 128KB. Fwup's
+    internal caching used to only write 128KB blocks. It now supports writing a
+    partial final block.
+  * Support writing to `/dev/null` (e.g., `fwup -d /dev/null ...`). This is useful for
+    firmware updates that only use `path_write` and `pipe_write` since they
+    don't need a destination. Thanks to Edoardo Rossi for the suggestion and
+    patch.
+  * Add `--minimize-writes` option. When enabled, it will check the destination
+    media to see if a block really changed before writing it. This can be a
+    performance improvement and remove some accidental corruption risk.
+  * Support a backwards compatible shorthand for writing files to FAT
+    partitions. The filename will default to the resource name. See `fat_write`.
+  * Add `--max-size` option for specifying the max number of 512-blocks that
+    fwup can write. Use this to force a max size when writing to a regular file
+    (expandable partitions will obey this) or to reduce the allowed size on real
+    media.
+
+* Bug fixes
+  * Handle out of bounds reads by xdelta3. Thanks to Arthur Crepin-Leblond for
+    fixing this.
+
+* Package updates
+  * FatFS R0.15
+
 ## v1.9.1
 
 * Bug fixes
