@@ -330,12 +330,14 @@ static int uboot_env_read_redundant(struct block_cache *bc, struct uboot_env *en
     OK_OR_CLEANUP_MSG(block_cache_pread(bc, buffer2, env->env_size, env->redundant_block_offset * FWUP_BLOCK_SIZE),
                       "unexpected error reading redundant uboot environment: %s", strerror(errno));
 
-    // The flags really are a counter. The bigger one (accounting for wrap) determines
-    // which was written last and should be tried first.
-    int8_t flag1 = buffer1[4];
-    int8_t flag2 = buffer2[4];
+    // The flags are a one unsigned byte counter. The bigger one (accounting
+    // for wrap) determines which was written last and should be tried first.
+    uint8_t flag1 = buffer1[4];
+    uint8_t flag2 = buffer2[4];
+    uint8_t delta = flag2 - flag1;
 
-    if (flag1 - flag2 >= 0) {
+    // Same or wrap means that the first buffer should be preferred.
+    if (delta == 0 || delta >= 128) {
         // Check the first environment first
         rc = uboot_env_decode(env, buffer1);
         if (rc == 0) {
