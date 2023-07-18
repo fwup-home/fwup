@@ -1,10 +1,15 @@
 #!/bin/sh
 
 #
-# Test that the redundancy counter rolls over as expected
+# Test that the correct version of the redundant environment is always read
+#
+# This test runs fw_printenv if available to check that fwup's behavior matches.
 #
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+
+FW_PRINTENV=$(command -v fw_printenv)
 
 cat >$CONFIG <<EOF
 define(UBOOT_ENV_OFFSET, 0)
@@ -33,6 +38,11 @@ while [ $i -le 257 ]; do
     echo "  on-finish { uboot_setenv(uboot-env, \"counter\", $next_i) }}" >> $CONFIG
     i=$next_i
 done
+
+cat >"$WORK/fw_env.config" <<EOF
+$IMGFILE.copy 0x000 0x400
+$IMGFILE.copy 0x400 0x400
+EOF
 
 # Create the expected result after being upgraded until the counter is 257.
 #
@@ -140,11 +150,27 @@ $FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t complete
 dd if=$IMGFILE of=$WORK/actual-env.img count=4 2>/dev/null
 cmp $WORK/expected-env-2.img $WORK/actual-env.img
 
+check_fw_printenv() {
+    if [ "$FW_PRINTENV" = "" ]; then
+        exit 0
+    fi
+
+    cp $IMGFILE $IMGFILE.copy
+    fw_env=$($FW_PRINTENV -c "$WORK/fw_env.config")
+    if [ "$fw_env" != "counter=$1" ]; then
+        echo "fw_printenv didn't print expected"
+        echo "     GOT: $fw_env"
+        echo "EXPECTED: counter=$1"
+        exit 1
+    fi
+ }
+
 # Test that each update works:
 #
 # The apply specifies which count we are on. The require-uboot-variable check
 # confirms that fwup is reading the right U-Boot environment. If it picks the
-# wrong one, this will fail.
+# wrong one, this will fail. As a second check, if `fw_printenv` is available,
+# it's called to see if it reads the same value.
 #
 # The counter is initialized to 2 to match the U-Boot epoch counter for which
 # environment to read. It should match mod 256 when inspecting the image.
@@ -153,6 +179,8 @@ while [ $i -le 257 ]; do
     echo "Updating counter to $i"
     $FWUP_APPLY -q -a -d $IMGFILE -i $FWFILE -t count.$i
     $FWUP_VERIFY -q -V -i $FWFILE
+
+    check_fw_printenv $i
     i=$((i + 1))
 done
 
@@ -160,3 +188,8 @@ done
 dd if=$IMGFILE of=$WORK/actual-env.img count=4 2>/dev/null
 cmp $WORK/expected-env-257.img $WORK/actual-env.img
 
+if [ "$FW_PRINTENV" = "" ]; then
+    echo "WARNING: fw_printenv not found. Did not verify compatibility"
+else
+    echo "INFO: fw_printenv used to verify compatibility"
+fi
