@@ -36,7 +36,7 @@ install_confuse() {
 
 if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
     apt-get update -qq
-    apt-get install -qq git autopoint dosfstools mtools unzip zip help2man autoconf build-essential libtool curl pkg-config mtools unzip zip help2man ca-certificates xdelta3
+    apt-get install -qq git autopoint dosfstools mtools unzip zip help2man autoconf build-essential libtool curl pkg-config mtools unzip zip help2man ca-certificates xdelta3 u-boot-tools
     case $MODE in
         windows)
             dpkg --add-architecture i386
