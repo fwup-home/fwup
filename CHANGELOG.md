@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.10.1
+
+This release only is needed if you use redundant U-Boot environments.
+
+* Bug fixes
+  * For configurations using redundant U-Boot environments, this fixes an issue
+    where fwup would pick the wrong environment after about 126 updates
+    (correspoding to an 8-bit counter changing from 127 to 128). This has been
+    fixed and a new test has been added to ensure that fwup's behavior matches
+    fw_printenv's over the entire range of the counter. Thanks to Edoardo Rossi
+    for identifying the issue.
+
 ## v1.10.0
 
 This is a substantial release with improvements to delta updates and destination
