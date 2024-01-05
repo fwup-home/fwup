@@ -186,7 +186,7 @@ int mmc_umount_all(const char *mmc_device)
     unsigned int target_disk_number = 0;
     sscanf(mmc_device, "\\\\.\\PhysicalDrive%u", &target_disk_number);
     if (target_disk_number == 0)
-        fwup_errx(EXIT_FAILURE, "Target device must be formatted like \\\\.\\PhysicalDisk# where # is a positive integer.");
+        fwup_errx(EXIT_FAILURE, "Target device must be formatted like \\\\.\\PhysicalDrive# where # is a positive integer.");
 
     WCHAR volume_name[MAX_PATH] = L"";
     HANDLE volume_iter = FindFirstVolume(volume_name, ARRAYSIZE(volume_name));
