@@ -15,7 +15,7 @@ deploy_workflow: &deploy_workflow
 
 defaults: &defaults
   docker:
-    - image: ubuntu:16.04
+    - image: ubuntu:18.04
 
 defaults_osx: &defaults_osx
   macos:
