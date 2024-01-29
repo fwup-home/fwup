@@ -70,12 +70,15 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
     case CFGT_STR:
     {
         const char *str = cfg_opt_getnstr(opt, index);
+        // Fwup's feature of re-evaluating strings when applying firmware
+        // updates is a feature and used to modify behavior when applying
+        // firmware updates (aka runtime). Fwup has always escaped double
+        // quotes, though, since it really messes up error messages when
+        // double quotes aren't escaped.
         ssprintf(s, "\"");
         while (str && *str) {
             if (*str == '"')
                 ssprintf(s, "\\\"");
-            else if (*str == '\\')
-                ssprintf(s, "\\\\");
             else
                 ssprintf(s, "%c", *str);
             str++;
