@@ -16,6 +16,12 @@ cat >"$CONFIG" <<EOF
 # Test substitution in a field
 meta-product = \${TEST_ENV_VAR}
 
+# Test substitution in double quotes
+meta-author = "\${TEST_ENV_VAR}"
+
+# Test no substitution in single quotes
+meta-misc = '\${TEST_ENV_VAR}'
+
 # Test substitution in a resource name
 file-resource "\${TEST_ENV_VAR}" {
         # Test substitution in the middle of a string
@@ -30,6 +36,8 @@ EOF
 
 cat >"$EXPECTED_META_CONF" <<EOF
 meta-product="${TEST_ENV_VAR}"
+meta-author="${TEST_ENV_VAR}"
+meta-misc="\${TEST_ENV_VAR}"
 file-resource "${TEST_ENV_VAR}" {
   length=1024
   blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
