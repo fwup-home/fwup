@@ -153,8 +153,8 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info, dev
     if (info->st.st_rdev == rootdev)
         return false;
 
-    // Check 2: Zero capacity devices
-    if (info->device_size <= 0)
+    // Check 2: Small or zero capacity devices
+    if (info->device_size < MMC_MIN_AUTODETECTED_SIZE)
         return false;
 
     // Check 3: Only allow removable drives

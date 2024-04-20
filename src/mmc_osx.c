@@ -109,8 +109,10 @@ static void scan_disk_appeared_cb(DADiskRef disk, void *c)
 
         CFRelease(info);
 
-        // Filter out virtual devices like Time Machine network backup drives
-        if (is_virtual)
+        // Filter out unlikely devices:
+        //   1. Virtual devices like Time Machine network backup drives
+        //   2. Really small devices like those that those that just contain device docs
+        if (is_virtual || size < MMC_MIN_AUTODETECTED_SIZE)
             return;
 
         context->count++;
