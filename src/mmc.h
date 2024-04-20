@@ -32,6 +32,7 @@
 //       large capacity and we don't want to autodetect them when looking for
 //       SDCards.
 #define MMC_MAX_AUTODETECTED_SIZE (129 * ONE_GiB)
+#define MMC_MIN_AUTODETECTED_SIZE (ONE_MiB)
 
 struct mmc_device {
     char name[MMC_DEVICE_NAME_LEN];

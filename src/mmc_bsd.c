@@ -76,8 +76,8 @@ static bool is_autodetectable_mmc_device(const struct mmc_device_info *info,
     if (info->st.st_rdev == (rootdev->st_dev & 0xfff0))
         return false;
 
-    // Check 2: Zero capacity devices
-    if (info->device_size <= 0)
+    // Check 2: Very small and zero capacity devices
+    if (info->device_size < MMC_MIN_AUTODETECTED_SIZE)
         return false;
 
     // Check 3: Capacity larger than max autodetectable size -> false
