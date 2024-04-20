@@ -27,27 +27,74 @@ if [ $(uname -s) = "Darwin" ]; then
     exit 0
 fi
 
+create_fwup_deb() {
+    local FWUP_ARCH=$1
+
+    local FWUP_DEB_NAME="fwup_${FWUP_VERSION}_${FWUP_ARCH}"
+    local FWUP_DEB_DIR="$BUILD_DIR/$FWUP_DEB_NAME"
+
+    # Clear and recreate the DEB directory structure
+    rm -fr "$FWUP_DEB_DIR"
+    mkdir -p "$FWUP_DEB_DIR/DEBIAN"
+    cp -r "$FWUP_STAGING_DIR"/* "$FWUP_DEB_DIR"
+
+    # Fix directory permissions for packaging
+    find "$FWUP_DEB_DIR" -type d | xargs chmod 755
+
+    # Debian requires compressed man pages
+    # Check for the existence of the man page before attempting to gzip it
+    if [ ! -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1.gz" ]; then
+        if [ -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1" ]; then
+            gzip -9 -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1"
+        else
+            echo "Error: Man page does not exist and is required."
+            return 1
+        fi
+    fi
+
+    # Create control file
+    cat > "$FWUP_DEB_DIR/DEBIAN/control" << EOF
+Package: fwup
+Version: $FWUP_VERSION
+License: $FWUP_LICENSE
+Vendor: $FWUP_VENDOR
+Architecture: $FWUP_ARCH
+Maintainer: $FWUP_MAINTAINER
+Depends: libc6 (>= 2.4)
+Section: devel
+Priority: optional
+Homepage: $FWUP_HOMEPAGE
+Description: $FWUP_DESCRIPTION
+EOF
+
+    # Create and gzip the changelog
+    mkdir -p "$FWUP_DEB_DIR/usr/share/doc/fwup"
+    gzip > "$FWUP_DEB_DIR/usr/share/doc/fwup/changelog.gz" << EOF
+fwup ($FWUP_VERSION) ; urgency=medium
+
+  * Automatically created package.
+
+ -- $FWUP_MAINTAINER  $(date -R)
+EOF
+
+    # Generate md5sums for the files
+    (cd "$FWUP_DEB_DIR" && find usr -type f | sort | xargs md5sum > "$FWUP_DEB_DIR/DEBIAN/md5sums")
+
+    # Build the package
+    dpkg-deb -Zgzip --build "$FWUP_DEB_DIR"
+    mv "$BUILD_DIR/$FWUP_DEB_NAME.deb" .
+}
+
 # Package fwup
 FWUP_VERSION=$(cat $BASE_DIR/VERSION)
 if [ -z "$CROSS_COMPILE" ]; then
+    # Build Linux packages
+    rm -f fwup_*.deb fwup-*.rpm
+
     # Fix directory permissions for packaging
     find $FWUP_STAGING_DIR -type d | xargs chmod 755
 
-    # Debian requires compressed man pages
-    # NOTE: Even though building man pages is optional, it is
-    #       an error if man pages don't exist when creating packages
-    gzip -9 -f $FWUP_STAGING_DIR/usr/share/man/man1/fwup.1
-
-    # Build Linux packages
-    rm -f fwup_*.deb fwup-*.rpm
-    fpm -s dir -t deb -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" \
-        --license "$FWUP_LICENSE" --description "$FWUP_DESCRIPTION" \
-        --depends "libc6 (>= 2.4)" --deb-priority optional --category devel \
-        --url "$FWUP_HOMEPAGE" --vendor "$FWUP_VENDOR" -C $FWUP_STAGING_DIR
-
-    fpm -s dir -t rpm -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" \
-        --license "$FWUP_LICENSE" --description "$FWUP_DESCRIPTION" \
-        --url "$FWUP_HOMEPAGE" --vendor "$FWUP_VENDOR" -C $FWUP_STAGING_DIR
+    create_fwup_deb amd64
 elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     # Build Windows package
     rm -f fwup.exe
@@ -77,21 +124,9 @@ elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
 elif [ "$CROSS_COMPILE" = "arm-linux-gnueabihf" ]; then
     # Build Raspberry Pi package
 
-    # Fix directory permissions for packaging
-    find $FWUP_STAGING_DIR -type d | xargs chmod 755
-
-    # Debian requires compressed man pages
-    # NOTE: Even though building man pages is optional, it is
-    #       an error if man pages don't exist when creating packages
-    gzip -9 -f $FWUP_STAGING_DIR/usr/share/man/man1/fwup.1
 
     # Build Raspbian package
     rm -f fwup_*.deb
-    fpm -s dir -t deb -v $FWUP_VERSION -n fwup -m "$FWUP_MAINTAINER" \
-        --license "$FWUP_LICENSE" --description "$FWUP_DESCRIPTION" \
-        --depends "libc6 (>= 2.4)" --deb-priority optional --category devel \
-        -a armhf \
-        --url "$FWUP_HOMEPAGE" --vendor "$FWUP_VENDOR" -C $FWUP_STAGING_DIR
-
+    create_fwup_deb armhf
 fi
 

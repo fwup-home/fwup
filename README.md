@@ -73,7 +73,6 @@ On Linux, download and install the appropriate package for your platform:
 * [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.10.1/fwup_1.10.1_amd64.deb)
 * [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.10.1/fwup_1.10.1_armhf.deb)
 * Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
-* [RedHat/CentOS x86\_64 .rpm](https://github.com/fwup-home/fwup/releases/download/v1.10.1/fwup-1.10.1-1.x86_64.rpm)
 * Arch Linux - See [fwup-git package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 * Buildroot - Support is included upstream since the 2016.05 release
 * Yocto - See [meta-fwup](https://github.com/fwup-home/meta-fwup)
