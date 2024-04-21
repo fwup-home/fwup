@@ -53,7 +53,7 @@ cat >$EXPECTED_OUTPUT << EOF
 EOF
 
 # Check that the attributes look right
-mattrib -i $WORK/fwup.img@@32256 system.txt hidden.txt readonly.txt shr.txt > $ACTUAL_OUTPUT
+LC_ALL= mattrib -i $WORK/fwup.img@@32256 system.txt hidden.txt readonly.txt shr.txt > $ACTUAL_OUTPUT
 diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
 
 # Check the FAT file format using fsck

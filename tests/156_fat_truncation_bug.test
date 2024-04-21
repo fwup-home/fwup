@@ -124,10 +124,10 @@ EOF
 
 
 # Check that the directories look right
-MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@30720 > $ACTUAL_OUTPUT.1
+LC_ALL= MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@30720 > $ACTUAL_OUTPUT.1
 diff -w $EXPECTED_OUTPUT.1 $ACTUAL_OUTPUT.1
 
-MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@542720 > $ACTUAL_OUTPUT.2
+LC_ALL= MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@542720 > $ACTUAL_OUTPUT.2
 diff -w $EXPECTED_OUTPUT.2 $ACTUAL_OUTPUT.2
 
 # Check the contents of the files
