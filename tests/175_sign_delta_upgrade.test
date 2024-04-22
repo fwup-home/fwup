@@ -36,6 +36,12 @@ export SOURCE_DATE_EPOCH=1525543816
 $FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
 $FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE" -o "$FWFILE.signed"
 
+echo "==> Verifying unsigned full firmware"
+$FWUP_VERIFY -V -i "$FWFILE" # Sanity check.
+
+echo "==> Verifying signed full firmware"
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed"
+
 # Manually create a signed delta upgrade by replacing rootfs.next
 # with the delta3 version
 mkdir -p "$WORK/data"
@@ -48,17 +54,20 @@ cp "$FWFILE.signed" "$FWFILE.signed.patch"
 cp "$FWFILE" "$FWFILE.unsigned.patch"
 (cd "$WORK" && zip "$FWFILE.unsigned.patch" data/rootfs.next)
 
+echo "==> Verifying unsigned patch firmware"
+$FWUP_VERIFY -V -i "$FWFILE.unsigned.patch"
+
 # Check the signatures on both the signed and the delta firmware
-$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed"
+echo "==> Verifying signed patched firmware"
 $FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch"
 
 # Now sign the unsigned patch and make sure that it's still valid
-$FWUP_VERIFY -V -i "$FWFILE.unsigned.patch" # Sanity check.
 $FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE.unsigned.patch" -o "$FWFILE.signed.patch2"
 if [ "$CIRCLE_OS_NAME" != "linux" ]; then
     # This test just won't work on Travis due to the old version of
     # zip or libarchive. Someone needs the central directory.
     # NOTE: This was blindly disabled on CircleCI as well.
+    echo "==> Verifying signing unsigned patch firmware"
     $FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed.patch2"
 fi
 
