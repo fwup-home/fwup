@@ -61,6 +61,7 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
         archive_entry_set_ctime(entry, get_creation_time_t(), 0);
         archive_entry_set_mtime(entry, get_creation_time_t(), 0);
         archive_entry_set_atime(entry, get_creation_time_t(), 0);
+        OK_OR_RETURN_MSG(archive_write_zip_set_compression_store(a), archive_error_string(a));
         archive_write_header(a, entry);
         archive_write_data(a, signature, sizeof(signature));
         archive_entry_free(entry);
@@ -75,6 +76,7 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
     archive_entry_set_ctime(entry, get_creation_time_t(), 0);
     archive_entry_set_mtime(entry, get_creation_time_t(), 0);
     archive_entry_set_atime(entry, get_creation_time_t(), 0);
+    OK_OR_RETURN_MSG(archive_write_zip_set_compression_deflate(a), archive_error_string(a));
     archive_write_header(a, entry);
     archive_write_data(a, configtxt, configtxt_len);
     archive_entry_free(entry);
