@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.10.2
+
+These is a regression with signed delta firmware updates. The TL;DR is that it
+probably doesn't affect anyone, and if it did affect you, I think you should
+have noticed firmware validation breaking by now. Please follow
+https://github.com/fwup-home/fwup/issues/227 for updates.
+
+RPMs are no longer distributed due to the packager I was using, FPM, no longer
+running on the Ubuntu versions being used on CI. Since I don't use RPM-based
+distro's, I didn't not feel comfortable switching. Debian packages are still
+available.
+
+* Improvements
+  * Don't add superfluous timestamps to zip files (.fw files are zip files). It
+    turns out that most could be removed completely rather than just hardcoded
+  * Don't compress archive signatures
+
+* Bug fixes
+  * When scanning attached media, filter out devices under 1 MiB since they're
+    almost certainly not what's wanted. It's still possible to use these
+    devices, but it won't be automatic any more.
+
+* Package updates
+  *  libarchive 3.7.3
+
 ## v1.10.1
 
 This release only is needed if you use redundant U-Boot environments.
