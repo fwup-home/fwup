@@ -6,6 +6,7 @@ This works on Ubuntu 20.04:
 
 ```sh
 sudo apt-get install build-essential autoconf pkg-config libtool mtools unzip zip help2man libconfuse-dev libarchive-dev xdelta3 dosfstools
+./autogen.sh
 ./configure
 make -j4
 make check
