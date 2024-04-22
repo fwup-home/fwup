@@ -97,10 +97,18 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
             if (!configtxt)
                 ERR_CLEANUP_MSG("Invalid firmware. meta.conf must be at the beginning of archive");
 
+            // Normalize attributes in case extraneous ones got added via other tools
+            struct archive_entry *out_ae = archive_entry_new();
+            archive_entry_set_pathname(out_ae, archive_entry_pathname(in_ae));
+            if (archive_entry_size_is_set(in_ae))
+                archive_entry_set_size(out_ae, archive_entry_size(in_ae));
+            archive_entry_set_filetype(out_ae, AE_IFREG);
+            archive_entry_set_perm(out_ae, 0644);
+
             // Copy the file
-            rc = archive_write_header(out, in_ae);
+            rc = archive_write_header(out, out_ae);
             if (rc != ARCHIVE_OK)
-                ERR_CLEANUP_MSG("Error writing '%s' header to '%s'", archive_entry_pathname(in_ae), temp_filename);
+                ERR_CLEANUP_MSG("Error writing '%s' header to '%s'", archive_entry_pathname(out_ae), temp_filename);
 
             ssize_t size_left = archive_entry_size(in_ae);
             while (size_left > 0) {
@@ -113,10 +121,11 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
                     ERR_CLEANUP_MSG("Error reading '%s' in '%s'", archive_entry_pathname(in_ae), input_filename);
 
                 if (archive_write_data(out, buffer, len) != len)
-                    ERR_CLEANUP_MSG("Error writing '%s' to '%s'", archive_entry_pathname(in_ae), temp_filename);
+                    ERR_CLEANUP_MSG("Error writing '%s' to '%s'", archive_entry_pathname(out_ae), temp_filename);
 
                 size_left -= len;
             }
+            archive_entry_free(out_ae);
         }
     }
 

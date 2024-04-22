@@ -229,9 +229,6 @@ static int add_file_resource(cfg_t *sec,
     archive_entry_set_size(entry, data_len);
     archive_entry_set_filetype(entry, AE_IFREG);
     archive_entry_set_perm(entry, 0644);
-    archive_entry_set_ctime(entry, get_creation_time_t(), 0);
-    archive_entry_set_mtime(entry, get_creation_time_t(), 0);
-    archive_entry_set_atime(entry, get_creation_time_t(), 0);
     archive_write_header(a, entry);
 
     struct write_file_state state;
@@ -260,9 +257,6 @@ static int add_string_resource(struct archive *a,
     archive_entry_set_size(entry, len);
     archive_entry_set_filetype(entry, AE_IFREG);
     archive_entry_set_perm(entry, 0644);
-    archive_entry_set_ctime(entry, get_creation_time_t(), 0);
-    archive_entry_set_mtime(entry, get_creation_time_t(), 0);
-    archive_entry_set_atime(entry, get_creation_time_t(), 0);
     archive_write_header(a, entry);
 
     ssize_t written = archive_write_data(a, contents, len);
