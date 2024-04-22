@@ -1,0 +1,75 @@
+#!/bin/sh
+
+#
+# Write a firmware image and then test upgrading it with an xdelta3-encoded
+# update. This tests that it works when signed. This is similar to
+# 175_sign_delta_upgrade.test, but that test inspected the contents. At the
+# time, this seemed sufficient, but with a failure with libarchive 3.7.3, it
+# seemed wise to explicitly test this case.
+#
+# brew install xdelta
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+FWFILE2="$WORK/fwup2.fw"
+
+cat >"$CONFIG" <<EOF
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+
+file-resource rootfs.original {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.next {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+    on-resource rootfs.original { raw_write(\${ROOTFS_A_PART_OFFSET}) }
+}
+task upgrade {
+    on-resource rootfs.next {
+        delta-source-raw-offset=\${ROOTFS_A_PART_OFFSET}
+        delta-source-raw-count=\${ROOTFS_A_PART_COUNT}
+        raw_write(\${ROOTFS_B_PART_OFFSET})
+    }
+}
+EOF
+
+# Create new keys
+(cd "$WORK" && $FWUP_CREATE -g)
+
+# Create/sign the firmware file, then "burn it"
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+$FWUP_CREATE -S -s "$WORK/fwup-key.priv" -i "$FWFILE" -o "$FWFILE.signed"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE.signed" -t complete
+
+# Check that the resources got copied to all of the right places
+cmp_bytes 1024 "$TESTFILE_1K" "$IMGFILE" 0 524288
+
+# Manually create the delta upgrade by replacing rootfs.next
+# with the delta3 version
+mkdir -p "$WORK/data"
+xdelta3 -A -S -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+cp "$FWFILE.signed" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+
+# NOTE: use "unzip -v $FWFILE2" to verify archive contents
+
+# Now upgrade the IMGFILE file
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade
+
+cmp_bytes 1024 "$TESTFILE_1K" "$IMGFILE" 0 524288  # Same
+cmp_bytes 1024 "$TESTFILE_1K" "$IMGFILE" 0 1048576 # Updated
+
+# Check that the firmware metadata didn't change (including the UUID)
+$FWUP_APPLY_NO_CHECK -m -i "$FWFILE" > "$WORK/original.metadata"
+$FWUP_APPLY_NO_CHECK -m -i "$FWFILE2" > "$WORK/delta_update.metadata"
+diff "$WORK/original.metadata" "$WORK/delta_update.metadata"
+
+# Check that the verify logic works on both files
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE.signed"
+$FWUP_VERIFY -V -p "$WORK/fwup-key.pub" -i "$FWFILE2"
