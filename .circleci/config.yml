@@ -29,9 +29,9 @@ install_ghr: &install_ghr
     command: |
       apt update
       apt install -qq wget --yes
-      wget https://github.com/tcnksm/ghr/releases/download/v0.9.0/ghr_v0.9.0_linux_amd64.tar.gz
-      tar xf ghr_v0.9.0_linux_amd64.tar.gz
-      ln -sf ghr_v0.9.0_linux_amd64/ghr .
+      wget https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz
+      tar xf ghr_v0.16.2_linux_amd64.tar.gz
+      ln -sf ghr_v0.16.2_linux_amd64/ghr .
 
 build: &build
   steps:
@@ -50,6 +50,12 @@ build: &build
     - store_artifacts:
         path: artifacts
         destination: artifacts
+    - run:
+        command: mkdir -p ./artifacts
+    - persist_to_workspace:
+        root: ./
+        paths:
+          - artifacts
     - save_cache:
         key: fwup-{{ .Revision }}-{{ .Environment.CIRCLE_TAG }}
         paths:
@@ -70,6 +76,12 @@ build_osx: &build_osx
     - store_artifacts:
         path: artifacts
         destination: artifacts
+    - run:
+        command: mkdir -p ./artifacts
+    - persist_to_workspace:
+        root: ./
+        paths:
+          - artifacts
 
 jobs:
   linux_gcc_static:
@@ -129,6 +141,8 @@ jobs:
       - restore_cache:
           key: fwup-{{ .Revision }}-{{ .Environment.CIRCLE_TAG }}
       - <<: *install_ghr
+      - attach_workspace:
+          at: ./
       - run:
           name: Create release notes
           command: grep -Pazo "(?s)(?<=## ${CIRCLE_TAG})[^#]+" artifacts/CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
