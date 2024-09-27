@@ -135,20 +135,21 @@ Options:
   --exit-handshake Send a Ctrl+Z on exit and wait for stdin to close (Erlang)
   -f <fwup.conf> Specify the firmware update configuration file
   -F, --framing Apply framing on stdin/stdout
-  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv)
+  -g, --gen-keys Generate firmware signing keys (fwup-key.pub and fwup-key.priv, or specify with -o)
   -i <input.fw> Specify the input firmware update file (Use - for stdin)
   -l, --list   List the available tasks in a firmware update
+  --max-size <blocks> Max size of the destination in 512-byte blocks (usually automatic)
   -m, --metadata   Print metadata in the firmware update
   --metadata-key <key> Only output the specified key's value when printing metadata
   --minimize-writes Skip write if contents match destination
   --no-minimize-writes Don't try to minimize writes when applying firmware updates (default)
   -n   Report numeric progress
   -o <output.fw> Specify the output file when creating an update (Use - for stdout)
-  -p, --public-key-file <keyfile> A public key file for verifying firmware updates
+  -p, --public-key-file <keyfile> A public key file for verifying firmware updates (can specify multiple times)
   --private-key <key> A private key for signing firmware updates
   --progress-low <number> When displaying progress, this is the lowest number (normally 0 for 0%)
   --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%)
-  --public-key <key> A public key for verifying firmware updates
+  --public-key <key> A public key for verifying firmware updates (can specify multiple times)
   -q, --quiet   Quiet
   -s, --private-key-file <keyfile> A private key file for signing firmware updates
   -S, --sign Sign an existing firmware file (specify -i and -o)
