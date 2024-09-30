@@ -25,6 +25,7 @@ file-resource rootfs.next {
 }
 
 task complete {
+    on-init { raw_memset(\${ROOTFS_B_PART_OFFSET}, \${ROOTFS_B_PART_COUNT}, 0) }
     on-resource rootfs.original { raw_write(\${ROOTFS_A_PART_OFFSET}) }
 }
 task upgrade {

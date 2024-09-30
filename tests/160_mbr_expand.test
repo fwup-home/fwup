@@ -89,5 +89,12 @@ rm $IMGFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE --max-size=20480 -t complete
 cmp_bytes 512 $WORK/expanded.img $IMGFILE
 
+# Repeat the test, but now apply to a large regular file. This is a common qemu
+# use case.
+rm $IMGFILE
+dd if=/dev/zero of=$IMGFILE seek=20480 count=0
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+cmp_bytes 512 $WORK/expanded.img $IMGFILE
+
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

@@ -678,6 +678,10 @@ int main(int argc, char **argv)
                     close(output_fd);
                     output_fd = -1;
                 }
+                // If the image file already has a size, go by the file's size.
+                // This is the Qemu disk image use case.
+                if (st.st_size > 0)
+                    end_offset = st.st_size;
             }
             if (enable_trim) {
                 fwup_warnx("ignoring --enable-trim since operating on a regular file");
