@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.11.0
+
+* Improvements
+  * Use the file size of regular files to determine the end of the image. This
+    makes it possible to expand the final file system partition when working
+    with Qemu disk images. It could break scripts that were expecting regular
+    files to be able to grow arbitrarily. Those will need to be updated to pad
+    the image files as needed.
+
+* Package updates
+  * monocypher 3.1.3
+  * libarchive 3.7.6 (static builds only)
+
 ## v1.10.2
 
 There is a regression with signed delta firmware updates. The TL;DR is that it
