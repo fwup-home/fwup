@@ -680,7 +680,7 @@ int main(int argc, char **argv)
                 }
             }
             if (enable_trim) {
-                fwup_warnx("ignoring --enable_trim since operating on a regular file");
+                fwup_warnx("ignoring --enable-trim since operating on a regular file");
                 enable_trim = false;
             }
             if (max_size_blocks > 0)
