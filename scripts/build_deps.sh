@@ -24,7 +24,7 @@ cd $DEPS_DIR
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
     echo Building zlib...
     rm -fr $DEPS_DIR/zlib-*
-    tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.xz
+    tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.gz
     cd zlib-$ZLIB_VERSION
     if [ -n "$CROSS_COMPILE" ]; then
         ZLIB_CONFIGURE_ENV="CC=$CROSS_COMPILE-gcc"
