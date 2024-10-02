@@ -687,6 +687,8 @@ int main(int argc, char **argv)
                 fwup_warnx("ignoring --enable-trim since operating on a regular file");
                 enable_trim = false;
             }
+            // Regular files can always be the --max-size assuming enough disk space, so
+            // force the end_offset outright if set.
             if (max_size_blocks > 0)
                 end_offset = FWUP_BLOCK_SIZE * max_size_blocks;
         } else if (is_device_null(mmc_device_path)) {
