@@ -25,8 +25,8 @@ fi
 
 install_confuse() {
     echo Downloading and installing libconfuse $CONFUSE_VERSION...
-    curl -LO https://github.com/libconfuse/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
-    tar xf confuse-$CONFUSE_VERSION.tar.xz
+    curl -LO https://github.com/libconfuse/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.gz
+    tar xf confuse-$CONFUSE_VERSION.tar.gz
     pushd confuse-$CONFUSE_VERSION
     ./configure --prefix=$DEPS_INSTALL_DIR --disable-examples
     make $MAKE_FLAGS

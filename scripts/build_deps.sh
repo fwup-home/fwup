@@ -39,7 +39,7 @@ fi
 if [[ ! -e $DEPS_INSTALL_DIR/lib/libconfuse.a ]]; then
     echo Building libconfuse...
     rm -fr $DEPS_DIR/confuse-*
-    tar xf $DOWNLOAD_DIR/confuse-$CONFUSE_VERSION.tar.xz
+    tar xf $DOWNLOAD_DIR/confuse-$CONFUSE_VERSION.tar.gz
     cd confuse-$CONFUSE_VERSION
     PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --disable-examples --enable-shared=no
     make $MAKE_FLAGS
