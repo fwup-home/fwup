@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2020, 2022 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2020 and 2022 by Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_X25519_INVERSE(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_X25519_INVERSE(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_X25519_INVERSE(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_x25519_inverse</code> &#x2014;
+<div class="Nd">X25519 scalar multiplication with the multiplicative inverse of
+  a scalar</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_x25519_inverse</code>(<var class="Fa">uint8_t
+    blind_salt[32]</var>, <var class="Fa">const uint8_t private_key[32]</var>,
+    <var class="Fa">const uint8_t curve_point[32]</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The <code class="Fn">crypto_x25519_inverse</code>() function performs scalar
+  multiplication of the multiplicative inverse of a scalar for X25519.
+  <b class="Sy">This is a highly advanced, specialized feature</b>; unless you
+  are implementing a protocol that requires this specifically, <b class="Sy">you
+  likely have no reason to be using these functions</b> and are probably looking
+  for <a class="Xr"                  href="../crypto_x25519.html">crypto_x25519(3monocypher)</a>
+  instead. Expect elliptic curve jargon on this page.
+<p class="Pp">This function is used, for example, with exponential blinding in
+    oblivious pseudo-random functions (OPRFs). The arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">blind_salt</var></dt>
+  <dd>The output point.</dd>
+  <dt><var class="Fa">private_key</var></dt>
+  <dd>The private key (scalar) to use. First, the value is clamped, then the
+      clamped value's multiplicative inverse (modulo the curve order) is
+      determined. The clamped value's multiplicative inverse then has its
+      cofactor cleared, and that final value is then used for scalar
+      multiplication.</dd>
+  <dt><var class="Fa">curve_point</var></dt>
+  <dd>The curve point on X25519 to multiply with the multiplicative inverse
+      (modulo the curve order) of <var class="Fa">private_key</var>.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                  href="../crypto_x25519.html">crypto_x25519(3monocypher)</a>,
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_x25519_inverse</code>() function first appeared in
+  Monocypher 3.1.0.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">February 13, 2022</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

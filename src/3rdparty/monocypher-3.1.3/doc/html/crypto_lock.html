@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2017-2019 Loup Vaillant
+   Copyright (c) 2017-2018 Michael Savage
+   Copyright (c) 2017, 2019-2022 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2017-2022 by Loup Vaillant, Michael Savage and Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_LOCK(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_LOCK(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_LOCK(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_lock_aead</code>,
+  <code class="Nm">crypto_unlock_aead</code>,
+  <code class="Nm">crypto_lock</code>, <code class="Nm">crypto_unlock</code>
+  &#x2014;
+<div class="Nd">authenticated encryption with additional data</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_lock</code>(<var class="Fa">uint8_t mac[16]</var>,
+    <var class="Fa">uint8_t *cipher_text</var>, <var class="Fa">const uint8_t
+    key[32]</var>, <var class="Fa">const uint8_t nonce[24]</var>,
+    <var class="Fa">const uint8_t *plain_text</var>, <var class="Fa">size_t
+    text_size</var>);</p>
+<p class="Pp"><var class="Ft">int</var>
+  <br/>
+  <code class="Fn">crypto_unlock</code>(<var class="Fa">uint8_t
+    *plain_text</var>, <var class="Fa">const uint8_t key[32]</var>,
+    <var class="Fa">const uint8_t nonce[24]</var>, <var class="Fa">const uint8_t
+    mac[16]</var>, <var class="Fa">const uint8_t *cipher_text</var>,
+    <var class="Fa">size_t text_size</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_lock_aead</code>(<var class="Fa">uint8_t
+    mac[16]</var>, <var class="Fa">uint8_t *cipher_text</var>,
+    <var class="Fa">const uint8_t key[32]</var>, <var class="Fa">const uint8_t
+    nonce[24]</var>, <var class="Fa">const uint8_t *ad</var>,
+    <var class="Fa">size_t ad_size</var>, <var class="Fa">const uint8_t
+    *plain_text</var>, <var class="Fa">size_t text_size</var>);</p>
+<p class="Pp"><var class="Ft">int</var>
+  <br/>
+  <code class="Fn">crypto_unlock_aead</code>(<var class="Fa">uint8_t
+    *plain_text</var>, <var class="Fa">const uint8_t key[32]</var>,
+    <var class="Fa">const uint8_t nonce[24]</var>, <var class="Fa">const uint8_t
+    mac[16]</var>, <var class="Fa">const uint8_t *ad</var>,
+    <var class="Fa">size_t ad_size</var>, <var class="Fa">const uint8_t
+    *cipher_text</var>, <var class="Fa">size_t text_size</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<code class="Fn">crypto_lock</code>() encrypts and authenticates a plaintext. It
+  can be decrypted by <code class="Fn">crypto_unlock</code>(). The arguments
+  are:
+<dl class="Bl-tag">
+  <dt><var class="Fa">key</var></dt>
+  <dd>A 32-byte session key shared between the sender and the recipient. It must
+      be secret and random. Different methods can be used to produce and
+      exchange this key, such as Diffie-Hellman key exchange, password-based key
+      derivation (the password must be communicated on a secure channel), or
+      even meeting physically. See
+      <a class="Xr"                  href="crypto_x25519.html">crypto_x25519(3monocypher)</a> for
+      a bulding block for a key exchange protocol and
+      <a class="Xr"                 href="crypto_argon2i.html">crypto_argon2i(3monocypher)</a>
+      for password-based key derivation.</dd>
+  <dt><var class="Fa">nonce</var></dt>
+  <dd>A 24-byte number, used only once with any given session key. It does not
+      need to be secret or random, but it does have to be unique.
+      <i class="Em">Never</i> use the same nonce twice with the same key. This
+      would basically reveal the affected messages and leave you vulnerable to
+      forgeries. The easiest (and recommended) way to generate this nonce is to
+      select it at random. See
+      <a class="Xr"                          href="intro.html">intro(3monocypher)</a> about random number
+      generation (use your operating system's random number generator).</dd>
+  <dt><var class="Fa">mac</var></dt>
+  <dd>A 16-byte <i class="Em">message authentication code</i> (MAC) that can
+      only be produced by someone who knows the session key. This guarantee
+      cannot be upheld if a nonce has been reused with the session key because
+      doing so allows the attacker to learn the authentication key associated
+      with that nonce. The MAC is intended to be sent along with the
+    ciphertext.</dd>
+  <dt><var class="Fa">plain_text</var></dt>
+  <dd>The secret message. Its contents will be kept hidden from attackers. Its
+      length, however, will <i class="Em">not</i>. Be careful when combining
+      encryption with compression. See
+      <a class="Xr"                          href="intro.html">intro(3monocypher)</a> for details.</dd>
+  <dt><var class="Fa">cipher_text</var></dt>
+  <dd>The encrypted message.</dd>
+  <dt><var class="Fa">text_size</var></dt>
+  <dd>Length of both <var class="Fa">plain_text and</var>
+      <var class="Fa">cipher_text</var>, in bytes.</dd>
+</dl>
+<p class="Pp">The <var class="Fa">cipher_text</var> and
+    <var class="Fa">plain_text</var> arguments may point to the same buffer for
+    in-place encryption. Otherwise, the buffers they point to must not
+  overlap.</p>
+<p class="Pp"><code class="Fn">crypto_unlock</code>() first checks the integrity
+    of an encrypted message. If it has been corrupted,
+    <code class="Fn">crypto_unlock</code>() returns -1 immediately. Otherwise,
+    it decrypts the message then returns zero. <i class="Em">Always check the
+    return value</i>.</p>
+<p class="Pp"><code class="Fn">crypto_lock_aead</code>() and
+    <code class="Fn">crypto_unlock_aead</code>() are variants of
+    <code class="Fn">crypto_lock</code>() and
+    <code class="Fn">crypto_unlock</code>(), permitting additional data.
+    Additional data is authenticated but <i class="Em">not</i> encrypted. This
+    is used to authenticate relevant data that cannot be encrypted. The
+    arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">ad</var></dt>
+  <dd>Additional data to authenticate. It will not be encrypted. May be
+      <code class="Dv">NULL</code> if <var class="Fa">ad_size</var> is zero.
+      Setting <var class="Fa">ad_size</var> to zero yields the same results as
+      <code class="Fn">crypto_lock</code>() and
+      <code class="Fn">crypto_unlock</code>().</dd>
+  <dt><var class="Fa">ad_size</var></dt>
+  <dd>Length of the additional data, in bytes.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<code class="Fn">crypto_lock</code>() and
+  <code class="Fn">crypto_lock_aead</code>() return nothing.
+  <code class="Fn">crypto_unlock</code>() and
+  <code class="Fn">crypto_unlock_aead</code>() return 0 on success or -1 if the
+  message was corrupted (i.e. <var class="Fa">mac</var> mismatched the
+  combination of <var class="Fa">key</var>, <var class="Fa">nonce</var>,
+  <var class="Fa">ad</var>, and <var class="Fa">cipher_text</var>). Corruption
+  can be caused by transmission errors, programmer error, or an attacker's
+  interference. <var class="Fa">plain_text</var> does not need to be wiped if
+  the decryption fails.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following examples assume the existence of
+  <code class="Fn">arc4random_buf</code>(), which fills the given buffer with
+  cryptographically secure random bytes. If
+  <code class="Fn">arc4random_buf</code>() does not exist on your system, see
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a> for advice about how to
+  generate cryptographically secure random bytes.
+<p class="Pp">Encryption:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t key        [32];    /* Random, secret session key  */
+uint8_t nonce      [24];    /* Use only once per key       */
+uint8_t plain_text [12] = &quot;Lorem ipsum&quot;; /* Secret message */
+uint8_t mac        [16];    /* Message authentication code */
+uint8_t cipher_text[12];              /* Encrypted message */
+arc4random_buf(key,   32);
+arc4random_buf(nonce, 24);
+crypto_lock(mac, cipher_text, key, nonce, plain_text,
+        sizeof(plain_text));
+/* Wipe secrets if they are no longer needed */
+crypto_wipe(plain_text, 12);
+crypto_wipe(key, 32);
+/* Transmit cipher_text, nonce, and mac over the network,
+ * store them in a file, etc.
+ */
+</pre>
+</div>
+<p class="Pp">To decrypt the above:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t       key        [32]; /* Same as the above        */
+uint8_t       nonce      [24]; /* Same as the above        */
+const uint8_t cipher_text[12]; /* Encrypted message        */
+const uint8_t mac        [16]; /* Received along with text */
+uint8_t       plain_text [12]; /* Secret message           */
+if (crypto_unlock(plain_text, key, nonce, mac, cipher_text, 12)) {
+    /* The message is corrupted.
+     * Wipe key if it is no longer needed,
+     * and abort the decryption.
+     */
+    crypto_wipe(key, 32);
+} else {
+    /* ...do something with the decrypted text here... */
+    /* Finally, wipe secrets if they are no longer needed */
+    crypto_wipe(plain_text, 12);
+    crypto_wipe(key, 32);
+}
+</pre>
+</div>
+<p class="Pp">In-place encryption:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t key  [32];    /* Random, secret session key  */
+uint8_t nonce[24];    /* Use only once per key       */
+uint8_t text [12] = &quot;Lorem ipsum&quot;; /* Secret message */
+uint8_t mac  [16];    /* Message authentication code */
+arc4random_buf(key,   32);
+arc4random_buf(nonce, 24);
+crypto_lock(mac, text, key, nonce, text, 12);
+/* Wipe secrets if they are no longer needed */
+crypto_wipe(key, 32);
+/* Transmit cipher_text, nonce, and mac over the network,
+ * store them in a file, etc.
+ */
+</pre>
+</div>
+<p class="Pp">In-place decryption:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t        key  [32]; /* Same as the above             */
+const uint8_t  nonce[24]; /* Same as the above             */
+const uint8_t  mac  [16]; /* Received from along with text */
+uint8_t        text [12]; /* Message to decrypt            */
+if (crypto_unlock(text, key, nonce, mac, text, 12)) {
+    /* The message is corrupted.
+     * Wipe key if it is no longer needed,
+     * and abort the decryption.
+     */
+    crypto_wipe(key, 32);
+} else {
+    /* ...do something with the decrypted text here... */
+    /* Finally, wipe secrets if they are no longer needed */
+    crypto_wipe(text, 12);
+    crypto_wipe(key, 32);
+}
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                  href="crypto_x25519.html">crypto_x25519(3monocypher)</a>,
+  <a class="Xr"                    href="crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement RFC 8439, with XChaCha20 instead of ChaCha20.
+  XChaCha20 derives from ChaCha20 the same way XSalsa20 derives from Salsa20 and
+  benefits from the same security reduction (proven secure as long as ChaCha20
+  itself is secure).
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_lock</code>() and
+  <code class="Fn">crypto_unlock</code>() functions first appeared in Monocypher
+  0.1. <code class="Fn">crypto_lock_aead</code>() and
+  <code class="Fn">crypto_unlock_aead</code>() were introduced in Monocypher
+  1.1.0. In Monocypher 2.0.0, the underlying algorithms for these functions were
+  changed from a custom XChaCha20/Poly1305 construction to an implementation of
+  RFC 7539 (now RFC 8439) with XChaCha20 instead of ChaCha20. The
+  <code class="Fn">crypto_lock_encrypt</code>() and
+  <code class="Fn">crypto_lock_auth</code>() functions were removed in
+  Monocypher 2.0.0.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">February 13, 2022</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

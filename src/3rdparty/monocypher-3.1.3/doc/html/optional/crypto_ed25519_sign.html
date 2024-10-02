@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2019-2020, 2022 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2019-2020 and 2022 by Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_ED25519_SIGN(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_ED25519_SIGN(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_ED25519_SIGN(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_ed25519_sign</code>,
+  <code class="Nm">crypto_ed25519_check</code>,
+  <code class="Nm">crypto_ed25519_public_key</code> &#x2014;
+<div class="Nd">public key signatures</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher-ed25519.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_ed25519_public_key</code>(<var class="Fa">uint8_t
+    public_key[32]</var>, <var class="Fa">const uint8_t
+  secret_key[32]</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_ed25519_sign</code>(<var class="Fa">uint8_t
+    signature[64]</var>, <var class="Fa">const uint8_t secret_key[32]</var>,
+    <var class="Fa">const uint8_t public_key[32]</var>, <var class="Fa">const
+    uint8_t *message</var>, <var class="Fa">size_t message_size</var>);</p>
+<p class="Pp"><var class="Ft">int</var>
+  <br/>
+  <code class="Fn">crypto_ed25519_check</code>(<var class="Fa">const uint8_t
+    signature[64]</var>, <var class="Fa">const uint8_t public_key[32]</var>,
+    <var class="Fa">const uint8_t *message</var>, <var class="Fa">size_t
+    message_size</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The <code class="Fn">crypto_ed25519_sign</code>() and
+  <code class="Fn">crypto_ed25519_check</code>() functions provide Ed25519
+  public key signatures and verification with SHA-512 as the underlying hash
+  function. They are interoperable with other Ed25519 implementations. If you
+  have no interoperability requirements, prefer
+  <a class="Xr"                    href="../crypto_sign.html">crypto_sign(3monocypher)</a>.
+<p class="Pp">The arguments and security considerations are the same as those
+    described in
+    <a class="Xr"                    href="../crypto_sign.html">crypto_sign(3monocypher)</a>.</p>
+<p class="Pp">For an incremental interface, see
+    <a class="Xr" href="crypto_ed25519_sign_init_first_pass.html">crypto_ed25519_sign_init_first_pass(3monocypher)</a>.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<code class="Fn">crypto_ed25519_public_key</code>() and
+  <code class="Fn">crypto_ed25519_sign</code>() return nothing.
+<p class="Pp"><code class="Fn">crypto_ed25519_check</code>() returns 0 for
+    legitimate messages and -1 for forgeries.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                   href="../crypto_check.html">crypto_check(3monocypher)</a>,
+  <a class="Xr"                  href="../crypto_x25519.html">crypto_x25519(3monocypher)</a>,
+  <a class="Xr"                    href="../crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr" href="crypto_sha512.html">crypto_sha512(3monocypher)</a>,
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement Ed25519 as described in RFC 8032.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_ed25519_sign</code>(),
+  <code class="Fn">crypto_ed25519_check</code>(), and
+  <code class="Fn">crypto_ed25519_public_key</code>() functions appeared in
+  Monocypher 3.0.0. They replace recompilation of Monocypher with the
+  <code class="Dv">ED25519_SHA512</code> preprocessor definition.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">February 13, 2022</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>
