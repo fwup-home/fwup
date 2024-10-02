@@ -29,7 +29,7 @@ echo "Downloading third party libraries to $DOWNLOAD_DIR..."
 cd $DOWNLOAD_DIR
 [ -e zlib-$ZLIB_VERSION.tar.xz ] || curl -LO http://zlib.net/zlib-$ZLIB_VERSION.tar.xz
 [ -e confuse-$CONFUSE_VERSION.tar.xz ] || curl -LO https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.xz
-[ -e libarchive-$LIBARCHIVE_VERSION.tar.xz ] || curl -LO http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.xz
+[ -e libarchive-$LIBARCHIVE_VERSION.tar.gz ] || curl -LO http://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
 
 echo "Verifying checksums..."
 $SHA256SUM -c $BASE_DIR/scripts/third_party.sha256
