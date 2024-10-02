@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2019-2020 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2019-2020 by Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_HMAC_SHA512(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_HMAC_SHA512(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_HMAC_SHA512(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_hmac_sha512</code>,
+  <code class="Nm">crypto_hmac_sha512_init</code>,
+  <code class="Nm">crypto_hmac_sha512_update</code>,
+  <code class="Nm">crypto_hmac_sha512_final</code> &#x2014;
+<div class="Nd">cryptographic hash-based message authentication code with
+  SHA-512</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher-ed25519.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_hmac_sha512</code>(<var class="Fa">uint8_t
+    hmac[64]</var>, <var class="Fa">const uint8_t *key</var>,
+    <var class="Fa">size_t key_size</var>, <var class="Fa">const uint8_t
+    *message</var>, <var class="Fa">size_t message_size</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_hmac_sha512_init</code>(<var class="Fa">crypto_hmac_sha512_ctx
+    *ctx</var>, <var class="Fa">const uint8_t *key</var>, <var class="Fa">size_t
+    key_size</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_hmac_sha512_update</code>(<var class="Fa">crypto_hmac_sha512_ctx
+    *ctx</var>, <var class="Fa">const uint8_t *message</var>,
+    <var class="Fa">size_t message_size</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_hmac_sha512_final</code>(<var class="Fa">crypto_hmac_sha512_ctx
+    *ctx</var>, <var class="Fa">uint8_t hmac[64]</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+HMAC with SHA-512 is a cryptographically secure message authentication code
+  (MAC), provided to enable compatibility with other cryptographic systems. It
+  is generally recommended to use
+  <a class="Xr"         href="../crypto_blake2b_general.html">crypto_blake2b_general(3monocypher)</a>
+  instead, as it performs faster on x86_64 CPUs.
+<p class="Pp">The arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">hmac</var></dt>
+  <dd>The output MAC, which is always 64-bytes long.</dd>
+  <dt><var class="Fa">key</var></dt>
+  <dd>Some secret key. One cannot predict the final hash without it. Users may
+      want to wipe the key with
+      <a class="Xr"                    href="../crypto_wipe.html">crypto_wipe(3monocypher)</a> once
+      they are done with it.</dd>
+  <dt><var class="Fa">key_size</var></dt>
+  <dd>Length of <var class="Fa">key</var>, in bytes. 32 is a good default. Keys
+      longer than 128 bytes will be reduced to 64 bytes by hashing the key with
+      SHA-512.</dd>
+  <dt><var class="Fa">message</var></dt>
+  <dd>The message to compute the HMAC for. May overlap with
+      <var class="Fa">hmac</var>. May be <code class="Dv">NULL</code> if
+      <var class="Fa">message_size</var> is 0.</dd>
+  <dt><var class="Fa">message_size</var></dt>
+  <dd>Length of <var class="Fa">message</var>, in bytes.</dd>
+</dl>
+<p class="Pp">An incremental interface is provided. It is useful for handling
+    streams of data or large files without using too much memory. This interface
+    uses three steps:</p>
+<ul class="Bl-bullet">
+  <li>initialisation with <code class="Fn">crypto_hmac_sha512_init</code>(),
+      which sets up a context with the hashing parameters;</li>
+  <li>update with <code class="Fn">crypto_hmac_sha512_update</code>(), which
+      hashes the message chunk by chunk and keeps the intermediary result in the
+      context;</li>
+  <li>and finalisation with <code class="Fn">crypto_hmac_sha512_final</code>(),
+      which produces the final hash. The
+      <var class="Ft">crypto_hmac_sha512_ctx</var> is automatically wiped upon
+      finalisation.</li>
+</ul>
+<p class="Pp"><code class="Fn">crypto_hmac_sha512</code>() is a convenience
+    function that performs <code class="Fn">crypto_hmac_sha512_init</code>(),
+    <code class="Fn">crypto_hmac_sha512_update</code>(), and
+    <code class="Fn">crypto_hmac_sha512_final</code>().</p>
+<p class="Pp">MACs may be truncated safely down to at most 16 bytes; the
+    <a class="Xr"                href="../crypto_verify64.html">crypto_verify64(3monocypher)</a>,
+    <a class="Xr"                href="../crypto_verify32.html">crypto_verify32(3monocypher)</a>,
+    and
+    <a class="Xr"                href="../crypto_verify16.html">crypto_verify16(3monocypher)</a>
+    functions can be used to compare (possibly truncated) MACs.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+These functions return nothing.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following examples assume the existence of
+  <code class="Fn">arc4random_buf</code>(), which fills the given buffer with
+  cryptographically secure random bytes. If
+  <code class="Fn">arc4random_buf</code>() does not exist on your system, see
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a> for advice about how to
+  generate cryptographically secure random bytes.
+<p class="Pp">Computing a message authentication code all at once:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t hash   [64];                /* Output hash             */
+uint8_t key    [32];                /* Key                     */
+uint8_t message[10] = &quot;Lorem ipsu&quot;; /* Message to authenticate */
+arc4random_buf(key, 32);
+crypto_hmac_sha512(hash, key, 32, message, 10);
+/* Wipe secrets if they are no longer needed */
+crypto_wipe(message, 10);
+crypto_wipe(key, 32);
+</pre>
+</div>
+<p class="Pp">Computing a message authentication code incrementally:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t hash   [64];        /* Output hash             */
+uint8_t key    [32];        /* Key                     */
+uint8_t message[500] = {1}; /* Message to authenticate */
+crypto_hmac_sha512_ctx ctx;
+arc4random_buf(key, 32);
+crypto_hmac_sha512_init(&amp;ctx, key, 32);
+/* Wipe the key */
+crypto_wipe(key, 32);
+for (size_t i = 0; i &lt; 500; i += 100) {
+    crypto_hmac_sha512_update(&amp;ctx, message + i, 100);
+    /* Wipe secrets if they are no longer needed */
+    crypto_wipe(message + i, 100);
+}
+crypto_hmac_sha512_final(&amp;ctx, hash);
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                 href="../crypto_blake2b.html">crypto_blake2b(3monocypher)</a>,
+  <a class="Xr"                    href="../crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr"                           href="../advanced/crypto_poly1305.html">crypto_poly1305(3monocypher)</a>,
+  <a class="Xr" href="crypto_sha512.html">crypto_sha512(3monocypher)</a>,
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement HMAC with SHA-512. HMAC and SHA-512 itself are
+  described in RFC 6234; SHA-512 is also described in the Federal Information
+  Processing Standard (FIPS) 180-4; HMAC is also described in FIPS 198-1.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_hmac_sha512</code>(),
+  <code class="Fn">crypto_hmac_sha512_init</code>(),
+  <code class="Fn">crypto_hmac_sha512_update</code>(), and
+  <code class="Fn">crypto_hmac_sha512_final</code>() functions first appeared in
+  Monocypher 3.0.0.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">March 2, 2020</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

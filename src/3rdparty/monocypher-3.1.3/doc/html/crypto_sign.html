@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2017-2019 Loup Vaillant
+   Copyright (c) 2017-2018 Michael Savage
+   Copyright (c) 2017, 2019-2022 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2017-2022 by Loup Vaillant, Michael Savage and Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_SIGN(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_SIGN(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_SIGN(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_sign</code>, <code class="Nm">crypto_check</code>,
+  <code class="Nm">crypto_sign_public_key</code> &#x2014;
+<div class="Nd">public key signatures</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_sign_public_key</code>(<var class="Fa">uint8_t
+    public_key[32]</var>, <var class="Fa">const uint8_t
+  secret_key[32]</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_sign</code>(<var class="Fa">uint8_t
+    signature[64]</var>, <var class="Fa">const uint8_t secret_key[32]</var>,
+    <var class="Fa">const uint8_t public_key[32]</var>, <var class="Fa">const
+    uint8_t *message</var>, <var class="Fa">size_t message_size</var>);</p>
+<p class="Pp"><var class="Ft">int</var>
+  <br/>
+  <code class="Fn">crypto_check</code>(<var class="Fa">const uint8_t
+    signature[64]</var>, <var class="Fa">const uint8_t public_key[32]</var>,
+    <var class="Fa">const uint8_t *message</var>, <var class="Fa">size_t
+    message_size</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<code class="Fn">crypto_sign</code>() and <code class="Fn">crypto_check</code>()
+  provide EdDSA public key signatures and verification.
+<p class="Pp">The arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">signature</var></dt>
+  <dd>The signature.</dd>
+  <dt><var class="Fa">secret_key</var></dt>
+  <dd>A 32-byte random number known only to you. See
+      <a class="Xr"                          href="intro.html">intro(3monocypher)</a> about random number
+      generation (use your operating system's random number generator). Do not
+      use the same private key for both signatures and key exchanges. The public
+      keys are different and revealing both may leak information.</dd>
+  <dt><var class="Fa">public_key</var></dt>
+  <dd>The public key, generated from <var class="Fa">secret_key</var> with
+      <code class="Fn">crypto_sign_public_key</code>().</dd>
+  <dt><var class="Fa">message</var></dt>
+  <dd>The message to sign.</dd>
+  <dt><var class="Fa">message_size</var></dt>
+  <dd>Length of <var class="Fa">message</var>, in bytes.</dd>
+</dl>
+<p class="Pp"><var class="Fa">signature</var> and <var class="Fa">message</var>
+    may overlap.</p>
+<p class="Pp"><code class="Fn">crypto_sign_public_key</code>() computes the
+    public key of the specified secret key.</p>
+<p class="Pp"><code class="Fn">crypto_sign</code>() signs a message with
+    <var class="Fa">secret_key</var>. The public key is optional and will be
+    recomputed if not provided. This recomputation doubles the execution
+  time.</p>
+<p class="Pp"><code class="Fn">crypto_check</code>() checks that a given
+    signature is genuine. Meaning, only someone who had the private key could
+    have signed the message. <b class="Sy">It does not run in constant time</b>.
+    It does not have to in most threat models because nothing is secret:
+    everyone knows the public key, and the signature and message are rarely
+    secret. If the message needs to be secret, use a key exchange protocol
+    involving
+    <a class="Xr"                  href="crypto_x25519.html">crypto_x25519(3monocypher)</a> and
+    then
+    <a class="Xr"               href="crypto_lock_aead.html">crypto_lock_aead(3monocypher)</a>
+    instead.</p>
+<p class="Pp">An incremental interface is available; see
+    <a class="Xr"               href="advanced/crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+<code class="Fn">crypto_sign_public_key</code>() and
+  <code class="Fn">crypto_sign</code>() return nothing.
+<p class="Pp"><code class="Fn">crypto_check</code>() returns 0 for legitimate
+    messages and -1 for forgeries.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following examples assume the existence of
+  <code class="Fn">arc4random_buf</code>(), which fills the given buffer with
+  cryptographically secure random bytes. If
+  <code class="Fn">arc4random_buf</code>() does not exist on your system, see
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a> for advice about how to
+  generate cryptographically secure random bytes.
+<p class="Pp">Generate a public key from a random secret key:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t       sk[32]; /* Random secret key   */
+uint8_t       pk[32]; /* Matching public key */
+arc4random_buf(sk, 32);
+crypto_sign_public_key(pk, sk);
+/* Wipe the secret key if it is no longer needed */
+crypto_wipe(sk, 32);
+</pre>
+</div>
+<p class="Pp">Sign a message:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t       sk       [32]; /* Secret key from above          */
+const uint8_t pk       [32]; /* Matching public key            */
+const uint8_t message  [11] = &quot;Lorem ipsu&quot;; /* Message to sign */
+uint8_t       signature[64];
+crypto_sign(signature, sk, pk, message, 10);
+/* Wipe the secret key if it is no longer needed */
+crypto_wipe(sk, 32);
+</pre>
+</div>
+<p class="Pp">Check the above:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+const uint8_t pk       [32]; /* Their public key              */
+const uint8_t message  [11] = &quot;Lorem ipsu&quot;; /* Signed message */
+const uint8_t signature[64]; /* Signature to check            */
+if (crypto_check(signature, pk, message, 10)) {
+    /* Message is corrupted, abort processing */
+} else {
+    /* Message is genuine */
+}
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                 href="crypto_blake2b.html">crypto_blake2b(3monocypher)</a>,
+  <a class="Xr"                  href="crypto_x25519.html">crypto_x25519(3monocypher)</a>,
+  <a class="Xr"                    href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement PureEdDSA with Curve25519 and BLAKE2b, as described in
+  RFC 8032. This is the same as Ed25519, with BLAKE2b instead of SHA-512.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_sign</code>(),
+  <code class="Fn">crypto_check</code>(), and
+  <code class="Fn">crypto_sign_public_key</code>() functions appeared in
+  Monocypher 0.2.
+<p class="Pp">Starting with Monocypher 2.0.5, modified signatures abusing the
+    inherent signature malleability property of EdDSA now cause a non-zero
+    return value of <code class="Fn">crypto_check</code>(); in prior versions,
+    such signatures would be accepted.</p>
+<p class="Pp"><b class="Sy">A critical security vulnerability</b> that caused
+    all-zero signatures to be accepted was introduced in Monocypher 0.3; it was
+    fixed in Monocypher 1.1.1 and 2.0.4.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SECURITY_CONSIDERATIONS"><a class="permalink" href="#SECURITY_CONSIDERATIONS">SECURITY
+  CONSIDERATIONS</a></h1>
+<section class="Ss">
+<h2 class="Ss" id="Signature_malleability"><a class="permalink" href="#Signature_malleability">Signature
+  malleability</a></h2>
+Signature malleability is the ability of an attacker to produce a valid
+  signature with knowledge of only an existing signature and the public key.
+  That is, given a message, a signature and a public key, an attacker could
+  generate a new signature for the same message that is valid under the same
+  public key. Monocypher prevents signature malleability by only accepting
+  signatures in canonical form.
+<p class="Pp">On the other hand, EdDSA signatures are not unique like
+    cryptographic hashes. The signing procedure is deterministic by
+    specification and <code class="Fn">crypto_sign</code>() follows this
+    specification. However, someone with the private key can generate
+    arbitrarily many valid, canonical, and different signatures of the same
+    message. Because of this, never assume that signatures are unique.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Fault_injection_and_power_analysis"><a class="permalink" href="#Fault_injection_and_power_analysis">Fault
+  injection and power analysis</a></h2>
+Fault injection (also known as glitching) and power analysis may be used to
+  manipulate the resulting signature and recover the secret key in some cases.
+  This requires hardware access. If attackers are expected to have such access
+  and have the relevant equipment, you could try using the incremental interface
+  provided by
+  <a class="Xr"               href="advanced/crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>
+  to mitigate the side-channel attacks. Note that there may still be other
+  power-related side channels (such as if the CPU leaks information when an
+  operation overflows a register) that must be considered.
+</section>
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">February 13, 2022</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

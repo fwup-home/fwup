@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2017-2019 Loup Vaillant
+   Copyright (c) 2017-2018 Michael Savage
+   Copyright (c) 2019-2022 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2017-2022 by Loup Vaillant, Michael Savage and Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_HCHACHA20(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_HCHACHA20(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_HCHACHA20(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_hchacha20</code> &#x2014;
+<div class="Nd">HChaCha20 special-purpose hashing</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_hchacha20</code>(<var class="Fa">uint8_t
+    out[32]</var>, <var class="Fa">const uint8_t key[32]</var>,
+    <var class="Fa">const uint8_t in[16]</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<code class="Fn">crypto_hchacha20</code>() provides a not-so-cryptographic hash.
+  It may be used for some specific purposes such as X25519 key derivation or
+  XChaCha20 initialisation. If in doubt, do not use directly. Use
+  <a class="Xr"                 href="../crypto_blake2b.html">crypto_blake2b(3monocypher)</a>
+  instead.
+<p class="Pp">The arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">key</var></dt>
+  <dd>A sufficiently random key, such as the output of
+      <a class="Xr"                  href="../crypto_x25519.html">crypto_x25519(3monocypher)</a>.</dd>
+  <dt><var class="Fa">in</var></dt>
+  <dd>The space reserved for the ChaCha20 nonce and counter. It does not have to
+      be random.</dd>
+  <dt><var class="Fa">out</var></dt>
+  <dd>A cryptographically secure random number <i class="Em">if</i> there is
+      enough entropy in <var class="Fa">key</var>. X25519 shared secrets have
+      enough entropy.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+This function returns nothing.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following example assumes the existence of
+  <code class="Fn">arc4random_buf</code>(), which fills the given buffer with
+  cryptographically secure random bytes. If
+  <code class="Fn">arc4random_buf</code>() does not exist on your system, see
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a> for advice about how to
+  generate cryptographically secure random bytes.
+<p class="Pp">Simple hash:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t key[32]; /* Must have enough entropy           */
+uint8_t in [16]; /* Does not have to be random         */
+uint8_t out[32]; /* Will be random iff the above holds */
+arc4random_buf(key, 32);
+crypto_hchacha20(out, key, in);
+/* Wipe secrets if they are no longer needed */
+crypto_wipe(key, 32);
+crypto_wipe(in , 16);
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                          href="../intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+This function implements HChaCha20. HChaCha20 derives from ChaCha20 the same way
+  HSalsa20 derives from Salsa20.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_hchacha20</code>() function first appeared in
+  Monocypher 0.1 as <code class="Fn">crypto_chacha20_H</code>(). It was renamed
+  to <code class="Fn">crypto_hchacha20</code>() in Monocypher 3.0.0.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="CAVEATS"><a class="permalink" href="#CAVEATS">CAVEATS</a></h1>
+<b class="Sy">This is not a general-purpose cryptographic hash function</b>.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">February 13, 2022</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

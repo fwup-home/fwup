@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2017-2019 Loup Vaillant
+   Copyright (c) 2018 Michael Savage
+   Copyright (c) 2017, 2019-2021 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2017-2021 by Loup Vaillant, Michael Savage and Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_ARGON2I(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_ARGON2I(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_ARGON2I(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_argon2i</code> &#x2014;
+<div class="Nd">password-based key derivation</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_argon2i</code>(<var class="Fa">uint8_t *hash</var>,
+    <var class="Fa">uint32_t hash_size</var>, <var class="Fa">void
+    *work_area</var>, <var class="Fa">uint32_t nb_blocks</var>,
+    <var class="Fa">uint32_t nb_iterations</var>, <var class="Fa">const uint8_t
+    *password</var>, <var class="Fa">uint32_t password_size</var>,
+    <var class="Fa">const uint8_t *salt</var>, <var class="Fa">uint32_t
+    salt_size</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_argon2i_general</code>(<var class="Fa">uint8_t
+    *hash</var>, <var class="Fa">uint32_t hash_size</var>, <var class="Fa">void
+    *work_area</var>, <var class="Fa">uint32_t nb_blocks</var>,
+    <var class="Fa">uint32_t nb_iterations</var>, <var class="Fa">const uint8_t
+    *password</var>, <var class="Fa">uint32_t password_size</var>,
+    <var class="Fa">const uint8_t *salt</var>, <var class="Fa">uint32_t
+    salt_size</var>, <var class="Fa">const uint8_t *key</var>,
+    <var class="Fa">uint32_t key_size</var>, <var class="Fa">const uint8_t
+    *ad</var>, <var class="Fa">uint32_t ad_size</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+Argon2i is a resource intensive password-based key derivation scheme optimised
+  for the typical x86-like processor. It runs in constant time with respect to
+  the contents of the password.
+<p class="Pp">Typical applications are password checking (for online services)
+    and key derivation (for encryption). Derived keys can be used to encrypt,
+    for example, private keys or password databases.</p>
+<p class="Pp">The version provided by Monocypher has no threading support, so
+    the degree of parallelism is limited to 1. This is considered good enough
+    for most purposes.</p>
+<p class="Pp">The arguments to <code class="Fn">crypto_argon2i</code>() are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">hash</var></dt>
+  <dd>The output hash. If all parameters to
+      <code class="Fn">crypto_argon2i</code>() or
+      <code class="Fn">crypto_argon2i_general</code>() are identical between two
+      calls, then the output <var class="Fa">hash</var> is also identical. In
+      other words, all input parameters passed to the function influence the
+      output value.</dd>
+  <dt><var class="Fa">hash_size</var></dt>
+  <dd>Length of <var class="Fa">hash</var>, in bytes. This argument should be
+      set to 32 or 64 for compatibility with the
+      <code class="Fn">crypto_verify*</code>() constant time comparison
+      functions.</dd>
+  <dt><var class="Fa">work_area</var></dt>
+  <dd>Temporary buffer for the algorithm, allocated by the caller. It must be
+      <var class="Fa">nb_blocks</var> &#x00D7; 1024 bytes big and suitably
+      aligned for 64-bit integers. If you are not sure how to allocate that
+      buffer, just use <code class="Fn">malloc</code>().
+    <p class="Pp">The work area is automatically wiped by
+        <code class="Fn">crypto_argon2i</code>().</p>
+  </dd>
+  <dt><var class="Fa">nb_blocks</var></dt>
+  <dd>The number of blocks for the work area. Must be at least 8. A value of
+      100000 (one hundred megabytes) is a good starting point. If the
+      computation takes too long, reduce this number. If it is too fast,
+      increase this number. If it is still too fast with all available memory,
+      increase <var class="Fa">nb_iterations</var>.</dd>
+  <dt><var class="Fa">nb_iterations</var></dt>
+  <dd>The number of iterations. It must be at least 1. A value of 3 is
+      <i class="Em">strongly</i> recommended; any value lower than 3 enables
+      significantly more efficient attacks.</dd>
+  <dt><var class="Fa">password</var></dt>
+  <dd>The password to hash. It should be wiped with
+      <a class="Xr"                    href="crypto_wipe.html">crypto_wipe(3monocypher)</a> after
+      being hashed.</dd>
+  <dt><var class="Fa">password_size</var></dt>
+  <dd>Length of <var class="Fa">password</var>, in bytes.</dd>
+  <dt><var class="Fa">salt</var></dt>
+  <dd>A password salt. This should be filled with random bytes, generated
+      separately for each password to be hashed. See
+      <a class="Xr"                          href="intro.html">intro(3monocypher)</a> for advice about
+      generating random bytes (use the operating system's random number
+      generator).</dd>
+  <dt><var class="Fa">salt_size</var></dt>
+  <dd>Length of <var class="Fa">salt</var>, in bytes. Must be at least 8. 16 is
+      recommended.</dd>
+</dl>
+<p class="Pp">The arguments may overlap or point at the same buffer.</p>
+<p class="Pp">Use
+    <a class="Xr"                href="crypto_verify16.html">crypto_verify16(3monocypher)</a>,
+    <a class="Xr"                href="crypto_verify32.html">crypto_verify32(3monocypher)</a>,
+    or
+    <a class="Xr"                href="crypto_verify64.html">crypto_verify64(3monocypher)</a>
+    to compare password hashes to prevent timing attacks.</p>
+<p class="Pp">To select the <var class="Fa">nb_blocks</var> and
+    <var class="Fa">nb_iterations</var> parameters, it should first be decided
+    how long the computation should take. For user authentication, values
+    somewhere between half a second (convenient) and several seconds (paranoid)
+    are recommended. The computation should use as much memory as can be
+  spared.</p>
+<p class="Pp">Since parameter selection depends on your hardware, some trial and
+    error will be required in order to determine the ideal settings. Three
+    iterations and 100000 blocks (one hundred megabytes of memory) is a good
+    starting point. Adjust <var class="Fa">nb_blocks</var> first. If using all
+    available memory is not slow enough, increase
+    <var class="Fa">nb_iterations</var>.</p>
+<p class="Pp"><code class="Fn">crypto_argon2i_general</code>() is a variant of
+    <code class="Fn">crypto_argon2i</code>() that supports keyed hashing and
+    hashing of additional data. The additional arguments are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">key</var></dt>
+  <dd>A key to use in the hash. Can be <code class="Dv">NULL</code> if
+      <var class="Fa">key_size</var> is zero. The key is generally not needed,
+      but it does have some uses. In the context of password derivation, it
+      would be stored separately from the password database and would remain
+      secret even if an attacker were to steal the database. Note that changing
+      the key requires rehashing the user's password, which can only be done
+      when the user logs in</dd>
+  <dt><var class="Fa">key_size</var></dt>
+  <dd>Length of <var class="Fa">key</var>, in bytes. Must be zero if there is no
+      key.</dd>
+  <dt><var class="Fa">ad</var></dt>
+  <dd>Additional data. This is additional data that goes into the hash, similar
+      to the authenticated encryption with authenticated data (AEAD)
+      construction in
+      <a class="Xr"               href="crypto_lock_aead.html">crypto_lock_aead(3monocypher)</a>.
+      This most likely has no practical application but is exposed for the sake
+      of completeness. This parameter may be <code class="Dv">NULL</code> if
+      <var class="Fa">ad_size</var> is zero.</dd>
+  <dt><var class="Fa">ad_size</var></dt>
+  <dd>Length of <var class="Fa">ad</var>, in bytes. Must be zero if there is no
+      additional data.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+These functions return nothing.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+The following example assumes the existence of
+  <code class="Fn">arc4random_buf</code>(), which fills the given buffer with
+  cryptographically secure random bytes. If
+  <code class="Fn">arc4random_buf</code>() does not exist on your system, see
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a> for advice about how to
+  generate cryptographically secure random bytes.
+<p class="Pp">This example shows how to hash a password with the recommended
+    baseline parameters:</p>
+<div class="Bd Pp Bd-indent">
+<pre>
+uint8_t        hash[32];                    /* Output hash     */
+char          *password = &quot;Okay Password!&quot;; /* User's password */
+uint32_t       password_size = 14;          /* Password length */
+uint8_t        salt[16];                    /* Random salt     */
+const uint32_t nb_blocks = 100000;          /* 100 megabytes   */
+const uint32_t nb_iterations = 3;           /* 3 iterations    */
+void *work_area = malloc(nb_blocks * 1024); /* Work area       */
+if (work_area == NULL) {
+    /* Handle malloc() failure */
+    /* Wipe secrets if they are no longer needed */
+    crypto_wipe(password, password_size);
+} else {
+    arc4random_buf(salt, 16);
+    crypto_argon2i(hash, 32,
+                   work_area, nb_blocks, nb_iterations,
+                   (uint8_t *)password, password_size,
+                   salt, 16);
+    /* Wipe secrets if they are no longer needed */
+    crypto_wipe(password, password_size);
+    free(work_area);
+}
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                    href="crypto_lock.html">crypto_lock(3monocypher)</a>,
+  <a class="Xr"                href="crypto_verify16.html">crypto_verify16(3monocypher)</a>,
+  <a class="Xr"                    href="crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr"                          href="intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="STANDARDS"><a class="permalink" href="#STANDARDS">STANDARDS</a></h1>
+These functions implement Argon2i as described in RFC 9106.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_argon2i_general</code>() function first appeared in
+  Monocypher 0.1 but was called <code class="Fn">crypto_argon2i</code>(); it was
+  renamed to its current name in Monocypher 1.1.0. The current
+  <code class="Fn">crypto_argon2i</code>() first appeared in Monocypher 1.1.0.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="CAVEATS"><a class="permalink" href="#CAVEATS">CAVEATS</a></h1>
+Any deviation from the specified input and output length ranges results in
+  <b class="Sy">undefined behaviour</b>. Make sure your inputs are correct.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">September 9, 2021</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>

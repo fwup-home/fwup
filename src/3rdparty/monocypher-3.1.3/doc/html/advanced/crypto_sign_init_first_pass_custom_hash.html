@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   This file is dual-licensed.  Choose whichever you want.
+  
+   The first licence is a regular 2-clause BSD licence.  The second licence
+   is the CC-0 from Creative Commons. It is intended to release Monocypher
+   to the public domain.  The BSD licence serves as a fallback option.
+  
+   SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
+  
+   ----------------------------------------------------------------------------
+  
+   Copyright (c) 2019-2020 Fabio Scotoni
+   All rights reserved.
+  
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+  
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+  
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the
+      distribution.
+  
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+   ----------------------------------------------------------------------------
+  
+   Written in 2019-2020 by Fabio Scotoni
+  
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related neighboring rights to this software to the public domain
+   worldwide.  This software is distributed without any warranty.
+  
+   You should have received a copy of the CC0 Public Domain Dedication along
+   with this software.  If not, see
+   <https://creativecommons.org/publicdomain/zero/1.0/>
+   -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title>CRYPTO_SIGN_INIT_FIRST_PASS_CUSTOM_HASH(3MONOCYPHER)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">CRYPTO_SIGN_INIT_FIRST_PASS_CUSTOM_HASH(3MONOCYPHER)</td>
+    <td class="head-vol">3MONOCYPHER</td>
+    <td class="head-rtitle">CRYPTO_SIGN_INIT_FIRST_PASS_CUSTOM_HASH(3MONOCYPHER)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm">crypto_sign_init_first_pass_custom_hash</code>,
+  <code class="Nm">crypto_sign_public_key_custom_hash</code>,
+  <code class="Nm">crypto_check_init_custom_hash</code> &#x2014;
+<div class="Nd">public key signatures with custom hash functions</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In">#include &lt;<a class="In">monocypher.h</a>&gt;</code>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_sign_init_first_pass_custom_hash</code>(<var class="Fa">crypto_sign_ctx_abstract
+    *ctx</var>, <var class="Fa">const uint8_t secret_key[32]</var>,
+    <var class="Fa">const uint8_t public_key[32]</var>, <var class="Fa">const
+    crypto_sign_vtable *hash</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_sign_public_key_custom_hash</code>(<var class="Fa">uint8_t
+    public_key[32]</var>, <var class="Fa">const uint8_t secret_key[32]</var>,
+    <var class="Fa">const crypto_sign_vtable *hash</var>);</p>
+<p class="Pp"><var class="Ft">void</var>
+  <br/>
+  <code class="Fn">crypto_check_init_custom_hash</code>(<var class="Fa">crypto_sign_ctx_abstract
+    *ctx</var>, <var class="Fa">const uint8_t signature[64]</var>,
+    <var class="Fa">const uint8_t public_key[32]</var>, <var class="Fa">const
+    crypto_sign_vtable *hash</var>);</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+These functions are variants of the
+  <a class="Xr"               href="../advanced/crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>
+  family of functions. They provide the ability to replace the EdDSA hash
+  function with any user-provided hash function.
+<p class="Pp"><b class="Sy">This is a highly advanced feature</b>.
+    Interoperability of public key signatures with other cryptographic libraries
+    can normally be achieved by using
+    <a class="Xr" href="crypto_ed25519_sign.html">crypto_ed25519_sign(3monocypher)</a>
+    or
+    <a class="Xr" href="crypto_ed25519_sign_init_first_pass.html">crypto_ed25519_sign_init_first_pass(3monocypher)</a>
+    already. This interface is exposed only for completeness and to handle
+    special situations (e.g. to use the hash function of the future winner of
+    the NIST lightweight crypto competition on a device with highly constrained
+    resources or taking advantage of hardware support for cryptographic hash
+    functions). Whenever possible, these functions should be avoided.</p>
+<p class="Pp">To make a custom hash algorithm available for use with these
+    functions, a <var class="Vt">crypto_sign_vtable</var> structure must be
+    provided. It is defined as:</p>
+<div class="Bd Pp">
+<pre>
+typedef struct {
+    void (*hash)(uint8_t hash[64], const uint8_t *message,
+                 size_t message_size);
+    void (*init  )(void *ctx);
+    void (*update)(void *ctx, const uint8_t *message,
+                   size_t message_size);
+    void (*final )(void *ctx, uint8_t hash[64]);
+    size_t ctx_size;
+} crypto_sign_vtable;
+</pre>
+</div>
+<p class="Pp">The context argument to the functions shall be referred to as
+    &#x201C;outer signing context&#x201D;. The outer signing context must
+    contain a <var class="Vt">crypto_sign_ctx_abstract</var> as
+    <i class="Em">its first member</i>. Other than that, the outer signing
+    context may be defined freely. Logically, it is required to contain some
+    kind of hash context as well; otherwise it cannot work as a custom hash
+    function.</p>
+<p class="Pp">Because the calling code cannot know the real type of the outer
+    signing context, it is cast to <var class="Vt">void *</var> when calling the
+    hash functions in the vtable, but the <var class="Fa">ctx</var> argument to
+    the functions in the vtable is always guaranteed to be the outer signing
+    context.</p>
+<p class="Pp">The hash functions must not fail. If they somehow can fail, they
+    have no way to propagate its error status, and thus the only ways to handle
+    errors are to either assume an error never occurs (if reasonable) or to
+    induce a crash in the code when an error occurs.</p>
+<p class="Pp">The fields of <var class="Vt">crypto_sign_vtable</var> are:</p>
+<dl class="Bl-tag">
+  <dt><var class="Fa">hash</var></dt>
+  <dd>Function that computes a 64-byte hash for a given message and writes the
+      computed hash to <var class="Fa">hash</var>. The output length
+      <i class="Em">must</i> be exactly 64 bytes. This will normally be
+      constructed using the functions that provide the
+      <var class="Fa">init</var>, <var class="Fa">update</var>, and
+      <var class="Fa">final</var> members.</dd>
+  <dt><var class="Fa">init</var></dt>
+  <dd>Function that initialises the hash context of an outer signing
+    context.</dd>
+  <dt><var class="Fa">update</var></dt>
+  <dd>Function that updates the hash context of an outer signing context. It
+      must be able to handle message sizes of at least 32 bytes.</dd>
+  <dt><var class="Fa">final</var></dt>
+  <dd>Function that finalises the hash context of an outer signing context and
+      writes the computed hash to <var class="Fa">hash</var>. The output length
+      <i class="Em">must</i> be exactly 64 bytes. This function should wipe the
+      hash context with
+      <a class="Xr"                    href="../crypto_wipe.html">crypto_wipe(3monocypher)</a> if it
+      contains pointers to objects outside the outer signing context. Monocypher
+      takes care of wiping the outer signing context.</dd>
+  <dt><var class="Fa">ctx_size</var></dt>
+  <dd>The size of the outer signing context as determined by
+      <code class="Fn">sizeof</code>().</dd>
+</dl>
+<p class="Pp">The functions indicated in the
+    <var class="Vt">crypto_sign_vtable</var> must be thread-safe if any of
+    Monocypher's signing functions are accessed from multiple threads.</p>
+<p class="Pp">After calling
+    <code class="Fn">crypto_sign_init_first_pass_custom_hash</code>() or
+    <code class="Fn">crypto_check_init_custom_hash</code>(), the
+    <a class="Xr"                        href="../advanced/crypto_sign_update.html">crypto_sign_update(3monocypher)</a>,
+    <a class="Xr"                         href="../advanced/crypto_sign_final.html">crypto_sign_final(3monocypher)</a>,
+    <a class="Xr"              href="../advanced/crypto_sign_init_second_pass.html">crypto_sign_init_second_pass(3monocypher)</a>,
+    <a class="Xr"                       href="../advanced/crypto_check_update.html">crypto_check_update(3monocypher)</a>,
+    and
+    <a class="Xr"                        href="../advanced/crypto_check_final.html">crypto_check_final(3monocypher)</a>
+    functions can be used as usual. They will call into the hash vtable as
+    required. The same security considerations and semantics apply.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+These functions return nothing.
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+Defining and using a custom implementation of SHA-512 and crudely checking its
+  results against
+  <a class="Xr" href="crypto_ed25519_sign.html">crypto_ed25519_sign(3monocypher)</a>:
+<div class="Bd Pp Bd-indent">
+<pre>
+struct outer_ctx {
+    crypto_sign_ctx_abstract sctx;
+    SHA2_CTX hash_ctx;
+};
+
+static void
+my_hash(uint8_t hash[64], const uint8_t *msg, size_t len)
+{
+    SHA2_CTX ctx;
+    SHA512Init(&amp;ctx);
+    SHA512Update(&amp;ctx, msg, len);
+    SHA512Final(hash, &amp;ctx);
+}
+
+static void
+my_init(void *ctx)
+{
+    struct outer_ctx *octx = (struct outer_ctx *)ctx;
+    SHA512Init(&amp;octx-&gt;hash_ctx);
+}
+
+static void
+my_update(void *ctx, const uint8_t *msg, size_t len)
+{
+    struct outer_ctx *octx = (struct outer_ctx *)ctx;
+    SHA512Update(&amp;octx-&gt;hash_ctx, msg, len);
+}
+
+static void
+my_final(void *ctx, uint8_t *hash)
+{
+    struct outer_ctx *octx = (struct outer_ctx *)ctx;
+    SHA512Final(hash, &amp;octx-&gt;hash_ctx);
+}
+
+static const crypto_sign_vtable my_vtable = {
+    my_hash,
+    my_init,
+    my_update,
+    my_final,
+    sizeof(struct outer_ctx)
+};
+
+int
+main(void)
+{
+    uint8_t theirs[64], mine[64];
+    uint8_t sk[32] = {0x01, 0x02, 0x03, 0x04};
+    const uint8_t msg[] = {
+        0x00, 0x01, 0x02, 0x04
+    };
+
+    crypto_ed25519_sign(theirs, sk, NULL, msg, sizeof(msg));
+
+    struct outer_ctx ctx;
+    crypto_sign_ctx_abstract *actx = (crypto_sign_ctx_abstract*)&amp;ctx;
+    crypto_sign_init_first_pass_custom_hash(actx,
+                                            sk, NULL, &amp;my_vtable);
+    crypto_wipe(sk, sizeof(sk));
+    crypto_sign_update(          actx, msg, sizeof(msg));
+    crypto_sign_init_second_pass(actx);
+    crypto_sign_update(          actx, msg, sizeof(msg));
+    crypto_sign_final(           actx, mine);
+
+    if (crypto_verify64(theirs, mine) != 0) {
+        fprintf(stderr, &quot;theirs != mine\n&quot;);
+        return 1;
+    }
+    puts(&quot;ok&quot;);
+    return 0;
+}
+</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr"                 href="../crypto_blake2b.html">crypto_blake2b(3monocypher)</a>,
+  <a class="Xr" href="crypto_sha512.html">crypto_sha512(3monocypher)</a>,
+  <a class="Xr"                    href="../crypto_sign.html">crypto_sign(3monocypher)</a>,
+  <a class="Xr"               href="../advanced/crypto_sign_init_first_pass.html">crypto_sign_init_first_pass(3monocypher)</a>,
+  <a class="Xr"                    href="../crypto_wipe.html">crypto_wipe(3monocypher)</a>,
+  <a class="Xr"                          href="../intro.html">intro(3monocypher)</a>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+The <code class="Fn">crypto_sign_init_first_pass_custom_hash</code>(),
+  <code class="Fn">crypto_sign_public_key_custom_hash</code>(), and
+  <code class="Fn">crypto_check_init_first_pass_custom_hash</code>() functions
+  first appeared in Monocypher 3.0.0.
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">December 28, 2019</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</body>
+</html>
