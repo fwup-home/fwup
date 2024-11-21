@@ -212,11 +212,11 @@ static int add_file_resource(cfg_t *sec,
     if (assertions) {
         if (assertions->assert_gte >= 0 &&
                 !(total_len >= assertions->assert_gte))
-            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be >= %d bytes (%d blocks)",
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %lu bytes. It must be >= %lu bytes (%lu blocks)",
                             local_paths, total_len, assertions->assert_gte, assertions->assert_gte / FWUP_BLOCK_SIZE);
         if (assertions->assert_lte >= 0 &&
                 !(total_len <= assertions->assert_lte))
-            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %d bytes. It must be <= %d bytes (%d blocks)",
+            ERR_CLEANUP_MSG("file size assertion failed on '%s'. Size is %lu bytes. It must be <= %lu bytes (%lu blocks)",
                             local_paths, total_len, assertions->assert_lte, assertions->assert_lte / FWUP_BLOCK_SIZE);
     }
 
