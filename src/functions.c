@@ -851,11 +851,14 @@ int mbr_write_run(struct fun_context *fctx)
     cfg_t *mbrsec = cfg_gettsec(fctx->cfg, "mbr", mbr_name);
     uint32_t num_blocks = fctx->output->end_offset / FWUP_BLOCK_SIZE; // end_offset can be 0 for unknown
 
-    uint8_t buffer[FWUP_BLOCK_SIZE];
-    OK_OR_RETURN(mbr_create_cfg(mbrsec, num_blocks, buffer));
+    struct mbr_raw_partition raw[MBR_MAX_OUTPUT_BLOCKS];
+    uint32_t raw_count = 0;
+    OK_OR_RETURN(mbr_create_cfg(mbrsec, num_blocks, raw, &raw_count));
 
-    OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, FWUP_BLOCK_SIZE, 0, false),
-                     "unexpected error writing mbr: %s", strerror(errno));
+    for (uint32_t i = 0; i < raw_count; i++) {
+        OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, raw[i].data, FWUP_BLOCK_SIZE, raw[i].block_offset * FWUP_BLOCK_SIZE, false),
+                        "unexpected error writing mbr: %s", strerror(errno));
+    }
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;

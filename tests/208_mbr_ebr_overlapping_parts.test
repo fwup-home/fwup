@@ -1,0 +1,77 @@
+#!/bin/sh
+
+#
+# Test that an extended partition that overlaps with another one is flagged.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+# Numbers don't matter for the test so long as the MBR is right
+define(AUTOBOOT_PART_OFFSET, 64)
+define(AUTOBOOT_PART_COUNT, 1984)
+define(BOOT_A_PART_OFFSET, 2048)
+define(BOOT_A_PART_COUNT, 65536)
+define(BOOT_B_PART_OFFSET, 67584)
+define(BOOT_B_PART_COUNT, 65536)
+define(EXTENDED_PART_OFFSET, 133120)
+define(ROOTFS_A_PART_OFFSET, 133376)
+define(ROOTFS_A_PART_COUNT, 2197152) # oops
+define(ROOTFS_B_PART_OFFSET, 2230528)
+define(ROOTFS_B_PART_COUNT, 2097152)
+define(APP_PART_OFFSET, 4327680)
+define(APP_PART_COUNT, 4194304)
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${AUTOBOOT_PART_OFFSET}
+        block-count = \${AUTOBOOT_PART_COUNT}
+        type = 0x6 # FAT12
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${BOOT_A_PART_OFFSET}
+        block-count = \${BOOT_A_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    partition 2 {
+        block-offset = \${BOOT_B_PART_OFFSET}
+        block-count = \${BOOT_B_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    partition 3 {
+        type = 0xf # Extended partition
+        block-offset = \${EXTENDED_PART_OFFSET}
+    }
+    partition 4 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 5 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 6 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0x83 # Linux
+    }
+}
+
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+        }
+}
+EOF
+
+if $FWUP_CREATE -c -f $CONFIG -o $FWFILE >/dev/null 2> $WORK/error.out; then
+    echo "Expected an error when overlapping extended partitions"
+    exit 1
+fi
+if ! grep "partitions 4 (blocks 133376 to 2330528) and 5 (blocks 2230528 to 4327680) overlap" $WORK/error.out >/dev/null; then
+    echo "Didn't get expected message"
+    exit 1
+fi

@@ -22,6 +22,11 @@
 #include <confuse.h>
 
 #define MBR_MAX_PRIMARY_PARTITIONS 4
+#define MBR_MAX_EXTENDED_PARTITIONS 8
+#define MBR_MAX_PARTITIONS (MBR_MAX_PRIMARY_PARTITIONS + MBR_MAX_EXTENDED_PARTITIONS)
+
+// Each logical partition has a block's worth of info to write
+#define MBR_MAX_OUTPUT_BLOCKS (MBR_MAX_EXTENDED_PARTITIONS + 1)
 
 struct mbr_partition {
     bool boot_flag;     // true to mark as boot partition
@@ -29,10 +34,12 @@ struct mbr_partition {
     int partition_type; // partition type (e.g., 0=unused, 0x83=Linux, 0x01=FAT12, 0x04=FAT16, 0x0c=FAT32, etc.
     uint32_t block_offset;
     uint32_t block_count;
+    uint32_t record_offset; // Offset of the MBR or EBR that defines this partition
 };
 
 struct mbr_table {
-    struct mbr_partition partitions[MBR_MAX_PRIMARY_PARTITIONS];
+    struct mbr_partition partitions[MBR_MAX_PARTITIONS];
+    int num_extended_partitions;
 };
 
 struct osii {
@@ -57,8 +64,13 @@ struct osip_header {
     struct osii descriptors[16];
 };
 
+struct mbr_raw_partition {
+    off_t block_offset;
+    uint8_t data[512];
+};
+
 int mbr_verify_cfg(cfg_t *cfg);
-int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512]);
+int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, struct mbr_raw_partition *output, uint32_t *output_count);
 int mbr_decode(const uint8_t input[512], struct mbr_table *table);
 
 #endif // MBR_H

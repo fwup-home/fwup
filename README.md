@@ -531,6 +531,67 @@ mbr mbr-a {
 }
 ```
 
+### Extended partitions
+
+MBR supports more than 4 partitions by using a special extended partition type.
+Normally if you need more than 4 partitions, you'd want to switch to GPT, but
+your setup may make this more trouble than it's worth. At a high level, to use
+the extended partition feature, you need to mark partition 3 as the extended
+partition. Then you can specified partitions 4 and higher. Each of these
+partitions will have a 512-byte [Extended Boot
+Record](https://en.wikipedia.org/wiki/Extended_boot_record) or EBR. Fwup stores
+all EBRs at the beginning of the extended partition, so if you have partitions
+4, 5, and 6, that will require 3 EBRs or 1536 bytes. Partition 4 would start at
+a block after that. Note that there's flexibility in where EBRs are written so
+you'll see other programs that make different decisions, but it all works so
+long as the EBRs are inside of the extended partition and don't overlap with any
+other partition.
+
+Here's an example of an extended partition:
+
+```conf
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${AUTOBOOT_PART_OFFSET}
+        block-count = \${AUTOBOOT_PART_COUNT}
+        type = 0x6 # FAT12
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${BOOT_A_PART_OFFSET}
+        block-count = \${BOOT_A_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    partition 2 {
+        block-offset = \${BOOT_B_PART_OFFSET}
+        block-count = \${BOOT_B_PART_COUNT}
+        type = 0xc # FAT32
+    }
+    partition 3 {
+        type = 0xf # Extended partition
+        block-offset = \${EXTENDED_PART_OFFSET}
+    }
+    partition 4 {
+        block-offset = \${ROOTFS_A_PART_OFFSET}
+        block-count = \${ROOTFS_A_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 5 {
+        block-offset = \${ROOTFS_B_PART_OFFSET}
+        block-count = \${ROOTFS_B_PART_COUNT}
+        type = 0x83 # Linux
+    }
+    partition 6 {
+        block-offset = \${APP_PART_OFFSET}
+        block-count = \${APP_PART_COUNT}
+        type = 0x83 # Linux
+    }
+}
+```
+
+Fwup calculates the extended partition's size based on the partitions after it,
+so you only need to specify the starting block offset.
+
 ## gpt
 
 A `gpt` section specifies the contents of a [GUID Partition
