@@ -29,6 +29,10 @@ struct mbr_partition {
     uint32_t block_count;
 };
 
+struct mbr_partitions {
+    struct mbr_partition primary[4];
+};
+
 struct osii {
     uint16_t os_minor;
     uint16_t os_major;
@@ -53,6 +57,6 @@ struct osip_header {
 
 int mbr_verify_cfg(cfg_t *cfg);
 int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512]);
-int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4]);
+int mbr_decode_partitions(const uint8_t input[512], struct mbr_partitions *partitions);
 
 #endif // MBR_H

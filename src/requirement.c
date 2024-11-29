@@ -176,11 +176,11 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     if (block_cache_pread(fctx->output, buffer, FWUP_BLOCK_SIZE, 0) < 0)
         return -1;
 
-    struct mbr_partition partitions[4];
-    if (mbr_decode(buffer, partitions) < 0)
+    struct mbr_partitions partitions;
+    if (mbr_decode_partitions(buffer, &partitions) < 0)
         return -1;
 
-    if (partitions[partition].block_offset != block_offset)
+    if (partitions.primary[partition].block_offset != block_offset)
         return -1;
     else
         return 0;
