@@ -99,14 +99,24 @@ static void lba_to_chs(uint32_t lba, uint8_t *output)
     }
 }
 
-static void create_partition(const struct mbr_partition *partition, uint8_t *output, uint32_t num_blocks)
+static void expand_partition(struct mbr_partition *partition, uint32_t num_blocks)
 {
-    uint32_t block_count = partition->block_count;
-
     // If expanding and we know the total blocks, update the mbr to the max
     if (partition->expand_flag &&
         num_blocks > (partition->block_offset + partition->block_count))
-        block_count = num_blocks - partition->block_offset;
+        partition->block_count = num_blocks - partition->block_offset;
+}
+
+static void expand_partitions(const struct mbr_partitions *input, struct mbr_partitions *output, uint32_t num_blocks)
+{
+
+    for (int i = 0; i < input->
+    memcpy(&output, &input, sizeof(struct mbr_partitions));
+}
+
+static void create_partition(const struct mbr_partition *partition, uint8_t *output)
+{
+    uint32_t block_count = partition->block_count;
 
     // Write the partition entry
     if (partition->partition_type > 0) {
@@ -196,9 +206,12 @@ static int mbr_create(const struct mbr_partitions *partitions,
     if (bootstrap && osip->include_osip)
         ERR_RETURN("Can't specify both bootstrap and OSIP in MBR");
 
+    struct mbr_partitions expanded_partitions;
+    expand_partitions(partitions, &expanded_partitions, num_blocks);
+
     if (mbr_verify(partitions) < 0)
         return -1;
-
+        
     uint8_t *raw_mbr = output[0].data;
     output[0].block_offset = 0;
     if (bootstrap)
@@ -217,7 +230,7 @@ static int mbr_create(const struct mbr_partitions *partitions,
 
     int i;
     for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
-        create_partition(&partitions->primary[i], &raw_mbr[446 + i * 16], num_blocks);
+        create_partition(&partitions->primary[i], &raw_mbr[446 + i * 16]);
 
     raw_mbr[510] = 0x55;
     raw_mbr[511] = 0xaa;
@@ -238,17 +251,17 @@ static int mbr_create(const struct mbr_partitions *partitions,
         part.boot_flag = 0;
         part.expand_flag = partitions->extended[i].expand_flag;
         part.partition_type = partitions->extended[i].partition_type;
-        part.block_offset = partitions->extended[i].block_offset - i - 1; // delta offset to partition
+        part.block_offset = partitions->extended[i].block_offset - output[i+1].block_offset; // delta offset to partition
         part.block_count = partitions->extended[i].block_count;
-        create_partition(&part, &ebr[446 + 0 * 16], num_blocks - i - 1);
+        create_partition(&part, &ebr[446 + 0 * 16]);
 
         if (i != extended_partition_count - 1) {
             part.partition_type = 0xf;
             part.boot_flag = 0;
             part.expand_flag = 0;
-            part.block_offset = 1;
+            part.block_offset = extended_partition_start + i + 1;
             part.block_count = 1;
-            create_partition(&part, &ebr[446 + 1 * 16], 0);
+            create_partition(&part, &ebr[446 + 1 * 16]);
         } else {
             // Null next EBR
             memset(&ebr[446 + 1 * 16], 0, 32);
@@ -330,18 +343,6 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
 
         partition->partition_type = unverified_type;
 
-        if (unverified_type == 0xf) {
-            // Extended partition container
-            if  (partition_ix != 3)
-                ERR_RETURN("only partition 3 may be specified as the extended partition");
-
-            partition->block_offset = 1;
-            partition->block_count = 1;
-            partition->boot_flag = 0;
-            partition->expand_flag = 0;
-        } else if (unverified_type == 0) {
-            // Unused. No other fields are required.
-        } else {
             if (partition_ix > 3 && !is_extended_type(partitions->primary[3].partition_type))
                 ERR_RETURN("to use more than 4 partitions with MBR, partition 3 must have extended partition type 0xf or 0x5");
 
@@ -361,8 +362,6 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
 
             partition->block_offset = block_offset;
             partition->block_count = cfg_getint(partition_cfg, "block-count");
-            if (partition->block_count >= INT32_MAX)
-                ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
 
             if (is_extended_type(unverified_type)) {
                 // Check that the extended partition is the 4th primary partition
@@ -370,12 +369,15 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
                     ERR_RETURN("only partition 3 may be specified as the extended partition");
                 partition->boot_flag = false;
                 partition->expand_flag = true;
+                if (partition->block_count >= INT32_MAX)
+	            partition->block_count = 1;
             } else {
                 // Normal partition
                 partition->boot_flag = cfg_getbool(partition_cfg, "boot");
                 partition->expand_flag = cfg_getbool(partition_cfg, "expand");
+                if (partition->block_count >= INT32_MAX)
+                    ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
             }
-        }
     }
 
     if (found_partitions)
