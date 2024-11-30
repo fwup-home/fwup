@@ -99,20 +99,42 @@ static void lba_to_chs(uint32_t lba, uint8_t *output)
     }
 }
 
-static void expand_partition(struct mbr_partition *partition, uint32_t num_blocks)
+static void expand_partition(const struct mbr_partition *in_part,
+                             struct mbr_partition *out_part,
+                             uint32_t num_blocks)
 {
-    // If expanding and we know the total blocks, update the mbr to the max
-    if (partition->expand_flag &&
-        num_blocks > (partition->block_offset + partition->block_count))
-        partition->block_count = num_blocks - partition->block_offset;
+    out_part->boot_flag = in_part->boot_flag;
+    out_part->partition_type = in_part->partition_type;
+    out_part->block_offset = in_part->block_offset;
+
+    if (in_part->expand_flag &&
+        num_blocks > (in_part->block_offset + in_part->block_count))
+        out_part->block_count = num_blocks - in_part->block_offset;
+    else
+        out_part->block_count = in_part->block_count;
+
+    out_part->expand_flag = false;
 }
 
 static void expand_partitions(const struct mbr_partitions *input, struct mbr_partitions *output, uint32_t num_blocks)
 {
+    for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
+        uint32_t offset = input->primary[i].block_offset + input->primary[i].block_count;
+        if (offset > num_blocks)
+            num_blocks = offset;
+    }
+    for (int i = 0; i < input->num_extended_partitions; i++) {
+        uint32_t offset = input->extended[i].block_offset + input->extended[i].block_count;
+        if (offset > num_blocks)
+            num_blocks = offset;
+    }
 
-    for (int i = 0; i < input->
-    memcpy(&output, &input, sizeof(struct mbr_partitions));
-}
+    for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
+        expand_partition(&input->primary[i], &output->primary[i], num_blocks);
+    output->num_extended_partitions = input->num_extended_partitions;
+    for (int i = 0; i < input->num_extended_partitions; i++)
+        expand_partition(&input->extended[i], &output->extended[i], num_blocks);
+ }
 
 static void create_partition(const struct mbr_partition *partition, uint8_t *output)
 {
@@ -211,7 +233,7 @@ static int mbr_create(const struct mbr_partitions *partitions,
 
     if (mbr_verify(partitions) < 0)
         return -1;
-        
+
     uint8_t *raw_mbr = output[0].data;
     output[0].block_offset = 0;
     if (bootstrap)
