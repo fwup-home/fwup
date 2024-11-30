@@ -840,6 +840,8 @@ int mbr_write_run(struct fun_context *fctx)
     OK_OR_RETURN(mbr_create_cfg(mbrsec, num_blocks, raw, &raw_count));
 
     for (uint32_t i = 0; i < raw_count; i++) {
+	    fprintf(stderr, "WRITING %u: block %lu\n", i, raw[i].block_offset);
+
         OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, raw[i].data, 512, raw[i].block_offset, false),
                         "unexpected error writing mbr: %s", strerror(errno));
     }
