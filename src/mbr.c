@@ -120,20 +120,26 @@ static void expand_partitions(const struct mbr_partitions *input, struct mbr_par
 {
     for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
         uint32_t offset = input->primary[i].block_offset + input->primary[i].block_count;
+	fprintf(stderr, "--> primary %d %u\n", i, offset);
         if (offset > num_blocks)
             num_blocks = offset;
     }
     for (int i = 0; i < input->num_extended_partitions; i++) {
         uint32_t offset = input->extended[i].block_offset + input->extended[i].block_count;
+	fprintf(stderr, "--> extended %d %u\n", i, offset);
         if (offset > num_blocks)
             num_blocks = offset;
     }
 
+    fprintf(stderr, "CALCULATED num_blocks %d\n", num_blocks);
     for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
         expand_partition(&input->primary[i], &output->primary[i], num_blocks);
     output->num_extended_partitions = input->num_extended_partitions;
     for (int i = 0; i < input->num_extended_partitions; i++)
         expand_partition(&input->extended[i], &output->extended[i], num_blocks);
+
+    fprintf(stderr, "PART 3 -> expand %d\n\n", input->primary[3].expand_flag);
+    fprintf(stderr, "PART 3 -> %u\n\n", output->primary[3].block_count);
  }
 
 static void create_partition(const struct mbr_partition *partition, uint8_t *output)
@@ -231,7 +237,7 @@ static int mbr_create(const struct mbr_partitions *partitions,
     struct mbr_partitions expanded_partitions;
     expand_partitions(partitions, &expanded_partitions, num_blocks);
 
-    if (mbr_verify(partitions) < 0)
+    if (mbr_verify(&expanded_partitions) < 0)
         return -1;
 
     uint8_t *raw_mbr = output[0].data;
@@ -252,18 +258,14 @@ static int mbr_create(const struct mbr_partitions *partitions,
 
     int i;
     for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
-        create_partition(&partitions->primary[i], &raw_mbr[446 + i * 16]);
+        create_partition(&expanded_partitions.primary[i], &raw_mbr[446 + i * 16]);
 
     raw_mbr[510] = 0x55;
     raw_mbr[511] = 0xaa;
     *output_count = 1;
 
-    int extended_partition_count = 0;
-    for (i = 0; i < MBR_MAX_EXTENDED_PARTITIONS && partitions->extended[i].partition_type; i++)
-        extended_partition_count++;
-
-    uint32_t extended_partition_start = partitions->primary[3].block_offset;
-    for (i = 0; i < extended_partition_count; i++) {
+    uint32_t extended_partition_start = expanded_partitions.primary[3].block_offset;
+    for (i = 0; i < expanded_partitions.num_extended_partitions; i++) {
         output[i + 1].block_offset = extended_partition_start + i;
         uint8_t *ebr = output[i + 1].data;
         memset(ebr, 0, 446);
@@ -271,13 +273,13 @@ static int mbr_create(const struct mbr_partitions *partitions,
         struct mbr_partition part;
 
         part.boot_flag = 0;
-        part.expand_flag = partitions->extended[i].expand_flag;
-        part.partition_type = partitions->extended[i].partition_type;
-        part.block_offset = partitions->extended[i].block_offset - output[i+1].block_offset; // delta offset to partition
-        part.block_count = partitions->extended[i].block_count;
+        part.expand_flag = expanded_partitions.extended[i].expand_flag;
+        part.partition_type = expanded_partitions.extended[i].partition_type;
+        part.block_offset = expanded_partitions.extended[i].block_offset - output[i+1].block_offset; // delta offset to partition
+        part.block_count = expanded_partitions.extended[i].block_count;
         create_partition(&part, &ebr[446 + 0 * 16]);
 
-        if (i != extended_partition_count - 1) {
+        if (i != expanded_partitions.num_extended_partitions - 1) {
             part.partition_type = 0xf;
             part.boot_flag = 0;
             part.expand_flag = 0;
@@ -358,7 +360,13 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
             ERR_RETURN("invalid or duplicate partition number found for %d", partition_ix);
         found = found | (1 << partition_ix);
 
-        struct mbr_partition *partition = partition_ix < MBR_MAX_PRIMARY_PARTITIONS ? &partitions->primary[partition_ix] : &partitions->extended[partition_ix - MBR_MAX_PRIMARY_PARTITIONS];
+        struct mbr_partition *partition;
+        if (partition_ix < MBR_MAX_PRIMARY_PARTITIONS) {
+	      partition = &partitions->primary[partition_ix];
+	} else {
+	       partition =  &partitions->extended[partition_ix - MBR_MAX_PRIMARY_PARTITIONS];
+	       partitions->num_extended_partitions = partition_ix - MBR_MAX_PRIMARY_PARTITIONS + 1;
+	}
         int unverified_type = cfg_getint(partition_cfg, "type");
         if (unverified_type < 0 || unverified_type > 0xff)
             ERR_RETURN("partition %d's type must be between 0 and 255", partition_ix);
