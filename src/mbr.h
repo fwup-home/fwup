@@ -21,6 +21,13 @@
 #include <stdint.h>
 #include <confuse.h>
 
+#define MBR_MAX_PRIMARY_PARTITIONS 4
+#define MBR_MAX_EXTENDED_PARTITIONS 8
+#define MBR_MAX_PARTITIONS (MBR_MAX_PRIMARY_PARTITIONS + MBR_MAX_EXTENDED_PARTITIONS)
+
+// Each logical partition has a block's worth of info to write
+#define MBR_MAX_OUTPUT_BLOCKS (MBR_MAX_EXTENDED_PARTITIONS + 1)
+
 struct mbr_partition {
     bool boot_flag;     // true to mark as boot partition
     bool expand_flag;   // true to indicate that fwup can grow this partition
@@ -30,7 +37,9 @@ struct mbr_partition {
 };
 
 struct mbr_partitions {
-    struct mbr_partition primary[4];
+    struct mbr_partition primary[MBR_MAX_PRIMARY_PARTITIONS];
+    int num_extended_partitions;
+    struct mbr_partition extended[MBR_MAX_EXTENDED_PARTITIONS];
 };
 
 struct osii {
@@ -55,8 +64,13 @@ struct osip_header {
     struct osii descriptors[16];
 };
 
+struct mbr_raw_partition {
+    off_t block_offset;
+    uint8_t data[512];
+};
+
 int mbr_verify_cfg(cfg_t *cfg);
-int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512]);
+int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, struct mbr_raw_partition *output, uint32_t *output_count);
 int mbr_decode_partitions(const uint8_t input[512], struct mbr_partitions *partitions);
 
 #endif // MBR_H

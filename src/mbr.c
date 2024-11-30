@@ -39,7 +39,7 @@ static int mbr_verify(const struct mbr_partitions *partitions)
     int i;
 
     // Check for overlap
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
         const struct mbr_partition *partition = &partitions->primary[i];
         if (partition->partition_type > 0xff || partition->partition_type < 0)
             ERR_RETURN("invalid partition type");
@@ -99,7 +99,7 @@ static void lba_to_chs(uint32_t lba, uint8_t *output)
     }
 }
 
-static int create_partition(const struct mbr_partition *partition, uint8_t *output, uint32_t num_blocks)
+static void create_partition(const struct mbr_partition *partition, uint8_t *output, uint32_t num_blocks)
 {
     uint32_t block_count = partition->block_count;
 
@@ -126,8 +126,6 @@ static int create_partition(const struct mbr_partition *partition, uint8_t *outp
     // in the "if" block above.
     copy_le32(&output[8], partition->block_offset);
     copy_le32(&output[12], block_count);
-
-    return 0;
 }
 
 static int write_osip(const struct osip_header *osip, uint8_t *output)
@@ -183,7 +181,8 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
  * @param osip optional OSIP header (NULL if none)
  * @param signature
  * @param num_blocks the total number of blocks in the storage or 0 if unknown
- * @param output the output location
+ * @param output where to store the raw bytes
+ * @param output_count the number of bytes written to the output buffer
  * @return 0 if success
  */
 static int mbr_create(const struct mbr_partitions *partitions,
@@ -191,7 +190,8 @@ static int mbr_create(const struct mbr_partitions *partitions,
                       const struct osip_header *osip,
                       uint32_t signature,
                       uint32_t num_blocks,
-                      uint8_t output[512])
+                      struct mbr_raw_partition *output,
+                      uint32_t *output_count)
 {
     if (bootstrap && osip->include_osip)
         ERR_RETURN("Can't specify both bootstrap and OSIP in MBR");
@@ -199,28 +199,66 @@ static int mbr_create(const struct mbr_partitions *partitions,
     if (mbr_verify(partitions) < 0)
         return -1;
 
+    uint8_t *raw_mbr = output[0].data;
+    output[0].block_offset = 0;
     if (bootstrap)
-        memcpy(output, bootstrap, 440);
+        memcpy(raw_mbr, bootstrap, 440);
     else
-        memset(output, 0, 440);
+        memset(raw_mbr, 0, 440);
 
-    if (osip->include_osip && write_osip(osip, output) < 0)
+    if (osip->include_osip && write_osip(osip, raw_mbr) < 0)
         return -1;
 
-    copy_le32(&output[440], signature);
+    copy_le32(&raw_mbr[440], signature);
 
     // Not copy protected?
-    output[444] = 0;
-    output[445] = 0;
+    raw_mbr[444] = 0;
+    raw_mbr[445] = 0;
 
     int i;
-    for (i = 0; i < 4; i++) {
-        if (create_partition(&partitions->primary[i], &output[446 + i * 16], num_blocks) < 0)
-            return -1;
-    }
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
+        create_partition(&partitions->primary[i], &raw_mbr[446 + i * 16], num_blocks);
 
-    output[510] = 0x55;
-    output[511] = 0xaa;
+    raw_mbr[510] = 0x55;
+    raw_mbr[511] = 0xaa;
+    *output_count = 1;
+
+    int extended_partition_count = 0;
+    for (i = 0; i < MBR_MAX_EXTENDED_PARTITIONS && partitions->extended[i].partition_type; i++)
+        extended_partition_count++;
+
+    uint32_t extended_partition_start = partitions->primary[3].block_offset;
+    for (i = 0; i < extended_partition_count; i++) {
+        output[i + 1].block_offset = extended_partition_start + i;
+        uint8_t *ebr = output[i + 1].data;
+        memset(ebr, 0, 446);
+
+        struct mbr_partition part;
+
+        part.boot_flag = 0;
+        part.expand_flag = partitions->extended[i].expand_flag;
+        part.partition_type = partitions->extended[i].partition_type;
+        part.block_offset = partitions->extended[i].block_offset - i - 1; // delta offset to partition
+        part.block_count = partitions->extended[i].block_count;
+        create_partition(&part, &ebr[446 + 0 * 16], num_blocks - i - 1);
+
+        if (i != extended_partition_count - 1) {
+            part.partition_type = 0xf;
+            part.boot_flag = 0;
+            part.expand_flag = 0;
+            part.block_offset = 1;
+            part.block_count = 1;
+            create_partition(&part, &ebr[446 + 1 * 16], 0);
+        } else {
+            // Null next EBR
+            memset(&ebr[446 + 1 * 16], 0, 32);
+        }
+        // The third and fourth partition slots aren't used.
+        memset(&ebr[446 + 2 * 16], 0, 32);
+        ebr[510] = 0x55;
+        ebr[511] = 0xaa;
+        *output_count += 1;
+    }
     return 0;
 }
 
@@ -255,7 +293,7 @@ int mbr_decode_partitions(const uint8_t input[512], struct mbr_partitions *parti
         ERR_RETURN("MBR signature missing");
 
     int i;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
         if (read_partition(&input[446 + i * 16], &partitions->primary[i]) < 0)
             return -1;
     }
@@ -263,52 +301,81 @@ int mbr_decode_partitions(const uint8_t input[512], struct mbr_partitions *parti
     return 0;
 }
 
+static int is_extended_type(uint8_t type)
+{
+    return type == 0x05 || type == 0x0f;
+}
+
 static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, int *found_partitions)
 {
     cfg_t *partition_cfg;
     int i = 0;
-    int found = 0;
+    unsigned int found = 0;
 
     memset(partitions, 0, sizeof(struct mbr_partitions));
 
     while ((partition_cfg = cfg_getnsec(cfg, "partition", i++)) != NULL) {
         int partition_ix = strtoul(cfg_title(partition_cfg), NULL, 0);
-        if (partition_ix < 0 || partition_ix >= 4)
-            ERR_RETURN("partition must be numbered 0 through 3");
+        if (partition_ix < 0 || partition_ix >= MBR_MAX_PARTITIONS)
+            ERR_RETURN("partition must be numbered 0 through %d", MBR_MAX_PARTITIONS - 1);
 
         if (found & (1 << partition_ix))
             ERR_RETURN("invalid or duplicate partition number found for %d", partition_ix);
         found = found | (1 << partition_ix);
 
-        struct mbr_partition *partition = &partitions->primary[partition_ix];
+        struct mbr_partition *partition = partition_ix < MBR_MAX_PRIMARY_PARTITIONS ? &partitions->primary[partition_ix] : &partitions->extended[partition_ix - MBR_MAX_PRIMARY_PARTITIONS];
         int unverified_type = cfg_getint(partition_cfg, "type");
         if (unverified_type < 0 || unverified_type > 0xff)
             ERR_RETURN("partition %d's type must be between 0 and 255", partition_ix);
 
         partition->partition_type = unverified_type;
 
-        const char *unverified_block_offset = cfg_getstr(partition_cfg, "block-offset");
-        if (!unverified_block_offset || *unverified_block_offset == '\0')
-            ERR_RETURN("partition %d's block_offset is required", partition_ix);
-        char *endptr;
-        unsigned long block_offset = strtoul(unverified_block_offset, &endptr, 0);
+        if (unverified_type == 0xf) {
+            // Extended partition container
+            if  (partition_ix != 3)
+                ERR_RETURN("only partition 3 may be specified as the extended partition");
 
-        // strtoul returns error by returning ULONG_MAX and setting errno.
-        // Values bigger than 2^32-1 won't fit in the MBR, so report an
-        // error for those too.
-        if ((block_offset == ULONG_MAX && errno != 0) || block_offset >= UINT32_MAX)
-            ERR_RETURN("partition %d's block_offset must be positive and less than 2^32 - 1: '%s'", partition_ix, unverified_block_offset);
-        if (*endptr != '\0')
-            ERR_RETURN("error parsing partition %d's block offset", partition_ix);
+            partition->block_offset = 1;
+            partition->block_count = 1;
+            partition->boot_flag = 0;
+            partition->expand_flag = 0;
+        } else if (unverified_type == 0) {
+            // Unused. No other fields are required.
+        } else {
+            if (partition_ix > 3 && !is_extended_type(partitions->primary[3].partition_type))
+                ERR_RETURN("to use more than 4 partitions with MBR, partition 3 must have extended partition type 0xf or 0x5");
 
-        partition->block_offset = block_offset;
+            const char *unverified_block_offset = cfg_getstr(partition_cfg, "block-offset");
+            if (!unverified_block_offset || *unverified_block_offset == '\0')
+                ERR_RETURN("partition %d's block_offset is required", partition_ix);
+            char *endptr;
+            unsigned long block_offset = strtoul(unverified_block_offset, &endptr, 0);
 
-        partition->block_count = cfg_getint(partition_cfg, "block-count");
-        if (partition->block_count >= INT32_MAX)
-            ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
+            // strtoul returns error by returning ULONG_MAX and setting errno.
+            // Values bigger than 2^32-1 won't fit in the MBR, so report an
+            // error for those too.
+            if ((block_offset == ULONG_MAX && errno != 0) || block_offset >= UINT32_MAX)
+                ERR_RETURN("partition %d's block_offset must be positive and less than 2^32 - 1: '%s'", partition_ix, unverified_block_offset);
+            if (*endptr != '\0')
+                ERR_RETURN("error parsing partition %d's block offset", partition_ix);
 
-        partition->boot_flag = cfg_getbool(partition_cfg, "boot");
-        partition->expand_flag = cfg_getbool(partition_cfg, "expand");
+            partition->block_offset = block_offset;
+            partition->block_count = cfg_getint(partition_cfg, "block-count");
+            if (partition->block_count >= INT32_MAX)
+                ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
+
+            if (is_extended_type(unverified_type)) {
+                // Check that the extended partition is the 4th primary partition
+                if (partition_ix != 3)
+                    ERR_RETURN("only partition 3 may be specified as the extended partition");
+                partition->boot_flag = false;
+                partition->expand_flag = true;
+            } else {
+                // Normal partition
+                partition->boot_flag = cfg_getbool(partition_cfg, "boot");
+                partition->expand_flag = cfg_getbool(partition_cfg, "expand");
+            }
+        }
     }
 
     if (found_partitions)
@@ -393,10 +460,11 @@ int mbr_verify_cfg(cfg_t *cfg)
  *
  * @param cfg the mbr configuration
  * @param num_blocks the number of blocks on the destination or 0 if unknown
- * @param output where to store the encoded MBR
+ * @param output where to store the encoded MBR and any extended partitions
+ * @param output_count the number of records used in the output buffer
  * @return 0 if successful
  */
-int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512])
+int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, struct mbr_raw_partition *output, uint32_t *output_count)
 {
     struct mbr_partitions partitions;
     struct osip_header osip;
@@ -418,5 +486,6 @@ int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512])
     const char *raw_signature = cfg_getstr(cfg, "signature");
     uint32_t signature = !raw_signature ? 0 : strtoul(raw_signature, NULL, 0);
 
-    return mbr_create(&partitions, bootstrap_hex ? bootstrap : NULL, &osip, signature, num_blocks, output);
+    mbr_create(&partitions, bootstrap_hex ? bootstrap : NULL, &osip, signature, num_blocks, output, output_count);
+    return 0;
 }
