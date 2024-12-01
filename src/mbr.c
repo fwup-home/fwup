@@ -279,15 +279,17 @@ static int mbr_create(const struct mbr_partitions *partitions,
         part.block_count = expanded_partitions.extended[i].block_count;
         create_partition(&part, &ebr[446 + 0 * 16]);
 
-        if (i != expanded_partitions.num_extended_partitions - 1) {
+        if (i < expanded_partitions.num_extended_partitions - 1) {
+		fprintf(stderr, "NEXT: %d -> %d\n", i, i+ 1);
             part.partition_type = 0xf;
             part.boot_flag = 0;
             part.expand_flag = 0;
-            part.block_offset = extended_partition_start + i + 1;
+            part.block_offset = 2;
             part.block_count = 1;
             create_partition(&part, &ebr[446 + 1 * 16]);
         } else {
             // Null next EBR
+		fprintf(stderr, "NEXT: %d -> NULL\n", i);
             memset(&ebr[446 + 1 * 16], 0, 32);
         }
         // The third and fourth partition slots aren't used.
@@ -409,7 +411,7 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
                     ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
             }
     }
-
+fprintf(stderr, "FOUND %d, EXTENDED %d\n", found, partitions->num_extended_partitions);
     if (found_partitions)
         *found_partitions = found;
     return 0;
