@@ -120,26 +120,20 @@ static void expand_partitions(const struct mbr_partitions *input, struct mbr_par
 {
     for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
         uint32_t offset = input->primary[i].block_offset + input->primary[i].block_count;
-	fprintf(stderr, "--> primary %d %u\n", i, offset);
         if (offset > num_blocks)
             num_blocks = offset;
     }
     for (int i = 0; i < input->num_extended_partitions; i++) {
         uint32_t offset = input->extended[i].block_offset + input->extended[i].block_count;
-	fprintf(stderr, "--> extended %d %u\n", i, offset);
         if (offset > num_blocks)
             num_blocks = offset;
     }
 
-    fprintf(stderr, "CALCULATED num_blocks %d\n", num_blocks);
     for (int i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++)
         expand_partition(&input->primary[i], &output->primary[i], num_blocks);
     output->num_extended_partitions = input->num_extended_partitions;
     for (int i = 0; i < input->num_extended_partitions; i++)
         expand_partition(&input->extended[i], &output->extended[i], num_blocks);
-
-    fprintf(stderr, "PART 3 -> expand %d\n\n", input->primary[3].expand_flag);
-    fprintf(stderr, "PART 3 -> %u\n\n", output->primary[3].block_count);
  }
 
 static void create_partition(const struct mbr_partition *partition, uint8_t *output)
@@ -272,24 +266,22 @@ static int mbr_create(const struct mbr_partitions *partitions,
 
         struct mbr_partition part;
 
-        part.boot_flag = 0;
-        part.expand_flag = expanded_partitions.extended[i].expand_flag;
+        part.boot_flag = false;
+        part.expand_flag = false;
         part.partition_type = expanded_partitions.extended[i].partition_type;
         part.block_offset = expanded_partitions.extended[i].block_offset - output[i+1].block_offset; // delta offset to partition
         part.block_count = expanded_partitions.extended[i].block_count;
         create_partition(&part, &ebr[446 + 0 * 16]);
 
         if (i < expanded_partitions.num_extended_partitions - 1) {
-		fprintf(stderr, "NEXT: %d -> %d\n", i, i+ 1);
             part.partition_type = 0xf;
-            part.boot_flag = 0;
-            part.expand_flag = 0;
-            part.block_offset = 2;
+            part.boot_flag = false;
+            part.expand_flag = false;
+            part.block_offset = i + 1;
             part.block_count = 1;
             create_partition(&part, &ebr[446 + 1 * 16]);
         } else {
             // Null next EBR
-		fprintf(stderr, "NEXT: %d -> NULL\n", i);
             memset(&ebr[446 + 1 * 16], 0, 32);
         }
         // The third and fourth partition slots aren't used.
@@ -411,7 +403,7 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partitions *partitions, 
                     ERR_RETURN("partition %d's block-count must be specified and less than 2^31 - 1", partition_ix);
             }
     }
-fprintf(stderr, "FOUND %d, EXTENDED %d\n", found, partitions->num_extended_partitions);
+
     if (found_partitions)
         *found_partitions = found;
     return 0;
