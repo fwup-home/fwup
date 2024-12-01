@@ -100,7 +100,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     // read them, they'll get back zeros without any I/O. This is best
     // effort.
     OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * FWUP_BLOCK_SIZE, block_count * FWUP_BLOCK_SIZE, true),
-                     "Error trimming blocks affacted by fat_mkfs");
+                     "Error trimming blocks affected by fat_mkfs");
 
     // Clear out the final block. This has to purposes:
     //
