@@ -1,0 +1,137 @@
+#!/bin/sh
+
+#
+# Test that mounting lots of FAT file systems simultaneously works.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(FAT1_PART_OFFSET, 0)
+define(FAT1_PART_COUNT, 2016)
+define(FAT2_PART_OFFSET, 2048)
+define(FAT2_PART_COUNT, 2016)
+define(FAT3_PART_OFFSET, 4096)
+define(FAT3_PART_COUNT, 2016)
+define(FAT4_PART_OFFSET, 6144)
+define(FAT4_PART_COUNT, 2016)
+define(FAT5_PART_OFFSET, 8192)
+define(FAT5_PART_COUNT, 2016)
+
+file-resource file1.txt { contents = "1" }
+file-resource file2.txt { contents = "22" }
+file-resource file3.txt { contents = "333" }
+file-resource file4.txt { contents = "4444" }
+file-resource file5.txt { contents = "55555" }
+file-resource file6.txt { contents = "666666" }
+file-resource file7.txt { contents = "7777777" }
+file-resource file8.txt { contents = "88888888" }
+file-resource file9.txt { contents = "999999999" }
+file-resource file10.txt { contents = "aaaaaaaaaa" }
+
+task complete {
+	on-init {
+                fat_mkfs(\${FAT1_PART_OFFSET}, \${FAT1_PART_COUNT})
+                fat_mkfs(\${FAT2_PART_OFFSET}, \${FAT2_PART_COUNT})
+                fat_mkfs(\${FAT3_PART_OFFSET}, \${FAT3_PART_COUNT})
+                fat_mkfs(\${FAT4_PART_OFFSET}, \${FAT4_PART_COUNT})
+                fat_mkfs(\${FAT5_PART_OFFSET}, \${FAT5_PART_COUNT})
+        }
+        on-resource file1.txt { fat_write(\${FAT1_PART_OFFSET}, "1.txt") }
+        on-resource file2.txt { fat_write(\${FAT2_PART_OFFSET}, "2.txt") }
+        on-resource file3.txt { fat_write(\${FAT3_PART_OFFSET}, "3.txt") }
+        on-resource file4.txt { fat_write(\${FAT4_PART_OFFSET}, "4.txt") }
+        on-resource file5.txt { fat_write(\${FAT5_PART_OFFSET}, "5.txt") }
+        on-resource file6.txt { fat_write(\${FAT4_PART_OFFSET}, "6.txt") }
+        on-resource file7.txt { fat_write(\${FAT3_PART_OFFSET}, "7.txt") }
+        on-resource file8.txt { fat_write(\${FAT2_PART_OFFSET}, "8.txt") }
+        on-resource file9.txt { fat_write(\${FAT1_PART_OFFSET}, "9.txt") }
+        on-resource file10.txt { fat_write(\${FAT5_PART_OFFSET}, "10.txt") }
+	on-finish {
+                fat_setlabel(\${FAT1_PART_OFFSET}, "11111111")
+                fat_setlabel(\${FAT2_PART_OFFSET}, "22222222")
+                fat_setlabel(\${FAT3_PART_OFFSET}, "33333333")
+                fat_setlabel(\${FAT4_PART_OFFSET}, "44444444")
+                fat_setlabel(\${FAT5_PART_OFFSET}, "55555555")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT.1 << EOF
+ Volume in drive : is 11111111
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+1        txt         1 1980-01-01   0:00
+9        txt         9 1980-01-01   0:00
+        2 files                  10 bytes
+                          1 008 128 bytes free
+
+EOF
+cat >$EXPECTED_OUTPUT.2 << EOF
+ Volume in drive : is 22222222
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+2        txt         2 1980-01-01   0:00
+8        txt         8 1980-01-01   0:00
+        2 files                  10 bytes
+                          1 008 128 bytes free
+
+EOF
+cat >$EXPECTED_OUTPUT.3 << EOF
+ Volume in drive : is 33333333
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+3        txt         3 1980-01-01   0:00
+7        txt         7 1980-01-01   0:00
+        2 files                  10 bytes
+                          1 008 128 bytes free
+
+EOF
+cat >$EXPECTED_OUTPUT.4 << EOF
+ Volume in drive : is 44444444
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+4        txt         4 1980-01-01   0:00
+6        txt         6 1980-01-01   0:00
+        2 files                  10 bytes
+                          1 008 128 bytes free
+
+EOF
+cat >$EXPECTED_OUTPUT.5 << EOF
+ Volume in drive : is 55555555
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+5        txt         5 1980-01-01   0:00
+10       txt        10 1980-01-01   0:00
+        2 files                  15 bytes
+                          1 008 128 bytes free
+
+EOF
+
+# Check that all file systems look right
+LC_ALL= mdir -i $WORK/fwup.img@@0 > $ACTUAL_OUTPUT.1
+LC_ALL= mdir -i $WORK/fwup.img@@1048576 > $ACTUAL_OUTPUT.2
+LC_ALL= mdir -i $WORK/fwup.img@@2097152 > $ACTUAL_OUTPUT.3
+LC_ALL= mdir -i $WORK/fwup.img@@3145728 > $ACTUAL_OUTPUT.4
+LC_ALL= mdir -i $WORK/fwup.img@@4194304 > $ACTUAL_OUTPUT.5
+
+diff -w $EXPECTED_OUTPUT.1 $ACTUAL_OUTPUT.1
+diff -w $EXPECTED_OUTPUT.2 $ACTUAL_OUTPUT.2
+diff -w $EXPECTED_OUTPUT.3 $ACTUAL_OUTPUT.3
+diff -w $EXPECTED_OUTPUT.4 $ACTUAL_OUTPUT.4
+diff -w $EXPECTED_OUTPUT.5 $ACTUAL_OUTPUT.5
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

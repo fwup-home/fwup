@@ -202,6 +202,7 @@ TESTS = 001_simple_fw.test \
 	199_partial_read.test \
 	200_uboot_redundant_255.test \
 	201_sign_delta_upgrade2.test \
-	202_fat_rm_missing_path.test
+	202_fat_rm_missing_path.test \
+	203_multi_fat.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
