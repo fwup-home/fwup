@@ -1,0 +1,64 @@
+#!/bin/sh
+
+#
+# Test failure cases when removing a file from a FAT file system.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(BOOT_PART_OFFSET, 63)
+define(BOOT_PART_COUNT, 77238)
+
+task missing_ok {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_rm(\${BOOT_PART_OFFSET}, "/abcd/missing.txt")
+    }
+}
+
+task missing_not_ok {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_rm!(\${BOOT_PART_OFFSET}, "/abcd/missing.txt")
+    }
+}
+
+task corrupt_partition {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_rm(1, "/abcd/missing.txt")
+    }
+}
+
+task corrupt_partition2 {
+    on-init {
+        fat_mkfs(\${BOOT_PART_OFFSET}, \${BOOT_PART_COUNT})
+        fat_rm!(1, "/abcd/missing.txt")
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY -q -d $IMGFILE -t missing $FWFILE
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t missing_not_ok $FWFILE; then
+    echo "Expected apply to fail due to missing the file, but it didn't."
+    exit 1
+fi
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition $FWFILE; then
+    echo "Expected apply to fail due to a corrupt filesystem, but it didn't."
+    exit 1
+fi
+
+echo "Expect to fail..."
+if $FWUP_APPLY -q -d $IMGFILE -t corrupt_partition2 $FWFILE; then
+    echo "Expected apply to fail due to a corrupt filesystem, but it didn't."
+    exit 1
+fi
+
+$FWUP_VERIFY -V -i $FWFILE

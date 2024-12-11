@@ -205,6 +205,7 @@ int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, co
         return 0;
 
     case FR_NO_FILE:
+    case FR_NO_PATH:
         if (!file_must_exist)
             return 0;
 
