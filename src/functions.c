@@ -505,7 +505,7 @@ int fat_mkfs_validate(struct fun_context *fctx)
 }
 int fat_mkfs_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_mkfs_run(struct fun_context *fctx)
@@ -547,7 +547,7 @@ int fat_attrib_validate(struct fun_context *fctx)
 }
 int fat_attrib_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_attrib_run(struct fun_context *fctx)
@@ -630,7 +630,7 @@ int fat_mv_validate(struct fun_context *fctx)
 }
 int fat_mv_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_mv_run(struct fun_context *fctx)
@@ -655,7 +655,7 @@ int fat_rm_validate(struct fun_context *fctx)
 }
 int fat_rm_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_rm_run(struct fun_context *fctx)
@@ -680,7 +680,7 @@ int fat_cp_validate(struct fun_context *fctx)
 }
 int fat_cp_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_cp_run(struct fun_context *fctx)
@@ -704,7 +704,7 @@ int fat_mkdir_validate(struct fun_context *fctx)
 }
 int fat_mkdir_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_mkdir_run(struct fun_context *fctx)
@@ -728,7 +728,7 @@ int fat_setlabel_validate(struct fun_context *fctx)
 }
 int fat_setlabel_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_setlabel_run(struct fun_context *fctx)
@@ -752,7 +752,7 @@ int fat_touch_validate(struct fun_context *fctx)
 }
 int fat_touch_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int fat_touch_run(struct fun_context *fctx)
@@ -1254,7 +1254,7 @@ int execute_validate(struct fun_context *fctx)
 }
 int execute_compute_progress(struct fun_context *fctx)
 {
-    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitarily count as 1 block
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
     return 0;
 }
 int execute_run(struct fun_context *fctx)
