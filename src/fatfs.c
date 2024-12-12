@@ -102,7 +102,7 @@ int fatfs_mkfs(struct block_cache *output, off_t block_offset, size_t block_coun
     OK_OR_RETURN_MSG(block_cache_trim(output, block_offset * FWUP_BLOCK_SIZE, block_count * FWUP_BLOCK_SIZE, true),
                      "Error trimming blocks affected by fat_mkfs");
 
-    // Clear out the final block. This has to purposes:
+    // Clear out the final block. This has two purposes:
     //
     // 1. To check that it can be written and isn't past the end of the device.
     // 2. If writing a disk image, this expands the disk image so that other
