@@ -321,21 +321,25 @@ int fatfs_mv(struct block_cache *output, off_t block_offset, const char *cmd, co
 
 /**
  * @brief fatfs_cp copy a file
- * @param fc the current FAT session
+ * @param output the cache
+ * @param from_offset from FAT filesystem block offset
  * @param from_name original filename
- * @param to_name the name of the copy filename
+ * @param to_offset to FAT filesystem block offset
+ * @param to_name the name of the destination
  * @return 0 on success
  */
-int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_name, const char *to_name)
+int fatfs_cp(struct block_cache *output, off_t from_offset, const char *from_name, off_t to_offset, const char *to_name)
 {
     close_open_files();
-    TCHAR mount_path[3];
-    OK_OR_RETURN(maybe_mount(output, block_offset, 0, mount_path));
+    TCHAR from_mount_path[3];
+    TCHAR to_mount_path[3];
+    OK_OR_RETURN(maybe_mount(output, from_offset, 0, from_mount_path));
+    OK_OR_RETURN(maybe_mount(output, to_offset, 0, to_mount_path));
 
     TCHAR absolute_from_name[FATFS_MAX_PATH];
-    concatenate_path(mount_path, from_name, absolute_from_name);
+    concatenate_path(from_mount_path, from_name, absolute_from_name);
     TCHAR absolute_to_name[FATFS_MAX_PATH];
-    concatenate_path(mount_path, to_name, absolute_to_name);
+    concatenate_path(to_mount_path, to_name, absolute_to_name);
 
     FIL fromfil;
     FIL tofil;

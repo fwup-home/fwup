@@ -1,0 +1,100 @@
+#!/bin/sh
+
+#
+# Test copying files between FAT file systems
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+define(BOOT_A_PART_OFFSET, 2048)
+define(BOOT_A_PART_COUNT, 2016)
+define(BOOT_B_PART_OFFSET, 4096)
+define(BOOT_B_PART_COUNT, 2016)
+
+file-resource 1K.bin {
+	host-path = "${TESTFILE_1K}"
+}
+
+mbr mbr-a {
+    partition 0 {
+        block-offset = \${BOOT_A_PART_OFFSET}
+        block-count = \${BOOT_A_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+    partition 1 {
+        block-offset = \${BOOT_B_PART_OFFSET}
+        block-count = \${BOOT_B_PART_COUNT}
+        type = 0xc # FAT32
+        boot = true
+    }
+}
+task complete {
+	on-init {
+                mbr_write(mbr-a)
+                fat_mkfs(\${BOOT_A_PART_OFFSET}, \${BOOT_A_PART_COUNT})
+                fat_mkfs(\${BOOT_B_PART_OFFSET}, \${BOOT_B_PART_COUNT})
+        }
+        on-resource 1K.bin {
+                fat_write(\${BOOT_A_PART_OFFSET}, "1.bin")
+        }
+        on-finish {
+                # copy between partitions
+                fat_cp(\${BOOT_A_PART_OFFSET}, "1.bin", \${BOOT_B_PART_OFFSET}, "2.bin")
+                fat_cp(\${BOOT_B_PART_OFFSET}, "2.bin", \${BOOT_A_PART_OFFSET}, "3.bin")
+                fat_cp(\${BOOT_A_PART_OFFSET}, "3.bin", \${BOOT_B_PART_OFFSET}, "4.bin")
+                fat_cp(\${BOOT_B_PART_OFFSET}, "4.bin", \${BOOT_A_PART_OFFSET}, "5.bin")
+                fat_cp(\${BOOT_A_PART_OFFSET}, "5.bin", \${BOOT_B_PART_OFFSET}, "6.bin")
+                fat_cp(\${BOOT_B_PART_OFFSET}, "6.bin", \${BOOT_A_PART_OFFSET}, "7.bin")
+
+                # test copying over an existing file
+                fat_cp(\${BOOT_A_PART_OFFSET}, "1.bin", \${BOOT_A_PART_OFFSET}, "3.bin")
+        }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+EXPECTED_OUTPUT=$WORK/expected.out
+ACTUAL_OUTPUT=$WORK/actual.out
+
+cat >$EXPECTED_OUTPUT << EOF
+ Volume in drive : has no label
+ Volume Serial Number is 0021-07E0
+Directory for ::/
+
+1        bin      1024 1980-01-01   0:00
+3        bin      1024 1980-01-01   0:00
+5        bin      1024 1980-01-01   0:00
+7        bin      1024 1980-01-01   0:00
+        4 files               4 096 bytes
+                          1 005 056 bytes free
+
+EOF
+
+# Check that the directory looks right
+LC_ALL= MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@1048576 > $ACTUAL_OUTPUT
+diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+
+# Check the contents of the file
+for i in 1 3 5 7; do
+    mcopy -n -i $WORK/fwup.img@@1048576 ::/${i}.bin $WORK/actual.1K.bin
+    diff $TESTFILE_1K $WORK/actual.1K.bin
+done
+for i in 2 4 6; do
+    mcopy -n -i $WORK/fwup.img@@2097152 ::/${i}.bin $WORK/actual.1K.bin
+    diff $TESTFILE_1K $WORK/actual.1K.bin
+done
+
+# Check the FAT file format using fsck
+dd if=$WORK/fwup.img skip=2048 count=2048 of=$WORK/vfat.img
+$FSCK_FAT $WORK/vfat.img
+
+dd if=$WORK/fwup.img skip=4096 count=2048 of=$WORK/vfat2.img
+$FSCK_FAT $WORK/vfat2.img
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

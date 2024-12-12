@@ -40,7 +40,7 @@ int fatfs_rm(struct block_cache *output, off_t block_offset, const char *cmd, co
 int fatfs_truncate(struct block_cache *output, off_t block_offset, const char *filename);
 int fatfs_pread(struct block_cache *output, off_t block_offset, const char *filename, int offset, size_t size, void *buffer);
 int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *filename, int offset, const char *buffer, off_t size);
-int fatfs_cp(struct block_cache *output, off_t block_offset, const char *from_name, const char *to_name);
+int fatfs_cp(struct block_cache *output, off_t from_offset, const char *from_name, off_t to_offset, const char *to_name);
 int fatfs_touch(struct block_cache *output, off_t block_offset, const char *filename);
 int fatfs_exists(struct block_cache *output, off_t block_offset, const char *filename);
 int fatfs_file_matches(struct block_cache *output, off_t block_offset, const char *filename, const char *pattern);

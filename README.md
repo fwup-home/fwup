@@ -651,6 +651,7 @@ error(message)                          | 0.12.0 | Immediately fail a firmware u
 execute(command)                        | 0.16.0 | Execute a command on the host. Requires the `--unsafe` flag
 fat_attrib(block_offset, filename, attrib) | 0.1.0 | Modify a file's attributes. attrib is a string like "RHS" where R=readonly, H=hidden, S=system
 fat_cp(block_offset, from, to)          | 0.3.0 | Copy a file on one partition
+fat_cp(from_offset, from, to_offset, to) | 1.12.0 | Copy a file between partitions
 fat_mkdir(block_offset, filename)       | 0.2.0 | Create a directory on a FAT file system. This also succeeds if the directory already exists.
 fat_mkfs(block_offset, block_count)     | 0.1.0 | Create a FAT file system at the specified block offset and count
 fat_mv(block_offset, oldname, newname)  | 0.1.0 | Rename the specified file on a FAT file system

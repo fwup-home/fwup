@@ -671,10 +671,15 @@ int fat_rm_run(struct fun_context *fctx)
 
 int fat_cp_validate(struct fun_context *fctx)
 {
-    if (fctx->argc != 4)
-        ERR_RETURN("fat_cp requires a block offset, from filename, and to filename");
-
-    CHECK_ARG_UINT64(fctx->argv[1], "fat_cp requires a non-negative integer block offset");
+    if (fctx->argc == 4) {
+        // Implicit destination filesystem version
+        CHECK_ARG_UINT64(fctx->argv[1], "fat_cp requires a non-negative integer block offset");
+    } else if (fctx->argc == 5) {
+        CHECK_ARG_UINT64(fctx->argv[1], "fat_cp requires a non-negative integer source block offset");
+        CHECK_ARG_UINT64(fctx->argv[3], "fat_cp requires a non-negative integer destination block offset");
+    } else {
+        ERR_RETURN("fat_cp requires either 3 or 4 arguments");
+    }
 
     return 0;
 }
@@ -685,9 +690,20 @@ int fat_cp_compute_progress(struct fun_context *fctx)
 }
 int fat_cp_run(struct fun_context *fctx)
 {
-    off_t block_offset = strtoull(fctx->argv[1], NULL, 0);
+    off_t from_block_offset = strtoull(fctx->argv[1], NULL, 0);
+    const char *from_filename = fctx->argv[2];
+    off_t to_block_offset;
+    const char *to_filename;
 
-    OK_OR_RETURN(fatfs_cp(fctx->output, block_offset, fctx->argv[2], fctx->argv[3]));
+    if (fctx->argc == 4) {
+        to_block_offset = from_block_offset;
+        to_filename = fctx->argv[3];
+    } else {
+        to_block_offset = strtoull(fctx->argv[3], NULL, 0);
+        to_filename = fctx->argv[4];
+    }
+
+    OK_OR_RETURN(fatfs_cp(fctx->output, from_block_offset, from_filename, to_block_offset, to_filename));
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;
