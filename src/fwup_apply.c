@@ -54,11 +54,11 @@ static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *outpu
         if (block_cache_pread(output, buffer, FWUP_BLOCK_SIZE, 0) < 0)
             return false;
 
-        struct mbr_partition partitions[4];
-        if (mbr_decode(buffer, partitions) < 0)
+        struct mbr_table table;
+        if (mbr_decode(buffer, &table) < 0)
             return false;
 
-        if (partitions[1].block_offset != (uint32_t) part1_offset)
+        if (table.partitions[1].block_offset != (uint32_t) part1_offset)
             return false;
     }
 

@@ -21,12 +21,18 @@
 #include <stdint.h>
 #include <confuse.h>
 
+#define MBR_MAX_PRIMARY_PARTITIONS 4
+
 struct mbr_partition {
     bool boot_flag;     // true to mark as boot partition
     bool expand_flag;   // true to indicate that fwup can grow this partition
     int partition_type; // partition type (e.g., 0=unused, 0x83=Linux, 0x01=FAT12, 0x04=FAT16, 0x0c=FAT32, etc.
     uint32_t block_offset;
     uint32_t block_count;
+};
+
+struct mbr_table {
+    struct mbr_partition partitions[MBR_MAX_PRIMARY_PARTITIONS];
 };
 
 struct osii {
@@ -53,6 +59,6 @@ struct osip_header {
 
 int mbr_verify_cfg(cfg_t *cfg);
 int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512]);
-int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4]);
+int mbr_decode(const uint8_t input[512], struct mbr_table *table);
 
 #endif // MBR_H

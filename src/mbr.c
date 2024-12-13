@@ -30,45 +30,47 @@
 
 /**
  * @brief mbr_verify check that the specified partitions make sense and don't overlap
- * @param partitions the partitions
+ * @param table the partitions
  * @return 0 if successful
  */
-static int mbr_verify(const struct mbr_partition partitions[4])
+static int mbr_verify(const struct mbr_table *table)
 {
     bool expanding = false;
     int i;
 
     // Check for overlap
-    for (i = 0; i < 4; i++) {
-        if (partitions[i].partition_type > 0xff || partitions[i].partition_type < 0)
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
+        const struct mbr_partition *partition = &table->partitions[i];
+        if (partition->partition_type > 0xff || partition->partition_type < 0)
             ERR_RETURN("invalid partition type");
 
-        uint32_t ileft = partitions[i].block_offset;
-        uint32_t iright = ileft + partitions[i].block_count;
+        uint32_t ileft = partition->block_offset;
+        uint32_t iright = ileft + partition->block_count;
 
         // Check if empty.
-        if (partitions[i].partition_type == 0)
+        if (partition->partition_type == 0)
            continue;
 
-        if (ileft == iright && !partitions[i].expand_flag)
+        if (ileft == iright && !partition->expand_flag)
             continue;
 
         // Validate that if expand is used, it has to be the last partition
         if (expanding)
             ERR_RETURN("a partition can't be specified after the one with \"expand = true\"");
 
-        if (partitions[i].expand_flag)
+        if (partition->expand_flag)
             expanding = true;
 
         int j;
-        for (j = 0; j < 4; j++) {
+        for (j = 0; j < MBR_MAX_PRIMARY_PARTITIONS; j++) {
             if (j == i)
                 continue;
 
-            uint32_t jleft = partitions[j].block_offset;
-            uint32_t jright = jleft + partitions[j].block_count;
+            const struct mbr_partition *partition2 = &table->partitions[j];
+            uint32_t jleft = partition2->block_offset;
+            uint32_t jright = jleft + partition2->block_count;
 
-            if (partitions[j].partition_type == 0 ||
+            if (partition2->partition_type == 0 ||
                     jleft == jright)
                 continue;
 
@@ -176,7 +178,7 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
 
 /**
  * @brief Create a master boot record and put it in output
- * @param partitions the list of partitions
+ * @param table the list of partitions
  * @param bootstrap optional bootstrap code (must be 440 bytes or NULL if none)
  * @param osip optional OSIP header (NULL if none)
  * @param signature
@@ -184,7 +186,7 @@ static int write_osip(const struct osip_header *osip, uint8_t *output)
  * @param output the output location
  * @return 0 if success
  */
-static int mbr_create(const struct mbr_partition partitions[4],
+static int mbr_create(const struct mbr_table *table,
                       const uint8_t *bootstrap,
                       const struct osip_header *osip,
                       uint32_t signature,
@@ -194,7 +196,7 @@ static int mbr_create(const struct mbr_partition partitions[4],
     if (bootstrap && osip->include_osip)
         ERR_RETURN("Can't specify both bootstrap and OSIP in MBR");
 
-    if (mbr_verify(partitions) < 0)
+    if (mbr_verify(table) < 0)
         return -1;
 
     if (bootstrap)
@@ -212,8 +214,8 @@ static int mbr_create(const struct mbr_partition partitions[4],
     output[445] = 0;
 
     int i;
-    for (i = 0; i < 4; i++) {
-        if (create_partition(&partitions[i], &output[446 + i * 16], num_blocks) < 0)
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
+        if (create_partition(&table->partitions[i], &output[446 + i * 16], num_blocks) < 0)
             return -1;
     }
 
@@ -242,19 +244,19 @@ static int read_partition(const uint8_t *input, struct mbr_partition *partition)
 /**
  * @brief Decode the MBR data found in input
  * @param input the 512 byte MBR
- * @param partitions decoded data from the 4 partitions in the MBR
+ * @param table decoded data from the 4 partitions in the MBR
  * @return 0 if successful
  */
-int mbr_decode(const uint8_t input[512], struct mbr_partition partitions[4])
+int mbr_decode(const uint8_t input[512], struct mbr_table *table)
 {
-    memset(partitions, 0, 4 * sizeof(struct mbr_partition));
+    memset(table, 0, sizeof(struct mbr_table));
 
     if (input[510] != 0x55 || input[511] != 0xaa)
         ERR_RETURN("MBR signature missing");
 
     int i;
-    for (i = 0; i < 4; i++) {
-        if (read_partition(&input[446 + i * 16], &partitions[i]) < 0)
+    for (i = 0; i < MBR_MAX_PRIMARY_PARTITIONS; i++) {
+        if (read_partition(&input[446 + i * 16], &table->partitions[i]) < 0)
             return -1;
     }
 
@@ -267,7 +269,7 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_partition *partitions, i
     int i = 0;
     int found = 0;
 
-    memset(partitions, 0, 4 * sizeof(struct mbr_partition));
+    memset(partitions, 0, MBR_MAX_PRIMARY_PARTITIONS * sizeof(struct mbr_partition));
 
     while ((partition = cfg_getnsec(cfg, "partition", i++)) != NULL) {
         int partition_ix = strtoul(cfg_title(partition), NULL, 0);
@@ -362,7 +364,7 @@ static int mbr_cfg_to_osip(cfg_t *cfg, struct osip_header *osip)
 int mbr_verify_cfg(cfg_t *cfg)
 {
     int found_partitions = 0;
-    struct mbr_partition partitions[4];
+    struct mbr_table table;
     struct osip_header osip;
 
     const char *bootstrap_hex = cfg_getstr(cfg, "bootstrap-code");
@@ -377,12 +379,12 @@ int mbr_verify_cfg(cfg_t *cfg)
     if (osip.include_osip && bootstrap_hex)
         ERR_RETURN("cannot specify OSIP if including bootstrap code");
 
-    if (mbr_cfg_to_partitions(cfg, partitions, &found_partitions) < 0)
+    if (mbr_cfg_to_partitions(cfg, table.partitions, &found_partitions) < 0)
         return -1;
     if (found_partitions == 0)
         ERR_RETURN("empty partition table?");
 
-    return mbr_verify(partitions);
+    return mbr_verify(&table);
 }
 
 /**
@@ -395,7 +397,7 @@ int mbr_verify_cfg(cfg_t *cfg)
  */
 int mbr_create_cfg(cfg_t *cfg, uint32_t num_blocks, uint8_t output[512])
 {
-    struct mbr_partition partitions[4];
+    struct mbr_partition partitions[MBR_MAX_PRIMARY_PARTITIONS];
     struct osip_header osip;
 
     if (mbr_cfg_to_partitions(cfg, partitions, NULL) < 0)

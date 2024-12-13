@@ -157,8 +157,8 @@ int require_partition_offset_validate(struct fun_context *fctx)
         ERR_RETURN("require-partition-offset requires a partition number and a block offset");
 
     int partition = strtol(fctx->argv[1], NULL, 0);
-    if (partition < 0 || partition > 3)
-        ERR_RETURN("require-partition-offset requires the partition number to be between 0, 1, 2, or 3");
+    if (partition < 0 || partition >= MBR_MAX_PRIMARY_PARTITIONS)
+        ERR_RETURN("require-partition-offset requires the partition number to be 0-3");
 
     CHECK_ARG_UINT64(fctx->argv[2], "require-partition-offset requires a non-negative integer block offset");
 
@@ -176,11 +176,11 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
     if (block_cache_pread(fctx->output, buffer, FWUP_BLOCK_SIZE, 0) < 0)
         return -1;
 
-    struct mbr_partition partitions[4];
-    if (mbr_decode(buffer, partitions) < 0)
+    struct mbr_table table;
+    if (mbr_decode(buffer, &table) < 0)
         return -1;
 
-    if (partitions[partition].block_offset != block_offset)
+    if (table.partitions[partition].block_offset != block_offset)
         return -1;
     else
         return 0;
