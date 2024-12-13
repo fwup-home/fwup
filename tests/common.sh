@@ -212,11 +212,7 @@ create_15M_file() {
 TESTFILE_15M=$WORK/15M.bin
 
 # GNU and BSD friendly cmp --bytes
-# Invoke as: cmp_bytes <byte count> <file1> <file2> [offset1] [offset2]
-#
-# NOTE: This implementation has the unfortunate constraint that bytes and
-#       offsets need to be multiples of the block size. The block size
-#       could be set to 1, but that makes some large comparisons VERY slow.
+# Invoke as: cmp_bytes <byte count> <file1> <file2> [byte offset1] [byte offset2]
 cmp_bytes() {
     BYTE_COUNT=$1
     FILE1=$2
