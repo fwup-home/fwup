@@ -428,8 +428,8 @@ Linux and the bootloaders for finding the file systems that exist on the media.
 In comparison to a tool like `fdisk`, `fwup` only supports simplistic partition
 setup, but this is sufficient for many devices. Tools such as `fdisk` can be
 used to determine the block offsets and sizes of partitions for the
-configuration file. Offsets and sizes are given in 512 byte blocks. Here's a
-potential mbr definition:
+configuration file. Offsets and sizes are given in 512 byte blocks. Here's an
+example mbr definition:
 
 ```conf
 mbr mbr-a {
@@ -459,6 +459,8 @@ mbr mbr-a {
         }
 }
 ```
+
+### OSIP
 
 If you're using an Intel Edison or similar platform, `fwup` supports generation
 of the OSIP header in the MBR. This header provides information for where to
@@ -492,6 +494,8 @@ mbr mbr-a {
     }
 }
 ```
+
+### Expanding the final partition
 
 Sometimes it's useful to have the final partition fill the remainder of the
 storage. This is needed if your target's storage size is unknown and you need
