@@ -917,7 +917,7 @@ It is important to understand how verification works so that the security of
 the archive isn't compromised. Firmware updates are applied in one pass to
 avoid needing a lot of memory or disk space. The consequence of this is that
 verification is done on the fly. The main metadata for the archive is always
-verified before any operations occur. Cryptographic hashs (using the
+verified before any operations occur. Cryptographic hashes (using the
 [BLAKE2b-256](https://blake2.net/) algorithm) of each file contained in the
 archive is stored in the metadata. The hash for each file is computed on the
 fly, so a compromised file may not be detected until it has been written to
@@ -935,7 +935,7 @@ executable and parsing the text written to `stdout`. When applying firmware
 progress updates are delivered based on commandline options:
 
   1. Human readable - This is the default. Progress is updated from the text `0%` to `100%`.
-  1. Numeric (`-n`) - Progess is printed as `0\n` to `100\n`
+  1. Numeric (`-n`) - Progress is printed as `0\n` to `100\n`
   1. Quiet (`-q`) - No progress is printed
 
 While the above works well for scripts and when errors can be seen by the
