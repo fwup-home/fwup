@@ -424,7 +424,6 @@ static int mbr_cfg_to_partitions(cfg_t *cfg, struct mbr_table *table)
         for (int i = MBR_MAX_PRIMARY_PARTITIONS;
              i < MBR_MAX_PARTITIONS && table->partitions[i].partition_type;
              i++) {
-                fprintf(stderr, "record_offset: %d\n", record_offset);
             table->partitions[i].record_offset = record_offset;
             record_offset++;
         }
