@@ -67,6 +67,7 @@ DECLARE_FUN(info);
 DECLARE_FUN(path_write);
 DECLARE_FUN(pipe_write);
 DECLARE_FUN(execute);
+DECLARE_FUN(reboot_param);
 
 struct fun_info {
     const char *name;
@@ -103,6 +104,7 @@ static struct fun_info fun_table[] = {
     FUN_INFO(path_write),
     FUN_INFO(pipe_write),
     FUN_INFO(execute),
+    FUN_INFO(reboot_param)
 };
 
 static struct fun_info *lookup(int argc, const char **argv)
@@ -1287,6 +1289,48 @@ int execute_run(struct fun_context *fctx)
         ERR_RETURN("execute couldn't run '%s'", cmd_name);
     if (status != 0)
         ERR_RETURN("'%s' failed with exit status %d", cmd_name, status);
+
+    progress_report(fctx->progress, FWUP_BLOCK_SIZE);
+    return 0;
+}
+
+int reboot_param_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("reboot_param requires a single string parameter");
+
+    return 0;
+}
+int reboot_param_compute_progress(struct fun_context *fctx)
+{
+    fctx->progress->total_units += FWUP_BLOCK_SIZE; // Arbitrarily count as 1 block
+    return 0;
+}
+int reboot_param_run(struct fun_context *fctx)
+{
+    assert(fctx->on_event);
+
+    FILE *fp;
+    if (fctx->reboot_param_path) {
+        fp = fopen(fctx->reboot_param_path, "w");
+        if (fp == NULL)
+            ERR_RETURN("reboot-param can't open '%s'", fctx->reboot_param_path);
+    } else {
+        const char *systemd_reboot_param_path = "/run/systemd/reboot-param";
+        const char *reboot_param_path = "/run/reboot-param";
+
+        // Try systemd and Nerves locations for this file
+        fp = fopen(systemd_reboot_param_path, "w");
+        if (fp == NULL)
+            fp = fopen(reboot_param_path, "w");
+
+        if (fp == NULL)
+            ERR_RETURN("reboot-param can't open under `/run`");
+    }
+
+    const char *param = fctx->argv[1];
+    fwrite(param, 1, strlen(param), fp);
+    fclose(fp);
 
     progress_report(fctx->progress, FWUP_BLOCK_SIZE);
     return 0;

@@ -733,6 +733,7 @@ path_write(destination_path)            | 0.16.0 | Write a resource to a path on
 pipe_write(command)                     | 0.16.0 | Pipe a resource through a command on the host. Requires the `--unsafe` flag
 raw_memset(block_offset, block_count, value) | 0.10.0 | Write the specified byte value repeatedly for the specified blocks
 raw_write(block_offset, options)        | 0.1.0 | Write the resource to the specified block offset. Options include `cipher` and `secret`.
+reboot_param(args)                      | 1.12.0 | A string that will enqueued to the reboot command if supported
 trim(block_offset, count)               | 0.15.0 | Discard any data previously written to the range. TRIM requests are issued to the device if --enable-trim is passed to fwup.
 uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable free U-boot environment
 uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is corrupt, reinitialize it. If not, then do nothing
@@ -987,6 +988,26 @@ is to write them to an unused location first and then switch over at the last
 possible minute. This is desirable to do anyway, since this strategy also
 provides some protection against the user disconnecting power midway through
 the firmware update.
+
+# Reboot parameters
+
+The Linux reboot syscall takes an argument when using the
+`LINUX_REBOOT_CMD_RESTART2` command.  This is not the shutdown timeout. It's a
+free text string passed to the Linux kernel.  It's use is device and
+driver-specific. The Raspberry Pi uses it for its TRYBOOT feature. Fwup allows
+configurations to set the reboot parameters via the `reboot_param` function:
+
+```conf
+reboot_param("0 tryboot")
+```
+
+Even though `fwup` doesn't reboot the system, it can influence the parameter
+passed to the kernel due to the simplistic way this parameter is passed to the
+`init` process (PID 1).  Systemd, for example, reads the
+`/run/systemd/reboot-param` file when `init` initiates the reboot.  Erlinit with
+Nerves uses the file `/run/reboot-param`. Fwup will automatically detect Systemd
+and write the right file. The `--reboot-param-path` commandline argument can be
+used to force a path.
 
 # Integration with applications
 

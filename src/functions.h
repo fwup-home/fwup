@@ -68,6 +68,9 @@ struct fun_context {
     size_t xd_source_count;
     const char *xd_source_path;
 
+    // Reboot parameters
+    const char *reboot_param_path;
+
     void *cookie;
 };
 

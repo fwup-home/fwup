@@ -21,14 +21,19 @@
 
 struct fwup_progress;
 
+struct fwup_apply_options {
+    unsigned char *const*public_keys;
+    bool enable_trim;
+    bool verify_writes;
+    bool minimize_writes;
+    const char *reboot_param_path;
+};
+
 int fwup_apply(const char *fw_filename,
-               const char *task,
+               const char *task_prefix,
                int output_fd,
                off_t end_offset,
                struct fwup_progress *progress,
-               unsigned char *const* public_keys,
-               bool enable_trim,
-               bool verify_writes,
-               bool minimize_writes);
+               const struct fwup_apply_options *options);
 
 #endif // FWUP_APPLY_H

@@ -528,7 +528,8 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("info", CB), \
     CFG_FUNC("path_write", CB), \
     CFG_FUNC("pipe_write", CB), \
-    CFG_FUNC("execute", CB)
+    CFG_FUNC("execute", CB), \
+    CFG_FUNC("reboot_param", CB)
 
 static cfg_opt_t task_on_init_opts[] = {
     CFG_ON_EVENT_FUNCTIONS(cb_on_init_func),

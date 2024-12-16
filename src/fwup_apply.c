@@ -485,16 +485,14 @@ int fwup_apply(const char *fw_filename,
                int output_fd,
                off_t end_offset,
                struct fwup_progress *progress,
-               unsigned char *const*public_keys,
-               bool enable_trim,
-               bool verify_writes,
-               bool minimize_writes)
+               const struct fwup_apply_options *options)
 {
     int rc = 0;
     unsigned char *meta_conf_signature = NULL;
     struct fun_context fctx;
     memset(&fctx, 0, sizeof(fctx));
     fctx.progress = progress;
+    fctx.reboot_param_path = options->reboot_param_path;
 
     // Report 0 progress before doing anything
     progress_report(fctx.progress, 0);
@@ -530,14 +528,14 @@ int fwup_apply(const char *fw_filename,
     if (strcmp(archive_entry_pathname(ae), "meta.conf") != 0)
         ERR_CLEANUP_MSG("Expecting meta.conf to be at the beginning of %s", fw_filename);
 
-    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, public_keys));
+    OK_OR_CLEANUP(cfgfile_parse_fw_ae(pd.a, ae, &fctx.cfg, meta_conf_signature, options->public_keys));
 
     initialize_timestamps();
 
     // Initialize the output. Nothing should have been written before now
     // and waiting to initialize the output until now forces the point.
     fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
-    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, end_offset, enable_trim, verify_writes, minimize_writes));
+    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, end_offset, options->enable_trim, options->verify_writes,options->minimize_writes));
 
     // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);

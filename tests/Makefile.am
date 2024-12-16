@@ -208,6 +208,7 @@ TESTS = 001_simple_fw.test \
 	205_mbr_ebr.test \
 	206_mbr_ebr_missing_partition.test \
 	207_mbr_ebr_overlapping_records.test \
-	208_mbr_ebr_overlapping_parts.test
+	208_mbr_ebr_overlapping_parts.test \
+	209_reboot_param.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

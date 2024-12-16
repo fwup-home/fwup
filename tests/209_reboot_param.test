@@ -1,0 +1,27 @@
+#!/bin/sh
+
+#
+# Test the reboot-param command
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+task complete {
+	on-init { reboot_param("0 tryboot") }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that applying the firmware does the expected thing
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --reboot-param-path "$WORK/reboot-param"
+
+# Check that the reboot-param file has the expected contents
+if [ "$(cat $WORK/reboot-param)" != "0 tryboot" ]; then
+	echo "reboot-param file has unexpected contents"
+	exit 1
+fi
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

@@ -108,6 +108,7 @@ static void print_usage()
     printf("  --progress-high <number> When displaying progress, this is the highest number (normally 100 for 100%%)\n");
     printf("  --public-key <key> A public key for verifying firmware updates (can specify multiple times)\n");
     printf("  -q, --quiet   Quiet\n");
+    printf("  --reboot-param-path Path to write reboot parameters (defaults to systemd and Nerves locations)\n");
     printf("  -s, --private-key-file <keyfile> A private key file for signing firmware updates\n");
     printf("  -S, --sign Sign an existing firmware file (specify -i and -o)\n");
     printf("  --sparse-check <path> Check if the OS and file system supports sparse files at path\n");
@@ -180,6 +181,7 @@ enum fwup_long_option_only_value {
     OPTION_PUBLIC_KEY,
     OPTION_PROGRESS_LOW,
     OPTION_PROGRESS_HIGH,
+    OPTION_REBOOT_PARAM_PATH,
     OPTION_SPARSE_CHECK,
     OPTION_SPARSE_CHECK_SIZE,
     OPTION_UNSAFE,
@@ -212,6 +214,7 @@ static struct option long_options[] = {
     {"progress-low", required_argument, 0, OPTION_PROGRESS_LOW},
     {"progress-high", required_argument, 0, OPTION_PROGRESS_HIGH},
     {"quiet",    no_argument,       0, 'q'},
+    {"reboot-param-path", required_argument, 0, OPTION_REBOOT_PARAM_PATH},
     {"sparse-check", required_argument, 0, OPTION_SPARSE_CHECK},
     {"sparse-check-size", required_argument, 0, OPTION_SPARSE_CHECK_SIZE},
     {"sign",     no_argument,       0, 'S'},
@@ -413,6 +416,7 @@ int main(int argc, char **argv)
     int progress_high = 100; // to 100%
     int verify_writes = -1; // Use default (yes unless writing to a regular file)
     int minimize_writes = false; // Default to off. FUTURE: Turn on for device files if performance impact continues to be minimal
+    const char *reboot_param_path = NULL;
     uint32_t max_size_blocks = 0; // Force a max size for the device if it can't be automatically determined
 
     if (argc == 1) {
@@ -573,6 +577,9 @@ int main(int argc, char **argv)
                 num_public_keys++;
             } else
                 fwup_warnx("Ignoring public key since only %d supported", FWUP_MAX_PUBLIC_KEYS);
+            break;
+        case OPTION_REBOOT_PARAM_PATH: // --reboot-param-path
+            reboot_param_path = optarg;
             break;
         case OPTION_EXIT_HANDSHAKE: // --exit-handshake
             fwup_handshake_on_exit = true;
@@ -740,15 +747,19 @@ int main(int argc, char **argv)
         if (verify_writes < 0)
             verify_writes = !is_regular_file;
 
+        struct fwup_apply_options options;
+        options.public_keys = public_keys;
+        options.enable_trim = enable_trim;
+        options.verify_writes = verify_writes;
+        options.minimize_writes = minimize_writes;
+        options.reboot_param_path = reboot_param_path;
+
         if (fwup_apply(input_filename,
                        task,
                        output_fd,
                        end_offset,
                        &progress,
-                       public_keys,
-                       enable_trim,
-                       verify_writes,
-                       minimize_writes) < 0) {
+                       &options) < 0) {
             if (!quiet)
                 fprintf(stderr, "\n");
             fwup_errx(EXIT_FAILURE, "%s", last_error());
