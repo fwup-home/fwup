@@ -457,7 +457,7 @@ int raw_memset_validate(struct fun_context *fctx)
         ERR_RETURN("raw_memset requires a block offset, count, and value");
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_memset requires a non-negative integer block offset");
-    CHECK_ARG_UINT64_RANGE(fctx->argv[2], 1, INT32_MAX / FWUP_BLOCK_SIZE, "raw_memset requires a positive integer block count");
+    CHECK_ARG_UINT64_RANGE(fctx->argv[2], 1, INT64_MAX / FWUP_BLOCK_SIZE, "raw_memset requires a positive integer block count");
 
     int value = strtol(fctx->argv[3], NULL, 0);
     if (value < 0 || value > 255)
