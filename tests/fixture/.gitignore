@@ -2,3 +2,4 @@
 /verify-syscalls
 /.libs
 /libwrite_shim*
+/libmount_shim*

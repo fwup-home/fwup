@@ -11,11 +11,15 @@ verify_syscalls_SOURCES=verify-syscalls.c
 endif
 
 if HAS_WRITE_SHIM
-check_LTLIBRARIES = libwrite_shim.la
+check_LTLIBRARIES = libwrite_shim.la libmount_shim.la
 libwrite_shim_la_SOURCES = write_shim.c
 
 # The "-rpath /nowhere" is the trick to getting libtool to create a shared library for
 # "check" LTLIBRARIES.
 libwrite_shim_la_LDFLAGS = ${AM_LDFLAGS} -ldl -dynamiclib -avoid-version -shared -rpath /nowhere
 libwrite_shim_la_CFLAGS = ${AM_CFLAGS}
+
+libmount_shim_la_SOURCES = mount_shim.c
+libmount_shim_la_LDFLAGS = ${AM_LDFLAGS} -ldl -dynamiclib -avoid-version -shared -rpath /nowhere
+libmount_shim_la_CFLAGS = ${AM_CFLAGS} -D_FILE_OFFSET_BITS=64
 endif

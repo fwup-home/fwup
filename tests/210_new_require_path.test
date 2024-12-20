@@ -1,0 +1,33 @@
+#!/bin/sh
+
+#
+# Tests that the "require-path-on-device" feature works. This allows one to
+# update firmware images based on where the filesystem is mounted.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+$HAS_MOUNT_SHIM || exit 77
+
+cat >$CONFIG <<EOF
+task test.correct {
+    require-path-on-device("/", "/dev/rootdisk0p1")
+    on-init { info("correct") }
+}
+task test.fail {
+    on-init { error("something else!") }
+}
+EOF
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Use the mount shim instead of the write shim
+LD_PRELOAD="$MOUNT_LD_PRELOAD" DYLD_INSERT_LIBRARIES="$MOUNT_DYLD_INSERT_LIBRARIES" $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t test > $WORK/actual_output.txt
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

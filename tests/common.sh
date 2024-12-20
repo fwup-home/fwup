@@ -140,7 +140,19 @@ else
     export HAS_WRITE_SHIM=false
 fi
 
-WORK=$TESTS_DIR/work-$(basename "$0")
+# The mount simulator only runs only runs on a subset of
+# platforms. Let autoconf figure out which ones.
+MOUNT_SHIM="$TESTS_DIR/fixture/.libs/libmount_shim.$SO_EXT"
+if [ -e "$MOUNT_SHIM" ]; then
+    export HAS_MOUNT_SHIM=true
+    export MOUNT_LD_PRELOAD="$MOUNT_SHIM"
+    export MOUNT_DYLD_INSERT_LIBRARIES="$MOUNT_SHIM"
+else
+    export HAS_MOUNT_SHIM=false
+fi
+
+# Export WORK for the shims to use if needed
+export WORK=$TESTS_DIR/work-$(basename "$0")
 RESULTS=$WORK/results
 
 CONFIG=$WORK/fwup.conf

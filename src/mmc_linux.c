@@ -27,6 +27,7 @@
 #include <sys/wait.h>
 #include <sys/sysmacros.h>
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -235,20 +236,78 @@ int mmc_device_size(const char *mmc_path, off_t *end_offset)
     return *end_offset > 0 ? 0 : -1;
 }
 
+#define DEV_BLOCK_PATH_MAX 64
+#define DEV_ID_LENGTH 16 // "major:minor"
+
+static void dev_to_string(int dev, char *str)
+{
+    snprintf(str, DEV_ID_LENGTH, "%d:%d",  major(dev), minor(dev));
+}
+
+static int traverse_devices(const char *current, const char *goal, int depth_left)
+{
+    // Found?
+    if (strcmp(current, goal) == 0)
+        return 1;
+
+    // Traverse more?
+    if (depth_left <= 0)
+        return 0;
+    depth_left--;
+
+    // Check all device-mapper devices
+    int found_goal = 0;
+    char *slaves_path;
+    if (asprintf(&slaves_path, "/sys/dev/block/%s/slaves", current) < 0)
+        return 0;
+
+    struct dirent **namelist = NULL;
+    int n = scandir(slaves_path, &namelist, NULL, NULL);
+    for (int i = 0; i < n && !found_goal; i++) {
+        const char *name = namelist[i]->d_name;
+        if (name[0] == '.')
+            continue;
+
+        // The dev file contains the major:minor string
+        char *dev_path;
+        if (asprintf(&dev_path, "%s/%s/dev", slaves_path, name) < 0)
+            return 0;
+
+        char next[DEV_ID_LENGTH];
+        int rc = readsysfs(dev_path, next, sizeof(next));
+        if (rc > 0)
+            found_goal = traverse_devices(next, goal, depth_left);
+
+        free(dev_path);
+    }
+
+    free(slaves_path);
+    if (namelist) {
+        for (int i = 0; i < n; i++)
+            free(namelist[i]);
+        free(namelist);
+    }
+    return found_goal;
+}
+
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
+    char starting_device[DEV_ID_LENGTH];
+    char goal_device[DEV_ID_LENGTH];
+
     // Stat both paths.
-    struct stat file_st;
-    if (stat(file_path, &file_st) < 0)
+    struct stat sb;
+    if (stat(file_path, &sb) < 0)
         return -1;
+    dev_to_string(sb.st_dev, starting_device);
 
-    struct stat device_st;
-    if (stat(device_path, &device_st) < 0)
+    if (stat(device_path, &sb) < 0)
         return -1;
+    dev_to_string(sb.st_rdev, goal_device);
 
-    // Check that the device's major/minor are the same
-    // as the file's containing device's major/minor
-    return device_st.st_rdev == file_st.st_dev ? 1 : 0;
+    // Traverse through device-mapper mappings to see if we can get from the
+    // starting file_path's containing device to the block device of interest.
+    return traverse_devices(starting_device, goal_device, 3);
 }
 
 int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset)

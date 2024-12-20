@@ -1,0 +1,46 @@
+#!/bin/sh
+
+#
+# Tests that the "require-path-on-device" feature can traverse through
+# device mapper mounts.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+$HAS_MOUNT_SHIM || exit 77
+
+if [ "$HOST_OS" != "Linux" ]; then
+    echo "Skipping since device mapper logic only on Linux-specific fwup code."
+    exit 77
+fi
+
+cat >$CONFIG <<EOF
+task test.correct {
+    require-path-on-device("/boot", "/dev/mmcblk0p2")
+    on-init { info("correct") }
+}
+task test.fail {
+    on-init { error("something else!") }
+}
+EOF
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Set up some fake /sys/dev/block directories similar to device mapper
+mkdir -p $WORK/sys/dev/block/254:0/slaves/mmcblk0p1 # Fake entry to test scanning
+mkdir -p $WORK/sys/dev/block/254:0/slaves/mmcblk0p2
+mkdir -p $WORK/sys/dev/block/254:0/slaves/mmcblk0p3 # Fake entry to test scanning
+echo "1:1" > $WORK/sys/dev/block/254:0/slaves/mmcblk0p1/dev
+echo "179:2" > $WORK/sys/dev/block/254:0/slaves/mmcblk0p2/dev
+echo "1:1" > $WORK/sys/dev/block/254:0/slaves/mmcblk0p3/dev
+
+# Use the mount shim instead of the write shim
+LD_PRELOAD="$MOUNT_LD_PRELOAD" DYLD_INSERT_LIBRARIES="$MOUNT_DYLD_INSERT_LIBRARIES" $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t test > $WORK/actual_output.txt
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
