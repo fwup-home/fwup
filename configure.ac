@@ -115,9 +115,25 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 # Test for whether it's possible to build test fixtures
 #
 # verify-syscalls - requires ptrace so Linux-only
-# write_shim - shared library. Hasn't been ported to OSX.
+# write_shim - shared library
+
 AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no"])
-AM_CONDITIONAL([HAS_WRITE_SHIM], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no" -a x$enable_shared = x"yes"])
+
+AC_DEFUN([CHECK_HOST_SUPPORT_FOR_SHIMS], [
+    case "$host" in
+        x86_64-pc-linux-gnu|x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)
+            eval "$1=yes"
+            ;;
+        aarch64-apple-darwin*)
+            eval "$1=yes"
+            ;;
+        *)
+            eval "$1=no"
+            ;;
+    esac
+])
+CHECK_HOST_SUPPORT_FOR_SHIMS([host_shim_match])
+AM_CONDITIONAL([HAS_WRITE_SHIM], [test x$host_shim_match = x"yes" -a x$cross_compiling = x"no" -a x$enable_shared = x"yes"])
 
 # Scripts
 AC_ARG_ENABLE(scripts,[AS_HELP_STRING([--disable-scripts], [do not install img2fwup and any other helper scripts])])

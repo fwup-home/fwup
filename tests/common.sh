@@ -9,6 +9,7 @@ export LC_ALL=C
 READLINK=readlink
 BASE64_DECODE=-d
 TIMEOUT=timeout
+SO_EXT=so
 
 if [ -d "/mnt/c/Users" ]; then
     # Windows 10 bash mode
@@ -41,6 +42,7 @@ case "$HOST_OS" in
         fi
 
         TIMEOUT=gtimeout
+        SO_EXT=dylib
         ;;
     FreeBSD|NetBSD|OpenBSD|DragonFly)
 	# BSD stat
@@ -129,7 +131,7 @@ fi
 
 # The write fault simulator only runs on a subset of platforms. Let autoconf
 # figure out which ones.
-WRITE_SHIM="$TESTS_DIR/fixture/.libs/libwrite_shim.so"
+WRITE_SHIM="$TESTS_DIR/fixture/.libs/libwrite_shim.$SO_EXT"
 if [ -e "$WRITE_SHIM" ]; then
     export HAS_WRITE_SHIM=true
     export LD_PRELOAD="$WRITE_SHIM"
