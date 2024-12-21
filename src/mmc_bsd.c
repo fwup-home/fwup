@@ -187,8 +187,17 @@ void mmc_finalize()
 
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
-    // Not implemented
-    return -1;
+    // Stat both paths.
+    struct stat sb;
+    if (stat(file_path, &sb) < 0)
+        return -1;
+    int starting_device = sb.st_dev;
+
+    if (stat(device_path, &sb) < 0)
+        return -1;
+    int target_device = sb.st_rdev;
+
+    return starting_device == target_device ? 1 : 0;
 }
 
 int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset)

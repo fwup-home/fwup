@@ -22,8 +22,9 @@
 #include <DiskArbitration/DiskArbitration.h>
 #include <IOKit/storage/IOStorageProtocolCharacteristics.h>
 
-#include <sys/socket.h>
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 
 // DiskArbitration API session
 static DASessionRef da_session;
@@ -364,10 +365,17 @@ int mmc_eject(const char *mmc_device)
 
 int mmc_is_path_on_device(const char *file_path, const char *device_path)
 {
-    // Not implemented - I don't think there's a use case for this on Mac.
-    (void) file_path;
-    (void) device_path;
-    return -1;
+    // Stat both paths.
+    struct stat sb;
+    if (stat(file_path, &sb) < 0)
+        return -1;
+    int starting_device = sb.st_dev;
+
+    if (stat(device_path, &sb) < 0)
+        return -1;
+    int target_device = sb.st_rdev;
+
+    return starting_device == target_device ? 1 : 0;
 }
 
 int mmc_is_path_at_device_offset(const char *file_path, off_t block_offset)
