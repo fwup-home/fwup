@@ -59,13 +59,13 @@ static int readsysfs(const char *path, char *buffer, int maxlen)
     if (fd < 0)
         return 0;
 
-    int count = read(fd, buffer, maxlen - 1);
+    int count = read(fd, buffer, maxlen);
 
     close(fd);
     if (count <= 0)
         return 0;
 
-    // Trim trailing \n
+    // Trim trailing \n or null-terminate whatever we got.
     count--;
     buffer[count] = 0;
     return count;
