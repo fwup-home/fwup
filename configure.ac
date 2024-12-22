@@ -114,7 +114,7 @@ AM_CONDITIONAL([ENABLE_BASH_COMPLETION],[test "x$with_bash_completion_dir" != "x
 
 # Test for whether it's possible to build test fixtures
 #
-# verify-syscalls - requires ptrace so Linux-only
+# verify-syscalls - requires ptrace so Linux-only and only ported to x86_64
 # write_shim - shared library
 
 AM_CONDITIONAL([HAS_VERIFY_SYSCALLS], [test \( x$host = x"x86_64-pc-linux-gnu" -o x$host = x"x86_64-unknown-linux-gnu" \) -a x$cross_compiling = x"no"])
