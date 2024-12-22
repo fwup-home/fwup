@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.12.0
+
+* New features
+  * Add 4-parameter `fat_cp` function to support copying files between FAT
+    partitions. The previous (and still supported) 3-parameter `fat_cp` required
+    files to be on the same partition.
+  * Support extended partitions in master boot records. This makes it possible
+    to have more than four partitions without switching to GPT partitions. See
+    README.md for details.
+  * Add `reboot-param` function for setting parameters to be sent to `reboot`.
+    This is useful for implementing the Raspberry Pi tryboot functionality
+    within `fwup`.
+
+* Improvements
+  * Update `require-path-on-device` on Linux to be able to traverse device
+    mapper block devices. This allows encryption and other device mapper
+    features to be in use when checking where file systems are mounted.
+    Workarounds shouldn't be needed any more.
+
+* Bug fixes
+  * Fix `raw_memset` max size to support 64-bit sizes. Thanks to @joaohf.
+  * Fix `assert-size-*` error output messages for large sizes. Thanks to @mscandal.
+  * Fix `fat_rm` incorrectly failing when the file has already been removed
+    because it's containing directory doesn't exist.
+
 ## v1.11.0
 
 * Improvements
