@@ -62,7 +62,12 @@ reliable enough for production use.
 
 The simplest way to install `fwup` is via a package manager or installer.
 
-On OSX, `fwup` is in [homebrew](http://brew.sh/):
+If you're already using [asdf](https://asdf-vm.com/) or
+[mise-en-place](https://mise.jdx.dev/), install `fwup` via
+[asdf-fwup](https://github.com/fwup-home/asdf-fwup). This will allow you to
+manage `fwup` versions in your software projects via `.tool-versions` files.
+
+For system-wide installation on MacOS, `fwup` is in [homebrew](http://brew.sh/):
 
 ```sh
 brew install fwup
