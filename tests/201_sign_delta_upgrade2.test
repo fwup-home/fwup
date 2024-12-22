@@ -12,6 +12,8 @@
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
+export SOURCE_DATE_EPOCH=1525543816
+
 FWFILE2="$WORK/fwup2.fw"
 
 cat >"$CONFIG" <<EOF
