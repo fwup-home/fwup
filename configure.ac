@@ -125,7 +125,8 @@ AC_DEFUN([CHECK_HOST_SUPPORT_FOR_SHIMS], [
             eval "$1=yes"
             ;;
         aarch64-apple-darwin*)
-            eval "$1=yes"
+            # This works fine on Sequoia, but not on earlier versions. Disable for now.
+            eval "$1=no"
             ;;
         *)
             eval "$1=no"
