@@ -138,7 +138,7 @@ char* strptime(const char *buf, const char *fmt, struct tm *tm);
 
 #define FRAMING_TYPE_SUCCESS  "OK"
 #define FRAMING_TYPE_ERROR    "ER"
-#define FRAMING_TYPE_WARNING  "WN"
+#define FRAMING_TYPE_INFO     "WN"
 #define FRAMING_TYPE_PROGRESS "PR"
 
 // Send output to the terminal based on the framing options

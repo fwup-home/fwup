@@ -435,7 +435,7 @@ void fwup_warnx(const char *format, ...)
         ssvprintf(&s, format, ap);
         ssappend(&s, "\n");
     }
-    fwup_output(FRAMING_TYPE_WARNING, 0, s.str);
+    fwup_output(FRAMING_TYPE_INFO, 0, s.str);
     free(s.str);
 
     va_end(ap);
