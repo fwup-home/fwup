@@ -89,11 +89,11 @@ popd
 rm -rf /tmp/confuse-3.2.2
 
 # The version of libarchive available in yum is too old
-curl -L http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz | tar -xz -C /tmp
-pushd /tmp/libarchive-3.1.2
+curl -L http://www.libarchive.org/downloads/libarchive-3.7.9.tar.gz | tar -xz -C /tmp
+pushd /tmp/libarchive-3.7.9
 ./configure && make && sudo make install
 popd
-rm -rf /tmp/libarchive-3.1.2
+rm -rf /tmp/libarchive-3.7.9
 
 # Assuming all of the libraries were installed to /usr/local/lib
 sudo ldconfig /usr/local/lib
