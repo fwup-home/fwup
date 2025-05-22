@@ -28,7 +28,7 @@ struct disk_crypto {
     off_t base_offset;
 };
 
-int disk_crypto_init(struct disk_crypto *dc, const char *mode, const char *secret, off_t base_offset);
+int disk_crypto_init(struct disk_crypto *dc, off_t base_offset, int argc, const char *argv[]);
 void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset);
 void disk_crypto_free(struct disk_crypto *dc);
 

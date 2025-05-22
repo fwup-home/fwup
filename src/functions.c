@@ -336,34 +336,6 @@ cleanup:
     return rc;
 }
 
-struct raw_write_options {
-    const char *cipher;
-    const char *secret;
-};
-static int parse_raw_write_options(const struct fun_context *fctx, struct raw_write_options *options)
-{
-    memset(options, 0, sizeof(*options));
-
-    for (int i = 2; i < fctx->argc; i++) {
-        const char *key;
-        const char *value;
-
-        key = fctx->argv[i];
-        value = strchr(key, '=');
-        if (!value)
-            ERR_RETURN("Expecting '=' for optional raw_write parameter");
-
-        value++;
-
-        if (strncmp(key, "cipher=", 7) == 0)
-            options->cipher = value;
-        else if (strncmp(key, "secret=", 7) == 0)
-            options->secret = value;
-        else
-            ERR_RETURN("Unexpected parameter to raw_write: %s", key);
-    }
-    return 0;
-}
 int raw_write_validate(struct fun_context *fctx)
 {
     if (fctx->type != FUN_CONTEXT_FILE)
@@ -374,14 +346,12 @@ int raw_write_validate(struct fun_context *fctx)
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_write requires a non-negative integer block offset");
 
-    // Check the options
-    struct raw_write_options options;
-    OK_OR_RETURN(parse_raw_write_options(fctx, &options));
-
-    // If there's a cipher, then there must be a secret
-    if ((options.cipher && !options.secret) ||
-        (options.secret && !options.cipher))
-        ERR_RETURN("raw_write requires both a cipher and secret if one is supplied");
+    // Check for encryption options
+    if (fctx->argc > 2) {
+        struct disk_crypto dc;
+        if (disk_crypto_init(&dc, 0, fctx->argc - 2, &fctx->argv[2]) < 0)
+            return -1;
+    }
 
     return 0;
 }
@@ -423,13 +393,10 @@ int raw_write_run(struct fun_context *fctx)
     struct raw_write_cookie rwc;
     rwc.dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
 
-    struct raw_write_options options;
-    OK_OR_RETURN(parse_raw_write_options(fctx, &options));
-
     struct disk_crypto dc_info;
     struct disk_crypto *dc = NULL;
-    if (options.cipher) {
-        if (disk_crypto_init(&dc_info, options.cipher, options.secret, rwc.dest_offset) < 0)
+    if (fctx->argc > 2) {
+        if (disk_crypto_init(&dc_info, rwc.dest_offset, fctx->argc - 2, &fctx->argv[2]) < 0)
             return -1;
         dc = &dc_info;
     }
