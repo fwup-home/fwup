@@ -34,6 +34,7 @@ enum fun_context_type {
 struct archive;
 struct fwup_progress;
 struct block_cache;
+struct disk_crypto;
 
 struct fun_context {
     // Context of where the function is called
@@ -67,6 +68,7 @@ struct fun_context {
     off_t xd_source_offset;
     size_t xd_source_count;
     const char *xd_source_path;
+    struct disk_crypto *xd_source_dc;
 
     // Reboot parameters
     const char *reboot_param_path;

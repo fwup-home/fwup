@@ -802,6 +802,7 @@ off UUID). Here's how:
        on-resource rootfs.img {
            delta-source-raw-offset=${ROOTFS_B_PART_OFFSET}
            delta-source-raw-count=${ROOTFS_B_PART_COUNT}
+           # delta-source-raw-options="cipher=...,secret=..." (if encrypted)
            raw_write(${ROOTFS_A_PART_OFFSET})
        }
    }
@@ -809,6 +810,7 @@ off UUID). Here's how:
        on-resource rootfs.img {
            delta-source-raw-offset=${ROOTFS_A_PART_OFFSET}
            delta-source-raw-count=${ROOTFS_A_PART_COUNT}
+           # delta-source-raw-options="cipher=...,secret=..." (if encrypted)
            raw_write(${ROOTFS_B_PART_OFFSET})
        }
    }
@@ -848,6 +850,7 @@ Key                               | Description
 ----------------------------------|------------
 delta-source-raw-offset           | Set to the starting block offset
 delta-source-raw-count            | Set to the number of blocks in the source region. No reads will be allowed outside of this area.
+delta-source-raw-options          | Set source encryption options (>= 1.13.0)
 delta-source-fat-offset           | Set to the starting block offset of the source FAT partition
 delta-source-fat-path             | Set to the path inside the FAT partition of the source file
 
@@ -941,6 +944,9 @@ mount /dev/mapper/my-filesystem /mnt
 
 You will likely need to replace many of the arguments above with ones
 appropriate for your system.
+
+If you're combining this with delta firmware updates, see
+`delta-source-raw-options` for reading encrypted source data.
 
 ## Reproducible builds
 

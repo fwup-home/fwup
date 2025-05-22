@@ -211,6 +211,7 @@ TESTS = 001_simple_fw.test \
 	208_mbr_ebr_overlapping_parts.test \
 	209_reboot_param.test \
 	210_new_require_path.test \
-	211_new_require_path_dm.test
+	211_new_require_path_dm.test \
+	212_encrypted_delta_upgrade.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

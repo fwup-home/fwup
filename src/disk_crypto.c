@@ -38,9 +38,24 @@ static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint32_t lba, const ui
 
     AES_CBC_encrypt_buffer(&ctx, output, FWUP_BLOCK_SIZE);
 }
+static void aes_cbc_plain_decrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
+{
+    uint8_t iv[AES_BLOCKLEN] = {0};
+    copy_le32(iv, lba);
+
+    struct AES_ctx ctx;
+    AES_init_ctx_iv(&ctx, dc->key, iv);
+
+    // Tiny AES only decrypts in-place, so copy to the output if necessary.
+    if (output != input)
+        memcpy(output, input, FWUP_BLOCK_SIZE);
+
+    AES_CBC_decrypt_buffer(&ctx, output, FWUP_BLOCK_SIZE);
+}
 static int aes_cbc_plain_init(struct disk_crypto *dc, const char *secret_key)
 {
     dc->encrypt = aes_cbc_plain_encrypt;
+    dc->decrypt = aes_cbc_plain_decrypt;
 
     if (secret_key) {
         if (hex_to_bytes(secret_key, dc->key, AES_KEYLEN) == 0)
@@ -65,8 +80,8 @@ static int min(int a, int b)
 
 static int parse_options(int argc, const char *argv[], char *cipher, char *secret)
 {
-    *cipher = '\0';
-    *secret = '\0';
+    memset(cipher, 0, MAX_CIPHER_LEN + 1);
+    memset(secret, 0, MAX_SECRET_LEN + 1);
 
     for (int i = 0; i < argc; i++) {
         const char *key;
@@ -81,7 +96,13 @@ static int parse_options(int argc, const char *argv[], char *cipher, char *secre
             value++;
 
             const char *next_key = strchr(value, ',');
-            size_t value_len = next_key ? (size_t) (next_key - value) : strlen(value);
+            size_t value_len;
+            if (next_key) {
+                value_len = (size_t) (next_key - value);
+                next_key++;
+            } else {
+                value_len = strlen(value);
+            }
 
             if (strncmp(key, "cipher=", 7) == 0)
                 strncpy(cipher, value, min(MAX_CIPHER_LEN, value_len));
@@ -141,6 +162,27 @@ void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *
 
     while (lba < last_lba) {
         dc->encrypt(dc, lba, input, output);
+        lba++;
+        input += FWUP_BLOCK_SIZE;
+        output += FWUP_BLOCK_SIZE;
+    }
+}
+
+/**
+ * @brief disk_crypto_decrypt
+ * @param dc session info
+ * @param input
+ * @param output
+ * @param count the number of bytes to read
+ * @param offset where the bytes will be read
+ */
+void disk_crypto_decrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset)
+{
+    uint32_t lba = (uint32_t) ((offset - dc->base_offset)/ FWUP_BLOCK_SIZE);
+    uint32_t last_lba = lba + (uint32_t) (count / FWUP_BLOCK_SIZE);
+
+    while (lba < last_lba) {
+        dc->decrypt(dc, lba, input, output);
         lba++;
         input += FWUP_BLOCK_SIZE;
         output += FWUP_BLOCK_SIZE;

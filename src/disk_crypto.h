@@ -20,16 +20,18 @@
 #include "util.h"
 
 struct disk_crypto;
-typedef void (disk_crypto_encrypt_fun)(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output);
+typedef void (disk_crypto_fun)(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output);
 
 struct disk_crypto {
-    disk_crypto_encrypt_fun *encrypt;
+    disk_crypto_fun *encrypt;
+    disk_crypto_fun *decrypt;
     uint8_t key[32];
     off_t base_offset;
 };
 
 int disk_crypto_init(struct disk_crypto *dc, off_t base_offset, int argc, const char *argv[]);
 void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset);
+void disk_crypto_decrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset);
 void disk_crypto_free(struct disk_crypto *dc);
 
 #endif // EVAL_MATH_H

@@ -346,13 +346,7 @@ int raw_write_validate(struct fun_context *fctx)
 
     CHECK_ARG_UINT64(fctx->argv[1], "raw_write requires a non-negative integer block offset");
 
-    // Check for encryption options
-    if (fctx->argc > 2) {
-        struct disk_crypto dc;
-        if (disk_crypto_init(&dc, 0, fctx->argc - 2, &fctx->argv[2]) < 0)
-            return -1;
-    }
-
+    // Encryption options aren't check to allow for runtime variable substitutions
     return 0;
 }
 int raw_write_compute_progress(struct fun_context *fctx)

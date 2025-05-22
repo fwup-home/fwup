@@ -41,6 +41,7 @@
 #include "resources.h"
 #include "block_cache.h"
 #include "fwup_xdelta3.h"
+#include "disk_crypto.h"
 
 static bool deprecated_task_is_applicable(cfg_t *task, struct block_cache *output)
 {
@@ -254,7 +255,11 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
         offset > fctx->xd_source_count - count)
         count = fctx->xd_source_count - offset;
 
-    return block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
+    int rc = block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
+    if (fctx->xd && fctx->xd_source_dc && rc >= 0)
+        disk_crypto_decrypt(fctx->xd_source_dc, buf, buf, rc, fctx->xd_source_offset + offset);
+
+    return rc;
 }
 
 static int xdelta_read_fat_callback(void *cookie, void *buf, size_t count, off_t offset)
@@ -409,6 +414,12 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
             if (source_raw_count > 0 && source_raw_offset_str != NULL) {
                 // Found delta-source-raw-offset and delta-source-raw-count directives
                 off_t source_raw_offset = strtoul(source_raw_offset_str, NULL, 0);
+                const char *source_raw_options = cfg_getstr(on_resource, "delta-source-raw-options");
+                fctx->xd_source_dc = NULL;
+                if (source_raw_options) {
+                    fctx->xd_source_dc = malloc(sizeof(struct disk_crypto));
+                    OK_OR_CLEANUP(disk_crypto_init(fctx->xd_source_dc, source_raw_offset * FWUP_BLOCK_SIZE, 1, &source_raw_options));
+                }
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
                 xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
@@ -424,6 +435,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 fctx->xd_source_offset = source_fat_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_path = source_fat_path;
                 fctx->xd_source_count = 0; // unused
+                fctx->xd_source_dc = NULL; // unused
             } else {
                 ERR_CLEANUP_MSG("File '%s' isn't expected size (%d vs %d) and xdelta3 patch support not enabled on it. (Add delta-source-raw-offset / delta-source-raw-count or delta-source-fat-offset / delta-source-fat-path)", resource_name, (int) size_in_archive, (int) expected_size_in_archive);
             }
@@ -439,7 +451,10 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
     if (fctx->xd) {
         xdelta_free(fctx->xd);
         free(fctx->xd);
+        if (fctx->xd_source_dc)
+            free(fctx->xd_source_dc);
         fctx->xd = NULL;
+        fctx->xd_source_dc = NULL;
     }
 }
     }
