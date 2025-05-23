@@ -1,0 +1,81 @@
+#!/bin/sh
+
+#
+# Write a firmware image and then test upgrading it with
+# an xdelta3-encoded update.
+#
+# brew install xdelta
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+FWFILE2="$WORK/fwup2.fw"
+SECRET="8e9c0780fd7f5d00c18a30812fe960cfce71f6074dd9cded6aab2897568cc856"
+
+cat >"$CONFIG" <<EOF
+define(ROOTFS_A_PART_OFFSET, 1024)
+define(ROOTFS_A_PART_COUNT, 1024)
+define(ROOTFS_B_PART_OFFSET, 2048)
+define(ROOTFS_B_PART_COUNT, 1024)
+
+file-resource rootfs.original {
+        host-path = "${TESTFILE_1K}"
+}
+file-resource rootfs.next {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+    on-init { raw_memset(\${ROOTFS_B_PART_OFFSET}, \${ROOTFS_B_PART_COUNT}, 0) }
+    on-resource rootfs.original { raw_write(\${ROOTFS_A_PART_OFFSET}, "cipher=aes-cbc-plain", "secret=${SECRET}") }
+}
+task upgrade-and-decrypt {
+    on-resource rootfs.next {
+        delta-source-raw-offset=\${ROOTFS_A_PART_OFFSET}
+        delta-source-raw-count=\${ROOTFS_A_PART_COUNT}
+        delta-source-raw-options="cipher=aes-cbc-plain,secret=${SECRET}"
+        raw_write(\${ROOTFS_B_PART_OFFSET})
+    }
+}
+task upgrade-and-encrypt {
+    on-resource rootfs.next {
+        delta-source-raw-offset=\${ROOTFS_A_PART_OFFSET}
+        delta-source-raw-count=\${ROOTFS_A_PART_COUNT}
+        delta-source-raw-options="cipher=aes-cbc-plain,secret=${SECRET}"
+        raw_write(\${ROOTFS_B_PART_OFFSET}, "cipher=aes-cbc-plain", "secret=${SECRET}")
+    }
+}
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete
+
+# Manually create the delta upgrade by replacing rootfs.next
+# with the delta3 version
+mkdir -p "$WORK/data"
+xdelta3 -A -S -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+cp "$FWFILE" "$FWFILE2"
+(cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
+
+# NOTE: use "unzip -v $FWFILE2" to verify archive contents
+
+# Now upgrade the IMGFILE file
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade-and-decrypt
+cmp_bytes 1024 "$TESTFILE_1K" "$IMGFILE" 0 1048576 # Updated
+
+# Check that the firmware metadata didn't change (including the UUID)
+$FWUP_APPLY_NO_CHECK -m -i "$FWFILE" > "$WORK/original.metadata"
+$FWUP_APPLY_NO_CHECK -m -i "$FWFILE2" > "$WORK/delta_update.metadata"
+diff "$WORK/original.metadata" "$WORK/delta_update.metadata"
+
+# Do it again, but encrypt the upgrade
+rm "$IMGFILE"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE2" -t upgrade-and-encrypt
+dd if="$IMGFILE" of="$WORK/encrypted.img" bs=1024 skip=512 count=1
+cmp_bytes 1024 "$WORK/encrypted.img" "$IMGFILE" 0 1048576 # Updated
+
+# Check that the verify logic works on both files
+$FWUP_VERIFY -V -i "$FWFILE"
+$FWUP_VERIFY -V -i "$FWFILE2"

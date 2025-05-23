@@ -13,7 +13,8 @@ task complete {
 }
 EOF
 
-if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete; then
     echo "Expecting missing secret to fail"
     exit 1
 fi
@@ -25,7 +26,8 @@ task complete {
 }
 EOF
 
-if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete; then
     echo "Expecting missing cipher to fail"
     exit 1
 fi
@@ -37,7 +39,8 @@ task complete {
 }
 EOF
 
-if $FWUP_CREATE -c -f $CONFIG -o $FWFILE; then
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete; then
     echo "Expecting unsupported parameter to fail"
     exit 1
 fi

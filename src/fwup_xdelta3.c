@@ -16,6 +16,7 @@ void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, x
     xd3_init_config(&config, XD3_ADLER32);
     xd3_config_stream(&xd->stream, &config);
 
+    // There's an assumption when decrypting that source block reads are block-aligned.
     xd->source.blksize = READ_SIZE;
     xd->source.curblk = malloc(READ_SIZE);
 
