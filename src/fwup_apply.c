@@ -256,8 +256,14 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
         count = fctx->xd_source_count - offset;
 
     int rc = block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
-    if (fctx->xd && fctx->xd_source_dc && rc >= 0)
+    if (fctx->xd_source_dc && rc > 0) {
+        // Verify xdelta3 offset/count alignment. See fwup_xdelta3.c.
+        if (offset & (FWUP_BLOCK_SIZE - 1) ||
+            count & (FWUP_BLOCK_SIZE - 1))
+            ERR_RETURN("xdelta3 source read not aligned to block size. Please report this bug. offset: %" PRId64 ", count: %d", offset, count);
+
         disk_crypto_decrypt(fctx->xd_source_dc, buf, buf, rc, fctx->xd_source_offset + offset);
+    }
 
     return rc;
 }

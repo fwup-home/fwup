@@ -152,8 +152,8 @@ int disk_crypto_init(struct disk_crypto *dc, off_t base_offset, int argc, const 
  * @param dc session info
  * @param input
  * @param output
- * @param count the number of bytes to write
- * @param offset where the bytes will be written
+ * @param count the number of bytes to write. Must be a multiple of 512.
+ * @param offset where the bytes will be written. Must be a multiple of 512.
  */
 void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset)
 {
@@ -173,8 +173,8 @@ void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *
  * @param dc session info
  * @param input
  * @param output
- * @param count the number of bytes to read
- * @param offset where the bytes will be read
+ * @param count the number of bytes to write. Must be a multiple of 512.
+ * @param offset where the bytes will be written. Must be a multiple of 512.
  */
 void disk_crypto_decrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset)
 {
