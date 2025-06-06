@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.13.0
+
+* New features
+  * Support applying firmware deltas that read directly from encrypted source
+    partitions. This adds `delta-source-raw-options` where you can add details,
+    but most likely add environment variables to allow secrets to be passed when
+    applying the update.
+
+* Package updates
+  * libarchive 3.7.9 (static builds only)
+
 ## v1.12.0
 
 * New features
