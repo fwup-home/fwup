@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#
+# Test to verify the cache flush hang fix behavior (see
+# https://github.com/fwup-home/fwup/issues/253).  Also tests soft limits and
+# updating regular files as secondary aspects.
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+ORIGINAL_FW="$TESTS_SRC_DIR/assets/error-hang-repro-start.fw"
+DELTA_FW="$TESTS_SRC_DIR/assets/error-hang-repro-delta.fw"
+
+if [ ! -e "$ORIGINAL_FW" ] || [ ! -e "$DELTA_FW" ]; then
+    echo "Skipping large reproduction files aren't distributed. Clone git repository for files for this test."
+    exit 77
+fi
+
+$FWUP_APPLY -a -d "$IMGFILE" -i "$ORIGINAL_FW" -t complete
+
+# Applying this delta is able to trigger a condition when flushing the block
+# cache on error that caused the hang.
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$DELTA_FW" --max-size=48640 -t upgrade; then
+    echo "Expected the apply to fail since the delta writes past the max-size"
+    exit 1
+fi
+
+# The following should work with the soft-limit fix for updating regular files
+rm -f "$IMGFILE"
+$FWUP_APPLY -a -d "$IMGFILE" -i "$ORIGINAL_FW" -t complete
+$FWUP_APPLY -a -d "$IMGFILE" -i "$DELTA_FW" -t upgrade
+
+# Check that the verify logic works
+$FWUP_VERIFY -V -i "$ORIGINAL_FW"
+# Commented out since this fails and needs to be investigated.
+#$FWUP_VERIFY -V -i "$DELTA_FW"

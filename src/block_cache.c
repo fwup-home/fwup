@@ -271,13 +271,17 @@ static void *writer_worker(void *void_bc)
 
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     for (;;) {
-        if (bc->seg_to_write && bc->bad_offset < 0) {
+        if (bc->seg_to_write) {
             volatile struct block_cache_segment *seg = bc->seg_to_write;
 
-            OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
-            if (verified_segment_write(bc, seg, bc->thread_verify_temp) < 0)
-                bc->bad_offset = seg->offset;
-            OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
+            // Skip the write if there was a previous write error
+            // A negative value for bc->bad_offset indicates no error has occurred.
+            if (bc->bad_offset < 0) {
+                OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
+                if (verified_segment_write(bc, seg, bc->thread_verify_temp) < 0)
+                    bc->bad_offset = seg->offset;
+                OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
+            }
 
             bc->seg_to_write = NULL;
             OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
