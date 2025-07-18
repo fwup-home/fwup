@@ -213,6 +213,7 @@ TESTS = 001_simple_fw.test \
 	210_new_require_path.test \
 	211_new_require_path_dm.test \
 	212_encrypted_delta_upgrade.test \
-	213_encrypted_delta_upgrade_unaligned.test
+	213_encrypted_delta_upgrade_unaligned.test \
+	214_expand_afterwards.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

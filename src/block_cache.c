@@ -154,10 +154,11 @@ static void init_segment(struct block_cache *bc, off_t offset, struct block_cach
 
 static int calculate_io_size(struct block_cache *bc, off_t offset, size_t *count)
 {
+    off_t last_offset = offset + BLOCK_CACHE_SEGMENT_SIZE;
+
     // If there's a max destination size, then check if it's been hit or
     // whether this should be a partial write.
-    if (bc->end_offset > 0) {
-        off_t last_offset = offset + BLOCK_CACHE_SEGMENT_SIZE;
+    if (bc->end_offset > 0 && !bc->is_soft_end_offset) {
         if (last_offset <= bc->end_offset) {
             // Common case: reading or writing before the end
             *count = BLOCK_CACHE_SEGMENT_SIZE;
@@ -177,6 +178,11 @@ static int calculate_io_size(struct block_cache *bc, off_t offset, size_t *count
         // what happens. Reads will be truncated by the OS and writes will
         // extend the file.
         *count = BLOCK_CACHE_SEGMENT_SIZE;
+        if (bc->is_soft_end_offset && bc->end_offset > 0 && last_offset > bc->end_offset) {
+            // If we're writing past the end of a soft end offset, then push the soft end offset
+            // to the new end of file.
+            bc->end_offset = last_offset;
+        }
     }
 
     return 0;
@@ -383,6 +389,7 @@ cleanup:
  * @param bc
  * @param fd the file descriptor of the destination
  * @param end_offset the size of the destination in bytes or 0 if unknown
+ * @param is_soft_end_offset true if the end_offset is a soft limit and writes can go past it
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @param verify_writes true to verify writes
  * @param minimize_writes true to read the block before writing and skip the write if it's the same
@@ -391,6 +398,7 @@ cleanup:
 int block_cache_init(struct block_cache *bc,
         int fd,
         off_t end_offset,
+        bool is_soft_end_offset,
         bool enable_trim,
         bool verify_writes,
         bool minimize_writes)
@@ -426,9 +434,10 @@ int block_cache_init(struct block_cache *bc,
     memset(bc->trimmed, 0, bc->trimmed_len);
     bc->hw_trim_enabled = enable_trim;
     bc->end_offset = end_offset;
+    bc->is_soft_end_offset = is_soft_end_offset;
 
     // Set the trim points based on the file size
-    if (end_offset > 0) {
+    if (!is_soft_end_offset && end_offset > 0) {
         // Mark the trim data structure that everything past the end has been trimmed.
         off_t aligned_end_offset = (end_offset + BLOCK_CACHE_SEGMENT_SIZE - 1) & BLOCK_CACHE_SEGMENT_MASK;
         OK_OR_RETURN(block_cache_trim_after(bc, aligned_end_offset, false));
