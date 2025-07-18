@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#
+# Test soft limits and growing regular files
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource test {
+        host-path = "${TESTFILE_1K}"
+}
+
+task step1 {
+	on-resource test { raw_write(0) }
+}
+task step2 {
+	on-resource test { raw_write(512) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step1
+
+# This will fail if soft limits aren't working since fwup won't grow the file.
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step2
+
+# The firmware file is equivalent to the following dd call
+# (The conv=sync makes sure that the output is a multiple of 512 bytes)
+cp $TESTFILE_1K $WORK/check.bin
+dd if=$TESTFILE_1K seek=512 of=$WORK/check.bin conv=sync 2>/dev/null
+cmp_bytes 263168 $WORK/check.bin $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

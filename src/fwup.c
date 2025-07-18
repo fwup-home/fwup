@@ -670,6 +670,7 @@ int main(int argc, char **argv)
         bool is_regular_file = will_be_regular_file(mmc_device_path);
         int output_fd = -1;
         off_t end_offset = 0;
+        bool is_soft_end_offset = false;
         if (is_regular_file) {
             // This is a regular file, so open it the regular way.
             output_fd = open(mmc_device_path, O_RDWR | O_CREAT | O_WIN32_BINARY, 0644);
@@ -686,9 +687,12 @@ int main(int argc, char **argv)
                     output_fd = -1;
                 }
                 // If the image file already has a size, go by the file's size.
-                // This is the Qemu disk image use case.
-                if (st.st_size > 0)
-                    end_offset = st.st_size;
+                // This is the Qemu disk image use case. It's a soft limit, so
+                // if the .fw explicitly wants to write more, it can.
+                if (st.st_size > 0) {
+                     end_offset = st.st_size;
+                     is_soft_end_offset = true;
+                }
             }
             if (enable_trim) {
                 fwup_warnx("ignoring --enable-trim since operating on a regular file");
@@ -696,8 +700,10 @@ int main(int argc, char **argv)
             }
             // Regular files can always be the --max-size assuming enough disk space, so
             // force the end_offset outright if set.
-            if (max_size_blocks > 0)
+            if (max_size_blocks > 0) {
                 end_offset = FWUP_BLOCK_SIZE * max_size_blocks;
+                is_soft_end_offset = false;
+            }
         } else if (is_device_null(mmc_device_path)) {
             output_fd = open(mmc_device_path, O_WRONLY);
             verify_writes = false;
@@ -753,11 +759,12 @@ int main(int argc, char **argv)
         options.verify_writes = verify_writes;
         options.minimize_writes = minimize_writes;
         options.reboot_param_path = reboot_param_path;
+        options.is_soft_end_offset = is_soft_end_offset;
+        options.end_offset = end_offset;
 
         if (fwup_apply(input_filename,
                        task,
                        output_fd,
-                       end_offset,
                        &progress,
                        &options) < 0) {
             if (!quiet)

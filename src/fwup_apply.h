@@ -27,12 +27,13 @@ struct fwup_apply_options {
     bool verify_writes;
     bool minimize_writes;
     const char *reboot_param_path;
+    off_t end_offset;
+    bool is_soft_end_offset;
 };
 
 int fwup_apply(const char *fw_filename,
                const char *task_prefix,
                int output_fd,
-               off_t end_offset,
                struct fwup_progress *progress,
                const struct fwup_apply_options *options);
 
