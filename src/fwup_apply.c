@@ -249,7 +249,7 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
 
     if (offset < 0 ||
         offset > fctx->xd_source_count)
-        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %d", fctx->xd_source_count, offset, count);
+        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %zu", fctx->xd_source_count, offset, count);
 
     if (count > fctx->xd_source_count ||
         offset > fctx->xd_source_count - count)
@@ -260,7 +260,7 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
         // Verify xdelta3 offset/count alignment. See fwup_xdelta3.c.
         if (offset & (FWUP_BLOCK_SIZE - 1) ||
             count & (FWUP_BLOCK_SIZE - 1))
-            ERR_RETURN("xdelta3 source read not aligned to block size. Please report this bug. offset: %" PRId64 ", count: %d", offset, count);
+            ERR_RETURN("xdelta3 source read not aligned to block size. Please report this bug. offset: %" PRId64 ", count: %zu", offset, count);
 
         disk_crypto_decrypt(fctx->xd_source_dc, buf, buf, rc, fctx->xd_source_offset + offset);
     }

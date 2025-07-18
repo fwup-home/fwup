@@ -209,7 +209,7 @@ int hex_to_bytes(const char *str, uint8_t *bytes, size_t numbytes)
 {
     size_t len = strlen(str);
     if (len != numbytes * 2)
-        ERR_RETURN("hex string should have length %d, but got %d", numbytes * 2, len);
+        ERR_RETURN("hex string should have length %zu, but got %zu", numbytes * 2, len);
 
     while (len) {
         if (two_hex_to_byte(str, bytes) < 0)

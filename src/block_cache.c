@@ -192,7 +192,7 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
         OK_OR_RETURN(calculate_io_size(bc, seg->offset, &count));
         ssize_t bytes_read = pread(bc->fd, data, count, seg->offset);
         if (bytes_read < 0) {
-            ERR_RETURN("unexpected error reading %d bytes at offset %" PRId64 ": %s.\nPossible causes are that the destination is too small, the device (e.g., an SD card) is going bad, or the connection to it is flaky.",
+            ERR_RETURN("unexpected error reading %zu bytes at offset %" PRId64 ": %s.\nPossible causes are that the destination is too small, the device (e.g., an SD card) is going bad, or the connection to it is flaky.",
                     count, seg->offset, strerror(errno));
         } else if (bytes_read < BLOCK_CACHE_SEGMENT_SIZE) {
             // Didn't read enough bytes. This occurs if the destination media is
@@ -245,7 +245,7 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
     }
 
     if (pwrite(bc->fd, data, count, offset) != count)
-        ERR_RETURN("writing %u bytes failed at offset %" PRId64 ". Check media size.", count, offset);
+        ERR_RETURN("writing %zu bytes failed at offset %" PRId64 ". Check media size.", count, offset);
 
     if (bc->verify_writes) {
         if (pread(bc->fd, temp, count, offset) != count)

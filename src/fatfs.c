@@ -602,7 +602,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
                 UINT bw;
                 CHECK("fat_write can't write", filename, f_write(&fil_, zero_buffer, btw, &bw));
                 if (btw != bw)
-                    ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+                    ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %u (maybe the disk is full?)", filename, size, bw);
                 CHECK_SYNC(filename, &fil_);
                 zero_count -= bw;
             }
@@ -614,7 +614,7 @@ int fatfs_pwrite(struct block_cache *output, off_t block_offset, const char *fil
     UINT bw;
     CHECK("fat_write can't write", filename, f_write(&fil_, buffer, size, &bw));
     if (size != bw)
-        ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %d (maybe the disk is full?)", filename, size, bw);
+        ERR_RETURN("Error writing file to FAT: %s, expected %ld bytes written, got %u (maybe the disk is full?)", filename, size, bw);
     CHECK_SYNC(filename, &fil_);
 
     return 0;
