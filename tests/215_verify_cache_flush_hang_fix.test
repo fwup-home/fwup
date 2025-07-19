@@ -32,4 +32,4 @@ $FWUP_APPLY -a -d "$IMGFILE" -i "$DELTA_FW" -t upgrade
 # Check that the verify logic works
 $FWUP_VERIFY -V -i "$ORIGINAL_FW"
 # Commented out since this fails and needs to be investigated.
-#$FWUP_VERIFY -V -i "$DELTA_FW"
+$FWUP_VERIFY -V -i "$DELTA_FW"

@@ -228,9 +228,11 @@ int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
     while (archive_read_next_header(a, &ae) == ARCHIVE_OK) {
         const char *filename = archive_entry_pathname(ae);
         char resource_name[FWFILE_MAX_ARCHIVE_PATH];
-
         OK_OR_CLEANUP(archive_filename_to_resource(filename, resource_name, sizeof(resource_name)));
-        OK_OR_CLEANUP(check_resource(all_resources, resource_name, a, ae));
+
+        // Skip empty filenames. These are easy to get when you manually run 'zip'.
+        if (resource_name[0] != '\0')
+            OK_OR_CLEANUP(check_resource(all_resources, resource_name, a, ae));
     }
 
     // Check that all resources have been validated
