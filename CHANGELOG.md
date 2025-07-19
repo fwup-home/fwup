@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.13.1
+
+* Bug fixes
+  * Allow images to be expanded after initial creation if they're regular files.
+    Previously this resulted in an error.
+  * Fix error handling triggered by a delta firmware update that resulted in a
+    hang. In theory, this should be possible to trigger without a delta
+    firmware, but I wasn't able to get it to happen.
+  * Fix verification error on delta firmware image that had an empty entry.
+
 ## v1.13.0
 
 * New features
