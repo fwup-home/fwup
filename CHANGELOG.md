@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.13.2
+
+* Improvements
+  * Improve progress reporting for delta updates. Previously progress was
+    updated after processing xdelta3 window size chunks (default is 8 MB). Now
+    progress is updated every 128 KB regardless of window size to avoid the long
+    stalls.
+
 ## v1.13.1
 
 * Bug fixes
