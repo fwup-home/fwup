@@ -27,6 +27,7 @@ struct xdelta_state {
     xdelta_pread_source *pread_source;
     void *cookie;
     bool end_of_patch;
+    size_t bytes_already_reported;
 };
 
 void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie);

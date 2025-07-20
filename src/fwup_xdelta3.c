@@ -7,6 +7,7 @@
 #include "util.h"
 
 #define READ_SIZE (128 * 1024)
+#define MAX_READ_RETURN_SIZE (128 * 1024)
 
 void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie)
 {
@@ -24,6 +25,7 @@ void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, x
     xd->pread_source = pread_source;
     xd->cookie = cookie;
     xd->end_of_patch = false;
+    xd->bytes_already_reported = 0;
 }
 
 void xdelta_free(struct xdelta_state *xd)
@@ -37,11 +39,12 @@ void xdelta_free(struct xdelta_state *xd)
 
 static void xdelta_consume(struct xdelta_state *xd, const void **buffer, size_t *count)
 {
-    *buffer = xd->stream.next_out;
-    *count = xd->stream.avail_out;
+    *buffer = xd->stream.next_out + xd->bytes_already_reported;
+    *count = xd->stream.avail_out - xd->bytes_already_reported;
 
     // Output buffer is invalidated on next call to xdelta_read.
     xd3_consume_output(&xd->stream);
+    xd->bytes_already_reported = 0;
 }
 
 static int xdelta_read_more(struct xdelta_state *xd)
@@ -81,6 +84,20 @@ static int xdelta_read_source_block(struct xdelta_state *xd, xoff_t blkno)
 // Returns 0 when done; >0 when more to do; <0 on error
 static int xdelta_read_impl(struct xdelta_state *xd, const void **buffer, size_t *count)
 {
+    // Check whether enough bytes have accumulated to return already. xdelta3 will
+    // force bytes to be returned when it constructs a window-sized amount of output
+    // which is 8 MB by default. However, 8 MB is quite large and tends to kill all
+    // concurrency while being written. Plus it delays progress reporting which is
+    // important when people watch firmware update progress over slow links.
+    size_t bytes_to_report = xd->stream.avail_out - xd->bytes_already_reported;
+    if (bytes_to_report > MAX_READ_RETURN_SIZE) {
+        *buffer = xd->stream.next_out + xd->bytes_already_reported;
+        *count = MAX_READ_RETURN_SIZE;
+        xd->bytes_already_reported += *count;
+        return 0;
+    }
+
+    // Tell xdelta3 to provide more data.
     switch (xd3_decode_input(&xd->stream)) {
     case XD3_INPUT:
         return xdelta_read_more(xd);
