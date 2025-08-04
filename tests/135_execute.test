@@ -14,7 +14,10 @@ EXE_CMD="dd if=${LOCAL_FILE} of=${OUTFILE}"
 
 if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
     # dd usually isn't available on Windows
-    EXE_CMD="copy work-135_execute.test\\\\somefile.txt work-135_execute.test\\\\output.txt"
+    #
+    # 8 backslashes to get 1 backslash since the string gets evaluated 3 times:
+    # shell script, fwup create, fwup apply. :(
+    EXE_CMD="copy work-135_execute.test\\\\\\\\somefile.txt work-135_execute.test\\\\\\\\output.txt"
 fi
 
 cat >$LOCAL_FILE <<EOF
