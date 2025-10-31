@@ -59,11 +59,11 @@ EOF
 cat >$EXPECTED_META_CONF <<EOF
 file-resource "sparsefile" {
 length={0,32768,4096,28672,4096,978944,4096}
-blake2b-256="3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1"
+blake2b-256=3fd7a5dcd714454042a6d84711bd7df040ec3cfe035d94e933676ebd89d627c1
 }
 task "complete" {
 on-resource "sparsefile" {
-funlist = {"2", "raw_write", "0"}
+funlist = {2, raw_write, 0}
 }
 }
 EOF

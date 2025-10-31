@@ -28,14 +28,14 @@ task complete {
 EOF
 
 cat >"$EXPECTED_META_CONF" <<EOF
-meta-product="$TESTFILE"
+meta-product=$TESTFILE
 file-resource "$TESTFILE" {
   length=1024
-  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+  blake2b-256=b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b
 }
 task "complete" {
   on-resource "$TESTFILE" {
-    funlist = {"2", "raw_write", "0"}
+    funlist = {2, raw_write, 0}
   }
 }
 EOF
