@@ -19,7 +19,7 @@ defaults: &defaults
 
 defaults_osx: &defaults_osx
   macos:
-    xcode: "13.4.1"
+    xcode: "16.2.0"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: 1
 
