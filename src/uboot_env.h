@@ -28,12 +28,12 @@ struct uboot_name_value {
 };
 
 struct uboot_env {
-    uint32_t block_offset;
-    uint32_t block_count;
+    off_t block_offset;
+    size_t block_count;
     size_t env_size;
 
     bool use_redundant;
-    uint32_t redundant_block_offset;
+    off_t redundant_block_offset;
 
     // These flags determine which environment gets written. When
     // not using redundant environments, write_primary is always true.
