@@ -494,9 +494,9 @@ static cfg_opt_t gpt_opts[] = {
     CFG_END()
 };
 static cfg_opt_t uboot_environment_opts[] = {
-    CFG_INT("block-offset", -1, CFGF_NONE),
+    CFG_STR("block-offset", 0, CFGF_NONE), // Special case: use a string to support > 31-bit offsets
     CFG_INT("block-count", INT32_MAX, CFGF_NONE),
-    CFG_INT("block-offset-redund", -1, CFGF_NONE),
+    CFG_STR("block-offset-redund", 0, CFGF_NONE), // Special case: use a string to support > 31-bit offsets
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };
