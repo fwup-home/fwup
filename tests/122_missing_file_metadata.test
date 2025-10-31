@@ -21,7 +21,7 @@ EOF
 cat >$WORK/new-meta.conf <<EOF
 task "complete" {
 on-resource "a.bin" {
-funlist={"2","raw_write","0"}
+funlist={2,raw_write,0}
 }
 }
 EOF

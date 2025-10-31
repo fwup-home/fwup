@@ -18,7 +18,7 @@ EOF
 
 cat >$EXPECTED_META_CONF <<EOF
 file-resource "devnull" {
-blake2b-256="0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8"
+blake2b-256=0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8
 }
 EOF
 

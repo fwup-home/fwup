@@ -21,8 +21,8 @@ task complete {
 EOF
 
 cat >$EXPECTED_OUTPUT <<EOF
-fwup: The wrong way to specify the UUID is 2f4626e9-78fa-5962-8571-59523c0f7847, but we'll allow it.
-fwup: The right way to specify the UUID is 2f4626e9-78fa-5962-8571-59523c0f7847.
+fwup: The wrong way to specify the UUID is 904d5a3b-8973-5bcb-496b-ef02ae8fa5bc, but we'll allow it.
+fwup: The right way to specify the UUID is 904d5a3b-8973-5bcb-496b-ef02ae8fa5bc.
 EOF
 
 # Create the firmware file, then apply it

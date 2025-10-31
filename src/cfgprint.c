@@ -18,9 +18,11 @@
 #include "simple_string.h"
 #include "errno.h"
 
+#include <ctype.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <inttypes.h>
 
 // This implementation is essentially a copy/pasted version of the default cfg_print
@@ -50,6 +52,43 @@
 
 static void fwup_cfg_print(cfg_t *cfg, struct simple_string *s);
 
+static bool ok_char(char c)
+{
+    // Be conservative in what we accept in unescaped strings to
+    // avoid future problems. For example, if we allow "+", then
+    // that could make addition ambiguous.
+    return isalnum(c) || c == '_' || c == '.';
+}
+
+static bool needs_escaping(const char *str)
+{
+    if (str == NULL || *str == '\0')
+        return true;
+
+    while (*str) {
+        if (!ok_char(*str))
+            return true;
+        str++;
+    }
+    return false;
+}
+
+static void ssprintf_escaped_string(struct simple_string *s, const char *str)
+{
+    // Add quotes and escape as needed
+    ssprintf(s, "\"");
+    while (str && *str) {
+        if (*str == '"')
+            ssprintf(s, "\\\"");
+        else if (*str == '\\')
+            ssprintf(s, "\\\\");
+        else
+            ssprintf(s, "%c", *str);
+        str++;
+    }
+    ssprintf(s, "\"");
+}
+
 static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct simple_string *s)
 {
     switch (opt->type) {
@@ -70,17 +109,20 @@ static void fwup_cfg_opt_nprint_var(cfg_opt_t *opt, unsigned int index, struct s
     case CFGT_STR:
     {
         const char *str = cfg_opt_getnstr(opt, index);
-        ssprintf(s, "\"");
-        while (str && *str) {
-            if (*str == '"')
-                ssprintf(s, "\\\"");
-            else if (*str == '\\')
-                ssprintf(s, "\\\\");
-            else
-                ssprintf(s, "%c", *str);
-            str++;
-        }
-        ssprintf(s, "\"");
+
+        // Output double-quoted strings when needed.
+        //
+        // This allows for an important compatibility feature due to integers
+        // sometimes needing to be stored as strings to support large numbers.
+        // If an attribute is originally an integer and then needs to be
+        // switched to a string, older versions of fwup would break if they saw
+        // double quotes. Keeping the double quotes off these integers works
+        // both when fwup parses it as an integer and a string.
+        if (needs_escaping(str))
+            ssprintf_escaped_string(s, str);
+        else
+            ssappend(s, str);
+
         break;
     }
 

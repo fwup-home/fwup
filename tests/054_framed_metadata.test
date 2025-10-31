@@ -22,11 +22,11 @@ cat >$EXPECTED_OUTPUT <<EOF
 meta-product="product name"
 meta-description="product description"
 meta-version="some version"
-meta-author="someone"
+meta-author=someone
 meta-platform="a platform"
 meta-architecture="an architecture"
 meta-creation-date="2018-05-05T18:10:16Z"
-meta-uuid="ded51581-3c37-5dd5-d1b6-cd8503e4cfc4"
+meta-uuid="53233641-82a4-5576-b75d-d227a234c626"
 EOF
 
 cat >$EXPECTED_OUTPUT.type << EOF

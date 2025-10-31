@@ -25,12 +25,12 @@ meta-author = \${SIXTEEN}
 EOF
 
 cat >$EXPECTED_META_CONF <<EOF
-meta-product="11"
+meta-product=11
 meta-description="-1"
 meta-version="-11"
-meta-author="16"
-meta-platform="132"
-meta-architecture="3"
+meta-author=16
+meta-platform=132
+meta-architecture=3
 EOF
 
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE

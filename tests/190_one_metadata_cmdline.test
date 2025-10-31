@@ -40,7 +40,7 @@ cat >$EXPECTED_OUTPUT.creation_date <<EOF
 2018-05-05T18:10:16Z
 EOF
 cat >$EXPECTED_OUTPUT.uuid <<EOF
-ded51581-3c37-5dd5-d1b6-cd8503e4cfc4
+53233641-82a4-5576-b75d-d227a234c626
 EOF
 cat >$EXPECTED_OUTPUT.unknown <<EOF
 (null)
