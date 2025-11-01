@@ -98,7 +98,7 @@ jobs:
     <<: *build
   linux_gcc_windows:
     docker:
-      - image: ubuntu:20.04
+      - image: ubuntu:24.04
     environment:
       CIRCLE_OS_NAME: linux
       MODE: windows
