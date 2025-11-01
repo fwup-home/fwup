@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.14.0
+
+NOTE: This release changes metadata stored in the .fw files in a way that
+doesn't affect any functionality, but is visible in the firmware UUID
+construction. In other words if you use the exact same inputs with this version
+of fwup and an older version, you'll get different UUIDs. This was done to
+prevent compatibility issues between fwup versions when parsing metadata that
+needed to change from being an integer to a string for holding very large
+numbers.
+
+* Improvements
+  * U-Boot environment blocks can now be written to offsets beyond 2 GB. Prior
+    versions would likely silently fail
+  * Don't unconditionally double quote strings in the metadata file. This allows
+    more flexibility in changing fields to strings when they go beyond what's
+    supported by libconfuse while not breaking backward compatibility.
+
 ## v1.13.2
 
 * Improvements
