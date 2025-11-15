@@ -7,7 +7,7 @@
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 cd $WORK
-$FWUP_CREATE -g
+$FWUP_CREATE -g > $WORK/output.txt 2>&1
 cd -
 
 # Check that the keys are the expected base64 length
@@ -31,6 +31,26 @@ if [ `wc -c $WORK/fwup-key.pub.raw | awk '{print $1}'` -ne 32 ]; then
 fi
 if [ `wc -c $WORK/fwup-key.priv.raw | awk '{print $1}'` -ne 64 ]; then
     echo "base64 -d fwup-key.priv didn't produce 64 bytes"
+    exit 1
+fi
+
+# Check that the output message contains the correct filenames
+# This verifies the fix for the basename() static storage issue
+if ! grep -q "saved to 'fwup-key.pub' and 'fwup-key.priv'" $WORK/output.txt; then
+    echo "Output message doesn't contain both 'fwup-key.pub' and 'fwup-key.priv'"
+    cat $WORK/output.txt
+    exit 1
+fi
+
+if ! grep -q "Distribute 'fwup-key.pub'" $WORK/output.txt; then
+    echo "Output message doesn't say to distribute 'fwup-key.pub'"
+    cat $WORK/output.txt
+    exit 1
+fi
+
+if ! grep -q "Keep 'fwup-key.priv'" $WORK/output.txt; then
+    echo "Output message doesn't say to keep 'fwup-key.priv' safe"
+    cat $WORK/output.txt
     exit 1
 fi
 

@@ -88,12 +88,14 @@ int fwup_genkeys(const char *output_prefix)
     OK_OR_RETURN(save_key(privkey_path, sk, FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN));
 
     char message[512];
-    char *base_pubkey_path = basename(pubkey_path);
+    char base_pubkey_name[64];
+    strncpy(base_pubkey_name, basename(pubkey_path), sizeof(base_pubkey_name) - 1);
+    base_pubkey_name[sizeof(base_pubkey_name) - 1] = '\0';
     char *base_privkey_path = basename(privkey_path);
     sprintf(message, "Firmware signing keys created and saved to '%.32s' and '%.32s'\n\n"
                      "Distribute '%.32s' with your system so that firmware updates can be\n"
                      "authenticated. Keep '%.32s' in a safe location.\n",
-            base_pubkey_path, base_privkey_path, base_pubkey_path, base_privkey_path);
+            base_pubkey_name, base_privkey_path, base_pubkey_name, base_privkey_path);
 
     fwup_output(FRAMING_TYPE_SUCCESS, 0, message);
 
