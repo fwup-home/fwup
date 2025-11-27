@@ -11,8 +11,7 @@ needed to change from being an integer to a string for holding very large
 numbers.
 
 * Improvements
-  * U-Boot environment blocks can now be written to offsets beyond 2 GB. Prior
-    versions would likely silently fail
+  * U-Boot environment blocks can now be written to offsets beyond 2 GB.
   * Don't unconditionally double quote strings in the metadata file. This allows
     more flexibility in changing fields to strings when they go beyond what's
     supported by libconfuse while not breaking backward compatibility.
