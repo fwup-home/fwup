@@ -695,6 +695,7 @@ require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the bl
 require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified partition device (e.g., "/dev/mmcblk0p1")
 require-path-at-offset(path, offset)               | 0.19.0 | Require that the specified path (e.g., "/") is at the specified block offset (e.g., 1024). Combine with require-path-on-device.
 require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-Boot environment
+require-execute(command)                           | 1.15.0 | Require that a command returns a success exit status (0) (Requires --unsafe)
 
 The remainder of the `task` section is a list of event handlers. Event handlers
 are organized as scopes. An event handler matches during the application of a
@@ -1255,6 +1256,29 @@ $ fwup -m -i $FW_FILE | jq -n -R 'reduce inputs as $i ({}; . + ($i | (match("([^
 Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See
 the [UBI Example fwup.conf](docs/ubi_example/fwup.conf) for how to integrate
 fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
+
+## What's the escape hatch
+
+When `fwup` really can't address a problem it does allow for shell scripts or
+other executables to be run. These require the `--unsafe` flag to enable to
+highlight that more scrutiny may be needed. For example, it may be another
+reason to authenticate `.fw` files.
+
+See `require-execute(cmd)` for running a command to see whether a particular
+task applies. This checks the exit status of the command and you can either run
+a standalone binary or execute shell script logic. For example, to check what a
+program prints, you could do `require-execute("[ $(find_active_partition) = 'a' ]")`.
+(Note that a possible "safe" alternative is to run the program before calling
+`fwup` and using the results to alter command line parameters or set an
+environment variable.)
+
+To then run an arbitrary command, run `execute(cmd)`.
+
+Sometimes you need to invoke a second program to write a file to wherever it
+belongs. This is what `pipe_write(cmd)` is for. For example, if you need to
+update a secondary processor and really need to do it via `fwup`, you could
+implement that by adding `pipe_write("upload_image_to_coprocessor")` in an
+`on-resource` handler.
 
 ## How do you pronounce fwup
 
