@@ -1,0 +1,45 @@
+#!/bin/sh
+
+
+# Tests that the "require-execute" feature works. This allows using the execute
+# escape hatch for require-conditions
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+task upgrade.false {
+    require-execute("false")
+    on-init { info("false shouldn't have worked") }
+}
+task upgrade.does_not_exist {
+    require-execute("/usr/bin/does_not_exist")
+    on-init { info("a non-existent program shouldn't have worked") }
+}
+task upgrade.empty_string {
+    require-execute("")
+    on-init { info("empty string shouldn't succeed") }
+}
+task upgrade.empty_variable {
+    require-execute("\${EMPTY_VAR}")
+    on-init { info("empty variable shouldn't succeed") }
+}
+task upgrade.true {
+    require-execute("true")
+    on-init { info("correct") }
+}
+task upgrade.catchall {
+    on-init { info("catchall triggered and shouldn't have") }
+}
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE --unsafe -c -f $CONFIG -o $FWFILE
+
+$FWUP_APPLY --unsafe -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
