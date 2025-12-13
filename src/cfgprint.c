@@ -230,8 +230,9 @@ void fwup_cfg_opt_to_string(cfg_opt_t *opt, struct simple_string *s, bool scrub)
                     strcmp("skip-holes", opt->name) == 0)
                     return;
 
-                // Skip attributes not are automatically calculated
+                // Skip attributes that are automatically calculated
                 if (strcmp("meta-uuid", opt->name) == 0 ||
+                    strcmp("meta-nickname", opt->name) == 0 ||
                     strcmp("meta-creation-date", opt->name) == 0)
                     return;
             }

@@ -118,6 +118,7 @@ EOF
 cat >$EXPECTED_METADATA <<EOF
 meta-creation-date="2019-09-19T03:22:13Z"
 meta-uuid="82db9640-3319-5aa6-3c13-195534a8536e"
+meta-nickname="key-stomach"
 EOF
 
 # Create that setting SOURCE_DATE_EPOCH sets the date properly in the archive.

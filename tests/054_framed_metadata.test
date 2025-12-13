@@ -27,6 +27,7 @@ meta-platform="a platform"
 meta-architecture="an architecture"
 meta-creation-date="2018-05-05T18:10:16Z"
 meta-uuid="53233641-82a4-5576-b75d-d227a234c626"
+meta-nickname="energy-bid"
 EOF
 
 cat >$EXPECTED_OUTPUT.type << EOF

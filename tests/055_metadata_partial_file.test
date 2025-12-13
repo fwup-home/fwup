@@ -34,6 +34,7 @@ meta-platform="a platform"
 meta-architecture="an architecture"
 meta-creation-date="2018-05-05T18:10:16Z"
 meta-uuid="b3c560af-d052-58c1-228d-5fa869817cda"
+meta-nickname="present-snack"
 EOF
 
 SOURCE_DATE_EPOCH=1525543816 $FWUP_CREATE -c -f $CONFIG -o $FWFILE

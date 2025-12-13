@@ -586,6 +586,7 @@ static cfg_opt_t opts[] = {
     CFG_STR("meta-vcs-identifier", 0, CFGF_NONE),
     CFG_STR("meta-misc", 0, CFGF_NONE),
     CFG_STR("meta-uuid", 0, CFGF_NONE),
+    CFG_STR("meta-nickname", 0, CFGF_NONE),
 
     CFG_STR("require-fwup-version", "0", CFGF_NONE),
     CFG_FUNC("define", cb_define),
@@ -622,6 +623,7 @@ int cfgfile_parse_file(const char *filename, cfg_t **cfg)
     // at "apply" time since it can't be calculated at creation time without
     // affecting itself.
     set_environment("FWUP_META_UUID", "${FWUP_META_UUID}");
+    set_environment("FWUP_META_NICKNAME", "${FWUP_META_NICKNAME}");
 
     // libconfuse 3.0 note: This function is called when creating
     // archives. If there's an unknown option, we want to throw an
@@ -766,17 +768,22 @@ int cfgfile_parse_fw_ae(struct archive *a,
     cfg_setstr(*cfg, "meta-creation-date", str);
 
     // meta-uuid is always calculated and cannot be overriden
-    calculate_fwup_uuid(meta_conf, total_size, str);
+    char nickname[UUID_NICKNAME_LENGTH];
+    calculate_fwup_uuid(meta_conf, total_size, str, nickname);
     cfg_setstr(*cfg, "meta-uuid", str);
+    cfg_setstr(*cfg, "meta-nickname", nickname);
     set_environment("FWUP_META_UUID", str);
+    set_environment("FWUP_META_NICKNAME", nickname);
 
     if (cfg_parse_buf(*cfg, meta_conf) != 0)
         ERR_CLEANUP_MSG("Unexpected error parsing meta.conf");
 
     // Verify that meta-uuid wasn't changed when loading the file.
     if (strcmp(str, cfg_getstr(*cfg, "meta-uuid")) != 0 ||
-        strcmp(str, get_environment("FWUP_META_UUID")) != 0)
-        ERR_CLEANUP_MSG("meta.conf isn't allowed to change 'meta-uuid' or '$FWUP_META_UUID'");
+        strcmp(str, get_environment("FWUP_META_UUID")) != 0 ||
+        strcmp(nickname, cfg_getstr(*cfg, "meta-nickname")) != 0 ||
+        strcmp(nickname, get_environment("FWUP_META_NICKNAME")) != 0)
+        ERR_CLEANUP_MSG("meta.conf isn't allowed to change 'meta-uuid', 'meta-nickname', '$FWUP_META_UUID' or '$FWUP_META_NICKNAME'");
 
 cleanup:
     if (meta_conf)

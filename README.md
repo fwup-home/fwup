@@ -325,6 +325,7 @@ meta-misc            | Miscellaneous additional data. Format and contents are up
 meta-creation-date   | Timestamp when the update was created (derived from ZIP metadata). For reproducible builds, set the [`SOURCE_DATE_EPOCH`](https://reproducible-builds.org/specs/source-date-epoch/#idm55) environment variable.
 meta-fwup-version    | Version of fwup used to create the update (deprecated - no longer added since fwup 1.2.0)
 meta-uuid            | A UUID to represent this firmware. The UUID won't change even if the .fw file is digitally signed after creation (automatically generated)
+meta-nickname        | A nickname generated from the UUID for ease of differentiating firmware files. It is only an aid and is not guaranteed unique
 
 After setting the above options, it is necessary to create scopes for other options. The
 currently available scopes are:
@@ -1213,6 +1214,8 @@ fwup supports several ways:
 2. Store the `git` hash in `meta-vcs-identifier`. This is good for developers.
 3. Use the `fwup`-computed UUID that's available in `meta-uuid' and
    `${FWUP_META_UUID}`.
+4. Use the `fwup`-computed nickname that's available in `meta-nickname` and
+   `${FWUP_META_NICKNAME}`.
 
 Of these, the third one is always available since version fwup `v1.2.1`. The
 motivation behind it was to unambiguously know whether installed firmware
@@ -1222,6 +1225,13 @@ previous versions of fwup have UUIDs.
 The first two options require the versions to be added to the `fwup.conf` file.
 They are usually added using environment variables so that the version numbers
 are not hardcoded.
+
+Even though firmware UUIDs are the most reliable way of differentiating firmware
+files and completely automatic, they're hard to remember. The `meta-nickname` is
+intended to help with this by giving the user a couple words to check.
+Unfortunately, it's only derived from 16-bits of the UUID so it's not guaranteed
+unique. This was the compromise to make it human memorable, and it's sufficient
+to reliably notice if a firmware updated or not in development.
 
 ## How do I get the firmware metadata formatted as JSON
 
