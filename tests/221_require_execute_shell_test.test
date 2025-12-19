@@ -6,6 +6,12 @@
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # Windows doesn't have the standard Linux shell or programs so these tests
+    # won't work there.
+    exit 77
+fi
+
 cat >$CONFIG <<EOF
 task upgrade.wrong-string-match {
     require-execute("[ $(echo bar) = 'foo' ]")

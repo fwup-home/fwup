@@ -29,7 +29,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifndef _WIN32
 #include <sys/wait.h>
+#else
+/* On Windows, system() returns the exit code directly. Provide minimal
+ * definitions so code using WIFEXITED/WEXITSTATUS still compiles and
+ * interprets the status consistently. */
+#define WIFEXITED(status) (1)
+#define WEXITSTATUS(status) (status)
+#endif
 
 #define DECLARE_REQ(REQ) \
     static int REQ ## _validate(struct fun_context *fctx); \
