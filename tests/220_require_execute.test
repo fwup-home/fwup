@@ -15,31 +15,36 @@ fi
 cat >$CONFIG <<EOF
 task upgrade.false {
     require-execute("false")
-    on-init { info("false shouldn't have worked") }
+    on-init { error("false shouldn't have worked") }
 }
 task upgrade.does_not_exist {
     require-execute("/usr/bin/does_not_exist")
-    on-init { info("a non-existent program shouldn't have worked") }
+    on-init { error("a non-existent program shouldn't have worked") }
 }
 task upgrade.empty_string {
     require-execute("")
-    on-init { info("empty string shouldn't succeed") }
+    on-init { error("empty string shouldn't succeed") }
 }
 task upgrade.empty_variable {
     require-execute("\${EMPTY_VAR}")
-    on-init { info("empty variable shouldn't succeed") }
+    on-init { error("empty variable shouldn't succeed") }
 }
 task upgrade.true {
     require-execute("true")
     on-init { info("correct") }
 }
 task upgrade.catchall {
-    on-init { info("catchall triggered and shouldn't have") }
+    on-init { error("catchall triggered and shouldn't have. No --unsafe?") }
 }
 EOF
 
-# Create the firmware file the normal way
-$FWUP_CREATE --unsafe -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Make sure that applying without --unsafe doesn't work
+if $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade; then
+    echo "Applying without --unsafe should have failed"
+    exit 1
+fi
 
 $FWUP_APPLY --unsafe -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
 cat >$WORK/expected_output.txt <<EOF

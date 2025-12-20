@@ -204,14 +204,17 @@ int require_execute_validate(struct fun_context *fctx)
     if (fctx->argc != 2)
         ERR_RETURN("require-execute requires a command");
 
-    if (!fwup_unsafe)
-        ERR_RETURN("%s requires --unsafe", fctx->argv[0]);
-
     return 0;
 }
 
 int require_execute_requirement_met(struct fun_context *fctx)
 {
+    // We silently fail here (returning -1) so the system can try the next task
+    // variant. An INFO message will be printed if verbose mode is enabled
+    // showing that the requirement was not met.
+    if (!fwup_unsafe)
+        return -1;
+
     const char *command = fctx->argv[1];
     if (command[0] == '\0')
         return -1;

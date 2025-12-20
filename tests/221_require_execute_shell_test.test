@@ -15,27 +15,33 @@ fi
 cat >$CONFIG <<EOF
 task upgrade.wrong-string-match {
     require-execute("[ $(echo bar) = 'foo' ]")
-    on-init { info("bar doesn't = foo") }
+    on-init { error("bar doesn't = foo") }
 }
 task upgrade.wrong-string-match-backticks {
     require-execute("[ `echo bar` = 'foo' ]")
-    on-init { info("bar doesn't = foo") }
+    on-init { error("bar doesn't = foo") }
 }
 task upgrade.wrong-prefix {
     require-execute("[ $(echo bar2) = 'bar' ]")
-    on-init { info("bar2 doesn't = bar") }
+    on-init { error("bar2 doesn't = bar") }
 }
 task upgrade.correct {
     require-execute("[ $(echo bar) = 'bar' ]")
     on-init { info("correct") }
 }
 task upgrade.catchall {
-    on-init { info("catchall shouldn't run") }
+    on-init { error("catchall shouldn't run") }
 }
 EOF
 
 # Create the firmware file the normal way
-$FWUP_CREATE --unsafe -c -f $CONFIG -o $FWFILE
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that applying without --unsafe fails
+if $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade; then
+    echo "Applying without --unsafe should have failed"
+    exit 1
+fi
 
 $FWUP_APPLY --unsafe -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
 cat >$WORK/expected_output.txt <<EOF
