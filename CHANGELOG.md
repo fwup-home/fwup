@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.15.0
+
+* New features
+  * Added `require-execute` to be able to run an arbitrary program to determine
+    whether or not to run a task. This requires the `--unsafe` flag to use.
+  * Added firmware nicknames like `guitar-weather` so that it's easier to refer
+    to firmware files rather than by using UUIDs. Nicknames are computed from
+    the UUID and don't affect `.fw` files. They're not guaranteed unique, so
+    continue to use the UUIDs for uniqueness guarantees. See the `meta-nickname`
+    metadata. You can still refer to firmware versions. This handles the
+    development and debug cases where you're not regularly updating version numbers.
+
+* Bug fixes
+  * Fixed success message when creating public/private signing key pairs. It
+    previously printed out the wrong filename on some systems.
+
 ## v1.14.0
 
 NOTE: This release changes metadata stored in the .fw files in a way that
