@@ -27,10 +27,9 @@ mkdir -p $DOWNLOAD_DIR
 echo "Downloading third party libraries to $DOWNLOAD_DIR..."
 
 cd $DOWNLOAD_DIR
-[ -e zlib-$ZLIB_VERSION.tar.gz ] || curl -LO http://zlib.net/zlib-$ZLIB_VERSION.tar.gz
+[ -e zlib-$ZLIB_VERSION.tar.gz ] || curl -LO https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
 [ -e confuse-$CONFUSE_VERSION.tar.gz ] || curl -LO https://github.com/martinh/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.gz
 [ -e libarchive-$LIBARCHIVE_VERSION.tar.gz ] || curl -LO https://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
 
 echo "Verifying checksums..."
 $SHA256SUM -c $BASE_DIR/scripts/third_party.sha256
-
