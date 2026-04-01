@@ -1100,6 +1100,12 @@ destination device can pull out and present on a UI. To do this, just add
 `file-resource` blocks for each file. These blocks don't need to be referenced
 by an `on-resource` block.
 
+Be aware that doing this could lead to unexpected behavior if used with deltas.
+Fwup does not provide a default implementation for generating deltas. Depending
+on the delta implementation, it is possible that a tool for generating efficient
+deltas would remove these files as part of optimizing the firmware size as the
+unreferenced files would seem unused.
+
 ## How do I include the firmware version in the archive
 
 If you are using git, you can invoke `fwup` as follows:
