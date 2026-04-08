@@ -73,6 +73,9 @@ struct fun_context {
     // Reboot parameters
     const char *reboot_param_path;
 
+    // Block cache size in MB (0 = auto-detect)
+    size_t cache_size_mb;
+
     void *cookie;
 };
 

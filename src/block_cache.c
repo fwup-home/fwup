@@ -397,6 +397,7 @@ cleanup:
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @param verify_writes true to verify writes
  * @param minimize_writes true to read the block before writing and skip the write if it's the same
+ * @param cache_size_mb the size of the block cache in MB (0 for auto-detect)
  * @return
  */
 int block_cache_init(struct block_cache *bc,
@@ -405,9 +406,28 @@ int block_cache_init(struct block_cache *bc,
         bool is_soft_end_offset,
         bool enable_trim,
         bool verify_writes,
-        bool minimize_writes)
+        bool minimize_writes,
+        size_t cache_size_mb)
 {
     memset(bc, 0, sizeof(struct block_cache));
+
+    // Determine cache size
+    if (cache_size_mb == 0) {
+        cache_size_mb = get_configured_cache_size_mb();
+    }
+
+    // Calculate number of segments
+    bc->num_segments = (cache_size_mb * 1024 * 1024) / BLOCK_CACHE_SEGMENT_SIZE;
+    if (bc->num_segments < 8) {
+        bc->num_segments = 8; // Minimum 1 MB cache
+    }
+
+    INFO("Initializing block cache: %zu MB (%zu segments)", cache_size_mb, bc->num_segments);
+
+    // Allocate segments array
+    bc->segments = (struct block_cache_segment *) calloc(bc->num_segments, sizeof(struct block_cache_segment));
+    if (bc->segments == NULL)
+        fwup_err(EXIT_FAILURE, "calloc segments array");
 
 #if USE_PTHREADS
     bc->running = true;
@@ -483,7 +503,7 @@ void block_cache_reset(struct block_cache *bc)
     // that any writes that we still control can be cancelled to minimize
     // changes. The block cache can be used again for error handling code.
 
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 0; i < bc->num_segments; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use) {
             wait_for_write_completion(bc, seg);
@@ -512,19 +532,23 @@ int block_cache_flush(struct block_cache *bc)
     // than FAT operation or raw write, and when that happens, the most recent one
     // drives the final sort order.
 
-    struct block_cache_segment *sorted_segments[BLOCK_CACHE_NUM_SEGMENTS];
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++)
+    struct block_cache_segment **sorted_segments = (struct block_cache_segment **) malloc(bc->num_segments * sizeof(struct block_cache_segment *));
+    if (sorted_segments == NULL)
+        fwup_err(EXIT_FAILURE, "malloc sorted_segments");
+    
+    for (size_t i = 0; i < bc->num_segments; i++)
         sorted_segments[i] = &bc->segments[i];
-    qsort(sorted_segments, BLOCK_CACHE_NUM_SEGMENTS, sizeof(struct block_cache_segment *), lrucompare);
+    qsort(sorted_segments, bc->num_segments, sizeof(struct block_cache_segment *), lrucompare);
 
     int rc = 0;
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 0; i < bc->num_segments; i++) {
         if (flush_segment(bc, sorted_segments[i]) < 0) {
             rc = -1;
             break;
         }
     }
 
+    free(sorted_segments);
     return rc;
 }
 
@@ -556,7 +580,7 @@ int block_cache_free(struct block_cache *bc)
     bc->thread_verify_temp = NULL;
 #endif
 
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 0; i < bc->num_segments; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->data) {
             free_page_aligned(seg->data);
@@ -568,7 +592,9 @@ int block_cache_free(struct block_cache *bc)
     if (bc->verify_temp)
         free_page_aligned(bc->verify_temp);
     free(bc->trimmed);
+    free(bc->segments);
 
+    bc->segments = NULL;
     bc->trimmed = NULL;
     bc->read_temp = NULL;
     bc->verify_temp = NULL;
@@ -588,7 +614,7 @@ int block_cache_free(struct block_cache *bc)
 static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_segment **segment)
 {
     // Check for a hit
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 0; i < bc->num_segments; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use && seg->offset == offset) {
             // Wait for async writes to complete on this segment before use.
@@ -607,7 +633,7 @@ static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_
         *segment = lru;
         return 0;
     }
-    for (int i = 1; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 1; i < bc->num_segments; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (!seg->in_use) {
             init_segment(bc, offset, seg);
@@ -710,7 +736,7 @@ int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwt
         }
 
         // Trim out anything in the cache
-        for (size_t i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+        for (size_t i = 0; i < bc->num_segments; i++) {
             struct block_cache_segment *seg = &bc->segments[i];
             if (seg->in_use && seg->offset >= aligned_offset && seg->offset < aligned_offset + (off_t) count) {
                 // Wait for writes to complete on this segment before letting it be used again.
@@ -752,7 +778,7 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim)
     bc->trimmed_remainder = true;
 
     // Trim out all blocks in the cache.
-    for (int i = 0; i < BLOCK_CACHE_NUM_SEGMENTS; i++) {
+    for (size_t i = 0; i < bc->num_segments; i++) {
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use && seg->offset >= offset) {
             // Wait for writes to complete on this segment before letting it be used again.

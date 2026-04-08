@@ -83,6 +83,7 @@ static void print_usage()
     printf("\n");
     printf("Options:\n");
     printf("  -a, --apply   Apply the firmware update\n");
+    printf("  --block-cache-size <MB> Block cache size in MB (8-1024, default auto-detects: 8 MB or 64 MB if >1GB RAM)\n");
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
     printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");
@@ -171,6 +172,7 @@ static void print_version()
 
 enum fwup_long_option_only_value {
     OPTION_NO_EJECT = 0x1000,
+    OPTION_BLOCK_CACHE_SIZE,
     OPTION_ENABLE_TRIM,
     OPTION_EXIT_HANDSHAKE,
     OPTION_MAX_SIZE,
@@ -192,6 +194,7 @@ enum fwup_long_option_only_value {
 
 static struct option long_options[] = {
     {"apply",    no_argument,       0, 'a'},
+    {"block-cache-size", required_argument, 0, OPTION_BLOCK_CACHE_SIZE},
     {"create",   no_argument,       0, 'c'},
     {"detect",   no_argument,       0, 'D'},
     {"eject",    no_argument,       0, 'E'},
@@ -418,6 +421,7 @@ int main(int argc, char **argv)
     int minimize_writes = false; // Default to off. FUTURE: Turn on for device files if performance impact continues to be minimal
     const char *reboot_param_path = NULL;
     uint32_t max_size_blocks = 0; // Force a max size for the device if it can't be automatically determined
+    size_t block_cache_size_mb = 0; // 0 means auto-detect
 
     if (argc == 1) {
         print_usage();
@@ -599,6 +603,11 @@ int main(int argc, char **argv)
         case OPTION_MAX_SIZE: // --max-size
             max_size_blocks = strtoul(optarg, 0, 0);
             break;
+        case OPTION_BLOCK_CACHE_SIZE: // --block-cache-size
+            block_cache_size_mb = strtoul(optarg, 0, 0);
+            if (block_cache_size_mb != 0 && (block_cache_size_mb < 8 || block_cache_size_mb > 1024))
+                fwup_errx(EXIT_FAILURE, "--block-cache-size must be 0 (auto) or between 8 and 1024 MB");
+            break;
         default: /* '?' */
             print_usage();
             fwup_exit(EXIT_FAILURE);
@@ -761,6 +770,7 @@ int main(int argc, char **argv)
         options.reboot_param_path = reboot_param_path;
         options.is_soft_end_offset = is_soft_end_offset;
         options.end_offset = end_offset;
+        options.cache_size_mb = block_cache_size_mb;
 
         if (fwup_apply(input_filename,
                        task,

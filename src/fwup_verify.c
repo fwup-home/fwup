@@ -131,7 +131,7 @@ static int check_xdelta3_resource(struct resource_list *item, const char *file_r
     OK_OR_RETURN(get_expected_hash(item, file_resource_name, &expected_hash));
 
     struct xdelta_state xd;
-    xdelta_init(&xd, xdelta_read_patch_callback, NULL, a);
+    xdelta_init(&xd, xdelta_read_patch_callback, NULL, a, 0);
 
     // This will check that the data at least looks like an xdelta3 patch and the
     // options in the header look decodeable. (xdelta3 will return errors)

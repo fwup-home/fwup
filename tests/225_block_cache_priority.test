@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#
+# Test that command-line option takes priority over environment variable
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Set environment variable to one value
+export FWUP_BLOCK_CACHE_SIZE=16
+
+# Use command-line option with different value - it should take priority
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 32 -v 2>&1 | grep -q "32 MB"
+
+# Verify we see the command-line value (32), not the env var value (16)
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 32 -v 2>&1 | grep -q "16 MB"; then
+    echo "Expected to see 32 MB cache, not 16 MB"
+    exit 1
+fi
+
+# Verify the firmware still applied correctly
+cmp_bytes 1024 $IMGFILE $TESTFILE_1K

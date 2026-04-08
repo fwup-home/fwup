@@ -428,7 +428,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 }
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
-                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
+                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx, fctx->cache_size_mb);
                 fctx->xd_source_offset = source_raw_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_count = source_raw_count * FWUP_BLOCK_SIZE;
                 fctx->xd_source_path = NULL;
@@ -437,7 +437,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 off_t source_fat_offset = strtoul(source_fat_offset_str, NULL, 0);
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
-                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_fat_callback, fctx);
+                xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_fat_callback, fctx, fctx->cache_size_mb);
                 fctx->xd_source_offset = source_fat_offset * FWUP_BLOCK_SIZE;
                 fctx->xd_source_path = source_fat_path;
                 fctx->xd_source_count = 0; // unused
@@ -513,6 +513,7 @@ int fwup_apply(const char *fw_filename,
     memset(&fctx, 0, sizeof(fctx));
     fctx.progress = progress;
     fctx.reboot_param_path = options->reboot_param_path;
+    fctx.cache_size_mb = options->cache_size_mb;
 
     // Report 0 progress before doing anything
     progress_report(fctx.progress, 0);
@@ -555,7 +556,7 @@ int fwup_apply(const char *fw_filename,
     // Initialize the output. Nothing should have been written before now
     // and waiting to initialize the output until now forces the point.
     fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
-    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, options->end_offset, options->is_soft_end_offset, options->enable_trim, options->verify_writes, options->minimize_writes));
+    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, options->end_offset, options->is_soft_end_offset, options->enable_trim, options->verify_writes, options->minimize_writes, options->cache_size_mb));
 
     // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);

@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test that block cache auto-detection works
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# With no options, should auto-detect based on system memory
+# This will detect system memory and choose either 8 MB or 64 MB
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete -v 2>&1 | tee $WORK/output.txt
+
+# Check that one of the expected cache sizes was used
+if grep -q "8 MB" $WORK/output.txt || grep -q "64 MB" $WORK/output.txt; then
+    # Good - auto-detection worked
+    true
+else
+    echo "Expected to see either 8 MB or 64 MB cache size in auto-detect mode"
+    cat $WORK/output.txt
+    exit 1
+fi
+
+# Verify the firmware still applied correctly
+cmp_bytes 1024 $IMGFILE $TESTFILE_1K
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

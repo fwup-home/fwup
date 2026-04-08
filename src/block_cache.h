@@ -76,8 +76,9 @@ struct block_cache {
     // Counter for maintaining LRU
     uint32_t timestamp;
 
-    // All of the cached segments
-    struct block_cache_segment segments[BLOCK_CACHE_NUM_SEGMENTS];
+    // All of the cached segments (dynamically allocated)
+    struct block_cache_segment *segments;
+    size_t num_segments;
 
     // Temporary buffer for reading segments that are partially valid
     uint8_t *read_temp;
@@ -110,7 +111,7 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool is_soft_end_offset, bool enable_trim, bool verify_writes, bool minimize_writes);
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool is_soft_end_offset, bool enable_trim, bool verify_writes, bool minimize_writes, size_t cache_size_mb);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);

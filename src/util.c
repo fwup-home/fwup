@@ -30,6 +30,11 @@
 
 #include <sys/stat.h>
 
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__NetBSD__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+
 char *strptime(const char *s, const char *format, struct tm *tm);
 
 static char *last_error_message = NULL;
@@ -605,6 +610,102 @@ void free_page_aligned(void *memptr)
     void *original = *savelocation;
     free(original);
 #endif
+}
+
+/*
+ * Get system physical memory in MB
+ */
+size_t get_system_memory_mb(void)
+{
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__NetBSD__)
+    // BSD-style sysctl
+    int mib[2];
+    uint64_t physical_memory;
+    size_t length;
+
+#if defined(__APPLE__)
+    mib[0] = CTL_HW;
+    mib[1] = HW_MEMSIZE;
+    length = sizeof(uint64_t);
+    if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) == 0) {
+        return (size_t)(physical_memory / (1024 * 1024));
+    }
+#else
+    // Other BSDs use HW_PHYSMEM (returns bytes on most BSDs)
+    mib[0] = CTL_HW;
+    mib[1] = HW_PHYSMEM;
+    length = sizeof(uint64_t);
+    if (sysctl(mib, 2, &physical_memory, &length, NULL, 0) == 0) {
+        return (size_t)(physical_memory / (1024 * 1024));
+    }
+#endif
+#elif defined(_WIN32)
+    // Windows: use GlobalMemoryStatusEx
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    if (GlobalMemoryStatusEx(&statex)) {
+        return (size_t)(statex.ullTotalPhys / (1024 * 1024));
+    }
+#elif defined(__linux__)
+    // Linux: try sysconf first, then fall back to /proc/meminfo
+#if HAVE_SYSCONF
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (pages > 0 && page_size > 0) {
+        uint64_t total_bytes = (uint64_t)pages * (uint64_t)page_size;
+        return (size_t)(total_bytes / (1024 * 1024));
+    }
+#endif
+    // Fallback: parse /proc/meminfo
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (fp) {
+        char line[256];
+        while (fgets(line, sizeof(line), fp)) {
+            unsigned long memtotal_kb;
+            if (sscanf(line, "MemTotal: %lu kB", &memtotal_kb) == 1) {
+                fclose(fp);
+                return (size_t)(memtotal_kb / 1024);
+            }
+        }
+        fclose(fp);
+    }
+#endif
+
+    // Default fallback: assume system has at least 256 MB
+    return 256;
+}
+
+/*
+ * Get configured cache size in MB
+ * Priority: environment variable > auto-detect based on system RAM
+ */
+size_t get_configured_cache_size_mb(void)
+{
+    // Check for environment variable override
+    const char *env_cache_size = get_environment("FWUP_BLOCK_CACHE_SIZE");
+    if (env_cache_size != NULL) {
+        unsigned long cache_size_mb = strtoul(env_cache_size, NULL, 10);
+        if (cache_size_mb >= 8 && cache_size_mb <= 1024) {
+            INFO("Using block cache size from FWUP_BLOCK_CACHE_SIZE: %lu MB", cache_size_mb);
+            return (size_t)cache_size_mb;
+        } else {
+            INFO("FWUP_BLOCK_CACHE_SIZE out of range (8-1024 MB), using default");
+        }
+    }
+
+    // Auto-detect based on system memory
+    size_t system_memory_mb = get_system_memory_mb();
+    INFO("Detected system memory: %zu MB", system_memory_mb);
+
+    // If system has more than 1 GB of RAM, use 64 MB cache
+    if (system_memory_mb > 1024) {
+        INFO("Using 64 MB block cache (system has >1GB RAM)");
+        return 64;
+    }
+
+    // Default to 8 MB cache
+    INFO("Using 8 MB block cache (default)");
+    return 8;
 }
 
 int update_relative_path(const char *fromfile, const char *filename, char **newpath)

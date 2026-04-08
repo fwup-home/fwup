@@ -185,6 +185,10 @@ int set_environment(const char *key, const char *value);
 void alloc_page_aligned(void **memptr, size_t size);
 void free_page_aligned(void *memptr);
 
+// System memory detection
+size_t get_system_memory_mb(void);
+size_t get_configured_cache_size_mb(void);
+
 int update_relative_path(const char *from_file, const char *filename, char **newpath);
 
 // UUIDs

@@ -30,7 +30,7 @@ struct xdelta_state {
     size_t bytes_already_reported;
 };
 
-void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie);
+void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie, size_t cache_size_mb);
 int xdelta_read(struct xdelta_state *xd, const void **buffer, size_t *count);
 int xdelta_read_header(struct xdelta_state *xd);
 void xdelta_free(struct xdelta_state *xd);

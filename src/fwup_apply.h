@@ -29,6 +29,7 @@ struct fwup_apply_options {
     const char *reboot_param_path;
     off_t end_offset;
     bool is_soft_end_offset;
+    size_t cache_size_mb;
 };
 
 int fwup_apply(const char *fw_filename,

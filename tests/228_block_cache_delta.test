@@ -1,0 +1,78 @@
+#!/bin/sh
+
+#
+# Test that block cache size is properly used with delta (xdelta3) upgrades
+# This addresses the cache thrashing issue from GitHub issue #279
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+# Create the starting point for a delta upgrade - a 2 MB file
+dd if=/dev/zero of=$WORK/2m_v1.bin bs=1024 count=2048 2>/dev/null
+
+# Modify it slightly for v2 (change pattern in the middle)
+cp $WORK/2m_v1.bin $WORK/2m_v2.bin
+dd if=/dev/urandom of=$WORK/2m_v2.bin bs=1024 count=256 seek=896 conv=notrunc 2>/dev/null
+
+# Create the delta file (disable secondary compression)
+xdelta3 -e -S none -s $WORK/2m_v1.bin $WORK/2m_v2.bin $WORK/delta.bin
+
+# Create initial firmware with v1
+cat >$CONFIG <<EOF
+file-resource 2m.bin {
+        host-path = "${WORK}/2m_v1.bin"
+}
+
+task complete {
+	on-resource 2m.bin { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $WORK/v1.fw
+
+# Apply v1 to create the initial state
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/v1.fw -t complete
+
+# Create upgrade firmware with delta and small cache
+cat >$CONFIG <<EOF
+file-resource 2m.bin {
+        host-path = "${WORK}/2m_v1.bin"
+}
+
+task upgrade {
+	on-resource 2m.bin {
+		delta-source-raw-offset=0
+		delta-source-raw-count=4096  # 2MB in blocks
+		raw_write(0)
+	}
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $WORK/upgrade.fw
+
+# Now manually replace the resource with the delta
+mkdir -p $WORK/data
+cp $WORK/delta.bin $WORK/data/2m.bin
+(cd $WORK && zip $WORK/upgrade.fw data/2m.bin)
+
+# Test upgrade with 8 MB cache (should work with thrashing on large deltas)
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/upgrade.fw -t upgrade --block-cache-size 8 -v 2>&1 | tee $WORK/output1.txt
+grep -q "8 MB" $WORK/output1.txt
+
+# Test upgrade with 16 MB cache (less thrashing)
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/v1.fw -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/upgrade.fw -t upgrade --block-cache-size 16 -v 2>&1 | tee $WORK/output2.txt
+grep -q "16 MB" $WORK/output2.txt
+
+# Test upgrade with 64 MB cache (no thrashing)
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/v1.fw -t complete
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/upgrade.fw -t upgrade --block-cache-size 64 -v 2>&1 | tee $WORK/output3.txt
+grep -q "64 MB" $WORK/output3.txt
+
+# Verify the final result matches v2
+cmp_bytes 2097152 $IMGFILE $WORK/2m_v2.bin
+
+# Check that the verify logic works
+$FWUP_VERIFY -V -i $WORK/upgrade.fw

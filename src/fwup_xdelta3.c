@@ -9,7 +9,7 @@
 #define READ_SIZE (128 * 1024)
 #define MAX_READ_RETURN_SIZE (128 * 1024)
 
-void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie)
+void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, xdelta_pread_source *pread_source, void *cookie, size_t cache_size_mb)
 {
     memset(xd, 0, sizeof(*xd));
 
@@ -20,6 +20,13 @@ void xdelta_init(struct xdelta_state *xd, xdelta_read_patch_block *read_patch, x
     // There's an assumption when decrypting that source block reads are block-aligned.
     xd->source.blksize = READ_SIZE;
     xd->source.curblk = malloc(READ_SIZE);
+
+    // Set max_winsize to match the cache size to prevent thrashing
+    // Convert MB to bytes
+    if (cache_size_mb == 0) {
+        cache_size_mb = get_configured_cache_size_mb();
+    }
+    xd->source.max_winsize = (xoff_t)(cache_size_mb * 1024 * 1024);
 
     xd->read_patch = read_patch;
     xd->pread_source = pread_source;

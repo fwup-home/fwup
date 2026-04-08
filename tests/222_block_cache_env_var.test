@@ -1,0 +1,78 @@
+#!/bin/sh
+
+#
+# Test block cache size configuration via environment variable and command line
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+	on-resource TEST { raw_write(0) }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Test with valid cache size via environment variable
+export FWUP_BLOCK_CACHE_SIZE=16
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete -v 2>&1 | grep -q "16 MB"
+
+# Test with another valid cache size via environment variable
+export FWUP_BLOCK_CACHE_SIZE=32
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete -v 2>&1 | grep -q "32 MB"
+
+# Test that invalid env var values are handled
+export FWUP_BLOCK_CACHE_SIZE=9999
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete -v 2>&1 | grep -q "out of range"
+
+# Test that non-numeric env var values are ignored
+export FWUP_BLOCK_CACHE_SIZE=invalid
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+# Clear environment variable for command-line tests
+unset FWUP_BLOCK_CACHE_SIZE
+
+# Test with valid cache size via command line
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 24 -v 2>&1 | tee $WORK/output1.txt
+grep -q "24 MB" $WORK/output1.txt
+
+# Test with minimum cache size
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 8 -v 2>&1 | tee $WORK/output2.txt
+grep -q "8 MB" $WORK/output2.txt
+
+# Test with maximum cache size
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 1024 -v 2>&1 | tee $WORK/output3.txt
+grep -q "1024 MB" $WORK/output3.txt
+
+# Test with cache size too small (below 8 MB) - should fail
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 7 2>&1; then
+    echo "Expected --block-cache-size 7 to fail"
+    exit 1
+fi
+
+# Test with cache size too large (above 1024 MB) - should fail
+if $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 2048 2>&1; then
+    echo "Expected --block-cache-size 2048 to fail"
+    exit 1
+fi
+
+# Test with cache size of 0 (should use auto-detect and succeed)
+rm -f $IMGFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete --block-cache-size 0
+
+# Verify the firmware applied correctly
+cmp_bytes 1024 $IMGFILE $TESTFILE_1K
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
