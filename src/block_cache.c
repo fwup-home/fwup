@@ -137,19 +137,103 @@ static inline bool is_valid(struct block_cache_segment *seg, int block)
     return (seg->flags[block / 4] & (0x2 << (2 * (block & 0x3)))) != 0;
 }
 
+// Hash table helper functions
+static inline size_t hash_offset(off_t offset)
+{
+    // Segments are 128KB aligned (offset >> 17), hash to table size
+    return ((size_t)(offset >> 17)) & (HASH_TABLE_SIZE - 1);
+}
+
+static void hash_insert(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    size_t hash = hash_offset(seg->offset);
+    seg->hash_next = bc->hash_table[hash];
+    bc->hash_table[hash] = seg;
+}
+
+static void hash_remove(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    size_t hash = hash_offset(seg->offset);
+    struct block_cache_segment **ptr = &bc->hash_table[hash];
+    
+    while (*ptr) {
+        if (*ptr == seg) {
+            *ptr = seg->hash_next;
+            seg->hash_next = NULL;
+            return;
+        }
+        ptr = &(*ptr)->hash_next;
+    }
+}
+
+static struct block_cache_segment *hash_lookup(struct block_cache *bc, off_t offset)
+{
+    size_t hash = hash_offset(offset);
+    struct block_cache_segment *seg = bc->hash_table[hash];
+    
+    while (seg) {
+        if (seg->offset == offset && seg->in_use)
+            return seg;
+        seg = seg->hash_next;
+    }
+    return NULL;
+}
+
+// LRU list helper functions
+static void lru_remove(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    if (seg->lru_prev)
+        seg->lru_prev->lru_next = seg->lru_next;
+    else
+        bc->lru_head = seg->lru_next;
+    
+    if (seg->lru_next)
+        seg->lru_next->lru_prev = seg->lru_prev;
+    else
+        bc->lru_tail = seg->lru_prev;
+    
+    seg->lru_prev = NULL;
+    seg->lru_next = NULL;
+}
+
+static void lru_push_front(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    seg->lru_next = bc->lru_head;
+    seg->lru_prev = NULL;
+    
+    if (bc->lru_head)
+        bc->lru_head->lru_prev = seg;
+    else
+        bc->lru_tail = seg;
+    
+    bc->lru_head = seg;
+}
+
+static void lru_touch(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    // Move to front of LRU list (most recently used)
+    if (bc->lru_head != seg) {
+        lru_remove(bc, seg);
+        lru_push_front(bc, seg);
+    }
+}
+
 static void init_segment(struct block_cache *bc, off_t offset, struct block_cache_segment *seg)
 {
-    void *data = seg->data;
-    if (!data)
-        alloc_page_aligned(&data, BLOCK_CACHE_SEGMENT_SIZE);
-
-    memset(seg, 0, sizeof(*seg));
+    // Data buffer is already allocated, just reset the metadata
+    memset(seg->flags, 0, sizeof(seg->flags));
 
     seg->in_use = true;
-    seg->data = data;
     seg->offset = offset;
     seg->last_access = bc->timestamp++;
     seg->streamed = true;
+    seg->hash_next = NULL;
+    
+    // Add to hash table
+    hash_insert(bc, seg);
+    
+    // Move to front of LRU list
+    lru_push_front(bc, seg);
 }
 
 static int calculate_io_size(struct block_cache *bc, off_t offset, size_t *count)
@@ -271,8 +355,12 @@ static void *writer_worker(void *void_bc)
 
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     for (;;) {
-        if (bc->seg_to_write) {
-            volatile struct block_cache_segment *seg = bc->seg_to_write;
+        // Check if there's work in the queue
+        if (bc->write_queue_head != bc->write_queue_tail) {
+            volatile struct block_cache_segment *seg = bc->write_queue[bc->write_queue_tail];
+            bc->write_queue[bc->write_queue_tail] = NULL;
+            bc->write_queue_tail = (bc->write_queue_tail + 1) % WRITE_QUEUE_SIZE;
+            OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
 
             // Skip the write if there was a previous write error
             // A negative value for bc->bad_offset indicates no error has occurred.
@@ -283,14 +371,13 @@ static void *writer_worker(void *void_bc)
                 OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
             }
 
-            bc->seg_to_write = NULL;
             OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
+        } else {
+            if (!bc->running)
+                break;
+
+            OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
         }
-
-        if (!bc->running)
-            break;
-
-        OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     }
     pthread_mutex_unlock(&bc->mutex);
     return NULL;
@@ -301,17 +388,34 @@ static int check_async_error(struct block_cache *bc)
         ERR_RETURN("write failed at offset %" PRId64". Check media size.", bc->bad_offset);
     return 0;
 }
+
+static bool is_segment_in_write_queue(struct block_cache *bc, struct block_cache_segment *seg)
+{
+    size_t pos = bc->write_queue_tail;
+    while (pos != bc->write_queue_head) {
+        if (bc->write_queue[pos] == seg)
+            return true;
+        pos = (pos + 1) % WRITE_QUEUE_SIZE;
+    }
+    return false;
+}
+
 static int do_async_write(struct block_cache *bc, struct block_cache_segment *seg)
 {
     // Don't start if already errored.
     OK_OR_RETURN(check_async_error(bc));
 
-    // Wait for the writer thread to complete the last set of writes
-    // before starting new ones.
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
-    while (bc->seg_to_write != NULL)
+    
+    // Wait if the queue is full
+    size_t next_head = (bc->write_queue_head + 1) % WRITE_QUEUE_SIZE;
+    while (next_head == bc->write_queue_tail)
         OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
-    bc->seg_to_write = seg;
+    
+    // Add to queue
+    bc->write_queue[bc->write_queue_head] = seg;
+    bc->write_queue_head = next_head;
+    
     OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
     OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
 
@@ -321,9 +425,9 @@ static int do_async_write(struct block_cache *bc, struct block_cache_segment *se
 }
 static void wait_for_write_completion(struct block_cache *bc, struct block_cache_segment *seg)
 {
-    // Wait for write thread to finish
+    // Wait for write thread to finish processing this segment
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
-    while (bc->seg_to_write == seg)
+    while (is_segment_in_write_queue(bc, seg))
         OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
 }
@@ -334,8 +438,9 @@ static inline int do_sync_write(struct block_cache *bc, struct block_cache_segme
     OK_OR_RETURN(check_async_error(bc));
 
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
-    if (bc->seg_to_write == seg) {
-        while (bc->seg_to_write == seg)
+    if (is_segment_in_write_queue(bc, seg)) {
+        // Wait for async write to complete
+        while (is_segment_in_write_queue(bc, seg))
             OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
 
         OK_OR_FAIL(pthread_mutex_unlock(&bc->mutex));
@@ -429,9 +534,35 @@ int block_cache_init(struct block_cache *bc,
     if (bc->segments == NULL)
         fwup_err(EXIT_FAILURE, "calloc segments array");
 
+    // Initialize hash table to NULL
+    for (size_t i = 0; i < HASH_TABLE_SIZE; i++)
+        bc->hash_table[i] = NULL;
+
+    // Initialize LRU list
+    bc->lru_head = NULL;
+    bc->lru_tail = NULL;
+
+    // Pre-allocate ALL segment data buffers upfront to avoid runtime allocation
+    INFO("Pre-allocating %zu MB of segment buffers", (bc->num_segments * BLOCK_CACHE_SEGMENT_SIZE) / (1024 * 1024));
+    for (size_t i = 0; i < bc->num_segments; i++) {
+        alloc_page_aligned((void **) &bc->segments[i].data, BLOCK_CACHE_SEGMENT_SIZE);
+        if (bc->segments[i].data == NULL)
+            fwup_err(EXIT_FAILURE, "alloc_page_aligned segment data");
+        
+        // Initialize segment metadata
+        bc->segments[i].in_use = false;
+        bc->segments[i].hash_next = NULL;
+        bc->segments[i].lru_prev = NULL;
+        bc->segments[i].lru_next = NULL;
+    }
+
 #if USE_PTHREADS
     bc->running = true;
     bc->bad_offset = -1;
+    bc->write_queue_head = 0;
+    bc->write_queue_tail = 0;
+    for (size_t i = 0; i < WRITE_QUEUE_SIZE; i++)
+        bc->write_queue[i] = NULL;
 
     pthread_mutex_init(&bc->mutex, NULL);
     pthread_cond_init(&bc->cond, NULL);
@@ -507,6 +638,11 @@ void block_cache_reset(struct block_cache *bc)
         struct block_cache_segment *seg = &bc->segments[i];
         if (seg->in_use) {
             wait_for_write_completion(bc, seg);
+            
+            // Remove from hash table and LRU list
+            hash_remove(bc, seg);
+            lru_remove(bc, seg);
+            
             seg->in_use = false;
         }
     }
@@ -613,38 +749,42 @@ int block_cache_free(struct block_cache *bc)
  */
 static int get_segment(struct block_cache *bc, off_t offset, struct block_cache_segment **segment)
 {
-    // Check for a hit
-    for (size_t i = 0; i < bc->num_segments; i++) {
-        struct block_cache_segment *seg = &bc->segments[i];
-        if (seg->in_use && seg->offset == offset) {
-            // Wait for async writes to complete on this segment before use.
-            wait_for_write_completion(bc, seg);
+    // O(1) hash table lookup for cache hit
+    struct block_cache_segment *seg = hash_lookup(bc, offset);
+    if (seg) {
+        // Cache hit! Wait for async writes to complete on this segment before use.
+        wait_for_write_completion(bc, seg);
 
-            seg->last_access = bc->timestamp++;
-            *segment = seg;
-            return 0;
-        }
-    }
-
-    // Cache miss, so either use an unused entry or the LRU
-    struct block_cache_segment *lru = &bc->segments[0];
-    if (!lru->in_use) {
-        init_segment(bc, offset, lru);
-        *segment = lru;
+        seg->last_access = bc->timestamp++;
+        lru_touch(bc, seg);  // Move to front of LRU list
+        *segment = seg;
         return 0;
     }
-    for (size_t i = 1; i < bc->num_segments; i++) {
-        struct block_cache_segment *seg = &bc->segments[i];
-        if (!seg->in_use) {
-            init_segment(bc, offset, seg);
-            *segment = seg;
+
+    // Cache miss - find an unused segment
+    for (size_t i = 0; i < bc->num_segments; i++) {
+        if (!bc->segments[i].in_use) {
+            init_segment(bc, offset, &bc->segments[i]);
+            *segment = &bc->segments[i];
             return 0;
         }
-        if (seg->last_access < lru->last_access)
-            lru = seg;
     }
 
+    // No unused segments - evict the LRU (tail of list)
+    struct block_cache_segment *lru = bc->lru_tail;
+    if (!lru) {
+        // Should never happen if num_segments > 0
+        ERR_RETURN("LRU list is empty but cache is full");
+    }
+
+    // Remove from hash table and LRU list before reusing
+    hash_remove(bc, lru);
+    lru_remove(bc, lru);
+
+    // Flush the segment if dirty
     OK_OR_RETURN(flush_segment(bc, lru));
+
+    // Reinitialize for new offset (also adds back to hash and LRU)
     init_segment(bc, offset, lru);
     *segment = lru;
     return 0;
@@ -742,6 +882,10 @@ int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwt
                 // Wait for writes to complete on this segment before letting it be used again.
                 wait_for_write_completion(bc, seg);
 
+                // Remove from hash table and LRU list
+                hash_remove(bc, seg);
+                lru_remove(bc, seg);
+
                 // Return the segment
                 seg->in_use = false;
             }
@@ -783,6 +927,10 @@ int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim)
         if (seg->in_use && seg->offset >= offset) {
             // Wait for writes to complete on this segment before letting it be used again.
             wait_for_write_completion(bc, seg);
+
+            // Remove from hash table and LRU list
+            hash_remove(bc, seg);
+            lru_remove(bc, seg);
 
             // Return the segment
             seg->in_use = false;

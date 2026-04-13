@@ -62,6 +62,13 @@ struct block_cache_segment {
     // dirty (need to be written back to the target image).
     // (2 bits of flags in a uint8_t)
     uint8_t flags[BLOCK_CACHE_BLOCKS_PER_SEGMENT * 2 / 8];
+
+    // Hash table chaining for O(1) lookups
+    struct block_cache_segment *hash_next;
+
+    // LRU double-linked list for O(1) eviction
+    struct block_cache_segment *lru_prev;
+    struct block_cache_segment *lru_next;
 };
 
 struct block_cache {
@@ -79,6 +86,14 @@ struct block_cache {
     // All of the cached segments (dynamically allocated)
     struct block_cache_segment *segments;
     size_t num_segments;
+
+    // Hash table for O(1) cache lookups (size is power of 2)
+    #define HASH_TABLE_SIZE 256
+    struct block_cache_segment *hash_table[HASH_TABLE_SIZE];
+
+    // LRU list head and tail for O(1) eviction
+    struct block_cache_segment *lru_head;
+    struct block_cache_segment *lru_tail;
 
     // Temporary buffer for reading segments that are partially valid
     uint8_t *read_temp;
@@ -106,7 +121,11 @@ struct block_cache {
     uint8_t *thread_verify_temp;
 
     volatile bool running;
-    volatile struct block_cache_segment *seg_to_write;
+    // Work queue for async writes (circular buffer)
+    #define WRITE_QUEUE_SIZE 32
+    volatile struct block_cache_segment *write_queue[WRITE_QUEUE_SIZE];
+    volatile size_t write_queue_head;
+    volatile size_t write_queue_tail;
     volatile off_t bad_offset; // set if pwrite fails asynchronously
 #endif
 };
