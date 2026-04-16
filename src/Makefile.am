@@ -72,8 +72,17 @@ fwup_SOURCES=\
 	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
-	3rdparty/tiny-AES-c/aes.c \
-	3rdparty/tiny-AES-c/aes.h \
+	3rdparty/mbedtls/aes.c \
+	3rdparty/mbedtls/aes.h \
+	3rdparty/mbedtls/aesce.c \
+	3rdparty/mbedtls/aesce.h \
+	3rdparty/mbedtls/aesni.c \
+	3rdparty/mbedtls/aesni.h \
+	3rdparty/mbedtls/platform_util.c \
+	3rdparty/mbedtls/platform_util.h \
+	3rdparty/mbedtls/common.h \
+	3rdparty/mbedtls/alignment.h \
+	3rdparty/mbedtls/build_info.h \
 	3rdparty/fatfs/source/diskio.h \
 	3rdparty/fatfs/source/ff.c \
 	3rdparty/fatfs/source/ff.h \
@@ -114,6 +123,7 @@ endif
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src/optional \
+	      -I$(srcdir)/3rdparty/mbedtls \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \
 	      $(PTHREAD_CFLAGS)

@@ -15,42 +15,49 @@
  */
 
 #include "disk_crypto.h"
-#include "3rdparty/tiny-AES-c/aes.h"
+#include "mbedtls/aes.h"
 #include "3rdparty/base64.h"
 #include "monocypher.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #define MAX_CIPHER_LEN 32
 #define MAX_SECRET_LEN 64
+#define AES_BLOCKLEN 16
+#define AES_KEYLEN 32
 
 static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
 {
     uint8_t iv[AES_BLOCKLEN] = {0};
     copy_le32(iv, lba);
 
-    struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, dc->key, iv);
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
 
-    // Tiny AES only encrypts in-place, so copy to the output if necessary.
-    if (output != input)
-        memcpy(output, input, FWUP_BLOCK_SIZE);
+    if (mbedtls_aes_setkey_enc(&ctx, dc->key, AES_KEYLEN * 8) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_setkey_enc failed");
 
-    AES_CBC_encrypt_buffer(&ctx, output, FWUP_BLOCK_SIZE);
+    if (mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, FWUP_BLOCK_SIZE, iv, input, output) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_crypt_cbc encrypt failed");
+
+    mbedtls_aes_free(&ctx);
 }
 static void aes_cbc_plain_decrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
 {
     uint8_t iv[AES_BLOCKLEN] = {0};
     copy_le32(iv, lba);
 
-    struct AES_ctx ctx;
-    AES_init_ctx_iv(&ctx, dc->key, iv);
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
 
-    // Tiny AES only decrypts in-place, so copy to the output if necessary.
-    if (output != input)
-        memcpy(output, input, FWUP_BLOCK_SIZE);
+    if (mbedtls_aes_setkey_dec(&ctx, dc->key, AES_KEYLEN * 8) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_setkey_dec failed");
 
-    AES_CBC_decrypt_buffer(&ctx, output, FWUP_BLOCK_SIZE);
+    if (mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, FWUP_BLOCK_SIZE, iv, input, output) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_crypt_cbc decrypt failed");
+
+    mbedtls_aes_free(&ctx);
 }
 static int aes_cbc_plain_init(struct disk_crypto *dc, const char *secret_key)
 {
