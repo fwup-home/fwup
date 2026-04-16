@@ -216,13 +216,15 @@ TESTS = 001_simple_fw.test \
 	213_encrypted_delta_upgrade_unaligned.test \
 	214_expand_afterwards.test \
 	215_verify_cache_flush_hang_fix.test \
-      216_delta_progress.test \
-      217_uboot_12G_offset.test \
-      218_uboot_2T_offset.test \
-      219_uboot_redundant_2T_offset.test \
-      220_require_execute.test \
-      221_require_execute_shell_test.test \
-      222_block_cache_env_var.test \
-      225_block_cache_priority.test \
-      226_block_cache_autodetect.test \
-      228_block_cache_delta.test
+  216_delta_progress.test \
+  217_uboot_12G_offset.test \
+  218_uboot_2T_offset.test \
+  219_uboot_redundant_2T_offset.test \
+  220_require_execute.test \
+  221_require_execute_shell_test.test \
+  222_block_cache_env_var.test \
+  225_block_cache_priority.test \
+  226_block_cache_autodetect.test \
+  228_block_cache_delta.test
+
+EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

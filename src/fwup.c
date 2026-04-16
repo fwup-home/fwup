@@ -83,7 +83,7 @@ static void print_usage()
     printf("\n");
     printf("Options:\n");
     printf("  -a, --apply   Apply the firmware update\n");
-    printf("  --block-cache-size <MB> Block cache size in MB (8-1024, default auto-detects: 8 MB or 64 MB if >1GB RAM)\n");
+    printf("  --block-cache-size <MB>  Block cache size (8-1024, default: auto)\n");
     printf("  -c, --create  Create the firmware update\n");
     printf("  -d <file> Device file for the memory card\n");
     printf("  -D, --detect List attached SDCards or MMC devices and their sizes\n");

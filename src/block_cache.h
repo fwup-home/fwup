@@ -39,6 +39,10 @@
 #define BLOCK_CACHE_BLOCKS_PER_SEGMENT (BLOCK_CACHE_SEGMENT_SIZE / FWUP_BLOCK_SIZE)
 #define BLOCK_CACHE_SEGMENT_MASK       (~(BLOCK_CACHE_SEGMENT_SIZE - 1))
 
+/* Hash table and write queue sizes */
+#define BLOCK_CACHE_HASH_TABLE_SIZE    256
+#define BLOCK_CACHE_WRITE_QUEUE_SIZE   32
+
 struct block_cache_segment {
     bool in_use;
 
@@ -88,8 +92,7 @@ struct block_cache {
     size_t num_segments;
 
     // Hash table for O(1) cache lookups (size is power of 2)
-    #define HASH_TABLE_SIZE 256
-    struct block_cache_segment *hash_table[HASH_TABLE_SIZE];
+    struct block_cache_segment *hash_table[BLOCK_CACHE_HASH_TABLE_SIZE];
 
     // LRU list head and tail for O(1) eviction
     struct block_cache_segment *lru_head;
@@ -122,8 +125,7 @@ struct block_cache {
 
     volatile bool running;
     // Work queue for async writes (circular buffer)
-    #define WRITE_QUEUE_SIZE 32
-    volatile struct block_cache_segment *write_queue[WRITE_QUEUE_SIZE];
+    volatile struct block_cache_segment *write_queue[BLOCK_CACHE_WRITE_QUEUE_SIZE];
     volatile size_t write_queue_head;
     volatile size_t write_queue_tail;
     volatile off_t bad_offset; // set if pwrite fails asynchronously

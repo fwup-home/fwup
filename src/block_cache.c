@@ -141,7 +141,7 @@ static inline bool is_valid(struct block_cache_segment *seg, int block)
 static inline size_t hash_offset(off_t offset)
 {
     // Segments are 128KB aligned (offset >> 17), hash to table size
-    return ((size_t)(offset >> 17)) & (HASH_TABLE_SIZE - 1);
+    return ((size_t)(offset >> 17)) & (BLOCK_CACHE_HASH_TABLE_SIZE - 1);
 }
 
 static void hash_insert(struct block_cache *bc, struct block_cache_segment *seg)
@@ -359,7 +359,7 @@ static void *writer_worker(void *void_bc)
         if (bc->write_queue_head != bc->write_queue_tail) {
             volatile struct block_cache_segment *seg = bc->write_queue[bc->write_queue_tail];
             bc->write_queue[bc->write_queue_tail] = NULL;
-            bc->write_queue_tail = (bc->write_queue_tail + 1) % WRITE_QUEUE_SIZE;
+            bc->write_queue_tail = (bc->write_queue_tail + 1) % BLOCK_CACHE_WRITE_QUEUE_SIZE;
             OK_OR_FAIL(pthread_cond_broadcast(&bc->cond));
 
             // Skip the write if there was a previous write error
@@ -395,7 +395,7 @@ static bool is_segment_in_write_queue(struct block_cache *bc, struct block_cache
     while (pos != bc->write_queue_head) {
         if (bc->write_queue[pos] == seg)
             return true;
-        pos = (pos + 1) % WRITE_QUEUE_SIZE;
+        pos = (pos + 1) % BLOCK_CACHE_WRITE_QUEUE_SIZE;
     }
     return false;
 }
@@ -408,7 +408,7 @@ static int do_async_write(struct block_cache *bc, struct block_cache_segment *se
     OK_OR_FAIL(pthread_mutex_lock(&bc->mutex));
     
     // Wait if the queue is full
-    size_t next_head = (bc->write_queue_head + 1) % WRITE_QUEUE_SIZE;
+    size_t next_head = (bc->write_queue_head + 1) % BLOCK_CACHE_WRITE_QUEUE_SIZE;
     while (next_head == bc->write_queue_tail)
         OK_OR_FAIL(pthread_cond_wait(&bc->cond, &bc->mutex));
     
@@ -535,7 +535,7 @@ int block_cache_init(struct block_cache *bc,
         fwup_err(EXIT_FAILURE, "calloc segments array");
 
     // Initialize hash table to NULL
-    for (size_t i = 0; i < HASH_TABLE_SIZE; i++)
+    for (size_t i = 0; i < BLOCK_CACHE_HASH_TABLE_SIZE; i++)
         bc->hash_table[i] = NULL;
 
     // Initialize LRU list
@@ -561,7 +561,7 @@ int block_cache_init(struct block_cache *bc,
     bc->bad_offset = -1;
     bc->write_queue_head = 0;
     bc->write_queue_tail = 0;
-    for (size_t i = 0; i < WRITE_QUEUE_SIZE; i++)
+    for (size_t i = 0; i < BLOCK_CACHE_WRITE_QUEUE_SIZE; i++)
         bc->write_queue[i] = NULL;
 
     pthread_mutex_init(&bc->mutex, NULL);
