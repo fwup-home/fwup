@@ -19,11 +19,11 @@ EOF
 cat >$EXPECTED_META_CONF <<EOF
 file-resource "TEST" {
 length=152048
-blake2b-256="792ac899e67b886626954873c976baa23d9d9c3b379410515041e9e94687e13a"
+blake2b-256=792ac899e67b886626954873c976baa23d9d9c3b379410515041e9e94687e13a
 }
 task "complete" {
 on-resource "TEST" {
-funlist = {"2", "raw_write", "0"}
+funlist = {2, raw_write, 0}
 }
 }
 EOF

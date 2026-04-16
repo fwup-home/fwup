@@ -194,10 +194,11 @@ int update_relative_path(const char *from_file, const char *filename, char **new
 // UUIDs
 #define UUID_LENGTH 16
 #define UUID_STR_LENGTH 37 /* Includes NULL terminator */
+#define UUID_NICKNAME_LENGTH 16 /* Includes NULL terminator */
 
 void uuid_to_string(const uint8_t uuid[UUID_LENGTH], char *uuid_str);
 int string_to_uuid_me(const char *uuid_str, uint8_t uuid[UUID_LENGTH]);
-void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid);
+void calculate_fwup_uuid(const char *data, size_t data_size, char *uuid, char *nickname);
 
 // Endian conversion
 void ascii_to_utf16le(const char *input, char *output, size_t len);

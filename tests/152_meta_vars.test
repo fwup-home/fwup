@@ -1,8 +1,7 @@
 #!/bin/sh
 
 #
-# Test that referencing metadata as variables works. Only FWUP_META_UUID is
-# supported now.
+# Test that referencing FWUP_META_UUID and FWUP_META_NICKNAME as variables works.
 #
 # This test sends variables to a U-Boot environment block. This is a little
 # excessive, but it exercises the same path as some production code.
@@ -14,8 +13,8 @@ EXPECTED_OUTPUT=$WORK/expected_output
 ACTUAL_OUTPUT=$WORK/actual_output
 
 base64_decode >$EXPECTED_OUTPUT <<EOF
-8IaSlnV1aWQ9NDNmZGI4NDUtNjBkNC01NjNjLTkzYzktNWQ5OGNhYTRkOWRkAAD/////////////
-////////////////////////////////////////////////////////////////////////////
+ze/Lh25pY2tuYW1lPWFib3V0LWRhc2gAdXVpZD0wMjI5NzZjYi05OWZiLTUzMmUtM2JjOC02NzJj
+NGE5MGNiZDAAAP//////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -43,6 +42,7 @@ task complete {
        uboot_clearenv(uboot-env)
 
        uboot_setenv(uboot-env, "uuid", "\\\${FWUP_META_UUID}")
+       uboot_setenv(uboot-env, "nickname", "\\\${FWUP_META_NICKNAME}")
     }
 }
 EOF

@@ -15,7 +15,7 @@ meta-misc = "Some misc. stuff"
 EOF
 
 cat >$EXPECTED_META_CONF <<EOF
-meta-vcs-identifier="0e919751fc38196f2486b0c98ded91013eb9baa3"
+meta-vcs-identifier=0e919751fc38196f2486b0c98ded91013eb9baa3
 meta-misc="Some misc. stuff"
 EOF
 

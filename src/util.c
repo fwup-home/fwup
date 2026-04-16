@@ -726,6 +726,93 @@ int update_relative_path(const char *fromfile, const char *filename, char **newp
     return 0;
 }
 
+// 256-word word list for computing a word34567
+// This array intentionally has no separators to save memory. See the function below for details.
+static const char *word34567_words = \
+    "act" "able" "about" "absent" "abandon" \
+    "add" "away" "aisle" "advice" "address" \
+    "aim" "best" "anger" "annual" "analyst" \
+    "all" "bone" "armor" "assume" "apology" \
+    "arm" "cake" "beach" "barrel" "average" \
+    "ask" "chat" "bless" "bitter" "bargain" \
+    "bar" "club" "brick" "bronze" "blanket" \
+    "bid" "corn" "cabin" "camera" "capital" \
+    "boy" "dash" "chalk" "casual" "certain" \
+    "can" "dice" "civil" "cherry" "coconut" \
+    "cat" "drip" "cloud" "column" "conduct" \
+    "cup" "east" "craft" "credit" "crucial" \
+    "day" "fall" "curve" "debris" "cushion" \
+    "dry" "fine" "dream" "depend" "despair" \
+    "egg" "foil" "earth" "dinner" "dilemma" \
+    "era" "gain" "entry" "dragon" "dynamic" \
+    "fan" "glad" "exist" "energy" "emotion" \
+    "few" "grit" "field" "estate" "essence" \
+    "fix" "head" "focus" "expire" "exhibit" \
+    "fog" "hood" "gauge" "finger" "fatigue" \
+    "fox" "idea" "glove" "fossil" "forward" \
+    "gap" "jump" "grunt" "garlic" "genuine" \
+    "hat" "kiwi" "hello" "guitar" "gravity" \
+    "hip" "lazy" "inner" "horror" "illness" \
+    "ice" "link" "labor" "indoor" "initial" \
+    "job" "loop" "light" "invest" "jealous" \
+    "key" "math" "maple" "laptop" "lecture" \
+    "kid" "mind" "mimic" "lonely" "lottery" \
+    "lab" "name" "nasty" "margin" "mention" \
+    "mad" "nose" "offer" "middle" "monitor" \
+    "mix" "open" "owner" "motion" "network" \
+    "net" "pass" "piano" "nephew" "observe" \
+    "nut" "plug" "power" "online" "ostrich" \
+    "oak" "pulp" "purse" "palace" "peasant" \
+    "oil" "ramp" "ready" "phrase" "popular" \
+    "one" "ring" "round" "praise" "present" \
+    "pen" "safe" "scrap" "reason" "program" \
+    "pig" "seed" "shock" "relief" "pudding" \
+    "raw" "sign" "skill" "resist" "raccoon" \
+    "rug" "slot" "snack" "ripple" "release" \
+    "run" "soon" "spawn" "salute" "satisfy" \
+    "say" "step" "spray" "select" "session" \
+    "shy" "tape" "still" "silver" "slender" \
+    "spy" "text" "super" "sphere" "stomach" \
+    "tag" "tiny" "table" "street" "supreme" \
+    "tip" "trip" "tired" "symbol" "thunder" \
+    "toe" "undo" "trade" "ticket" "trigger" \
+    "toy" "visa" "truth" "travel" "uncover" \
+    "two" "wasp" "vague" "unfold" "utility" \
+    "van" "wild" "vivid" "valley" "vibrant" \
+    "web" "yard" "zebra" "voyage" "weather" \
+    "zoo" \
+    "";
+
+// Return the word at the specified index
+static void word34567(int index, const char **word, int *len)
+{
+    // Each row has 5 words with lengths 3 to 7. That's 25 letters per row.
+    // The offset of the mth word in each row is 0, 3, 7, 12, 18, but this
+    // can be computed as m * (m + 5) / 2.
+    int m = index % 5;
+    *len = m + 3;
+    *word = &word34567_words[(index / 5) * 25 + m * (m + 5) / 2];
+}
+
+// nickname must be at least 16 characters (7 + 1 hyphen + 7 + 1 null terminator)
+static void uuid_to_nickname(const uint8_t uuid[UUID_LENGTH], char *nickname)
+{
+    const char *word;
+    int len;
+
+    word34567(uuid[0], &word, &len);
+    memcpy(nickname, word, len);
+    nickname += len;
+
+    *nickname++ = '-';
+
+    word34567(uuid[1], &word, &len);
+    memcpy(nickname, word, len);
+    nickname += len;
+
+    *nickname = '\0';
+}
+
 /**
  * Convert a UUID to a string in big endian form.
  *
@@ -787,9 +874,10 @@ int string_to_uuid_me(const char *uuid_str, uint8_t uuid[UUID_LENGTH])
  *
  * @param data
  * @param data_size
- * @param uuid
+ * @param uuid the resulting UUID as a string
+ * @param nickname the resulting nickname
  */
-void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid)
+void calculate_fwup_uuid(const char *data, size_t data_size, char *uuid, char *nickname)
 {
     crypto_blake2b_ctx hash_state;
     crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
@@ -798,7 +886,7 @@ void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid)
     unsigned char fwup_uuid[UUID_LENGTH] = {0x20, 0x53, 0xdf, 0xfb, 0xd5, 0x1e, 0x43, 0x10, 0xb9, 0x3b, 0x95, 0x6d, 0xa8, 0x9f, 0x9f, 0x34};
 
     crypto_blake2b_update(&hash_state, fwup_uuid, sizeof(fwup_uuid));
-    crypto_blake2b_update(&hash_state, (const unsigned char *) data, (unsigned long long) data_size);
+    crypto_blake2b_update(&hash_state, (const uint8_t *) data, data_size);
 
     unsigned char hash[64];
     crypto_blake2b_final(&hash_state, hash);
@@ -808,6 +896,9 @@ void calculate_fwup_uuid(const char *data, off_t data_size, char *uuid)
     hash[6] = (hash[6] & 0x0f) | 0x50;
 
     uuid_to_string_be(hash, uuid);
+
+    // Since UUIDs are hard to remember, create a convenience nickname
+    uuid_to_nickname(hash, nickname);
 }
 
 /**

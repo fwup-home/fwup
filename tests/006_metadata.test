@@ -19,7 +19,7 @@ cat >$EXPECTED_META_CONF <<EOF
 meta-product="product name"
 meta-description="product description"
 meta-version="some version"
-meta-author="someone"
+meta-author=someone
 meta-platform="a platform"
 meta-architecture="an architecture"
 EOF

@@ -1,0 +1,53 @@
+#!/bin/sh
+
+
+# Tests that the "require-execute" feature works with shell tests since this
+# simulates an actual use case.
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # Windows doesn't have the standard Linux shell or programs so these tests
+    # won't work there.
+    exit 77
+fi
+
+cat >$CONFIG <<EOF
+task upgrade.wrong-string-match {
+    require-execute("[ $(echo bar) = 'foo' ]")
+    on-init { error("bar doesn't = foo") }
+}
+task upgrade.wrong-string-match-backticks {
+    require-execute("[ `echo bar` = 'foo' ]")
+    on-init { error("bar doesn't = foo") }
+}
+task upgrade.wrong-prefix {
+    require-execute("[ $(echo bar2) = 'bar' ]")
+    on-init { error("bar2 doesn't = bar") }
+}
+task upgrade.correct {
+    require-execute("[ $(echo bar) = 'bar' ]")
+    on-init { info("correct") }
+}
+task upgrade.catchall {
+    on-init { error("catchall shouldn't run") }
+}
+EOF
+
+# Create the firmware file the normal way
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Check that applying without --unsafe fails
+if $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade; then
+    echo "Applying without --unsafe should have failed"
+    exit 1
+fi
+
+$FWUP_APPLY --unsafe -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

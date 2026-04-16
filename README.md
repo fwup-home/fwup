@@ -75,8 +75,8 @@ brew install fwup
 
 On Linux, download and install the appropriate package for your platform:
 
-* [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.13.2/fwup_1.13.2_amd64.deb)
-* [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.13.2/fwup_1.13.2_armhf.deb)
+* [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.15.0/fwup_1.15.0_amd64.deb)
+* [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.15.0/fwup_1.15.0_armhf.deb)
 * Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
 * Arch Linux - See [fwup-git package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 * Buildroot - Support is included upstream since the 2016.05 release
@@ -86,11 +86,11 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
     choco install fwup
 
-Alternatively, download the [fwup executable](https://github.com/fwup-home/fwup/releases/download/v1.13.2/fwup.exe)
+Alternatively, download the [fwup executable](https://github.com/fwup-home/fwup/releases/download/v1.15.0/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fwup-home/fwup/releases/download/v1.13.2/fwup-1.13.2.tar.gz)
+latest [source code release](https://github.com/fwup-home/fwup/releases/download/v1.15.0/fwup-1.15.0.tar.gz)
 or clone this repository. Then read one of the following files:
 
 * [Linux build instructions](docs/build_linux.md)
@@ -325,6 +325,7 @@ meta-misc            | Miscellaneous additional data. Format and contents are up
 meta-creation-date   | Timestamp when the update was created (derived from ZIP metadata). For reproducible builds, set the [`SOURCE_DATE_EPOCH`](https://reproducible-builds.org/specs/source-date-epoch/#idm55) environment variable.
 meta-fwup-version    | Version of fwup used to create the update (deprecated - no longer added since fwup 1.2.0)
 meta-uuid            | A UUID to represent this firmware. The UUID won't change even if the .fw file is digitally signed after creation (automatically generated)
+meta-nickname        | A nickname generated from the UUID for ease of differentiating firmware files. It is only an aid and is not guaranteed unique
 
 After setting the above options, it is necessary to create scopes for other options. The
 currently available scopes are:
@@ -694,6 +695,7 @@ require-partition-offset(partition, block_offset)  | 0.7.0 | Require that the bl
 require-path-on-device(path, device)               | 0.13.0 | Require that the specified path (e.g., "/") is on the specified partition device (e.g., "/dev/mmcblk0p1")
 require-path-at-offset(path, offset)               | 0.19.0 | Require that the specified path (e.g., "/") is at the specified block offset (e.g., 1024). Combine with require-path-on-device.
 require-uboot-variable(my_uboot_env, varname, value) | 0.10.0 | Require that a variable is set to the specified value in the U-Boot environment
+require-execute(command)                           | 1.15.0 | Require that a command returns a success exit status (0) (Requires --unsafe)
 
 The remainder of the `task` section is a list of event handlers. Event handlers
 are organized as scopes. An event handler matches during the application of a
@@ -1098,6 +1100,12 @@ destination device can pull out and present on a UI. To do this, just add
 `file-resource` blocks for each file. These blocks don't need to be referenced
 by an `on-resource` block.
 
+Be aware that doing this could lead to unexpected behavior if used with deltas.
+Fwup does not provide a default implementation for generating deltas. Depending
+on the delta implementation, it is possible that a tool for generating efficient
+deltas would remove these files as part of optimizing the firmware size as the
+unreferenced files would seem unused.
+
 ## How do I include the firmware version in the archive
 
 If you are using git, you can invoke `fwup` as follows:
@@ -1213,6 +1221,8 @@ fwup supports several ways:
 2. Store the `git` hash in `meta-vcs-identifier`. This is good for developers.
 3. Use the `fwup`-computed UUID that's available in `meta-uuid' and
    `${FWUP_META_UUID}`.
+4. Use the `fwup`-computed nickname that's available in `meta-nickname` and
+   `${FWUP_META_NICKNAME}`.
 
 Of these, the third one is always available since version fwup `v1.2.1`. The
 motivation behind it was to unambiguously know whether installed firmware
@@ -1222,6 +1232,13 @@ previous versions of fwup have UUIDs.
 The first two options require the versions to be added to the `fwup.conf` file.
 They are usually added using environment variables so that the version numbers
 are not hardcoded.
+
+Even though firmware UUIDs are the most reliable way of differentiating firmware
+files and completely automatic, they're hard to remember. The `meta-nickname` is
+intended to help with this by giving the user a couple words to check.
+Unfortunately, it's only derived from 16-bits of the UUID so it's not guaranteed
+unique. This was the compromise to make it human memorable, and it's sufficient
+to reliably notice if a firmware updated or not in development.
 
 ## How do I get the firmware metadata formatted as JSON
 
@@ -1245,6 +1262,29 @@ $ fwup -m -i $FW_FILE | jq -n -R 'reduce inputs as $i ({}; . + ($i | (match("([^
 Some "raw" NAND Flash requires a wear leveling layer such as UBI.  See
 the [UBI Example fwup.conf](docs/ubi_example/fwup.conf) for how to integrate
 fwup with the [UBI toolchain](http://www.linux-mtd.infradead.org/doc/ubi.html).
+
+## What's the escape hatch
+
+When `fwup` really can't address a problem it does allow for shell scripts or
+other executables to be run. These require the `--unsafe` flag to enable to
+highlight that more scrutiny may be needed. For example, it may be another
+reason to authenticate `.fw` files.
+
+See `require-execute(cmd)` for running a command to see whether a particular
+task applies. This checks the exit status of the command and you can either run
+a standalone binary or execute shell script logic. For example, to check what a
+program prints, you could do `require-execute("[ $(find_active_partition) = 'a' ]")`.
+(Note that a possible "safe" alternative is to run the program before calling
+`fwup` and using the results to alter command line parameters or set an
+environment variable.)
+
+To then run an arbitrary command, run `execute(cmd)`.
+
+Sometimes you need to invoke a second program to write a file to wherever it
+belongs. This is what `pipe_write(cmd)` is for. For example, if you need to
+update a secondary processor and really need to do it via `fwup`, you could
+implement that by adding `pipe_write("upload_image_to_coprocessor")` in an
+`on-resource` handler.
 
 ## How do you pronounce fwup
 

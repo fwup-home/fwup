@@ -25,9 +25,20 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifndef _WIN32
+#include <sys/wait.h>
+#else
+/* On Windows, system() returns the exit code directly. Provide minimal
+ * definitions so code using WIFEXITED/WEXITSTATUS still compiles and
+ * interprets the status consistently. */
+#define WIFEXITED(status) (1)
+#define WEXITSTATUS(status) (status)
+#endif
 
 #define DECLARE_REQ(REQ) \
     static int REQ ## _validate(struct fun_context *fctx); \
@@ -39,6 +50,7 @@ DECLARE_REQ(require_uboot_variable);
 DECLARE_REQ(require_path_on_device);
 DECLARE_REQ(require_path_at_offset);
 DECLARE_REQ(require_fat_file_match);
+DECLARE_REQ(require_execute);
 
 struct req_info {
     const char *name;
@@ -48,6 +60,7 @@ struct req_info {
 
 #define REQ_INFO(NAME, REQ) {NAME, REQ ## _validate, REQ ## _requirement_met}
 static struct req_info req_table[] = {
+    REQ_INFO("require-execute", require_execute),
     REQ_INFO("require-fat-file-exists", require_fat_file_exists),
     REQ_INFO("require-fat-file-match", require_fat_file_match),
     REQ_INFO("require-partition-offset", require_partition_offset),
@@ -184,6 +197,39 @@ int require_partition_offset_requirement_met(struct fun_context *fctx)
         return -1;
     else
         return 0;
+}
+
+int require_execute_validate(struct fun_context *fctx)
+{
+    if (fctx->argc != 2)
+        ERR_RETURN("require-execute requires a command");
+
+    return 0;
+}
+
+int require_execute_requirement_met(struct fun_context *fctx)
+{
+    // We silently fail here (returning -1) so the system can try the next task
+    // variant. An INFO message will be printed if verbose mode is enabled
+    // showing that the requirement was not met.
+    if (!fwup_unsafe)
+        return -1;
+
+    const char *command = fctx->argv[1];
+    if (command[0] == '\0')
+        return -1;
+
+    int ret = system(command);
+    if (ret == -1) {
+        // system() itself failed to invoke the command (not a non-zero exit status), so requirement not met.
+        return -1;
+    } else if (WIFEXITED(ret)) {
+        // Normal exit, so requirement met if exit status is 0.
+        return WEXITSTATUS(ret) == 0 ? 0 : -1;
+    } else {
+        // Abnormal termination, so requirement not met.
+        return -1;
+    }
 }
 
 int require_fat_file_exists_validate(struct fun_context *fctx)

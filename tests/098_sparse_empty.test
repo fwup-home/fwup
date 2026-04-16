@@ -30,16 +30,16 @@ NEW_META_CONF=$WORK/new-meta.conf
 cat >$NEW_META_CONF <<EOF
 file-resource "sparsefile" {
 length={0,131072}
-blake2b-256="0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8"
+blake2b-256=0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8
 }
 task "raw" {
 on-resource "sparsefile" {
-funlist={"2","raw_write","0"}
+funlist={2,raw_write,0}
 }
 }
 task "fat" {
 on-resource "sparsefile" {
-funlist={"3","fat_mkfs","0","32760","3","fat_write","0","sparse.bin"}
+funlist={3,fat_mkfs,0,32760,3,fat_write,0,sparse.bin}
 }
 }
 EOF

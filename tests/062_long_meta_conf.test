@@ -40,25 +40,25 @@ done
 cat >$EXPECTED_META_CONF <<EOF
 file-resource "abc" {
   length=1024
-  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+  blake2b-256=b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b
 }
 file-resource "def" {
   length=1024
-  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+  blake2b-256=b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b
 }
 file-resource "ghi" {
   length=1024
-  blake2b-256="b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b"
+  blake2b-256=b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b
 }
 task "complete" {
   on-resource "abc" {
-    funlist = {"2", "raw_write", "0"}
+    funlist = {2, raw_write, 0}
   }
   on-resource "def" {
-    funlist = {"2", "raw_write", "4"}
+    funlist = {2, raw_write, 4}
   }
   on-resource "ghi" {
-    funlist = {"2", "raw_write", "8"}
+    funlist = {2, raw_write, 8}
   }
 }
 EOF
@@ -67,13 +67,13 @@ while [ $i -lt 200 ]; do
     cat >>$EXPECTED_META_CONF << EOF
 task "complete$i" {
   on-resource "abc" {
-    funlist = {"2", "raw_write", "0"}
+    funlist = {2, raw_write, 0}
   }
   on-resource "def" {
-    funlist = {"2", "raw_write", "4"}
+    funlist = {2, raw_write, 4}
   }
   on-resource "ghi" {
-    funlist = {"2", "raw_write", "8"}
+    funlist = {2, raw_write, 8}
   }
 }
 EOF

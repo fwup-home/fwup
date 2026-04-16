@@ -30,23 +30,34 @@
 //                 structure is simple enough to reverse engineer by playing
 //                 with mkenvimage.
 
+static int cfg_get_off_t(cfg_t *cfg, const char *key, off_t *result)
+{
+    const char *value = cfg_getstr(cfg, key);
+    if (!value)
+        return -1;
+
+    char *endptr;
+    *result = strtoull(value, &endptr, 0);
+    if (*endptr != '\0' || errno == ERANGE)
+        return -1;
+
+    return 0;
+}
+
 int uboot_env_verify_cfg(cfg_t *cfg)
 {
-    int block_offset = cfg_getint(cfg, "block-offset");
-    if (block_offset < 0)
-        ERR_RETURN("block-offset must be specified and less than 2^31 - 1");
+    off_t block_offset;
+    OK_OR_RETURN_MSG(cfg_get_off_t(cfg, "block-offset", &block_offset),
+                     "block-offset must be specified");
 
     int block_count = cfg_getint(cfg, "block-count");
     if (block_count <= 0 || block_count >= UINT16_MAX)
         ERR_RETURN("block-count must be specified, greater than 0 and less than 2^16 - 1");
 
-    int block_offset_redund = cfg_getint(cfg, "block-offset-redund");
-    if (block_offset_redund >= 0) {
-        if (block_offset_redund >= INT32_MAX)
-            ERR_RETURN("block-offset-redund must be less than 2^31 - 1");
-
-        int redundant_left = block_offset_redund;
-        int redundant_right = block_offset_redund + block_count;
+    off_t block_offset_redund;
+    if (cfg_get_off_t(cfg, "block-offset-redund", &block_offset_redund) >= 0) {
+        off_t redundant_left = block_offset_redund;
+        off_t redundant_right = block_offset_redund + block_count;
         if ((redundant_left >= block_offset && redundant_left < block_offset + block_count) ||
             (redundant_right > block_offset && redundant_right < block_offset + block_count))
             ERR_RETURN("block-offset-redund can't overlap primary U-Boot environment");
@@ -60,8 +71,8 @@ int uboot_env_block_count(cfg_t *cfg)
     // This assumes a valid configuration as checked by uboot_env_verify_cfg.
     int block_count = cfg_getint(cfg, "block-count");
 
-    int block_offset_redund = cfg_getint(cfg, "block-offset-redund");
-    if (block_offset_redund >= 0)
+    off_t block_offset_redund;
+    if (cfg_get_off_t(cfg, "block-offset-redund", &block_offset_redund) >= 0)
         block_count = block_count * 2;
 
     return block_count;
@@ -71,12 +82,12 @@ int uboot_env_create_cfg(cfg_t *cfg, struct uboot_env *output)
 {
     memset(output, 0, sizeof(struct uboot_env));
 
-    output->block_offset = cfg_getint(cfg, "block-offset");
+    cfg_get_off_t(cfg, "block-offset", &output->block_offset);
     output->block_count = cfg_getint(cfg, "block-count");
     output->env_size = output->block_count * FWUP_BLOCK_SIZE;
 
-    int redundant_offset = cfg_getint(cfg, "block-offset-redund");
-    if (redundant_offset >= 0) {
+    off_t redundant_offset;
+    if (cfg_get_off_t(cfg, "block-offset-redund", &redundant_offset) >= 0) {
         output->use_redundant = true;
         output->redundant_block_offset = redundant_offset;
         output->write_primary = true;

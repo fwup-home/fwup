@@ -1,0 +1,56 @@
+#!/bin/sh
+
+
+# Tests that the "require-execute" feature works. This allows using the execute
+# escape hatch for require-conditions
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+if [ "$CC" = "x86_64-w64-mingw32-gcc" -o "$MODE" = "windows" ]; then
+    # Windows doesn't have the standard Linux shell or programs so these tests
+    # won't work there.
+    exit 77
+fi
+
+cat >$CONFIG <<EOF
+task upgrade.false {
+    require-execute("false")
+    on-init { error("false shouldn't have worked") }
+}
+task upgrade.does_not_exist {
+    require-execute("/usr/bin/does_not_exist")
+    on-init { error("a non-existent program shouldn't have worked") }
+}
+task upgrade.empty_string {
+    require-execute("")
+    on-init { error("empty string shouldn't succeed") }
+}
+task upgrade.empty_variable {
+    require-execute("\${EMPTY_VAR}")
+    on-init { error("empty variable shouldn't succeed") }
+}
+task upgrade.true {
+    require-execute("true")
+    on-init { info("correct") }
+}
+task upgrade.catchall {
+    on-init { error("catchall triggered and shouldn't have. No --unsafe?") }
+}
+EOF
+
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+# Make sure that applying without --unsafe doesn't work
+if $FWUP_APPLY -a -q -d $IMGFILE -i $FWFILE -t upgrade; then
+    echo "Applying without --unsafe should have failed"
+    exit 1
+fi
+
+$FWUP_APPLY --unsafe -a -q -d $IMGFILE -i $FWFILE -t upgrade > $WORK/actual_output.txt
+cat >$WORK/expected_output.txt <<EOF
+fwup: correct
+EOF
+diff -w $WORK/expected_output.txt $WORK/actual_output.txt
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE

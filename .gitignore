@@ -51,3 +51,4 @@ fwup-key.pub
 /tests/work
 /tests/work-*.test
 /tests/verify-syscalls
+_codeql_detected_source_root

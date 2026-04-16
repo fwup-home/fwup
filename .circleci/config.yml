@@ -19,7 +19,7 @@ defaults: &defaults
 
 defaults_osx: &defaults_osx
   macos:
-    xcode: "13.4.1"
+    xcode: "16.2.0"
   environment:
     HOMEBREW_NO_AUTO_UPDATE: 1
 
@@ -98,7 +98,7 @@ jobs:
     <<: *build
   linux_gcc_windows:
     docker:
-      - image: ubuntu:20.04
+      - image: ubuntu:24.04
     environment:
       CIRCLE_OS_NAME: linux
       MODE: windows
