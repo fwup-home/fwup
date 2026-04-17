@@ -590,6 +590,7 @@ static cfg_opt_t opts[] = {
     CFG_STR("meta-nickname", 0, CFGF_NONE),
 
     CFG_STR("require-fwup-version", "0", CFGF_NONE),
+    CFG_INT("block-cache-size-mb", 8, CFGF_NONE),
     CFG_FUNC("define", cb_define),
     CFG_FUNC("define!", cb_define_bang),
     CFG_FUNC("define-eval", cb_define_eval),

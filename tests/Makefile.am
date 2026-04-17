@@ -221,6 +221,7 @@ TESTS = 001_simple_fw.test \
 	218_uboot_2T_offset.test \
 	219_uboot_redundant_2T_offset.test \
 	220_require_execute.test \
-	221_require_execute_shell_test.test
+	221_require_execute_shell_test.test \
+	222_block_cache_config.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin
