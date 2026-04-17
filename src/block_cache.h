@@ -35,7 +35,6 @@
 // actually made to the output. Additionally, all reads and
 // writes will be aligned to that size.
 #define BLOCK_CACHE_SEGMENT_SIZE       (128*1024) // This is also the read/write write size
-#define BLOCK_CACHE_NUM_SEGMENTS       64         // 8 MB cache
 #define BLOCK_CACHE_BLOCKS_PER_SEGMENT (BLOCK_CACHE_SEGMENT_SIZE / FWUP_BLOCK_SIZE)
 #define BLOCK_CACHE_SEGMENT_MASK       (~(BLOCK_CACHE_SEGMENT_SIZE - 1))
 
@@ -76,8 +75,9 @@ struct block_cache {
     // Counter for maintaining LRU
     uint32_t timestamp;
 
-    // All of the cached segments
-    struct block_cache_segment segments[BLOCK_CACHE_NUM_SEGMENTS];
+    // All of the cached segments (dynamically allocated)
+    struct block_cache_segment *segments;
+    size_t num_segments;
 
     // Temporary buffer for reading segments that are partially valid
     uint8_t *read_temp;
@@ -115,7 +115,7 @@ struct block_cache {
 #endif
 };
 
-int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool is_soft_end_offset, bool enable_trim, bool verify_writes, bool minimize_writes);
+int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool is_soft_end_offset, bool enable_trim, bool verify_writes, bool minimize_writes, size_t cache_size_mb);
 void block_cache_set_decrypt(struct block_cache *bc, void (*decrypt_callback)(void *, void *, size_t, off_t), void *cookie);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);

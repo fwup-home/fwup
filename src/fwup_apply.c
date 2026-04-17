@@ -559,10 +559,12 @@ int fwup_apply(const char *fw_filename,
 
     initialize_timestamps();
 
+    fctx.cache_size_mb = cfg_getint(fctx.cfg, "block-cache-size-mb");
+
     // Initialize the output. Nothing should have been written before now
     // and waiting to initialize the output until now forces the point.
     fctx.output = (struct block_cache *) malloc(sizeof(struct block_cache));
-    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, options->end_offset, options->is_soft_end_offset, options->enable_trim, options->verify_writes, options->minimize_writes));
+    OK_OR_CLEANUP(block_cache_init(fctx.output, output_fd, options->end_offset, options->is_soft_end_offset, options->enable_trim, options->verify_writes, options->minimize_writes, fctx.cache_size_mb));
 
     // Go through all of the tasks and find a matcher
     fctx.task = find_task(&fctx, task_prefix);
