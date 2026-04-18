@@ -97,6 +97,11 @@ struct block_cache {
     off_t end_offset;
     bool is_soft_end_offset; // true if it's ok to write past end_offset (e.g., regular file)
 
+    // Optional decrypt callback for encrypted source disks
+    // Called after reading from disk to store decrypted data in cache
+    void (*decrypt_callback)(void *decrypt_cookie, void *buffer, size_t count, off_t offset);
+    void *decrypt_cookie;
+
     // Asynchronous writes
 #if USE_PTHREADS
     pthread_t writer_thread;
@@ -111,6 +116,7 @@ struct block_cache {
 };
 
 int block_cache_init(struct block_cache *bc, int fd, off_t end_offset, bool is_soft_end_offset, bool enable_trim, bool verify_writes, bool minimize_writes);
+void block_cache_set_decrypt(struct block_cache *bc, void (*decrypt_callback)(void *, void *, size_t, off_t), void *cookie);
 int block_cache_trim(struct block_cache *bc, off_t offset, off_t count, bool hwtrim);
 int block_cache_trim_after(struct block_cache *bc, off_t offset, bool hwtrim);
 int block_cache_pwrite(struct block_cache *bc, const void *buf, size_t count, off_t offset, bool streamed);

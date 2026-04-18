@@ -206,6 +206,12 @@ static int read_segment(struct block_cache *bc, struct block_cache_segment *seg,
             // and don't fail.
             memset((uint8_t *) data + bytes_read, 0, BLOCK_CACHE_SEGMENT_SIZE - bytes_read);
         }
+        
+        // Decrypt data after reading from disk if callback is set
+        // This ensures cache holds decrypted data, avoiding redundant decryption on cache hits
+        if (bc->decrypt_callback) {
+            bc->decrypt_callback(bc->decrypt_cookie, data, count, seg->offset);
+        }
     }
     return 0;
 }
@@ -439,6 +445,8 @@ int block_cache_init(struct block_cache *bc,
     bc->hw_trim_enabled = enable_trim;
     bc->end_offset = end_offset;
     bc->is_soft_end_offset = is_soft_end_offset;
+    bc->decrypt_callback = NULL;
+    bc->decrypt_cookie = NULL;
 
     // Set the trim points based on the file size
     if (!is_soft_end_offset && end_offset > 0) {
@@ -459,6 +467,24 @@ int block_cache_init(struct block_cache *bc,
 #endif
 
     return 0;
+}
+
+/**
+ * @brief Set decrypt callback for reading encrypted disks
+ * 
+ * When set, data will be decrypted once when loaded from disk into cache.
+ * This eliminates redundant decryption on cache hits.
+ * 
+ * @param bc block cache
+ * @param decrypt_callback function to decrypt data in-place
+ * @param cookie context pointer passed to decrypt_callback
+ */
+void block_cache_set_decrypt(struct block_cache *bc, 
+                            void (*decrypt_callback)(void *, void *, size_t, off_t),
+                            void *cookie)
+{
+    bc->decrypt_callback = decrypt_callback;
+    bc->decrypt_cookie = cookie;
 }
 
 static int lrucompare(const void *pa, const void *pb)
