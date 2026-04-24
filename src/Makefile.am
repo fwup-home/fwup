@@ -112,7 +112,6 @@ endif
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src/optional \
-	      -I$(srcdir)/3rdparty/mbedtls \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \
 	      $(PTHREAD_CFLAGS)

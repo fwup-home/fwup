@@ -15,7 +15,7 @@
  */
 
 #include "disk_crypto.h"
-#include "mbedtls_aes.h"
+#include "3rdparty/mbedtls/mbedtls_aes.h"
 #include "3rdparty/base64.h"
 #include "monocypher.h"
 
