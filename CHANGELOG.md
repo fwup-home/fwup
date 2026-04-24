@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.15.1
+
+This release addresses some amazingly poor performance when updating encrypted
+firmware partitions. It was most noticeable when using delta firmware updates
+due to a combination of repeated decryption and a slow AES implementation.
+
+* Improvements
+  * Significantly improve AES performance by replacing Tiny-AES-C with Mbed
+    TLS's AES implementation. Thanks to @kybishop
+  * Decrypt blocks once rather than repeatedly when running firmware delta
+    updates. Thanks to @kybishop
+  * Bump libarchive to 3.8.5 and zlib to 1.3.2 for static builds
+
 ## v1.15.0
 
 * New features
