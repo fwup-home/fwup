@@ -326,6 +326,7 @@ meta-creation-date   | Timestamp when the update was created (derived from ZIP m
 meta-fwup-version    | Version of fwup used to create the update (deprecated - no longer added since fwup 1.2.0)
 meta-uuid            | A UUID to represent this firmware. The UUID won't change even if the .fw file is digitally signed after creation (automatically generated)
 meta-nickname        | A nickname generated from the UUID for ease of differentiating firmware files. It is only an aid and is not guaranteed unique
+block-cache-size-mb  | Size of the internal block cache in MB (default: 8). Increasing this can improve delta update performance when the source partition is large.
 
 After setting the above options, it is necessary to create scopes for other options. The
 currently available scopes are:
@@ -841,6 +842,15 @@ Blake 2B hashes on the final contents of the files, so what matters is what
 comes out of the `xdelta3` decompressor and not what is stored in the archive.
 Most likely though, `xdelta3` will detect corruption since it checks Adler32
 checksums as it decompresses.
+
+When applying delta updates, `fwup` reads from the source partition through the
+block cache. If the source partition is larger than the default 8 MB cache,
+reads may be repeated as segments are evicted. Set `block-cache-size-mb` in the
+global scope of `fwup.conf` to increase the cache size and avoid this:
+
+```conf
+block-cache-size-mb = 32
+```
 
 ### Delta update on-resource source settings
 
