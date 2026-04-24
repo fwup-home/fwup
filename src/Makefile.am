@@ -72,17 +72,8 @@ fwup_SOURCES=\
 	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
-	3rdparty/mbedtls/aes.c \
-	3rdparty/mbedtls/aes.h \
-	3rdparty/mbedtls/aesce.c \
-	3rdparty/mbedtls/aesce.h \
-	3rdparty/mbedtls/aesni.c \
-	3rdparty/mbedtls/aesni.h \
-	3rdparty/mbedtls/platform_util.c \
-	3rdparty/mbedtls/platform_util.h \
-	3rdparty/mbedtls/common.h \
-	3rdparty/mbedtls/alignment.h \
-	3rdparty/mbedtls/build_info.h \
+	3rdparty/mbedtls/mbedtls_aes.c \
+	3rdparty/mbedtls/mbedtls_aes.h \
 	3rdparty/fatfs/source/diskio.h \
 	3rdparty/fatfs/source/ff.c \
 	3rdparty/fatfs/source/ff.h \
