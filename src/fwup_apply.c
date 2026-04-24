@@ -255,15 +255,9 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
         offset > fctx->xd_source_count - count)
         count = fctx->xd_source_count - offset;
 
+    // NOTE: Decryption is now handled by block_cache_set_decrypt(), so the cache
+    // contains decrypted data. This eliminates redundant decryption on cache hits.
     int rc = block_cache_pread(fctx->output, buf, count, fctx->xd_source_offset + offset);
-    if (fctx->xd_source_dc && rc > 0) {
-        // Verify xdelta3 offset/count alignment. See fwup_xdelta3.c.
-        if (offset & (FWUP_BLOCK_SIZE - 1) ||
-            count & (FWUP_BLOCK_SIZE - 1))
-            ERR_RETURN("xdelta3 source read not aligned to block size. Please report this bug. offset: %" PRId64 ", count: %zu", offset, count);
-
-        disk_crypto_decrypt(fctx->xd_source_dc, buf, buf, rc, fctx->xd_source_offset + offset);
-    }
 
     return rc;
 }
@@ -299,6 +293,13 @@ static int read_callback(struct fun_context *fctx, const void **buffer, size_t *
         return read_callback_xdelta(fctx, buffer, len, offset);
     else
         return read_callback_normal(fctx, buffer, len, offset);
+}
+
+// Wrapper for disk_crypto_decrypt to match block_cache decrypt callback signature
+static void block_cache_decrypt_wrapper(void *cookie, void *buffer, size_t count, off_t offset)
+{
+    struct disk_crypto *dc = (struct disk_crypto *) cookie;
+    disk_crypto_decrypt(dc, buffer, buffer, count, offset);
 }
 
 static void initialize_timestamps()
@@ -425,6 +426,8 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 if (source_raw_options) {
                     fctx->xd_source_dc = malloc(sizeof(struct disk_crypto));
                     OK_OR_CLEANUP(disk_crypto_init(fctx->xd_source_dc, source_raw_offset * FWUP_BLOCK_SIZE, 1, &source_raw_options));
+                    // Set decrypt callback on block cache to decrypt once when loading from disk
+                    block_cache_set_decrypt(fctx->output, block_cache_decrypt_wrapper, fctx->xd_source_dc);
                 }
 
                 fctx->xd = malloc(sizeof(struct xdelta_state));
@@ -455,6 +458,10 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
 
 { // MOVE ME!!!
     if (fctx->xd) {
+        // Clear decrypt callback before freeing crypto context
+        if (fctx->xd_source_dc)
+            block_cache_set_decrypt(fctx->output, NULL, NULL);
+            
         xdelta_free(fctx->xd);
         free(fctx->xd);
         if (fctx->xd_source_dc)
