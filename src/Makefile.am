@@ -72,8 +72,8 @@ fwup_SOURCES=\
 	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
-	3rdparty/tiny-AES-c/aes.c \
-	3rdparty/tiny-AES-c/aes.h \
+	3rdparty/mbedtls/mbedtls_aes.c \
+	3rdparty/mbedtls/mbedtls_aes.h \
 	3rdparty/fatfs/source/diskio.h \
 	3rdparty/fatfs/source/ff.c \
 	3rdparty/fatfs/source/ff.h \
@@ -100,8 +100,6 @@ EXTRA_DIST= \
 	3rdparty/semver.c/Makefile \
 	3rdparty/semver.c/semver_unit.c \
 	3rdparty/semver.c/semver_test.c \
-	3rdparty/tiny-AES-c/README.md \
-	3rdparty/tiny-AES-c/unlicense.txt \
 	3rdparty/strptime.c \
 	3rdparty/xdelta3/xdelta3.c \
 	3rdparty/xdelta3/LICENSE \

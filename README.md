@@ -1323,6 +1323,13 @@ developments under license policy of following terms.
 * Redistributions of source code must retain the above copyright notice.
 >>>
 
+## Mbed TLS
+
+The AES implementation comes from the [Mbed TLS](https://github.com/Mbed-TLS/TF-PSA-Crypto)
+project as an amalgamated single-file build. It is copyright The Mbed TLS Contributors
+and dual-licensed under Apache-2.0 OR GPL-2.0-or-later. See
+[LICENSE](src/3rdparty/mbedtls/LICENSE) for details.
+
 ## Monocypher
 
 This package has been dual licensed under the 2-clause BSD and CC-0. See
@@ -1338,11 +1345,6 @@ License. See [LICENSE](src/3rdparty/semver.c/LICENSE).
 
 On systems without the function strptime(), a version from Google is
 included that is distributed under the Apache 2.0 license.
-
-## Tiny AES
-
-This code was released into the public domain. See
-[unlicense.txt](src/3rdparty/tiny-AES-c/unlicense.txt) for details.
 
 ## Xdelta3
 
