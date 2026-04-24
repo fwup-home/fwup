@@ -1299,11 +1299,6 @@ License. See [LICENSE](src/3rdparty/semver.c/LICENSE).
 On systems without the function strptime(), a version from Google is
 included that is distributed under the Apache 2.0 license.
 
-## Tiny AES
-
-This code was released into the public domain. See
-[unlicense.txt](src/3rdparty/tiny-AES-c/unlicense.txt) for details.
-
 ## Xdelta3
 
 Only the xdelta3 decompressor is currently used by `fwup` so most of the code in

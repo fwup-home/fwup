@@ -100,8 +100,6 @@ EXTRA_DIST= \
 	3rdparty/semver.c/Makefile \
 	3rdparty/semver.c/semver_unit.c \
 	3rdparty/semver.c/semver_test.c \
-	3rdparty/tiny-AES-c/README.md \
-	3rdparty/tiny-AES-c/unlicense.txt \
 	3rdparty/strptime.c \
 	3rdparty/xdelta3/xdelta3.c \
 	3rdparty/xdelta3/LICENSE \
