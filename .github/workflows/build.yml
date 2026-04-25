@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: static
+            container: ubuntu:22.04
+          - mode: dynamic
+            container: ubuntu:22.04
+          - mode: windows
+            container: ubuntu:24.04
+          - mode: raspberrypi
+            container: ubuntu:22.04
+          - mode: singlethread
+            container: ubuntu:22.04
+          - mode: minimal
+            container: ubuntu:22.04
+    container: ${{ matrix.container }}
+    env:
+      CIRCLE_OS_NAME: linux
+      MODE: ${{ matrix.mode }}
+      DEBIAN_FRONTEND: noninteractive
+      TZ: America/New_York
+      WINEPREFIX: /tmp/wine
+    steps:
+      - name: Install git for checkout
+        run: |
+          apt-get update -qq
+          apt-get install -qq -y --no-install-recommends git ca-certificates
+
+      - uses: actions/checkout@v6
+
+      - name: Cache third-party downloads
+        uses: actions/cache@v5
+        with:
+          path: dl
+          key: fwup-dl-${{ matrix.mode }}-${{ hashFiles('scripts/third_party_versions.sh') }}
+          restore-keys: |
+            fwup-dl-${{ matrix.mode }}-
+
+      - name: Install Deps
+        run: scripts/ci_install_deps.sh
+
+      - name: Build
+        run: scripts/ci_build.sh
+
+      - name: Copy out artifacts
+        run: |
+          scripts/ci_deploy.sh
+          mkdir -p ./artifacts
+        env:
+          CIRCLECI: "true"
+          CIRCLE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          CIRCLE_BRANCH: ${{ github.ref_name }}
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: fwup-linux-${{ matrix.mode }}
+          path: artifacts/
+          if-no-files-found: ignore
+
+  macos:
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [static, dynamic]
+    env:
+      CIRCLE_OS_NAME: osx
+      MODE: ${{ matrix.mode }}
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Deps
+        run: scripts/ci_install_deps.sh
+
+      - name: Build
+        run: scripts/ci_build.sh
+
+      - name: Copy out artifacts
+        run: |
+          scripts/ci_deploy.sh
+          mkdir -p ./artifacts
+        env:
+          CIRCLECI: "true"
+          CIRCLE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          CIRCLE_BRANCH: ${{ github.ref_name }}
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: fwup-macos-${{ matrix.mode }}
+          path: artifacts/
+          if-no-files-found: ignore
+
+  release:
+    needs: [linux, macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: downloaded-artifacts
+          merge-multiple: true
+
+      - name: Create release notes
+        run: |
+          grep -Pazo "(?s)(?<=## ${GITHUB_REF_NAME})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
+          cat /tmp/RELEASE_NOTES
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          body_path: /tmp/RELEASE_NOTES
+          files: downloaded-artifacts/*
