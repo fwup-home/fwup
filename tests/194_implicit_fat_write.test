@@ -43,9 +43,8 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that the directory looks right
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "subdir" $WORK/actual.out
-grep -qi "1k.*bin" $WORK/actual.out
-grep -q "1024" $WORK/actual.out
+grep -qi "^subdir.*<DIR>" $WORK/actual.out
+grep -qi "^1k.*bin.*1024 1980-01-01" $WORK/actual.out
 
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img@@32256 ::/1K.bin $WORK/actual.1K.bin

@@ -71,8 +71,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t fat
 
 # Check that sparse.bin appears in the directory listing with the correct size
 mdir -i $WORK/fwup.img > $WORK/actual.out
-grep -qi "sparse" $WORK/actual.out
-grep -q "131072" $WORK/actual.out
+grep -qi "^sparse.*131072 1980-01-01" $WORK/actual.out
 
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img ::/sparse.bin $WORK/actual.sparse.bin

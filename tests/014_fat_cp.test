@@ -52,9 +52,8 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
 grep -q "7 files" $WORK/actual.out
 for i in 1 2 3 4 5 6 7; do
-    grep -qi "${i}.*bin" $WORK/actual.out
+    grep -qi "^${i}.*bin.*1024 1980-01-01" $WORK/actual.out
 done
-grep -q "1024" $WORK/actual.out
 
 # Check the contents of the file
 for i in 1 2 3 4 5 6 7; do

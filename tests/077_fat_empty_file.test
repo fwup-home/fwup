@@ -74,14 +74,12 @@ $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 # Check that the file gets created if it's not there before
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t creates-file
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "empty" $WORK/actual.out
-grep -q " 0 1980" $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check that the file gets truncated if it exists
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "empty" $WORK/actual.out
-grep -q " 0 1980" $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check the FAT file format using fsck
 dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
@@ -91,8 +89,7 @@ $FSCK_FAT $WORK/vfat.img
 # open works.
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file2
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "empty" $WORK/actual.out
-grep -q " 0 1980" $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

@@ -63,8 +63,7 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
 # Check that the directory looks right
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "1k.*bin" $WORK/actual.out
-grep -q "1024" $WORK/actual.out
+grep -qi "^1k.*bin.*1024 1980-01-01" $WORK/actual.out
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE

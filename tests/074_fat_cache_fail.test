@@ -90,16 +90,11 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step2
 
 # Check that the directory listing contains all expected files with correct sizes
 MTOOLS_SKIP_CHECK=1 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "mlo" $WORK/actual.out
-grep -q "65572" $WORK/actual.out
-grep -qi "u.boot" $WORK/actual.out
-grep -q "351052" $WORK/actual.out
-grep -qi "boot.scr" $WORK/actual.out
-grep -q "2308" $WORK/actual.out
-grep -qi "zimage" $WORK/actual.out
-grep -q "4099880" $WORK/actual.out
-grep -qi "am335x" $WORK/actual.out
-grep -q "60958" $WORK/actual.out
+grep -qi "^mlo.*65572 1980-01-01" $WORK/actual.out
+grep -qi "^u.boot.*351052 1980-01-01" $WORK/actual.out
+grep -qi "^boot.*scr.*2308 1980-01-01" $WORK/actual.out
+grep -qi "^zimage.*4099880 1980-01-01" $WORK/actual.out
+grep -qi "^am335x.*60958 1980-01-01" $WORK/actual.out
 
 # Check the contents of the file
 FILES="MLO zImage boot.scr u-boot.img am335x-boneblack.dtb"
