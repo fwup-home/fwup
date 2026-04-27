@@ -124,8 +124,11 @@ AC_DEFUN([CHECK_HOST_SUPPORT_FOR_SHIMS], [
         x86_64-pc-linux-gnu|x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)
             eval "$1=yes"
             ;;
+        aarch64-apple-darwin2[[4-9]]*|aarch64-apple-darwin[[3-9]][[0-9]]*)
+            eval "$1=yes"
+            ;;
         aarch64-apple-darwin*)
-            # This works fine on Sequoia, but not on earlier versions. Disable for now.
+            # Shims don't work on Apple Silicon before Sequoia (Darwin 24).
             eval "$1=no"
             ;;
         *)

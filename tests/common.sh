@@ -132,7 +132,9 @@ fi
 # The write fault simulator only runs on a subset of platforms. Let autoconf
 # figure out which ones.
 WRITE_SHIM="$TESTS_DIR/fixture/.libs/libwrite_shim.$SO_EXT"
-if [ -e "$WRITE_SHIM" ]; then
+if [ -e "$WRITE_SHIM" ] && \
+        LD_PRELOAD="$WRITE_SHIM" DYLD_INSERT_LIBRARIES="$WRITE_SHIM" \
+        /bin/sh -c 'exit 0' >/dev/null 2>&1; then
     export HAS_WRITE_SHIM=true
     export LD_PRELOAD="$WRITE_SHIM"
     export DYLD_INSERT_LIBRARIES="$WRITE_SHIM"
@@ -143,7 +145,9 @@ fi
 # The mount simulator only runs only runs on a subset of
 # platforms. Let autoconf figure out which ones.
 MOUNT_SHIM="$TESTS_DIR/fixture/.libs/libmount_shim.$SO_EXT"
-if [ -e "$MOUNT_SHIM" ]; then
+if [ -e "$MOUNT_SHIM" ] && \
+        LD_PRELOAD="$MOUNT_SHIM" DYLD_INSERT_LIBRARIES="$MOUNT_SHIM" \
+        /bin/sh -c 'exit 0' >/dev/null 2>&1; then
     export HAS_MOUNT_SHIM=true
     export MOUNT_LD_PRELOAD="$MOUNT_SHIM"
     export MOUNT_DYLD_INSERT_LIBRARIES="$MOUNT_SHIM"

@@ -3,3 +3,4 @@
 /.libs
 /libwrite_shim*
 /libmount_shim*
+/libpread_shim*
