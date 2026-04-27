@@ -1,0 +1,127 @@
+#!/bin/sh
+
+#
+# Test that a larger block cache results in fewer disk reads during a delta
+# upgrade. Uses a pread shim to count syscall-level reads against the image fd.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+PREAD_SHIM="$TESTS_DIR/fixture/.libs/libpread_shim.$SO_EXT"
+if [ ! -f "$PREAD_SHIM" ]; then
+    echo "Skipping: pread shim not available"
+    exit 77
+fi
+if ! LD_PRELOAD="$PREAD_SHIM" DYLD_INSERT_LIBRARIES="$PREAD_SHIM" \
+        "$FWUP_APPLY" --version >/dev/null 2>&1; then
+    echo "Skipping: pread shim injection not functional on this system"
+    exit 77
+fi
+
+# Source is 2 MB (16 × 128 KB segments). We build a two-window VCDIFF where both
+# windows copy all 16 source blocks via VCD_SOURCE. We do this by encoding a trivial
+# delta (source.bin → source.bin) to get one VCD_SOURCE window, then concatenating
+# that window a second time (stripping the 5-byte VCDIFF file header from the copy).
+#
+# With a 1 MB cache (8 segments): window 0 reads blocks 0-15 (16 cold misses),
+# leaving {8..15} in cache. Window 1 re-reads blocks 0-7 (evicting 8-15), then
+# 8-15 (evicting 0-7) — LRU sequential thrash, all 16 misses again. Total = 32.
+# With a 16 MB cache (128 segments): window 0 fills cache (16 misses), window 1
+# hits entirely from cache (0 misses). Total = 16. So small(32) > large(16).
+PART_OFFSET=1024
+PART_COUNT=8192   # 4 MB: enough for the doubled decoded output
+SOURCE_BLOCKS=4096  # 2 MB source = 4096 × 512-byte blocks
+
+dd if=/dev/urandom of=$WORK/source.bin bs=1024 count=2048 2>/dev/null
+
+# Target = source doubled (matches two-window delta decoded output)
+cat $WORK/source.bin $WORK/source.bin > $WORK/target.bin
+
+make_base_config() {
+    cat >$WORK/base.conf <<EOF
+define(PART_OFFSET, ${PART_OFFSET})
+define(PART_COUNT, ${SOURCE_BLOCKS})
+
+file-resource rootfs {
+    host-path = "$WORK/source.bin"
+}
+
+task complete {
+    on-resource rootfs { raw_write(\${PART_OFFSET}) }
+}
+EOF
+}
+
+make_upgrade_config() {
+    local cache_mb=$1
+    cat >$WORK/config_${cache_mb}mb.conf <<EOF
+block-cache-size-mb = ${cache_mb}
+
+define(PART_OFFSET, ${PART_OFFSET})
+define(SOURCE_BLOCKS, ${SOURCE_BLOCKS})
+
+file-resource rootfs {
+    host-path = "$WORK/target.bin"
+}
+
+task upgrade {
+    on-resource rootfs {
+        delta-source-raw-offset=\${PART_OFFSET}
+        delta-source-raw-count=\${SOURCE_BLOCKS}
+        raw_write(\${PART_OFFSET})
+    }
+}
+EOF
+}
+
+# Install base image
+make_base_config
+$FWUP_CREATE -c -f $WORK/base.conf -o $WORK/base.fw
+$FWUP_APPLY -a -d $IMGFILE -i $WORK/base.fw -t complete
+cp $IMGFILE $WORK/base.img
+
+# Build the two-window VCDIFF patch reused in both upgrade firmwares.
+# Encode source→source (trivial self-delta) to get one VCD_SOURCE window, then
+# concatenate it twice (stripping the 5-byte VCDIFF file header from the copy)
+# so both windows read all 16 source blocks via VCD_SOURCE.
+mkdir -p $WORK/data
+xdelta3 -A -S -f -s $WORK/source.bin $WORK/source.bin $WORK/data/rootfs_single
+{ cat $WORK/data/rootfs_single; tail -c +6 $WORK/data/rootfs_single; } > $WORK/data/rootfs
+
+# Package upgrade firmwares: same delta, different block-cache-size-mb.
+# The file-resource points to target.bin so the embedded hash matches the
+# decoded delta output; then we replace the raw content with the delta patch.
+make_upgrade_config 1
+$FWUP_CREATE -c -f $WORK/config_1mb.conf -o $WORK/upgrade_1mb.fw
+(cd $WORK && zip upgrade_1mb.fw data/rootfs)
+
+make_upgrade_config 16
+$FWUP_CREATE -c -f $WORK/config_16mb.conf -o $WORK/upgrade_16mb.fw
+(cd $WORK && zip upgrade_16mb.fw data/rootfs)
+
+# Run small-cache upgrade
+cp $WORK/base.img $IMGFILE
+PREAD_SHIM_OUTFILE=$WORK/pread_small.txt \
+    LD_PRELOAD="$PREAD_SHIM" DYLD_INSERT_LIBRARIES="$PREAD_SHIM" \
+    $FWUP_APPLY -a -d $IMGFILE -i $WORK/upgrade_1mb.fw -t upgrade
+
+# Run large-cache upgrade
+cp $WORK/base.img $IMGFILE
+PREAD_SHIM_OUTFILE=$WORK/pread_large.txt \
+    LD_PRELOAD="$PREAD_SHIM" DYLD_INSERT_LIBRARIES="$PREAD_SHIM" \
+    $FWUP_APPLY -a -d $IMGFILE -i $WORK/upgrade_16mb.fw -t upgrade
+
+small=$(cat $WORK/pread_small.txt)
+large=$(cat $WORK/pread_large.txt)
+
+if [ -z "$small" ] || [ -z "$large" ]; then
+    echo "FAIL: pread count file(s) not written by shim"
+    exit 1
+fi
+
+if [ "$large" -ge "$small" ]; then
+    echo "FAIL: large-cache run had $large reads, small-cache run had $small reads (expected large < small)"
+    exit 1
+fi
+
+echo "PASS: small-cache=$small reads, large-cache=$large reads"

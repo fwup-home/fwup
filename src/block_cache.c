@@ -428,8 +428,6 @@ int block_cache_init(struct block_cache *bc,
         bc->num_segments = 8; // Minimum 1 MB cache
     }
 
-    INFO("Initializing block cache: %zu MB (%zu segments)", cache_size_mb, bc->num_segments);
-
     // Allocate segments array
     bc->segments = (struct block_cache_segment *) calloc(bc->num_segments, sizeof(struct block_cache_segment));
     if (!bc->segments)
