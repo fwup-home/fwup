@@ -123,14 +123,11 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step6
 
 # Check that the directory lists all 5 files with correct sizes
 mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
-grep -qi "0.*bin" $WORK/actual.out
-grep -qi "1.*bin" $WORK/actual.out
-grep -qi "2.*bin" $WORK/actual.out
-grep -qi "3.*bin" $WORK/actual.out
-grep -qi "4.*bin" $WORK/actual.out
-grep -q "15000000" $WORK/actual.out
-grep -q "150000" $WORK/actual.out
-grep -q "1024" $WORK/actual.out
+grep -qi "^0.*bin.*15000000 1980-01-01" $WORK/actual.out
+grep -qi "^1.*bin.*150000 1980-01-01" $WORK/actual.out
+grep -qi "^2.*bin.*1024 1980-01-01" $WORK/actual.out
+grep -qi "^3.*bin.*150000 1980-01-01" $WORK/actual.out
+grep -qi "^4.*bin.*1024 1980-01-01" $WORK/actual.out
 
 # Check the contents of the file
 for i in 0 1 2 3 4; do
