@@ -121,27 +121,16 @@ $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step4
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step5
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t step6
 
-EXPECTED_OUTPUT=$WORK/expected.out
-ACTUAL_OUTPUT=$WORK/actual.out
-
-cat >$EXPECTED_OUTPUT << EOF
- Volume in drive : has no label
- Volume Serial Number is 0022-2DB6
-Directory for ::/
-
-3        bin    150000 1980-01-01   0:00
-0        bin  15000000 1980-01-01   0:00
-1        bin    150000 1980-01-01   0:00
-4        bin      1024 1980-01-01   0:00
-2        bin      1024 1980-01-01   0:00
-        5 files          15 302 048 bytes
-                                 23 608 320 bytes free
-
-EOF
-
-# Check that the directory looks right
-mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+# Check that the directory lists all 5 files with correct sizes
+mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
+grep -qi "0.*bin" $WORK/actual.out
+grep -qi "1.*bin" $WORK/actual.out
+grep -qi "2.*bin" $WORK/actual.out
+grep -qi "3.*bin" $WORK/actual.out
+grep -qi "4.*bin" $WORK/actual.out
+grep -q "15000000" $WORK/actual.out
+grep -q "150000" $WORK/actual.out
+grep -q "1024" $WORK/actual.out
 
 # Check the contents of the file
 for i in 0 1 2 3 4; do

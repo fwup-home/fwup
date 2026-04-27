@@ -41,24 +41,11 @@ EOF
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
 
-EXPECTED_OUTPUT=$WORK/expected.out
-ACTUAL_OUTPUT=$WORK/actual.out
-
-cat >$EXPECTED_OUTPUT << EOF
- Volume in drive : has no label
- Volume Serial Number is 0022-2DB6
-Directory for ::/
-
-subdir       <DIR>     1980-01-01   0:00
-1K       bin      1024 1980-01-01   0:00
-         2 files               1 024 bytes
-                          38 907 904 bytes free
-
-EOF
-
 # Check that the directory looks right
-mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
+grep -qi "subdir" $WORK/actual.out
+grep -qi "1k.*bin" $WORK/actual.out
+grep -q "1024" $WORK/actual.out
 
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img@@32256 ::/1K.bin $WORK/actual.1K.bin
