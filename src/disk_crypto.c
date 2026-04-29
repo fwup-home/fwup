@@ -23,14 +23,15 @@
 #include <string.h>
 
 #define MAX_CIPHER_LEN 32
-#define MAX_SECRET_LEN 64
+#define MAX_SECRET_LEN 128
 #define AES_BLOCKLEN 16
 #define AES_KEYLEN 32
+#define AES_XTS_KEYLEN 64 // 2 x 256-bit keys for AES-256-XTS
 
-static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
+static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint64_t lba, const uint8_t *input, uint8_t *output)
 {
     uint8_t iv[AES_BLOCKLEN] = {0};
-    copy_le32(iv, lba);
+    copy_le32(iv, (uint32_t) lba);
 
     mbedtls_aes_context ctx;
     mbedtls_aes_init(&ctx);
@@ -43,10 +44,10 @@ static void aes_cbc_plain_encrypt(struct disk_crypto *dc, uint32_t lba, const ui
 
     mbedtls_aes_free(&ctx);
 }
-static void aes_cbc_plain_decrypt(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output)
+static void aes_cbc_plain_decrypt(struct disk_crypto *dc, uint64_t lba, const uint8_t *input, uint8_t *output)
 {
     uint8_t iv[AES_BLOCKLEN] = {0};
-    copy_le32(iv, lba);
+    copy_le32(iv, (uint32_t) lba);
 
     mbedtls_aes_context ctx;
     mbedtls_aes_init(&ctx);
@@ -78,6 +79,56 @@ static int aes_cbc_plain_init(struct disk_crypto *dc, const char *secret_key)
     }
 
     ERR_RETURN("aes-cbc-plain requires a hex-encoded %d-bit key", AES_KEYLEN * 8);
+}
+
+static void aes_xts_plain64_data_unit(uint64_t lba, uint8_t data_unit[AES_BLOCKLEN])
+{
+    memset(data_unit, 0, AES_BLOCKLEN);
+    for (int i = 0; i < 8; i++)
+        data_unit[i] = (uint8_t) (lba >> (8 * i));
+}
+
+static void aes_xts_plain64_encrypt(struct disk_crypto *dc, uint64_t lba, const uint8_t *input, uint8_t *output)
+{
+    uint8_t data_unit[AES_BLOCKLEN];
+    aes_xts_plain64_data_unit(lba, data_unit);
+
+    mbedtls_aes_xts_context ctx;
+    mbedtls_aes_xts_init(&ctx);
+
+    if (mbedtls_aes_xts_setkey_enc(&ctx, dc->key, AES_XTS_KEYLEN * 8) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_xts_setkey_enc failed");
+
+    if (mbedtls_aes_crypt_xts(&ctx, MBEDTLS_AES_ENCRYPT, FWUP_BLOCK_SIZE, data_unit, input, output) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_crypt_xts encrypt failed");
+
+    mbedtls_aes_xts_free(&ctx);
+}
+static void aes_xts_plain64_decrypt(struct disk_crypto *dc, uint64_t lba, const uint8_t *input, uint8_t *output)
+{
+    uint8_t data_unit[AES_BLOCKLEN];
+    aes_xts_plain64_data_unit(lba, data_unit);
+
+    mbedtls_aes_xts_context ctx;
+    mbedtls_aes_xts_init(&ctx);
+
+    if (mbedtls_aes_xts_setkey_dec(&ctx, dc->key, AES_XTS_KEYLEN * 8) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_xts_setkey_dec failed");
+
+    if (mbedtls_aes_crypt_xts(&ctx, MBEDTLS_AES_DECRYPT, FWUP_BLOCK_SIZE, data_unit, input, output) != 0)
+        fwup_err(EXIT_FAILURE, "mbedtls_aes_crypt_xts decrypt failed");
+
+    mbedtls_aes_xts_free(&ctx);
+}
+static int aes_xts_plain64_init(struct disk_crypto *dc, const char *secret_key)
+{
+    dc->encrypt = aes_xts_plain64_encrypt;
+    dc->decrypt = aes_xts_plain64_decrypt;
+
+    if (secret_key && hex_to_bytes(secret_key, dc->key, AES_XTS_KEYLEN) == 0)
+        return 0;
+
+    ERR_RETURN("aes-xts-plain64 requires a hex-encoded %d-bit key", AES_XTS_KEYLEN * 8);
 }
 
 static int min(int a, int b)
@@ -146,10 +197,13 @@ int disk_crypto_init(struct disk_crypto *dc, off_t base_offset, int argc, const 
 
     OK_OR_RETURN(parse_options(argc, argv, cipher, secret));
 
+    memset(dc, 0, sizeof(*dc));
     dc->base_offset = base_offset;
 
     if (strcmp(cipher, "aes-cbc-plain") == 0)
         return aes_cbc_plain_init(dc, secret);
+    else if (strcmp(cipher, "aes-xts-plain64") == 0)
+        return aes_xts_plain64_init(dc, secret);
     else
         ERR_RETURN("Unsupported disk encryption: %s", cipher);
 }
@@ -164,8 +218,8 @@ int disk_crypto_init(struct disk_crypto *dc, off_t base_offset, int argc, const 
  */
 void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset)
 {
-    uint32_t lba = (uint32_t) ((offset - dc->base_offset)/ FWUP_BLOCK_SIZE);
-    uint32_t last_lba = lba + (uint32_t) (count / FWUP_BLOCK_SIZE);
+    uint64_t lba = (uint64_t) ((offset - dc->base_offset) / FWUP_BLOCK_SIZE);
+    uint64_t last_lba = lba + (uint64_t) (count / FWUP_BLOCK_SIZE);
 
     while (lba < last_lba) {
         dc->encrypt(dc, lba, input, output);
@@ -185,8 +239,8 @@ void disk_crypto_encrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *
  */
 void disk_crypto_decrypt(struct disk_crypto *dc, const uint8_t *input, uint8_t *output, size_t count, off_t offset)
 {
-    uint32_t lba = (uint32_t) ((offset - dc->base_offset)/ FWUP_BLOCK_SIZE);
-    uint32_t last_lba = lba + (uint32_t) (count / FWUP_BLOCK_SIZE);
+    uint64_t lba = (uint64_t) ((offset - dc->base_offset) / FWUP_BLOCK_SIZE);
+    uint64_t last_lba = lba + (uint64_t) (count / FWUP_BLOCK_SIZE);
 
     while (lba < last_lba) {
         dc->decrypt(dc, lba, input, output);

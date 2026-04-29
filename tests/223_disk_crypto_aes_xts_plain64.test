@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Test writing a resource to an aes-xts-plain64 encrypted disk
+#
+# Note: fwup and dmcrypt pad blocks differently, so test files need to be
+# multiples of 512.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >$CONFIG <<EOF
+file-resource subdir/TEST {
+        host-path = "${TESTFILE_1K}"
+}
+
+task complete {
+        on-resource subdir/TEST { raw_write(1, "cipher=aes-xts-plain64", "secret=8e9c0780fd7f5d00c18a30812fe960cfce71f6074dd9cded6aab2897568cc856fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210") }
+}
+EOF
+
+# Run ./223_disk_crypto_aes_xts_plain64-generate.sh
+base64_decodez >$WORK/expected.img <<EOF
+H4sIAAAAAAAAA+3UC1cNBgDA8WhqXrcMV5KoqOWq9LpTmmpKD0QInUpYtVSalJ4e0fTQ44QxpaKb
+WtyjB3mElBLRwoYiFSm9pFARTfYxtnP2/32In4wM/s++6VNy3X9yc/GbR8umdpbEDZQt2jSv4bps
+XcPKLSkdwZUVh/xLg/1GSUUpHgU17y47VGWNLZvTZ31t4HRpj3fy8/fCjUnS6PEjleNXTch9E10R
+WXsuTEZ4xHQ4Jtvg4VD0lPhhw4B0Qbfl6ocRAZNjvSPHOf2RNP23jyNUQg7VCi115xgOrLmd7NVn
+uMw0t8A45Ya/qM5brJldXlEe8Yv2quRPOycqpuUPzTXcHevrmjzy44MnhU69Sv1RRZm3tqW+bYtU
+1TEKcpdXNB51eU/x4RVtkg7ti5eUc7Nm12long1tlQzFTTefXRaS3nNKvNRrQPrJun7EmdjqglPp
+VTPkxB8nqaUf9HaR+8tylq7T+Jd2FnZy+kN5w44FEp+QmKs50nRpVNqrHaoZH+btNlIcVMoROOW8
+bfm2+OPouANxFiXp+0XHFI1sP8+Navzu7PHB4O6uufuc7+bcOpyascvv6U/Z/sKxTmOaEnvsMsLc
+zGauVAjNzKl84iznaa8TXNXm7C/Q05xvYnJg3UGjLvu1V5+5+nkkrc8SCsrDl9vOGR7n+FW+i2dN
+3rKjp+dlvxP7/KnlZnzOPV6qGH71fIuewTpzq+yGU2rn/MSXO6pKouo0E/vrc0uazPZ5u6+wnWU3
+2z085cWYaRvPNZytTug0lg2qK1CxzTN2CIhMLrG0fDWxUN9KxaiwfImg1qpGLaOqtHiXwnZ1PYNF
+6ilbHVq/3DDPT9n0u6gmRVWitiSyPaHrhwCJ9eiJvia9Iwud7qy3Lc62aA11dTEJ1DzZkhpyZVbQ
+kKDd74V2WNq+UyfeOR4SSZomis/KCjv0dno0FL0+sfPB9fHvpy7OsnN7FG4idzrg+Kt3h2ereJnL
+S7c0uki6D/qVKi99Xpr7NHRR5cXM0J6KewtDHdaunm9z18w/t2jVp86tduYr6yvbo1XjbWqbA5KL
+zsjccrRRUn/anJ+/eUb6YJLN9LymrdvvVP09KWJhochDaP9ZFOB+vDPqwTHfblPP5tD+xW3HR5e0
+6ndM1fCaV/CjSaLPy4uZsvL9zw1H5wn6DL3idSQ9e5Ujfnb1axXcl3z20TXJVTCNfbwhJybQc8K1
+RGnUMvcw2bFWlkPbcsx8W7T1XXStxV+GJiep7rp5bP2lwh0etjsHXz9xjL8wU2FDkXlQukvxdQuf
+K2oBdlUfLimKtC4t2P2s4lrj8t6vR3SXS8eoRQdtL1AKrBcENtkHS7y7KwcTVtzf8Gnk7r2P/MNP
+qEYU7epsPFOwuLtTeUeCdvSwk6ZwMLCjOsn5prXzr10yzfKTnctmyhdpjBKmZm/u/6ylucU+R0Or
+Wv2In2FMsEdCpsmSaXHj3kruOsiuUUnU9RDdO19/X/OCjti/97aBsZuTus2bkiULrMRenmGP9xyd
+0t4mLRR/fzHt3/4HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPDf9A/YisiSAAACAA==
+EOF
+
+# Create the firmware file, then "burn it"
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+$FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t complete
+
+cmp $WORK/expected.img $IMGFILE
+
+# Check that the verify logic works on this file
+$FWUP_VERIFY -V -i $FWFILE
