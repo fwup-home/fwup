@@ -924,9 +924,9 @@ write filesystem data in a way that's unreadable at rest. Caveats are in order:
    of the archive is protected by other means. Of course, it is possible
    pre-encrypt the data in the archive, but then you can't have device-specific
    secret keys.
-3. Only the simplest `dm-crypt` cipher is currently supported ("aes-cbc-plain").
-   This has known deficiencies. PRs for other modes that can be incorporated
-   under `fwup`'s Apache License would be appreciated
+3. Currently, two `dm-crypt` ciphers are supported, "aes-cbc-plain" and
+   "aes-xts-plain64". This has known deficiencies. PRs for other modes that can
+   be incorporated under `fwup`'s Apache License would be appreciated
 
 Various tutorials exist on the Internet for creating encrypted filesystems and
 mounting filesystems using `dm-crypt`. `fwup` is much simpler. It takes a block
@@ -936,21 +936,29 @@ disk, you'd have this fragment:
 
 ```conf
 on-resource fs.squashfs {
-    raw_write(${PARTITION_START}, "cipher=aes-cbc-plain", "secret=\${SECRET_KEY}")
+    raw_write(${PARTITION_START}, "cipher=aes-xts-plain64", "secret=\${SECRET_KEY}")
 }
 ```
 
 In the above example, the `SECRET_KEY` is expected to come from an environment
 variable being set on the device when applying the firmware update. You could,
 of course, hard-code the secret key in the configuration file to test things
-out. The key is hex-encoded.
+out. The key is hex-encoded. The required key length depends on the cipher:
+
+* `aes-cbc-plain` (AES-256-CBC): 256-bit key → 32 bytes → **64 hex characters**
+* `aes-xts-plain64` (AES-256-XTS): 512-bit key → 64 bytes → **128 hex characters**
+
+Note that AES-256-XTS uses two 256-bit AES keys internally, so the key material
+is twice the size of AES-256-CBC. Providing a key of the wrong length will
+result in a runtime error.
 
 Then, on the device, mount the SquashFS partition but use `dm-crypt`. The
 process will look something like this:
 
 ```sh
 losetup /dev/loop0 /dev/mmcblk0p2
-cryptsetup open --type=plain --cipher=aes-cbc-plain --key-file=key.txt /dev/loop0 my-filesystem
+xxd -r -p key.txt > key.bin
+cryptsetup open --type=plain --cipher=aes-xts-plain64 --key-size 512 --key-file=key.bin /dev/loop0 my-filesystem
 mount /dev/mapper/my-filesystem /mnt
 ```
 

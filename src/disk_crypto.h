@@ -20,12 +20,12 @@
 #include "util.h"
 
 struct disk_crypto;
-typedef void (disk_crypto_fun)(struct disk_crypto *dc, uint32_t lba, const uint8_t *input, uint8_t *output);
+typedef void (disk_crypto_fun)(struct disk_crypto *dc, uint64_t lba, const uint8_t *input, uint8_t *output);
 
 struct disk_crypto {
     disk_crypto_fun *encrypt;
     disk_crypto_fun *decrypt;
-    uint8_t key[32];
+    uint8_t key[64]; // 32 bytes for aes-cbc-plain; 64 bytes for aes-xts-plain64 (AES-256-XTS)
     off_t base_offset;
 };
 
