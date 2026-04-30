@@ -22,6 +22,8 @@
 #include <DiskArbitration/DiskArbitration.h>
 #include <IOKit/storage/IOStorageProtocolCharacteristics.h>
 
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
