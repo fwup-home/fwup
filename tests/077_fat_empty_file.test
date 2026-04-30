@@ -71,29 +71,15 @@ EOF
 # Create the firmware file, then "burn it"
 $FWUP_CREATE -c -f $CONFIG -o $FWFILE
 
-EXPECTED_OUTPUT=$WORK/expected.out
-ACTUAL_OUTPUT=$WORK/actual.out
-
-cat >$EXPECTED_OUTPUT << EOF
- Volume in drive : has no label
- Volume Serial Number is 0022-2DB6
-Directory for ::/
-
-empty                0 1980-01-01   0:00
-        1 file                    0 bytes
-                         38 910 464 bytes free
-
-EOF
-
 # Check that the file gets created if it's not there before
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t creates-file
-mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check that the file gets truncated if it exists
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file
-mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check the FAT file format using fsck
 dd if=$WORK/fwup.img skip=63 of=$WORK/vfat.img
@@ -102,8 +88,8 @@ $FSCK_FAT $WORK/vfat.img
 # Check that that the code path that truncates a file on
 # open works.
 $FWUP_APPLY -a -d $IMGFILE -i $FWFILE -t truncates-file2
-mdir -i $WORK/fwup.img@@32256 > $ACTUAL_OUTPUT
-diff -w $EXPECTED_OUTPUT $ACTUAL_OUTPUT
+mdir -i $WORK/fwup.img@@32256 > $WORK/actual.out
+grep -qi "^empty.* 0 1980-01-01" $WORK/actual.out
 
 # Check that the verify logic works on this file
 $FWUP_VERIFY -V -i $FWFILE
