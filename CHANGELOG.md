@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.16.0
+
+This release makes it possible for firmware updates to request larger block
+cache sizes. Earlier versions fixed the cache at 8 MB which is too small for
+many delta firmware update use cases. The visible effect is that delta firmware
+updates become extremely slow (sometimes >1 hour) due to thrashing when their
+source window is set to values much larger than 8 MB.
+
+* New features
+  * Adjustable block cache specified in the fwup.conf. See
+    `block-cache-size-mb`. Thanks to @kybishop
+  * Support dm-crypt aes-xts-plain64 encrypted partitions
+
+* Bug fixes
+  * Fix AES compilation on 32-bit ARMv8 like a Raspberry Pi 3 with a 32-bit OS
+  * Fix compilation on PowerPC Macs. Thanks to @barracuda156
+
 ## v1.15.1
 
 This release addresses some amazingly poor performance when updating encrypted
