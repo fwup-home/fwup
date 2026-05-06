@@ -18,7 +18,8 @@ AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
 # Check for header files
 AC_CHECK_HEADERS([fcntl.h inttypes.h malloc.h stddef.h stdint.h \
                   stdlib.h string.h unistd.h archive.h confuse.h \
-                  sys/ptrace.h libgen.h sys/random.h])
+                  sys/ptrace.h libgen.h sys/random.h \
+                  mtd/ubi-user.h])
 
 # Check for typedefs, structures, and compiler characteristics
 AC_TYPE_INT64_T
