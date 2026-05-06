@@ -528,6 +528,7 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_FUNC("info", CB), \
     CFG_FUNC("path_write", CB), \
     CFG_FUNC("pipe_write", CB), \
+    CFG_FUNC("ubi_volume_write", CB), \
     CFG_FUNC("execute", CB), \
     CFG_FUNC("reboot_param", CB)
 
