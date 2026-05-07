@@ -1246,7 +1246,7 @@ int ubi_volume_write_compute_progress(struct fun_context *fctx)
     // actually written.
     return process_resource_compute_progress(fctx, true);
 }
-#ifdef HAVE_MTD_UBI_USER_H
+
 #include <sys/ioctl.h>
 #include <mtd/ubi-user.h>
 
@@ -1362,12 +1362,6 @@ cleanup:
     }
     return rc;
 }
-#else // HAVE_MTD_UBI_USER_H
-int ubi_volume_write_run(struct fun_context *fctx)
-{
-    ERR_RETURN("%s requires fwup to be built on Linux with mtd-utils headers (mtd/ubi-user.h)", fctx->argv[0]);
-}
-#endif // HAVE_MTD_UBI_USER_H
 
 int execute_validate(struct fun_context *fctx)
 {
