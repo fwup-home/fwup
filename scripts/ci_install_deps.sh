@@ -47,7 +47,8 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
             apt-get install -qq libarchive-dev
             install_confuse
             ;;
-        static)
+        static|arm64)
+            # arm64 is a native static build on an arm64 runner
             #apt-get install -qq rpm
             ;;
         raspberrypi)

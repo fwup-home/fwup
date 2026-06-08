@@ -94,7 +94,8 @@ if [ -z "$CROSS_COMPILE" ]; then
     # Fix directory permissions for packaging
     find $FWUP_STAGING_DIR -type d | xargs chmod 755
 
-    create_fwup_deb amd64
+    # Package for the architecture we're running on (amd64, arm64, ...)
+    create_fwup_deb $(dpkg --print-architecture)
 elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     # Build Windows package
     rm -f fwup.exe

@@ -10,7 +10,7 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -23,6 +23,9 @@ jobs:
             container: ubuntu:24.04
           - mode: raspberrypi
             container: ubuntu:22.04
+          - mode: arm64
+            container: ubuntu:22.04
+            runner: ubuntu-24.04-arm
           - mode: singlethread
             container: ubuntu:22.04
           - mode: minimal

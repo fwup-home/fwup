@@ -50,6 +50,9 @@ case "${CIRCLE_OS_NAME}-${MODE}" in
     linux-raspberrypi)
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
         ;;
+    linux-arm64)
+        cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+        ;;
     linux-singlethread)
         # This is just for testing
         ;;

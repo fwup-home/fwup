@@ -20,8 +20,9 @@ FWUP_VERSION=$(cat VERSION)
 ./autogen.sh
 
 case "${CIRCLE_OS_NAME}-${MODE}" in
-    *-static)
-        # If this is a static build, run 'build_pkg.sh'
+    *-static | linux-arm64)
+        # If this is a static build, run 'build_pkg.sh'. arm64 is a native
+        # static build that runs on an arm64 runner.
         bash -v scripts/build_pkg.sh
         exit 0
         ;;

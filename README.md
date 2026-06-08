@@ -76,6 +76,7 @@ brew install fwup
 On Linux, download and install the appropriate package for your platform:
 
 * [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.16.0/fwup_1.16.0_amd64.deb)
+* [Debian/Ubuntu ARM64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.16.0/fwup_1.16.0_arm64.deb)
 * [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.16.0/fwup_1.16.0_armhf.deb)
 * Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
 * Arch Linux - See [fwup-git package](https://aur.archlinux.org/packages/fwup-git/) on AUR
