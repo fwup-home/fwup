@@ -34,7 +34,7 @@ download() {
 }
 
 cd $DOWNLOAD_DIR
-download zlib-$ZLIB_VERSION.tar.gz https://zlib.net/fossils/zlib-$ZLIB_VERSION.tar.gz
+download zlib-$ZLIB_VERSION.tar.gz https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 download confuse-$CONFUSE_VERSION.tar.gz https://github.com/libconfuse/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.gz
 download libarchive-$LIBARCHIVE_VERSION.tar.gz https://libarchive.org/downloads/libarchive-$LIBARCHIVE_VERSION.tar.gz
 
