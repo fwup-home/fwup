@@ -1,0 +1,96 @@
+#!/bin/sh
+
+#
+# Test ubi_volume_write's success path. A shim emulates the UBI volume
+# update API (UBI_IOCVOLUP + sequential write; pwrite rejected with
+# EPERM) on a regular file, so this verifies the full sequence without
+# needing a real UBI volume.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+if [ "$HOST_OS" != "Linux" ]; then
+    echo "Skipping: UBI is Linux-only"
+    exit 77
+fi
+
+UBI_SHIM="$TESTS_DIR/fixture/.libs/libubi_shim.$SO_EXT"
+if [ ! -f "$UBI_SHIM" ]; then
+    echo "Skipping: ubi shim not available"
+    exit 77
+fi
+if ! LD_PRELOAD="$UBI_SHIM" "$FWUP_CREATE" --version >/dev/null 2>&1; then
+    echo "Skipping: ubi shim injection not functional on this system"
+    exit 77
+fi
+
+FAKE_UBI=$WORK/fake_ubi
+EVENTS=$WORK/events.txt
+
+run_fwup() {
+    rm -f "$EVENTS"
+    : > "$FAKE_UBI"     # fwup opens the volume O_WRONLY; it must exist
+    UBI_SHIM_CHECKPATH="$FAKE_UBI" UBI_SHIM_OUTFILE="$EVENTS" \
+        LD_PRELOAD="$UBI_SHIM" \
+        $FWUP_APPLY --unsafe -a -d $IMGFILE -i "$1" -t complete
+}
+
+check_events() {
+    grep -q "^volup $1\$" $EVENTS
+    grep -q "^close $1 $1\$" $EVENTS
+    ! grep -q "pwrite-rejected" $EVENTS
+    ! grep -q "write-without-volup" $EVENTS
+}
+
+# Part 1: write a regular resource and verify it round-trips
+cat >$CONFIG <<EOF
+file-resource TEST { host-path = "${TESTFILE_150K}" }
+task complete {
+	on-resource TEST { ubi_volume_write("${FAKE_UBI}") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+run_fwup $FWFILE
+cmp $TESTFILE_150K $FAKE_UBI
+check_events 150000
+
+# Part 2: a sparse resource must have its holes written as zeros and
+# the hole bytes included in the declared update size. Hand-edit
+# meta.conf to make the resource sparse (hole at 0-512 and 1536-2048)
+# like 137_path_write_sparse.test does.
+SPARSE_FILE=$WORK/sparse.bin
+dd seek=1 if=$TESTFILE_1K of=$SPARSE_FILE 2>/dev/null
+dd seek=3 count=1 if=/dev/zero of=$SPARSE_FILE 2>/dev/null
+
+cat >$WORK/new-meta.conf <<EOF
+file-resource "TEST" {
+length={0,512,1024,512}
+blake2b-256=b25c2dfe31707f5572d9a3670d0dcfe5d59ccb010e6aba3b81aad133eb5e378b
+}
+task "complete" {
+on-resource "TEST" {
+funlist={"2","ubi_volume_write","${FAKE_UBI}"}
+}
+}
+EOF
+
+cat >$CONFIG <<EOF
+file-resource TEST { host-path = "${TESTFILE_1K}" }
+task complete {
+	on-resource TEST { ubi_volume_write("${FAKE_UBI}") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+SPARSE_FWFILE=$WORK/sparse.fw
+unzip -q $FWFILE -d $UNZIPDIR
+cp $WORK/new-meta.conf $UNZIPDIR/meta.conf
+cd $UNZIPDIR
+zip -q $SPARSE_FWFILE meta.conf data/TEST
+cd -
+$FWUP_VERIFY -V -i $SPARSE_FWFILE
+
+run_fwup $SPARSE_FWFILE
+cmp $SPARSE_FILE $FAKE_UBI
+check_events 2048

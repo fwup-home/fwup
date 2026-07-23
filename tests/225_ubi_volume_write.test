@@ -1,21 +1,13 @@
 #!/bin/sh
 
 #
-# Test that ubi_volume_write rejects misuse. Verifying the actual
-# UBI ioctl path requires a UBI volume in a kernel module, which
-# isn't reasonable in CI — the kernel-side behaviour is upstream's
-# concern. Here we just verify argument and unsafe-flag enforcement.
-#
-# fwup may be built without mtd-utils headers (non-Linux hosts), in
-# which case the action returns a build-time guard error at run().
-# Either path means the test passes argument validation, so we
-# assert "fails" rather than "fails with a specific message."
+# Test that ubi_volume_write rejects misuse. See
+# 226_ubi_volume_write_success.test for the success path.
 #
 
 . "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
-# 1. ubi_volume_write with no path argument must fail at config-parse
-#    time (argc check in ubi_volume_write_validate).
+# 1. ubi_volume_write with no path argument must fail at create time.
 cat >"$CONFIG" <<EOF
 file-resource TEST { host-path = "${TESTFILE_1K}" }
 task no_args {
@@ -41,9 +33,8 @@ if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
     exit 1
 fi
 
-# 3. With --unsafe, applying to /dev/null still has to fail (it's not
-#    a UBI volume), but cleanly — the UBI_IOCVOLUP ioctl returns
-#    ENOTTY/EINVAL on a non-UBI fd.
+# 3. With --unsafe, applying to /dev/null must fail since it's not a
+#    UBI volume.
 if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
     echo "Expected ubi_volume_write to fail on a non-UBI target."
     exit 1

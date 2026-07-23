@@ -11,7 +11,7 @@ verify_syscalls_SOURCES=verify-syscalls.c
 endif
 
 if HAS_WRITE_SHIM
-check_LTLIBRARIES = libwrite_shim.la libmount_shim.la libpread_shim.la
+check_LTLIBRARIES = libwrite_shim.la libmount_shim.la libpread_shim.la libubi_shim.la
 libwrite_shim_la_SOURCES = write_shim.c
 
 # The "-rpath /nowhere" is the trick to getting libtool to create a shared library for
@@ -26,4 +26,8 @@ libmount_shim_la_CFLAGS = ${AM_CFLAGS} -D_FILE_OFFSET_BITS=64
 libpread_shim_la_SOURCES = pread_shim.c
 libpread_shim_la_LDFLAGS = ${AM_LDFLAGS} -ldl -dynamiclib -avoid-version -shared -rpath /nowhere
 libpread_shim_la_CFLAGS = ${AM_CFLAGS}
+
+libubi_shim_la_SOURCES = ubi_shim.c
+libubi_shim_la_LDFLAGS = ${AM_LDFLAGS} -ldl -dynamiclib -avoid-version -shared -rpath /nowhere
+libubi_shim_la_CFLAGS = ${AM_CFLAGS} -I$(top_srcdir)/src/3rdparty/mtd-utils/include
 endif
