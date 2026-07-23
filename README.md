@@ -748,6 +748,7 @@ uboot_clearenv(my_uboot_env)            | 0.10.0 | Initialize a clean, variable 
 uboot_recover(my_uboot_env)             | 0.15.0 | If the U-Boot environment is corrupt, reinitialize it. If not, then do nothing
 uboot_setenv(my_uboot_env, name, value) | 0.10.0 | Set the specified U-boot variable
 uboot_unsetenv(my_uboot_env, name)      | 0.10.0 | Unset the specified U-boot variable
+ubi_volume_write(device_path)           | 1.17.0 | Write a resource atomically to a UBI volume (e.g. `/dev/ubi0_3`). Requires the `--unsafe` flag. Linux-only
 
 ## Minimizing writes to the destination
 

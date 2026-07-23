@@ -34,6 +34,7 @@ fwup_SOURCES=\
 	simple_string.c \
 	sparse_file.c \
 	uboot_env.c \
+	ubi_linux.c \
 	util.c \
 	archive_open.h \
 	block_cache.h \
@@ -63,6 +64,7 @@ fwup_SOURCES=\
 	simple_string.h \
 	sparse_file.h \
 	uboot_env.h \
+	ubi.h \
 	util.h \
 	3rdparty/base64.c \
 	3rdparty/base64.h \
@@ -70,6 +72,7 @@ fwup_SOURCES=\
 	3rdparty/monocypher-3.1.3/src/monocypher.h \
 	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.c \
 	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.h \
+	3rdparty/mtd-utils/include/mtd/ubi-user.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
 	3rdparty/mbedtls/mbedtls_aes.c \
@@ -112,6 +115,7 @@ endif
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src \
 	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src/optional \
+	      -I$(srcdir)/3rdparty/mtd-utils/include \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \
 	      $(PTHREAD_CFLAGS)

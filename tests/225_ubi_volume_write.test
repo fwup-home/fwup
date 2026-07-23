@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#
+# Test that ubi_volume_write rejects misuse. See
+# 226_ubi_volume_write_success.test for the success path.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+# 1. ubi_volume_write with no path argument must fail at create time.
+cat >"$CONFIG" <<EOF
+file-resource TEST { host-path = "${TESTFILE_1K}" }
+task no_args {
+	on-resource TEST { ubi_volume_write() }
+}
+EOF
+if $FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE" 2>/dev/null; then
+    echo "Expected ubi_volume_write() with no path argument to fail at create time."
+    exit 1
+fi
+
+# 2. ubi_volume_write with a valid-looking path must require --unsafe.
+cat >"$CONFIG" <<EOF
+file-resource TEST { host-path = "${TESTFILE_1K}" }
+task complete {
+	on-resource TEST { ubi_volume_write("/dev/null") }
+}
+EOF
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
+    echo "Expected ubi_volume_write to require --unsafe."
+    exit 1
+fi
+
+# 3. With --unsafe, applying to /dev/null must fail since it's not a
+#    UBI volume.
+if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
+    echo "Expected ubi_volume_write to fail on a non-UBI target."
+    exit 1
+fi
