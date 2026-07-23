@@ -34,6 +34,7 @@ fwup_SOURCES=\
 	simple_string.c \
 	sparse_file.c \
 	uboot_env.c \
+	ubi_linux.c \
 	util.c \
 	archive_open.h \
 	block_cache.h \
@@ -63,6 +64,7 @@ fwup_SOURCES=\
 	simple_string.h \
 	sparse_file.h \
 	uboot_env.h \
+	ubi.h \
 	util.h \
 	3rdparty/base64.c \
 	3rdparty/base64.h \

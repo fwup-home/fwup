@@ -23,6 +23,7 @@
 #include "fwfile.h"
 #include "block_cache.h"
 #include "uboot_env.h"
+#include "ubi.h"
 #include "sparse_file.h"
 #include "progress.h"
 #include "pad_to_block_writer.h"
@@ -1241,14 +1242,9 @@ int ubi_volume_write_validate(struct fun_context *fctx)
 }
 int ubi_volume_write_compute_progress(struct fun_context *fctx)
 {
-    // count_holes=true: we materialize sparse holes as zero writes so
-    // that the byte count we declare to UBI_IOCVOLUP matches what's
-    // actually written.
+    // count_holes=true since holes are written as zeros
     return process_resource_compute_progress(fctx, true);
 }
-
-#include <sys/ioctl.h>
-#include <mtd/ubi-user.h>
 
 struct ubi_volume_write_cookie {
     const char *device;
@@ -1259,20 +1255,8 @@ struct ubi_volume_write_cookie {
 static int ubi_volume_write_seq(struct ubi_volume_write_cookie *uvc,
                                 const void *buf, size_t count)
 {
-    const char *p = buf;
-    size_t remaining = count;
-    while (remaining > 0) {
-        ssize_t n = write(uvc->fd, p, remaining);
-        if (n < 0) {
-            if (errno == EINTR)
-                continue;
-            ERR_RETURN("ubi_volume_write: write to '%s' failed: %s",
-                       uvc->device, strerror(errno));
-        }
-        p += n;
-        remaining -= n;
-        uvc->cursor += n;
-    }
+    OK_OR_RETURN(ubi_volume_update_write(uvc->device, uvc->fd, buf, count));
+    uvc->cursor += count;
     return 0;
 }
 
@@ -1292,11 +1276,10 @@ static int ubi_volume_write_pwrite_callback(void *cookie, const void *buf, size_
 {
     struct ubi_volume_write_cookie *uvc = (struct ubi_volume_write_cookie *) cookie;
 
-    // UBI volumes don't support seeking — fill any gap with zeros so
-    // sparse resources are materialized.
+    // UBI volumes can't seek, so fill in holes with zeros.
     if (offset < uvc->cursor)
-        ERR_RETURN("ubi_volume_write: out-of-order write (offset=%lld, cursor=%lld) — UBI requires sequential writes",
-                   (long long) offset, (long long) uvc->cursor);
+        ERR_RETURN("unexpected out-of-order write to '%s' (offset=%lld, cursor=%lld)",
+                   uvc->device, (long long) offset, (long long) uvc->cursor);
     if (offset > uvc->cursor)
         OK_OR_RETURN(ubi_volume_write_fill_zeros(uvc, offset));
 
@@ -1320,26 +1303,16 @@ int ubi_volume_write_run(struct fun_context *fctx)
     uvc.cursor = 0;
     uvc.fd = -1;
 
-    // Determine the total bytes we'll write so we can declare the
-    // size to UBI's atomic-update ioctl. count_holes=true here must
-    // match ubi_volume_write_compute_progress.
+    // UBI's atomic-update ioctl needs the total update size up front.
     struct sparse_file_map sfm;
     sparse_file_init(&sfm);
     OK_OR_CLEANUP(sparse_file_get_map_from_config(fctx->cfg, fctx->on_event->title, &sfm));
     int64_t total_bytes = (int64_t) sparse_file_size(&sfm);
     sparse_file_free(&sfm);
 
-    uvc.fd = open(uvc.device, O_WRONLY | O_WIN32_BINARY);
+    uvc.fd = ubi_volume_update_start(uvc.device, total_bytes);
     if (uvc.fd < 0)
-        ERR_CLEANUP_MSG("ubi_volume_write can't open '%s': %s", uvc.device, strerror(errno));
-
-    // Tell UBI we're starting an atomic update. The volume is
-    // invalidated until exactly total_bytes are written and the fd is
-    // closed — partial writes leave the volume in the "corrupted"
-    // state, which is the desired failure mode.
-    if (ioctl(uvc.fd, UBI_IOCVOLUP, &total_bytes) < 0)
-        ERR_CLEANUP_MSG("ubi_volume_write: UBI_IOCVOLUP failed on '%s': %s. (Is this really a UBI volume? See /sys/class/ubi.)",
-                        uvc.device, strerror(errno));
+        ERR_CLEANUP();
 
     OK_OR_CLEANUP(process_resource(fctx,
                             true,
@@ -1348,17 +1321,16 @@ int ubi_volume_write_run(struct fun_context *fctx)
                             &uvc));
 
     if (uvc.cursor != total_bytes)
-        ERR_CLEANUP_MSG("ubi_volume_write: wrote %lld bytes to '%s' but declared %lld",
+        ERR_CLEANUP_MSG("wrote %lld bytes to '%s' but declared %lld",
                         (long long) uvc.cursor, uvc.device, (long long) total_bytes);
 
 cleanup:
     if (uvc.fd >= 0) {
-        // close() commits the atomic update if cursor == total_bytes,
-        // or invalidates the volume otherwise. Either way, errors
-        // here are reported but don't override an in-progress error.
-        if (close(uvc.fd) < 0 && rc == 0)
-            ERR_RETURN("ubi_volume_write: close('%s') failed: %s",
-                       uvc.device, strerror(errno));
+        // close() commits the update when all bytes were written and
+        // invalidates the volume otherwise.
+        int close_rc = ubi_volume_update_finish(uvc.device, uvc.fd);
+        if (rc == 0)
+            rc = close_rc;
     }
     return rc;
 }

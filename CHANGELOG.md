@@ -1,16 +1,5 @@
 # Changelog
 
-## v1.17.0-dev
-
-* New features
-  * `ubi_volume_write(device_path)` — write a resource atomically to a
-    UBI volume character device (e.g. `/dev/ubi0_3`). Existing
-    `raw_write` / `path_write` / `pipe_write` use `pwrite()` which
-    UBI rejects with `EPERM`; the new action issues `UBI_IOCVOLUP`
-    first so the volume enters atomic-update mode and accepts data
-    via sequential `write()`. Linux-only; requires
-    `<mtd/ubi-user.h>` at build time.
-
 ## v1.16.0
 
 This release makes it possible for firmware updates to request larger block
