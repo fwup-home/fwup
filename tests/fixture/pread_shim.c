@@ -40,6 +40,10 @@ __attribute__((constructor)) void pread_shim_init()
 
 __attribute__((destructor)) void pread_shim_fini()
 {
+    // Don't let processes that never opened the image clobber the count
+    if (image_fd < 0)
+        return;
+
     const char *outfile = getenv("PREAD_SHIM_OUTFILE");
     if (outfile) {
         FILE *f = fopen(outfile, "w");

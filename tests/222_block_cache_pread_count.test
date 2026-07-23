@@ -12,8 +12,9 @@ if [ ! -f "$PREAD_SHIM" ]; then
     echo "Skipping: pread shim not available"
     exit 77
 fi
+# Use FWUP_CREATE since FWUP_APPLY may be wrapped in verify-syscalls
 if ! LD_PRELOAD="$PREAD_SHIM" DYLD_INSERT_LIBRARIES="$PREAD_SHIM" \
-        "$FWUP_APPLY" --version >/dev/null 2>&1; then
+        "$FWUP_CREATE" --version >/dev/null 2>&1; then
     echo "Skipping: pread shim injection not functional on this system"
     exit 77
 fi
