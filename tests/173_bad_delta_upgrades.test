@@ -57,7 +57,7 @@ fi
 # Test number 2 - xdelta secondary compression is detected
 
 rm -f "$WORK/data/rootfs.next"
-xdelta3 -S fgk -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
+xdelta3 -S lzma -f -s "$TESTFILE_1K" "$TESTFILE_1K" "$WORK/data/rootfs.next"
 cp "$FWFILE" "$FWFILE2"
 (cd "$WORK" && zip "$FWFILE2" data/rootfs.next)
 if $FWUP_VERIFY -V -i "$FWFILE2"; then
