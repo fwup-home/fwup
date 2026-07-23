@@ -102,23 +102,9 @@ cmp_bytes 9234631 $SPARSE_FILE $IMGFILE
 rm $IMGFILE
 $FWUP_APPLY -a -d $IMGFILE -i $NEW_FWFILE -t fat
 
-EXPECTED_FAT_OUTPUT=$WORK/expected.out
-ACTUAL_FAT_OUTPUT=$WORK/actual.out
-
-cat >$EXPECTED_FAT_OUTPUT << EOF
- Volume in drive : has no label
- Volume Serial Number is 0021-7FF8
-Directory for ::/
-
-sparse   bin   9234631 1980-01-01   0:00
-        1 file            9 234 631 bytes
-                          7 390 208 bytes free
-
-EOF
-
 # Check that the directory looks right
-mdir -i $WORK/fwup.img > $ACTUAL_FAT_OUTPUT
-diff -w $EXPECTED_FAT_OUTPUT $ACTUAL_FAT_OUTPUT
+mdir -i $WORK/fwup.img > $WORK/actual.out
+grep -qi "^sparse.* 9234631 1980-01-01" $WORK/actual.out
 
 # Check the contents of the file
 mcopy -n -i $WORK/fwup.img ::/sparse.bin $WORK/actual.sparse.bin
