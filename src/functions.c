@@ -445,13 +445,13 @@ int raw_memset_run(struct fun_context *fctx)
     off_t dest_offset = strtoull(fctx->argv[1], NULL, 0) * FWUP_BLOCK_SIZE;
     off_t count = strtoull(fctx->argv[2], NULL, 0) * FWUP_BLOCK_SIZE;
     int value = strtol(fctx->argv[3], NULL, 0);
-    char buffer[block_size];
+    char buffer[FWUP_BLOCK_SIZE];
     memset(buffer, value, sizeof(buffer));
 
     off_t offset;
     for (offset = 0; offset < count; offset += block_size) {
         OK_OR_RETURN_MSG(block_cache_pwrite(fctx->output, buffer, block_size, dest_offset + offset, true),
-                         "raw_memset couldn't write %d bytes to offset %" PRId64, block_size, dest_offset + offset);
+                         "raw_memset couldn't write %zu bytes to offset %" PRId64, block_size, dest_offset + offset);
 
         progress_report(fctx->progress, block_size);
     }

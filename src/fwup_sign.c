@@ -90,7 +90,7 @@ int fwup_sign(const char *input_filename, const char *output_filename, const uns
                 ERR_CLEANUP_MSG("Error reading meta.conf from archive.");
 
             if (configtxt_len < 10 || configtxt_len >= 50000)
-                ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", configtxt_len);
+                ERR_CLEANUP_MSG("Unexpected meta.conf size: %" PRId64, configtxt_len);
 
             OK_OR_CLEANUP(fwfile_add_meta_conf_str(configtxt, configtxt_len, out, signing_key));
         } else {

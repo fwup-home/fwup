@@ -50,7 +50,7 @@ static int process_entry(struct archive *a, struct archive_entry *ae, off_t *len
         if (rc == ARCHIVE_EOF)
             break;
         else if (rc != ARCHIVE_OK)
-            ERR_RETURN(archive_error_string(a));
+            ERR_RETURN("%s", archive_error_string(a));
 
         if (offset64 != expected_offset)
             ERR_RETURN("Unexpected offset hole when decoding archive");
@@ -116,7 +116,7 @@ static int xdelta_read_patch_callback(void* cookie, const void **buffer, size_t 
     } else {
         *len = 0;
         *buffer = NULL;
-        ERR_RETURN(archive_error_string(a));
+        ERR_RETURN("%s", archive_error_string(a));
     }
 }
 
@@ -212,7 +212,7 @@ int fwup_verify(const char *input_filename, unsigned char * const *public_keys)
                             "Check for file corruption or libarchive built without zlib support");
 
         if (total_size != FWUP_SIGNATURE_LEN)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %" PRId64, total_size);
 
         rc = archive_read_next_header(a, &ae);
         if (rc != ARCHIVE_OK)

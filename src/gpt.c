@@ -202,8 +202,8 @@ static int gpt_cfg_to_partitions(cfg_t *cfg, struct gpt_partition *partitions, i
     memset(partitions, 0, GPT_MAX_PARTITIONS * sizeof(struct gpt_partition));
 
     while ((partition = cfg_getnsec(cfg, "partition", i++)) != NULL) {
-        unsigned long partition_ix = strtoul(cfg_title(partition), NULL, 0);
-        if (partition_ix >= GPT_MAX_PARTITIONS)
+        int partition_ix = strtoul(cfg_title(partition), NULL, 0);
+        if (partition_ix < 0 || partition_ix >= GPT_MAX_PARTITIONS)
             ERR_RETURN("partition must be numbered 0 through %d", GPT_MAX_PARTITIONS - 1);
 
         if (found & (1 << partition_ix))

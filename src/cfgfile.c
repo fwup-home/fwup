@@ -56,7 +56,7 @@ static int cb_func(enum fun_context_type ctype, cfg_t *cfg, cfg_opt_t *opt, int 
     memcpy(&fctx.argv[1], argv, sizeof(const char *) * argc);
 
     if (fun_validate(&fctx) < 0) {
-        cfg_error(cfg, last_error());
+        cfg_error(cfg, "%s", last_error());
         return -1;
     }
 
@@ -111,7 +111,7 @@ static int cb_task_require_func(cfg_t *cfg, cfg_opt_t *opt, int argc, const char
     memcpy(&fctx.argv[1], argv, sizeof(const char *) * argc);
 
     if (req_validate(&fctx) < 0) {
-        cfg_error(cfg, last_error());
+        cfg_error(cfg, "%s", last_error());
         return -1;
     }
 
@@ -351,7 +351,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
 
         uint8_t bootstrap[440];
         if (fread(bootstrap, 1, sizeof(bootstrap), fp) != sizeof(bootstrap)) {
-            cfg_error(cfg, "mbr bootstrap code in '%s' should be %d bytes", path, sizeof(bootstrap));
+            cfg_error(cfg, "mbr bootstrap code in '%s' should be %zu bytes", path, sizeof(bootstrap));
             fclose(fp);
             return -1;
         }
@@ -362,7 +362,7 @@ static int cb_validate_mbr(cfg_t *cfg, cfg_opt_t *opt)
         cfg_setstr(sec, "bootstrap-code", bootstrap_str);
     }
     if (mbr_verify_cfg(sec) < 0) {
-        cfg_error(cfg, last_error());
+        cfg_error(cfg, "%s", last_error());
         return -1;
     }
 
@@ -374,7 +374,7 @@ static int cb_validate_gpt(cfg_t *cfg, cfg_opt_t *opt)
     cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
 
     if (gpt_verify_cfg(sec) < 0) {
-        cfg_error(cfg, last_error());
+        cfg_error(cfg, "%s", last_error());
         return -1;
     }
 
@@ -386,7 +386,7 @@ static int cb_validate_uboot(cfg_t *cfg, cfg_opt_t *opt)
     cfg_t *sec = MOST_RECENTLY_ADDED_SECTION(opt);
 
     if (uboot_env_verify_cfg(sec) < 0) {
-        cfg_error(cfg, last_error());
+        cfg_error(cfg, "%s", last_error());
         return -1;
     }
 
@@ -719,7 +719,7 @@ int cfgfile_parse_fw_ae(struct archive *a,
         ERR_CLEANUP_MSG("Error reading meta.conf from archive.\n"
                         "Check for file corruption or libarchive built without zlib support");
     if (total_size < 10 || total_size >= max_meta_conf_size)
-        ERR_CLEANUP_MSG("Unexpected meta.conf size: %d", total_size);
+        ERR_CLEANUP_MSG("Unexpected meta.conf size: %" PRId64, total_size);
 
     // Check the signature on meta.conf if it has been signed
     if (*public_keys) {
@@ -817,7 +817,7 @@ int cfgfile_parse_fw_meta_conf(const char *filename, cfg_t **cfg, unsigned char 
                             "Check for file corruption or libarchive built without zlib support");
 
         if (total_size != 64)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %" PRId64, total_size);
 
         rc = archive_read_next_header(a, &ae);
         if (rc != ARCHIVE_OK)

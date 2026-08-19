@@ -191,7 +191,7 @@ static int read_callback_normal(struct fun_context *fctx, const void **buffer, s
         *offset = 0;
         return 0;
     } else if (rc != ARCHIVE_OK)
-        ERR_RETURN(archive_error_string(p->a));
+        ERR_RETURN("%s", archive_error_string(p->a));
 
     *offset = p->actual_offset;
 
@@ -239,7 +239,7 @@ static int xdelta_read_patch_callback(void* cookie, const void **buffer, size_t 
     } else {
         *len = 0;
         *buffer = NULL;
-        ERR_RETURN(archive_error_string(p->a));
+        ERR_RETURN("%s", archive_error_string(p->a));
     }
 }
 
@@ -249,7 +249,7 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
 
     if (offset < 0 ||
         offset > fctx->xd_source_count)
-        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %zu", fctx->xd_source_count, offset, count);
+        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%zu): offset: %" PRId64 ", count: %zu", fctx->xd_source_count, offset, count);
 
     if (count > fctx->xd_source_count ||
         offset > fctx->xd_source_count - count)
@@ -546,7 +546,7 @@ int fwup_apply(const char *fw_filename,
                             "Check for file corruption or libarchive built without zlib support");
 
         if (total_size != FWUP_SIGNATURE_LEN)
-            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %d", total_size);
+            ERR_CLEANUP_MSG("Unexpected meta.conf.ed25519 size: %" PRId64, total_size);
 
         arc = archive_read_next_header(pd.a, &ae);
         if (arc != ARCHIVE_OK)
