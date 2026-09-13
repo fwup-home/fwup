@@ -226,6 +226,7 @@ TESTS = 001_simple_fw.test \
 	223_disk_crypto_aes_xts_plain64.test \
 	224_encrypted_delta_upgrade_xts.test \
 	225_ubi_volume_write.test \
-	226_ubi_volume_write_success.test
+	226_ubi_volume_write_success.test \
+	227_delta_large_source.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

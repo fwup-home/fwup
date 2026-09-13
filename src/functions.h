@@ -66,7 +66,7 @@ struct fun_context {
     // Delta update processing (NULL if not in use)
     struct xdelta_state *xd;
     off_t xd_source_offset;
-    size_t xd_source_count;
+    off_t xd_source_count;
     const char *xd_source_path;
     struct disk_crypto *xd_source_dc;
 

@@ -249,11 +249,11 @@ static int xdelta_read_source_callback(void *cookie, void *buf, size_t count, of
 
     if (offset < 0 ||
         offset > fctx->xd_source_count)
-        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%zu): offset: %" PRId64 ", count: %zu", fctx->xd_source_count, offset, count);
+        ERR_RETURN("xdelta tried to load outside of allowed byte range (0-%" PRId64 "): offset: %" PRId64 ", count: %zu", fctx->xd_source_count, offset, count);
 
     if (count > fctx->xd_source_count ||
         offset > fctx->xd_source_count - count)
-        count = fctx->xd_source_count - offset;
+        count = (size_t) (fctx->xd_source_count - offset);
 
     // NOTE: Decryption is now handled by block_cache_set_decrypt(), so the cache
     // contains decrypted data. This eliminates redundant decryption on cache hits.
@@ -433,7 +433,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
                 fctx->xd = malloc(sizeof(struct xdelta_state));
                 xdelta_init(fctx->xd, xdelta_read_patch_callback, xdelta_read_source_callback, fctx);
                 fctx->xd_source_offset = source_raw_offset * FWUP_BLOCK_SIZE;
-                fctx->xd_source_count = source_raw_count * FWUP_BLOCK_SIZE;
+                fctx->xd_source_count = (off_t) source_raw_count * FWUP_BLOCK_SIZE;
                 fctx->xd_source_path = NULL;
             } else if (source_fat_offset_str != NULL && source_fat_path != NULL) {
                 // Found delta-source-fat-offset and delta-source-fat-path directives
@@ -461,7 +461,7 @@ static int run_task(struct fun_context *fctx, struct fwup_apply_data *pd)
         // Clear decrypt callback before freeing crypto context
         if (fctx->xd_source_dc)
             block_cache_set_decrypt(fctx->output, NULL, NULL);
-            
+
         xdelta_free(fctx->xd);
         free(fctx->xd);
         if (fctx->xd_source_dc)
