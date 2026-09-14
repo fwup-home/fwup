@@ -403,7 +403,7 @@ cleanup:
  * @param enable_trim true if allowed to issue TRIM commands to the device
  * @param verify_writes true to verify writes
  * @param minimize_writes true to read the block before writing and skip the write if it's the same
- * @param cache_size_mb the size of the block cache in MB (0 for default 8 MB)
+ * @param cache_size_mb the size of the block cache in MB (0 for default 32 MB)
  * @return
  */
 int block_cache_init(struct block_cache *bc,
@@ -417,9 +417,9 @@ int block_cache_init(struct block_cache *bc,
 {
     memset(bc, 0, sizeof(struct block_cache));
 
-    // Determine cache size: default to 8 MB if not specified
+    // Determine cache size: default to 32 MB if not specified
     if (cache_size_mb == 0) {
-        cache_size_mb = 8;
+        cache_size_mb = 32;
     }
 
     // Calculate number of segments (each segment is 128 KB)
