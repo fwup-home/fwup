@@ -35,7 +35,9 @@
                    release-assets/*.exe \
                    release-assets/*.nupkg \
                    release-assets/*.tar.gz; do
-       gh attestation verify "$artifact" --repo fwup-home/fwup
+       gh attestation verify "$artifact" \
+           --repo fwup-home/fwup \
+           --signer-workflow fwup-home/fwup/.github/workflows/build.yml
    done
    ```
 

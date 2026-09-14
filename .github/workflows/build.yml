@@ -115,10 +115,6 @@ jobs:
           path: downloaded-artifacts
           merge-multiple: true
 
-      - name: Generate release checksums
-        working-directory: downloaded-artifacts
-        run: sha256sum -- * > SHA256SUMS
-
       - name: Validate release inputs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -138,8 +134,13 @@ jobs:
             echo "Release tag '$RELEASE_TAG' must be an annotated, signed tag" >&2
             exit 1
           fi
-          if [[ $(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.verification.verified') != "true" ]]; then
+          tag_data=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha")
+          if [[ $(jq -r '.verification.verified' <<<"$tag_data") != "true" ]]; then
             echo "Release tag '$RELEASE_TAG' does not have a signature verified by GitHub" >&2
+            exit 1
+          fi
+          if [[ $(jq -r '.object.sha' <<<"$tag_data") != "$GITHUB_SHA" ]]; then
+            echo "Release tag '$RELEASE_TAG' moved after this workflow started" >&2
             exit 1
           fi
 
@@ -160,11 +161,15 @@ jobs:
           done
 
           printf '%s\n' "${expected[@]}" | sort > "$RUNNER_TEMP/expected-release-artifacts"
+          : > "$RUNNER_TEMP/actual-release-artifacts"
           for artifact in downloaded-artifacts/*; do
-            if [[ -f "$artifact" ]]; then
-              basename "$artifact"
+            if [[ ! -f "$artifact" ]]; then
+              echo "Unexpected non-file release artifact: $artifact" >&2
+              exit 1
             fi
-          done | sort > "$RUNNER_TEMP/actual-release-artifacts"
+            basename "$artifact" >> "$RUNNER_TEMP/actual-release-artifacts"
+          done
+          sort -o "$RUNNER_TEMP/actual-release-artifacts" "$RUNNER_TEMP/actual-release-artifacts"
           if ! diff -u "$RUNNER_TEMP/expected-release-artifacts" "$RUNNER_TEMP/actual-release-artifacts"; then
             echo "Unexpected release artifact set" >&2
             exit 1

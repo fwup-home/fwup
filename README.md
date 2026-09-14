@@ -95,7 +95,9 @@ attestations. After downloading release assets, verify them with:
 
 ```sh
 (cd release-assets && shasum -a 256 -c SHA256SUMS)
-gh attestation verify release-assets/<artifact> --repo fwup-home/fwup
+gh attestation verify release-assets/<artifact> \
+  --repo fwup-home/fwup \
+  --signer-workflow fwup-home/fwup/.github/workflows/build.yml
 ```
 
 If you're using another platform or prefer to build it yourself, download the
