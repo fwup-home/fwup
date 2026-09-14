@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.17.0
+
+* Changes
+  * Increase default block cache size to 32 MB to avoid cache thrashing when
+    using deltas. This should be safe, but can be adjusted down to the old 8 MB
+    default by adding `block-cache-size-mb = 8` to your `fwup.conf` file.
+  * Add `ubi_volume_write` for atomically updating Linux UBI volumes. This
+    action requires `--unsafe`. Thanks to @Hermanverschooten
+  * Support delta updates with source partitions up to 2 TB
+
+* Bug fixes
+  * Correct formatting of several error messages, including messages containing
+    large offsets and sizes.
+
+* Packaging
+  * Publish a prebuilt Debian package for ARM64
+  * Prebuilt Windows executable now includes version and architecture in its
+    filename
+  * Make Debian packages and source archives reproducible
+  * Update static builds to libarchive 3.8.9 and libconfuse 3.4
+
 ## v1.16.0
 
 This release makes it possible for firmware updates to request larger block
