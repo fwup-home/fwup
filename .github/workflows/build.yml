@@ -218,8 +218,12 @@ jobs:
           sbom-path: downloaded-artifacts/fwup-*.spdx.json
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          draft: true
-          body_path: /tmp/RELEASE_NOTES
-          files: downloaded-artifacts/*
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" downloaded-artifacts/* \
+            --draft \
+            --notes-file /tmp/RELEASE_NOTES \
+            --title "$RELEASE_TAG" \
+            --verify-tag
