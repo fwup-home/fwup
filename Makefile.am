@@ -19,4 +19,5 @@ EXTRA_DIST=README.md \
 	   scripts/common.sh \
 	   scripts/download_deps.sh \
 	   scripts/fwup.nuspec \
+	   scripts/generate_sbom.sh \
 	   scripts/third_party_versions.sh

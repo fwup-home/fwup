@@ -170,6 +170,24 @@ jobs:
             exit 1
           fi
 
+      - name: Generate release SBOM
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=$(cat VERSION)
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          scripts/generate_sbom.sh \
+            "downloaded-artifacts/fwup-$version.spdx.json" \
+            "$version" \
+            "$RELEASE_TAG" \
+            "$GITHUB_SHA"
+          jq -e '.spdxVersion == "SPDX-2.3" and (.packages | length) == 12' \
+            "downloaded-artifacts/fwup-$version.spdx.json" >/dev/null
+
+      - name: Generate release checksums
+        working-directory: downloaded-artifacts
+        run: sha256sum -- * > SHA256SUMS
+
       - name: Create release notes
         run: |
           grep -Pazo "(?s)(?<=## ${GITHUB_REF_NAME})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
@@ -179,10 +197,20 @@ jobs:
           fi
           cat /tmp/RELEASE_NOTES
 
-      - name: Attest release artifacts
+      - name: Attest release artifact provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
-          subject-path: downloaded-artifacts/*
+          subject-checksums: downloaded-artifacts/SHA256SUMS
+
+      - name: Attest release SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            downloaded-artifacts/*.deb
+            downloaded-artifacts/*.exe
+            downloaded-artifacts/*.nupkg
+            downloaded-artifacts/*.tar.gz
+          sbom-path: downloaded-artifacts/fwup-*.spdx.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
