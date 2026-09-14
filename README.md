@@ -90,6 +90,14 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 Alternatively, download the [fwup executable](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup.exe)
 and place it in your path.
 
+The release workflow publishes a `SHA256SUMS` file and GitHub build-provenance
+attestations. After downloading release assets, verify them with:
+
+```sh
+(cd release-assets && shasum -a 256 -c SHA256SUMS)
+gh attestation verify release-assets/<artifact> --repo fwup-home/fwup
+```
+
 If you're using another platform or prefer to build it yourself, download the
 latest [source code release](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup-1.17.0.tar.gz)
 or clone this repository. Then read one of the following files:

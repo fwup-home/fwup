@@ -8,6 +8,9 @@ on:
       - '*'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   linux:
     runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
@@ -16,20 +19,20 @@ jobs:
       matrix:
         include:
           - mode: static
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
           - mode: dynamic
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
           - mode: windows
-            container: ubuntu:24.04
+            container: ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
           - mode: raspberrypi
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
           - mode: arm64
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
             runner: ubuntu-24.04-arm
           - mode: singlethread
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
           - mode: minimal
-            container: ubuntu:22.04
+            container: ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
     container: ${{ matrix.container }}
     env:
       CIRCLE_OS_NAME: linux
@@ -60,19 +63,20 @@ jobs:
         run: scripts/ci_build.sh
 
       - name: Copy out artifacts
+        if: startsWith(github.ref, 'refs/tags/v') && (matrix.mode == 'static' || matrix.mode == 'windows' || matrix.mode == 'raspberrypi' || matrix.mode == 'arm64')
         run: |
           scripts/ci_deploy.sh
-          mkdir -p ./artifacts
         env:
           CIRCLECI: "true"
           CIRCLE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           CIRCLE_BRANCH: ${{ github.ref_name }}
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: startsWith(github.ref, 'refs/tags/v') && (matrix.mode == 'static' || matrix.mode == 'windows' || matrix.mode == 'raspberrypi' || matrix.mode == 'arm64')
         with:
           name: fwup-linux-${{ matrix.mode }}
           path: artifacts/
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   macos:
     runs-on: macos-15
@@ -93,27 +97,15 @@ jobs:
       - name: Build
         run: scripts/ci_build.sh
 
-      - name: Copy out artifacts
-        run: |
-          scripts/ci_deploy.sh
-          mkdir -p ./artifacts
-        env:
-          CIRCLECI: "true"
-          CIRCLE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          CIRCLE_BRANCH: ${{ github.ref_name }}
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: fwup-macos-${{ matrix.mode }}
-          path: artifacts/
-          if-no-files-found: ignore
-
   release:
     needs: [linux, macos]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
+      artifact-metadata: write
+      attestations: write
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -127,6 +119,57 @@ jobs:
         working-directory: downloaded-artifacts
         run: sha256sum -- * > SHA256SUMS
 
+      - name: Validate release inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=$(cat VERSION)
+          if [[ "$RELEASE_TAG" != "v$version" ]]; then
+            echo "Release tag '$RELEASE_TAG' does not match VERSION '$version'" >&2
+            exit 1
+          fi
+
+          read -r tag_type tag_sha < <(
+            gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" \
+              --jq '[.object.type, .object.sha] | @tsv'
+          )
+          if [[ "$tag_type" != "tag" ]]; then
+            echo "Release tag '$RELEASE_TAG' must be an annotated, signed tag" >&2
+            exit 1
+          fi
+          if [[ $(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.verification.verified') != "true" ]]; then
+            echo "Release tag '$RELEASE_TAG' does not have a signature verified by GitHub" >&2
+            exit 1
+          fi
+
+          expected=(
+            CHANGELOG.md
+            "fwup-$version.tar.gz"
+            "fwup-$version-windows-x86_64.exe"
+            "fwup.$version.nupkg"
+            "fwup_${version}_amd64.deb"
+            "fwup_${version}_arm64.deb"
+            "fwup_${version}_armhf.deb"
+          )
+          for artifact in "${expected[@]}"; do
+            if [[ ! -f "downloaded-artifacts/$artifact" ]]; then
+              echo "Missing release artifact: $artifact" >&2
+              exit 1
+            fi
+          done
+
+          printf '%s\n' "${expected[@]}" | sort > "$RUNNER_TEMP/expected-release-artifacts"
+          for artifact in downloaded-artifacts/*; do
+            if [[ -f "$artifact" ]]; then
+              basename "$artifact"
+            fi
+          done | sort > "$RUNNER_TEMP/actual-release-artifacts"
+          if ! diff -u "$RUNNER_TEMP/expected-release-artifacts" "$RUNNER_TEMP/actual-release-artifacts"; then
+            echo "Unexpected release artifact set" >&2
+            exit 1
+          fi
+
       - name: Create release notes
         run: |
           grep -Pazo "(?s)(?<=## ${GITHUB_REF_NAME})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
@@ -135,6 +178,11 @@ jobs:
             exit 1
           fi
           cat /tmp/RELEASE_NOTES
+
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: downloaded-artifacts/*
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3

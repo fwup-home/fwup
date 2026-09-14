@@ -15,6 +15,8 @@
 set -e
 set -v
 
+FWUP_VERSION=$(cat VERSION)
+
 if [[ "$CIRCLECI" != "true" ]]; then
     echo "This script is intended to be run on CircleCI"
     exit 1
@@ -43,7 +45,7 @@ case "${CIRCLE_OS_NAME}-${MODE}" in
         cp fwup-*.tar.gz artifacts/$ARTIFACT_SUBDIR/
         ;;
     linux-windows)
-        cp fwup.exe "artifacts/$ARTIFACT_SUBDIR/fwup-$(cat VERSION)-windows-x86_64.exe"
+        cp fwup.exe "artifacts/$ARTIFACT_SUBDIR/fwup-$FWUP_VERSION-windows-x86_64.exe"
         cp fwup.*.nupkg artifacts/$ARTIFACT_SUBDIR/
         ;;
     linux-raspberrypi)

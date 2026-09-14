@@ -54,7 +54,10 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
         raspberrypi)
             apt-get install -qq libarchive-dev qemu binfmt-support qemu-user-static
             pushd ~
-            git clone https://github.com/raspberrypi/tools.git --depth 1
+            git init tools
+            git -C tools remote add origin https://github.com/raspberrypi/tools.git
+            git -C tools fetch --depth 1 origin "$RPI_TOOLS_REVISION"
+            git -C tools checkout --detach FETCH_HEAD
             popd
             ;;
 

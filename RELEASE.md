@@ -1,27 +1,49 @@
 # Release checklist
 
- 1. Pre-release: Check version numbers on static link script
-    (`scripts/third_party_versions.sh`). There may be security updates! Verify
-    that they work.
- 2. Run a coverity scan by changing to the coverity branch and fast forwarding
-    it up to the latest master. Push and wait for CircleCI. Eventually the
-    results will be at https://scan.coverity.com/projects/fhunleth-fwup. Fix
-    issues.
- 3. Update `CHANGELOG.md` with a bullet-point list of new features and bug fixes
- 4. Remove the `-dev` from the version numbers in `CHANGELOG.md` and `VERSION`.
-    If doing an `rc` release, mark them appropriately.
- 5. For non-rc releases, update the version numbers in `README.md`. They'll be
-    broken links until the release files are uploaded, but "that's ok".
- 6. Tag
- 7. Push last commit(s) *and* tag to GitHub
- 8. Copy the latest `CHANGELOG.md` entry to the GitHub releases description.
-    Save it as a "draft". You have until the CircleCI builds complete to do this,
-    so don't delay. As soon as CircleCI uploads its artifacts, GitHub will send
-    release emails out with new text.
- 9. Wait for the CircleCI builds to complete successfully. They should work since
-    no code changes were made, but wait to be safe.
- 10. Check that the `.deb`, `.rpm`, `.exe`, and source tarball were uploaded
-     properly to GitHub.
- 11. Start the next dev cycle. Start a new section in `CHANGELOG.md` and update
-     the version in `VERSION` to a `-dev` version.
- 12. Push changes up to GitHub
+1. Review the versions and hashes in `scripts/third_party_versions.sh` and
+   `scripts/third_party.sha256`, including the pinned Raspberry Pi toolchain
+   revision. Check for relevant dependency security updates.
+2. Run the Coverity scan from the `coverity` branch and address new findings.
+3. Update `CHANGELOG.md` with the release changes. Remove `-dev` from the
+   release heading and `VERSION`; these versions must exactly match the tag.
+4. Update the versioned release links in `README.md`. Include only assets that
+   the release workflow publishes.
+5. Commit the release changes and create a signed annotated tag:
+
+   ```sh
+   version=$(cat VERSION)
+   git tag -s "v$version" -m "v$version release"
+   git push origin main "v$version"
+   ```
+
+   GitHub must show the tag signature as **Verified**. The release workflow
+   rejects lightweight, annotated-but-unsigned, and unverified tags.
+6. Wait for the `CI` workflow to complete. All build and test matrix jobs must
+   pass before the release job creates a draft. The release preflight verifies
+   the tag, `VERSION`, and the complete expected asset set.
+7. Download the draft assets and verify their checksums:
+
+   ```sh
+   gh release download "v$(cat VERSION)" --dir release-assets
+   (cd release-assets && shasum -a 256 -c SHA256SUMS)
+   ```
+
+8. Verify GitHub's build provenance for each executable and package:
+
+   ```sh
+   for artifact in release-assets/*.deb \
+                   release-assets/*.exe \
+                   release-assets/*.nupkg \
+                   release-assets/*.tar.gz; do
+       gh attestation verify "$artifact" --repo fwup-home/fwup
+   done
+   ```
+
+9. Review the generated SPDX SBOM, release notes, and these expected assets:
+   AMD64, ARM64, and ARMHF Debian packages; the versioned Windows x86-64
+   executable; the Chocolatey package; the source tarball; `CHANGELOG.md`;
+   `SHA256SUMS`; and the SPDX JSON file.
+10. Publish the draft. Release immutability prevents changing the tag or assets
+    after publication, so corrections require a new version.
+11. Start the next development cycle by adding the next `CHANGELOG.md` section,
+    restoring the `-dev` suffix in `VERSION`, and pushing those changes.
