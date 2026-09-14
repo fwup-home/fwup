@@ -15,11 +15,13 @@
 #  CROSS_COMPILE=x86_64-w64-mingw32 ./scripts/build_pkg.sh
 #
 
-set -e
+set -eo pipefail
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 source $BASE_DIR/scripts/common.sh
+
+FWUP_VERSION=$(cat "$BASE_DIR/VERSION")
 
 # Initial sanity checks
 if [ ! -e $BASE_DIR/configure ]; then
@@ -75,9 +77,29 @@ fi
 make install-strip
 make dist
 
+if [ "$(uname -s)" = "Linux" ] && [ -n "$SOURCE_DATE_EPOCH" ]; then
+    DIST_ARCHIVE="$BASE_DIR/fwup-$FWUP_VERSION.tar.gz"
+    DIST_REPACK_DIR="$BUILD_DIR/fwup-dist-repack"
+    rm -rf "$DIST_REPACK_DIR"
+    mkdir -p "$DIST_REPACK_DIR"
+    tar -xzf "$DIST_ARCHIVE" -C "$DIST_REPACK_DIR"
+    find "$DIST_REPACK_DIR" -exec touch -h --date="@$SOURCE_DATE_EPOCH" {} +
+    tar --sort=name \
+        --format=ustar \
+        --mtime="@$SOURCE_DATE_EPOCH" \
+        --owner=0 \
+        --group=0 \
+        --numeric-owner \
+        --mode='go=rX,u+rw,a-s' \
+        -C "$DIST_REPACK_DIR" \
+        -cf - "fwup-$FWUP_VERSION" |
+        gzip -9 -n > "$DIST_ARCHIVE.reproducible"
+    mv "$DIST_ARCHIVE.reproducible" "$DIST_ARCHIVE"
+    rm -rf "$DIST_REPACK_DIR"
+fi
+
 # Return to the base directory
 cd $BASE_DIR
 
 echo "Static build successful."
 echo "The fwup installation is in $FWUP_INSTALL_DIR."
-

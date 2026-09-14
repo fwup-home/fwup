@@ -17,6 +17,20 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 source $BASE_DIR/scripts/common.sh
 
+if [ -z "$SOURCE_DATE_EPOCH" ]; then
+    if SOURCE_DATE_EPOCH=$(git -C "$BASE_DIR" log -1 --format=%ct 2>/dev/null); then
+        :
+    elif SOURCE_DATE_EPOCH=$(stat -c %Y "$BASE_DIR/VERSION" 2>/dev/null); then
+        :
+    elif SOURCE_DATE_EPOCH=$(stat -f %m "$BASE_DIR/VERSION" 2>/dev/null); then
+        :
+    else
+        echo "Set SOURCE_DATE_EPOCH when building outside a Git checkout." >&2
+        exit 1
+    fi
+    export SOURCE_DATE_EPOCH
+fi
+
 # Check if the static build was run
 if [ ! -d $FWUP_INSTALL_DIR ]; then
     $BASE_DIR/scripts/build_static.sh
@@ -45,7 +59,7 @@ create_fwup_deb() {
     # Check for the existence of the man page before attempting to gzip it
     if [ ! -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1.gz" ]; then
         if [ -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1" ]; then
-            gzip -9 -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1"
+            gzip -9 -n -f "$FWUP_DEB_DIR/usr/share/man/man1/fwup.1"
         else
             echo "Error: Man page does not exist and is required."
             return 1
@@ -69,19 +83,22 @@ EOF
 
     # Create and gzip the changelog
     mkdir -p "$FWUP_DEB_DIR/usr/share/doc/fwup"
-    gzip > "$FWUP_DEB_DIR/usr/share/doc/fwup/changelog.gz" << EOF
+    gzip -n > "$FWUP_DEB_DIR/usr/share/doc/fwup/changelog.gz" << EOF
 fwup ($FWUP_VERSION) ; urgency=medium
 
   * Automatically created package.
 
- -- $FWUP_MAINTAINER  $(date -R)
+ -- $FWUP_MAINTAINER  $(date -u --date="@$SOURCE_DATE_EPOCH" -R)
 EOF
 
     # Generate md5sums for the files
     (cd "$FWUP_DEB_DIR" && find usr -type f | sort | xargs md5sum > "$FWUP_DEB_DIR/DEBIAN/md5sums")
 
+    # Normalize package metadata for reproducible archives.
+    find "$FWUP_DEB_DIR" -exec touch -h --date="@$SOURCE_DATE_EPOCH" {} +
+
     # Build the package
-    dpkg-deb -Zgzip --build "$FWUP_DEB_DIR"
+    dpkg-deb --root-owner-group -Zgzip --build "$FWUP_DEB_DIR"
     mv "$BUILD_DIR/$FWUP_DEB_NAME.deb" .
 }
 
@@ -130,4 +147,3 @@ elif [ "$CROSS_COMPILE" = "arm-linux-gnueabihf" ]; then
     rm -f fwup_*.deb
     create_fwup_deb armhf
 fi
-
