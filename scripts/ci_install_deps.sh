@@ -25,7 +25,7 @@ fi
 
 install_confuse() {
     echo Downloading and installing libconfuse $CONFUSE_VERSION...
-    curl -LO https://github.com/libconfuse/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.gz
+    curl -fL --retry 3 --retry-delay 2 --max-time 120 -O https://github.com/libconfuse/libconfuse/releases/download/v$CONFUSE_VERSION/confuse-$CONFUSE_VERSION.tar.gz
     tar xf confuse-$CONFUSE_VERSION.tar.gz
     pushd confuse-$CONFUSE_VERSION
     ./configure --prefix=$DEPS_INSTALL_DIR --disable-examples
@@ -68,4 +68,3 @@ else
 
     brew install $BREW_PACKAGES
 fi
-

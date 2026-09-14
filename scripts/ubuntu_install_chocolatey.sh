@@ -28,13 +28,13 @@ if $USE_PREBUILT; then
     if [ ! -e $DOWNLOAD_DIR/choco-${CHOCO_VERSION}-binaries.tar.gz ]; then
         # Download a prebuilt version
         cd $DOWNLOAD_DIR
-        curl -LO http://files.troodon-software.com/choco/choco-${CHOCO_VERSION}-binaries.tar.gz
+        curl -fL --retry 3 --retry-delay 2 --max-time 120 -O http://files.troodon-software.com/choco/choco-${CHOCO_VERSION}-binaries.tar.gz
         cd $BASE_DIR
     fi
 else
     if [ ! -e $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz ]; then
         # Download the source
-        curl -L -o $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz https://github.com/chocolatey/choco/archive/$CHOCO_VERSION.tar.gz
+        curl -fL --retry 3 --retry-delay 2 --max-time 120 -o $DOWNLOAD_DIR/choco-$CHOCO_VERSION.tar.gz https://github.com/chocolatey/choco/archive/$CHOCO_VERSION.tar.gz
     fi
 fi
 
