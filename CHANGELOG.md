@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.17.1
+
+This release only fixes a macOS issue when using fwup in a sandbox and adds RPM
+packages to the release artifacts. There's no need to update unless these affect
+you.
+
+* Changes
+  * Fix crash when running inside a sandboxed macOS environment due to code that
+    expected the DiskArbitration API to always be available. Thanks to @daeho-ro.
+  * Add RPM packages back to the release artifacts
+
 ## v1.17.0
 
 * Changes
