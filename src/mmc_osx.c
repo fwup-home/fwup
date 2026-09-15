@@ -36,8 +36,10 @@ static DASessionRef da_session;
  */
 void mmc_init()
 {
+    // This returns NULL if Disk Arbitration is unavailable (e.g., in a sandbox)
     da_session = DASessionCreate(kCFAllocatorDefault);
-    DASessionScheduleWithRunLoop(da_session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    if (da_session)
+        DASessionScheduleWithRunLoop(da_session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
 }
 
 /**
@@ -45,7 +47,8 @@ void mmc_init()
  */
 void mmc_finalize()
 {
-    CFRelease(da_session);
+    if (da_session)
+        CFRelease(da_session);
 }
 
 static const char *mmc_path_to_bsdname(const char *mmc_device)
@@ -76,7 +79,7 @@ static const char *mmc_path_to_bsdname(const char *mmc_device)
 static DADiskRef mmc_device_to_diskref(const char *mmc_device)
 {
     const char *bsdname = mmc_path_to_bsdname(mmc_device);
-    if (bsdname == NULL)
+    if (bsdname == NULL || da_session == NULL)
         return NULL;
 
     // Let the Disk Arbitration API perform any additional checks and return the DADiskRef
@@ -149,6 +152,9 @@ static int run_loop_for_time(double duration)
 int mmc_scan_for_devices(struct mmc_device *devices, int max_devices)
 {
     memset(devices, 0, max_devices * sizeof(struct mmc_device));
+
+    if (da_session == NULL)
+        return 0;
 
     // Only look for removable media
     CFMutableDictionaryRef toMatch =
