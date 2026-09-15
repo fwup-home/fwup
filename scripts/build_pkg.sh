@@ -102,6 +102,31 @@ EOF
     mv "$BUILD_DIR/$FWUP_DEB_NAME.deb" .
 }
 
+create_fwup_rpm() {
+    local RPM_VERSION=${FWUP_VERSION%%-*}
+    local RPM_RELEASE=1
+    if [ "$RPM_VERSION" != "$FWUP_VERSION" ]; then
+        local RPM_PRERELEASE=${FWUP_VERSION#*-}
+        RPM_RELEASE="0.${RPM_PRERELEASE//-/.}.1"
+    fi
+
+    local RPM_BUILD_DIR="$BUILD_DIR/rpmbuild"
+    rm -rf "$RPM_BUILD_DIR"
+    mkdir -p "$RPM_BUILD_DIR"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+
+    rpmbuild -bb "$BASE_DIR/scripts/fwup.spec" \
+        --define "_topdir $RPM_BUILD_DIR" \
+        --define "_buildhost fwup" \
+        --define "clamp_mtime_to_source_date_epoch 1" \
+        --define "use_source_date_epoch_as_buildtime 1" \
+        --define "fwup_version $RPM_VERSION" \
+        --define "fwup_release $RPM_RELEASE" \
+        --define "fwup_staging_dir $FWUP_STAGING_DIR" \
+        --define "fwup_license $BASE_DIR/LICENSE"
+
+    cp "$RPM_BUILD_DIR"/RPMS/*/fwup-*.rpm "$BASE_DIR/"
+}
+
 # Package fwup
 FWUP_VERSION=$(cat $BASE_DIR/VERSION)
 if [ -z "$CROSS_COMPILE" ]; then
@@ -113,6 +138,7 @@ if [ -z "$CROSS_COMPILE" ]; then
 
     # Package for the architecture we're running on (amd64, arm64, ...)
     create_fwup_deb $(dpkg --print-architecture)
+    create_fwup_rpm
 elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     # Build Windows package
     rm -f fwup.exe

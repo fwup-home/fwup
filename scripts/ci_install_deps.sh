@@ -49,7 +49,7 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
             ;;
         static|arm64)
             # arm64 is a native static build on an arm64 runner
-            #apt-get install -qq rpm
+            apt-get install -qq rpm
             ;;
         raspberrypi)
             apt-get install -qq libarchive-dev qemu binfmt-support qemu-user-static

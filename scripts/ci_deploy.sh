@@ -38,7 +38,7 @@ mkdir -p artifacts/$ARTIFACT_SUBDIR
 
 case "${CIRCLE_OS_NAME}-${MODE}" in
     linux-static)
-        #cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
+        cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
         cp fwup-*.tar.gz artifacts/$ARTIFACT_SUBDIR/
         ;;
@@ -51,6 +51,7 @@ case "${CIRCLE_OS_NAME}-${MODE}" in
         ;;
     linux-arm64)
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/
+        cp fwup-*.rpm artifacts/$ARTIFACT_SUBDIR/
         ;;
     linux-singlethread)
         # This is just for testing

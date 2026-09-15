@@ -18,5 +18,6 @@ EXTRA_DIST=README.md \
 	   scripts/ci_install_deps.sh \
 	   scripts/common.sh \
 	   scripts/download_deps.sh \
+	   scripts/fwup.spec \
 	   scripts/fwup.nuspec \
 	   scripts/third_party_versions.sh
