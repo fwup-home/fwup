@@ -126,6 +126,10 @@ jobs:
       - name: Create release notes
         run: |
           grep -Pazo "(?s)(?<=## ${GITHUB_REF_NAME})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
+          if [[ ! -s /tmp/RELEASE_NOTES ]]; then
+            echo "No CHANGELOG section found for ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
           cat /tmp/RELEASE_NOTES
 
       - name: Create GitHub Release
