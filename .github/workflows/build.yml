@@ -123,6 +123,10 @@ jobs:
           path: downloaded-artifacts
           merge-multiple: true
 
+      - name: Generate release checksums
+        working-directory: downloaded-artifacts
+        run: sha256sum -- * > SHA256SUMS
+
       - name: Create release notes
         run: |
           grep -Pazo "(?s)(?<=## ${GITHUB_REF_NAME})[^#]+" CHANGELOG.md | sed '/./,$!d' > /tmp/RELEASE_NOTES
