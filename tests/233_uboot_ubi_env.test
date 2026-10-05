@@ -1,0 +1,281 @@
+#!/bin/sh
+
+#
+# Test U-Boot environments stored in UBI volumes. A shim emulates the
+# UBI volume update API (UBI_IOCVOLUP + sequential write; pwrite
+# rejected with EPERM) on regular files.
+#
+# Every operation is also done on an environment at a block offset so
+# that the UBI copies can be compared byte for byte against it. UBI
+# environments are cached until the end of the run, so each volume is
+# written at most once no matter how many variables change.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+if [ "$HOST_OS" != "Linux" ]; then
+    echo "Skipping: UBI is Linux-only"
+    exit 77
+fi
+
+UBI_SHIM="$TESTS_DIR/fixture/.libs/libubi_shim.$SO_EXT"
+if [ ! -f "$UBI_SHIM" ]; then
+    echo "Skipping: ubi shim not available"
+    exit 77
+fi
+if ! LD_PRELOAD="$UBI_SHIM" "$FWUP_CREATE" --version >/dev/null 2>&1; then
+    echo "Skipping: ubi shim injection not functional on this system"
+    exit 77
+fi
+
+UBI0=$WORK/fake_ubi0
+UBI1=$WORK/fake_ubi1
+FIT=$WORK/fake_fit
+EVENTS=$WORK/events.txt
+ENV_SIZE=8192
+
+run_fwup() {
+    UBI_SHIM_CHECKPATH="$UBI0:$UBI1:$FIT" UBI_SHIM_OUTFILE="$EVENTS" \
+        LD_PRELOAD="$UBI_SHIM" \
+        $FWUP_APPLY --unsafe -a -d $IMGFILE -i $FWFILE -t "$1"
+}
+
+# Every UBI write must be one complete atomic update of the whole
+# environment.
+check_events() {
+    if grep -v -e "^open " -e "^volup $ENV_SIZE\$" -e "^close $ENV_SIZE $ENV_SIZE\$" $EVENTS; then
+        echo "Unexpected UBI events (see above)"
+        exit 1
+    fi
+    if [ "$(grep -c '^volup' $EVENTS)" -ne "$1" ]; then
+        echo "Expected $1 UBI writes, got $(grep -c '^volup' $EVENTS)"
+        exit 1
+    fi
+}
+
+block_env() {
+    dd if=$IMGFILE of=$2 skip=$1 count=16 2>/dev/null
+}
+
+#
+# Part 1: non-redundant environment in one UBI volume
+#
+cat >$CONFIG <<EOF
+uboot-environment ubi-env {
+    ubi-volume = "$UBI0"
+    block-count = 16
+}
+uboot-environment block-env {
+    block-offset = 32
+    block-count = 16
+}
+
+task complete {
+    on-finish {
+        uboot_clearenv(ubi-env)
+        uboot_setenv(ubi-env, "var1", "hello")
+        uboot_setenv(ubi-env, "var2", "world")
+        uboot_setenv(ubi-env, "var3", "remove me")
+        uboot_unsetenv(ubi-env, "var3")
+
+        uboot_clearenv(block-env)
+        uboot_setenv(block-env, "var1", "hello")
+        uboot_setenv(block-env, "var2", "world")
+        uboot_setenv(block-env, "var3", "remove me")
+        uboot_unsetenv(block-env, "var3")
+    }
+}
+task upgrade.matches {
+    require-uboot-variable(ubi-env, "var1", "hello")
+    on-finish { uboot_setenv(ubi-env, "upgraded", "1") }
+}
+task upgrade.fallback {
+    on-finish { error("require-uboot-variable didn't match") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+rm -f $EVENTS $IMGFILE
+: > $UBI0
+run_fwup complete
+check_events 1
+
+block_env 32 $WORK/expected.img
+cmp $WORK/expected.img $UBI0
+
+# A second run reads the variables back from the volume
+rm -f $EVENTS
+run_fwup upgrade
+check_events 1
+
+#
+# Part 2: redundant environment across two UBI volumes
+#
+cat >$CONFIG <<EOF
+uboot-environment ubi-env {
+    ubi-volume = "$UBI0"
+    ubi-volume-redund = "$UBI1"
+    block-count = 16
+}
+uboot-environment block-env {
+    block-offset = 32
+    block-offset-redund = 64
+    block-count = 16
+}
+
+task complete {
+    on-finish {
+        uboot_clearenv(ubi-env)
+        uboot_setenv(ubi-env, "var1", "hello")
+        uboot_setenv(ubi-env, "var2", "world")
+
+        uboot_clearenv(block-env)
+        uboot_setenv(block-env, "var1", "hello")
+        uboot_setenv(block-env, "var2", "world")
+    }
+}
+task upgrade.matches {
+    require-uboot-variable(ubi-env, "var2", "world")
+    on-finish {
+        uboot_setenv(ubi-env, "var2", "upgraded")
+        uboot_setenv(block-env, "var2", "upgraded")
+    }
+}
+task upgrade.fallback {
+    on-finish { error("require-uboot-variable didn't match") }
+}
+task newer.ok {
+    require-uboot-variable(ubi-env, "var2", "upgraded")
+}
+task newer.fail {
+    on-finish { error("expected the newer copy") }
+}
+task older.ok {
+    require-uboot-variable(ubi-env, "var2", "world")
+}
+task older.fail {
+    on-finish { error("expected the older copy") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+rm -f $EVENTS $IMGFILE
+: > $UBI0
+: > $UBI1
+run_fwup complete
+# clearenv writes both copies and each setenv the older one, so both
+# volumes change. The first volume holds the newest copy and must be
+# written first.
+check_events 2
+[ "$(grep '^open' $EVENTS | tr '\n' ' ')" = "open $UBI0 open $UBI1 " ]
+
+block_env 32 $WORK/expected0.img
+block_env 64 $WORK/expected1.img
+cmp $WORK/expected0.img $UBI0
+cmp $WORK/expected1.img $UBI1
+
+# A second run must ping-pong onto the older copy
+rm -f $EVENTS
+run_fwup upgrade
+check_events 1
+[ "$(grep '^open' $EVENTS)" = "open $UBI1" ]
+
+block_env 32 $WORK/expected0.img
+block_env 64 $WORK/expected1.img
+cmp $WORK/expected0.img $UBI0
+cmp $WORK/expected1.img $UBI1
+
+#
+# Part 3: a copy that can't be used must fall back to the other one
+#
+cp $UBI0 $WORK/saved_ubi0
+cp $UBI1 $WORK/saved_ubi1
+
+# The upgrade wrote the second volume, so it holds the newer copy
+run_fwup newer
+
+# UBI fails reads of a volume whose last update was interrupted. A
+# missing volume fails the read in the same place.
+rm $UBI1
+run_fwup older
+cp $WORK/saved_ubi1 $UBI1
+
+rm $UBI0
+run_fwup newer
+cp $WORK/saved_ubi0 $UBI0
+
+# A volume with too little data must fail the CRC check
+: > $UBI1
+run_fwup older
+cp $WORK/saved_ubi1 $UBI1
+
+# Both copies unreadable is an error
+rm $UBI0 $UBI1
+if run_fwup newer 2>/dev/null; then
+    echo "Expected an error when neither UBI volume can be read"
+    exit 1
+fi
+
+#
+# Part 4: changes are discarded when the task fails, and written after
+# all other data when it succeeds
+#
+cp $WORK/saved_ubi0 $UBI0
+cp $WORK/saved_ubi1 $UBI1
+: > $FIT
+
+cat >$CONFIG <<EOF
+file-resource TEST { host-path = "${TESTFILE_1K}" }
+uboot-environment ubi-env {
+    ubi-volume = "$UBI0"
+    ubi-volume-redund = "$UBI1"
+    block-count = 16
+}
+
+task fails {
+    on-finish {
+        uboot_setenv(ubi-env, "var2", "failed")
+        error("expected failure")
+    }
+}
+task complete {
+    on-resource TEST { ubi_volume_write("$FIT") }
+    on-finish { uboot_setenv(ubi-env, "var2", "done") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+rm -f $EVENTS
+if run_fwup fails 2>/dev/null; then
+    echo "Expected the fails task to fail"
+    exit 1
+fi
+[ ! -s $EVENTS ]
+cmp $WORK/saved_ubi0 $UBI0
+cmp $WORK/saved_ubi1 $UBI1
+
+rm -f $EVENTS
+run_fwup complete
+cmp $TESTFILE_1K $FIT
+[ "$(grep '^open' $EVENTS | tr '\n' ' ')" = "open $FIT open $UBI0 " ]
+
+# Data in the block cache must reach the output before the environment
+cat >$CONFIG <<EOF
+file-resource TEST { host-path = "${TESTFILE_1K}" }
+uboot-environment ubi-env {
+    ubi-volume = "$UBI0"
+    ubi-volume-redund = "$UBI1"
+    block-count = 16
+}
+
+task complete {
+    on-resource TEST { raw_write(0) }
+    on-finish { uboot_setenv(ubi-env, "var2", "after data") }
+}
+EOF
+$FWUP_CREATE -c -f $CONFIG -o $FWFILE
+
+rm -f $EVENTS $IMGFILE
+UBI_SHIM_LOG_PWRITE=1 run_fwup complete
+grep -q '^pwrite$' $EVENTS
+[ "$(grep -n '^pwrite$' $EVENTS | tail -1 | cut -d: -f1)" -lt "$(grep -n '^open' $EVENTS | head -1 | cut -d: -f1)" ]

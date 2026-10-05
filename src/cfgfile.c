@@ -497,6 +497,8 @@ static cfg_opt_t uboot_environment_opts[] = {
     CFG_STR("block-offset", 0, CFGF_NONE), // Special case: use a string to support > 31-bit offsets
     CFG_INT("block-count", INT32_MAX, CFGF_NONE),
     CFG_STR("block-offset-redund", 0, CFGF_NONE), // Special case: use a string to support > 31-bit offsets
+    CFG_STR("ubi-volume", 0, CFGF_NONE),
+    CFG_STR("ubi-volume-redund", 0, CFGF_NONE),
     CFG_IGNORE_UNKNOWN
     CFG_END()
 };

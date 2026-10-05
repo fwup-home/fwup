@@ -31,7 +31,7 @@ int ubi_volume_update_start(const char *path, int64_t total_bytes)
 {
     int fd = open(path, O_WRONLY);
     if (fd < 0)
-        ERR_RETURN("ubi_volume_write can't open '%s': %s", path, strerror(errno));
+        ERR_RETURN("Can't open UBI volume '%s': %s", path, strerror(errno));
 
     if (ioctl(fd, UBI_IOCVOLUP, &total_bytes) < 0) {
         close(fd);
@@ -71,7 +71,7 @@ int ubi_volume_update_start(const char *path, int64_t total_bytes)
 {
     (void) path;
     (void) total_bytes;
-    ERR_RETURN("ubi_volume_write is only supported on Linux");
+    ERR_RETURN("UBI volumes are only supported on Linux");
 }
 
 int ubi_volume_update_write(const char *path, int fd, const void *buf, size_t count)
@@ -80,14 +80,14 @@ int ubi_volume_update_write(const char *path, int fd, const void *buf, size_t co
     (void) fd;
     (void) buf;
     (void) count;
-    ERR_RETURN("ubi_volume_write is only supported on Linux");
+    ERR_RETURN("UBI volumes are only supported on Linux");
 }
 
 int ubi_volume_update_finish(const char *path, int fd)
 {
     (void) path;
     (void) fd;
-    ERR_RETURN("ubi_volume_write is only supported on Linux");
+    ERR_RETURN("UBI volumes are only supported on Linux");
 }
 
 #endif // __linux__
