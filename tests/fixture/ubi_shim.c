@@ -7,9 +7,16 @@
 //   2. write() is only allowed in update mode; otherwise EPERM.
 //   3. pwrite() always fails with EPERM like a real UBI volume.
 //
+// Only opens for writing are tracked since reads need no special
+// handling. One volume can be tracked at a time.
+//
 // Environment variables:
-//   UBI_SHIM_CHECKPATH - path suffix of the fake UBI volume
-//   UBI_SHIM_OUTFILE   - event log ("volup <declared>", "close <declared> <written>")
+//   UBI_SHIM_CHECKPATH - path suffix of the fake UBI volume, or a
+//                        colon-separated list of them
+//   UBI_SHIM_OUTFILE   - event log ("open <path>", "volup <declared>",
+//                        "close <declared> <written>")
+//   UBI_SHIM_LOG_PWRITE - if set, also log "pwrite" for writes to other
+//                        files, like fwup's output
 //
 // UBI only exists on Linux, so this shim is a no-op elsewhere.
 
@@ -67,12 +74,26 @@ static void log_event(const char *fmt, ...)
     fclose(f);
 }
 
-static int match_ubi_path(const char *pathname)
+static int match_ubi_path(const char *pathname, int flags)
 {
-    size_t ubi_pathname_len = strlen(ubi_pathname);
+    if ((flags & O_ACCMODE) == O_RDONLY)
+        return 0;
+
     size_t path_len = strlen(pathname);
-    return path_len >= ubi_pathname_len &&
-        strstr(pathname + path_len - ubi_pathname_len, ubi_pathname) != NULL;
+    const char *suffix = ubi_pathname;
+    while (*suffix) {
+        const char *end = strchr(suffix, ':');
+        size_t suffix_len = end ? (size_t) (end - suffix) : strlen(suffix);
+
+        if (suffix_len > 0 && path_len >= suffix_len &&
+            memcmp(pathname + path_len - suffix_len, suffix, suffix_len) == 0)
+            return 1;
+
+        if (!end)
+            break;
+        suffix = end + 1;
+    }
+    return 0;
 }
 
 OVERRIDE(int, open, (const char *pathname, int flags, ...))
@@ -86,7 +107,8 @@ OVERRIDE(int, open, (const char *pathname, int flags, ...))
 
     int rc = ORIGINAL(open)(pathname, flags, mode);
 
-    if (rc >= 0 && match_ubi_path(pathname)) {
+    if (rc >= 0 && match_ubi_path(pathname, flags)) {
+        log_event("open %s\n", pathname);
         ubi_fd = rc;
         updating = 0;
         declared_bytes = -1;
@@ -107,7 +129,8 @@ OVERRIDE(int, open64, (const char *pathname, int flags, ...))
 
     int rc = ORIGINAL(open64)(pathname, flags, mode);
 
-    if (rc >= 0 && match_ubi_path(pathname)) {
+    if (rc >= 0 && match_ubi_path(pathname, flags)) {
+        log_event("open %s\n", pathname);
         ubi_fd = rc;
         updating = 0;
         declared_bytes = -1;
@@ -165,6 +188,8 @@ OVERRIDE(ssize_t, pwrite, (int fd, const void *buf, size_t count, off_t offset))
         errno = EPERM;
         return -1;
     }
+    if (getenv("UBI_SHIM_LOG_PWRITE"))
+        log_event("pwrite\n");
     return ORIGINAL(pwrite)(fd, buf, count, offset);
 }
 
@@ -175,6 +200,8 @@ OVERRIDE(ssize_t, pwrite64, (int fd, const void *buf, size_t count, off_t offset
         errno = EPERM;
         return -1;
     }
+    if (getenv("UBI_SHIM_LOG_PWRITE"))
+        log_event("pwrite\n");
     return ORIGINAL(pwrite64)(fd, buf, count, offset);
 }
 

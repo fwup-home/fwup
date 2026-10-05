@@ -1,0 +1,88 @@
+#!/bin/sh
+
+#
+# Test that U-Boot environments in UBI volumes reject invalid
+# configurations and require --unsafe to write. See
+# 230_uboot_ubi_env.test for the success path.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+expect_create_failure() {
+    if $FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE" 2>/dev/null; then
+        echo "Expected fwup to reject: $1"
+        exit 1
+    fi
+}
+
+# 1. ubi-volume can't be combined with block offsets
+cat >"$CONFIG" <<EOF
+uboot-environment uboot-env {
+    ubi-volume = "/dev/ubi0_0"
+    block-offset = 32
+    block-count = 16
+}
+task complete {
+    on-finish { uboot_clearenv(uboot-env) }
+}
+EOF
+expect_create_failure "ubi-volume with block-offset"
+
+# 2. ubi-volume-redund without ubi-volume
+cat >"$CONFIG" <<EOF
+uboot-environment uboot-env {
+    ubi-volume-redund = "/dev/ubi0_1"
+    block-count = 16
+}
+task complete {
+    on-finish { uboot_clearenv(uboot-env) }
+}
+EOF
+expect_create_failure "ubi-volume-redund without ubi-volume"
+
+# 3. Both copies in the same volume
+cat >"$CONFIG" <<EOF
+uboot-environment uboot-env {
+    ubi-volume = "/dev/ubi0_0"
+    ubi-volume-redund = "/dev/ubi0_0"
+    block-count = 16
+}
+task complete {
+    on-finish { uboot_clearenv(uboot-env) }
+}
+EOF
+expect_create_failure "ubi-volume-redund equal to ubi-volume"
+
+# 4. ubi-volume still needs a block-count
+cat >"$CONFIG" <<EOF
+uboot-environment uboot-env {
+    ubi-volume = "/dev/ubi0_0"
+}
+task complete {
+    on-finish { uboot_clearenv(uboot-env) }
+}
+EOF
+expect_create_failure "ubi-volume without block-count"
+
+# 5. A valid configuration must require --unsafe to write
+cat >"$CONFIG" <<EOF
+uboot-environment uboot-env {
+    ubi-volume = "/dev/null"
+    block-count = 16
+}
+task complete {
+    on-finish { uboot_clearenv(uboot-env) }
+}
+EOF
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+
+if $FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
+    echo "Expected writing a UBI U-Boot environment to require --unsafe."
+    exit 1
+fi
+
+# 6. With --unsafe, /dev/null must fail since it's not a UBI volume
+if $FWUP_APPLY --unsafe -a -d "$IMGFILE" -i "$FWFILE" -t complete 2>/dev/null; then
+    echo "Expected writing a U-Boot environment to a non-UBI target to fail."
+    exit 1
+fi
