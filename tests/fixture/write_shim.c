@@ -1,8 +1,10 @@
 #define _GNU_SOURCE // for RTLD_NEXT
 #include <err.h>
 #include <dlfcn.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -39,6 +41,7 @@ static int write_fd = -1;
 static off_t write_offset = -1;
 static const char *write_pathname = "fwup.img";
 static off_t corrupt_write_offset = -1;
+static bool fail_fsync;
 
 #if HAVE_SYSCONF
 static size_t cached_pagesize = 0;
@@ -104,6 +107,8 @@ __attribute__((constructor)) void write_shim_init()
     char *corrupt_write_offset_str = getenv("WRITE_SHIM_CORRUPT_OFFSET");
     if (corrupt_write_offset_str)
         corrupt_write_offset = strtoll(corrupt_write_offset_str, NULL, 0);
+
+    fail_fsync = getenv("WRITE_SHIM_FAIL_FSYNC") != NULL;
 }
 
 OVERRIDE(int, open, (const char *pathname, int flags, ...))
@@ -206,6 +211,16 @@ OVERRIDE(ssize_t, pwrite, (int fd, const void *buf, size_t nbyte, off_t offset))
     }
 
     return ORIGINAL(pwrite)(fd, buf, nbyte, offset);
+}
+
+OVERRIDE(int, fsync, (int fd))
+{
+    if (fd == write_fd && fail_fsync) {
+        errno = EIO;
+        return -1;
+    }
+
+    return ORIGINAL(fsync)(fd);
 }
 
 #ifndef __APPLE__

@@ -228,6 +228,7 @@ TESTS = 001_simple_fw.test \
 	225_ubi_volume_write.test \
 	226_ubi_volume_write_success.test \
 	227_delta_large_source.test \
-	228_osx_no_disk_arbitration.test
+	228_osx_no_disk_arbitration.test \
+	229_block_cache_fsync_failure.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

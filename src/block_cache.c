@@ -259,6 +259,9 @@ static int verified_segment_write(struct block_cache *bc, volatile struct block_
     if (pwrite(bc->fd, data, count, offset) != count)
         ERR_RETURN("writing %zu bytes failed at offset %" PRId64 ". Check media size.", count, offset);
 
+    if (fsync(bc->fd) < 0)
+        ERR_RETURN("durability barrier failed at offset %" PRId64, offset);
+
     if (bc->verify_writes) {
         if (pread(bc->fd, temp, count, offset) != count)
             ERR_RETURN("read back failed at offset %" PRId64, offset);
