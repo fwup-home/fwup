@@ -1,0 +1,49 @@
+#!/bin/sh
+
+#
+# Test literal U-Boot variable references through both configuration parses
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+export TEST_ENV_VAR=creation
+
+cat >"$CONFIG" <<'EOF'
+define!(LITERAL_DOLLAR, '${:-$}')
+
+uboot-environment uboot-env {
+    block-offset = 0
+    block-count = 1
+}
+
+task complete {
+    on-init {
+        uboot_clearenv(uboot-env)
+        uboot_setenv(uboot-env, default, '${:-$}{TEST_ENV_VAR:-fallback}')
+        uboot_setenv(uboot-env, direct, 'echo ${:-$}{TEST_ENV_VAR} ${:-$}{other}')
+        uboot_setenv(uboot-env, helper, "echo ${LITERAL_DOLLAR}{TEST_ENV_VAR} ${TEST_ENV_VAR}")
+        uboot_setenv(uboot-env, mixed, 'echo ${:-$}{TEST_ENV_VAR}; path C:\boot; say "hello"')
+        uboot_setenv(uboot-env, runtime, '${TEST_ENV_VAR}')
+    }
+}
+EOF
+
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+
+export TEST_ENV_VAR=application
+$FWUP_APPLY -a -d "$IMGFILE" -i "$FWFILE" -t complete
+
+# U-Boot stores sorted, NUL-terminated entries after the four-byte CRC.
+printf '%s\000' \
+    'default=${TEST_ENV_VAR:-fallback}' \
+    'direct=echo ${TEST_ENV_VAR} ${other}' \
+    'helper=echo ${TEST_ENV_VAR} creation' \
+    'mixed=echo ${TEST_ENV_VAR}; path C:\boot; say "hello"' \
+    'runtime=application' >"$WORK/expected-env.bin"
+printf '\000' >>"$WORK/expected-env.bin"
+
+dd if="$IMGFILE" of="$WORK/actual-env.bin" bs=1 skip=4 \
+    count="$(filesize "$WORK/expected-env.bin")" 2>/dev/null
+cmp "$WORK/expected-env.bin" "$WORK/actual-env.bin"
+
+$FWUP_VERIFY -V -i "$FWFILE"
