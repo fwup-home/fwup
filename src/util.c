@@ -610,6 +610,10 @@ void free_page_aligned(void *memptr)
 int update_relative_path(const char *fromfile, const char *filename, char **newpath)
 {
     if (filename[0] == '/' ||
+#ifdef _WIN32
+            (filename[0] != '\0' && filename[1] == ':' &&
+             (filename[2] == '/' || filename[2] == '\\')) ||
+#endif
             filename[0] == '~') {
         // If absolute then don't modify the path
         *newpath = strdup(filename);
