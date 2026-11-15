@@ -135,7 +135,7 @@ static int compute_file_metadata(cfg_t *cfg)
             OK_OR_RETURN(sparse_file_set_map_in_resource(sec, &state.sfm));
 
             // Compute the hash across the files
-            crypto_blake2b_general_init(&state.hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
+            crypto_blake2b_init(&state.hash_state, FWUP_BLAKE2b_256_LEN);
             sparse_file_start_read(&state.sfm, &state.read_iterator);
             OK_OR_RETURN(run_on_each_path(sec, paths, calc_hash, &state));
 
@@ -152,7 +152,7 @@ static int compute_file_metadata(cfg_t *cfg)
             cfg_setint(sec, "length", len);
 #endif
 
-            crypto_blake2b_general(hash, FWUP_BLAKE2b_256_LEN, NULL, 0, (const uint8_t *) contents, len);
+            crypto_blake2b(hash, FWUP_BLAKE2b_256_LEN, (const uint8_t *) contents, len);
         }
         char hash_str[sizeof(hash) * 2 + 1];
         bytes_to_hex(hash, hash_str, sizeof(hash));

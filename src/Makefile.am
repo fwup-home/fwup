@@ -68,10 +68,10 @@ fwup_SOURCES=\
 	util.h \
 	3rdparty/base64.c \
 	3rdparty/base64.h \
-	3rdparty/monocypher-3.1.3/src/monocypher.c \
-	3rdparty/monocypher-3.1.3/src/monocypher.h \
-	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.c \
-	3rdparty/monocypher-3.1.3/src/optional/monocypher-ed25519.h \
+	3rdparty/monocypher-4.0.3/src/monocypher.c \
+	3rdparty/monocypher-4.0.3/src/monocypher.h \
+	3rdparty/monocypher-4.0.3/src/optional/monocypher-ed25519.c \
+	3rdparty/monocypher-4.0.3/src/optional/monocypher-ed25519.h \
 	3rdparty/mtd-utils/include/mtd/ubi-user.h \
 	3rdparty/semver.c/semver.c \
 	3rdparty/semver.c/semver.h \
@@ -113,8 +113,8 @@ fwup_SOURCES+=3rdparty/strptime.c
 endif
 
 fwup_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 \
-	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src \
-	      -I$(srcdir)/3rdparty/monocypher-3.1.3/src/optional \
+	      -I$(srcdir)/3rdparty/monocypher-4.0.3/src \
+	      -I$(srcdir)/3rdparty/monocypher-4.0.3/src/optional \
 	      -I$(srcdir)/3rdparty/mtd-utils/include \
 	      $(CONFUSE_CFLAGS) \
 	      $(ARCHIVE_CFLAGS) \

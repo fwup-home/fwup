@@ -278,7 +278,7 @@ static int process_resource(struct fun_context *fctx,
     off_t total_data_read = 0;
 
     crypto_blake2b_ctx hash_state;
-    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
+    crypto_blake2b_init(&hash_state, FWUP_BLAKE2b_256_LEN);
 
     off_t last_offset = 0;
     for (;;) {

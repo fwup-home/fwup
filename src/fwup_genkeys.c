@@ -70,13 +70,14 @@ int fwup_genkeys(const char *output_prefix)
 {
     char pubkey_path[PATH_MAX];
     char privkey_path[PATH_MAX];
+    uint8_t seed[FWUP_PRIVATE_KEY_LEN];
     uint8_t sk[FWUP_PRIVATE_KEY_LEN + FWUP_PUBLIC_KEY_LEN];
     uint8_t *pk = &sk[FWUP_PRIVATE_KEY_LEN];
 
-    if (get_random(sk, FWUP_PRIVATE_KEY_LEN) < 0)
+    if (get_random(seed, sizeof(seed)) < 0)
         ERR_RETURN("Could not get enough random bytes");
 
-    crypto_ed25519_public_key(pk, sk);
+    crypto_ed25519_key_pair(sk, pk, seed);
 
     if (!output_prefix)
         output_prefix = "fwup-key";

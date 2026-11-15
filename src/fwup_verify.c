@@ -35,7 +35,7 @@
 static int process_entry(struct archive *a, struct archive_entry *ae, off_t *length_read, uint8_t *hash)
 {
     crypto_blake2b_ctx hash_state;
-    crypto_blake2b_general_init(&hash_state, FWUP_BLAKE2b_256_LEN, NULL, 0);
+    crypto_blake2b_init(&hash_state, FWUP_BLAKE2b_256_LEN);
 
     *length_read = 0;
     int64_t expected_offset = 0;

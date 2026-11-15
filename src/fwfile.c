@@ -51,7 +51,7 @@ int fwfile_add_meta_conf_str(const char *configtxt, int configtxt_len,
     // If the user passed in a signing key, sign the meta.conf.
     if (signing_key) {
         uint8_t signature[FWUP_SIGNATURE_LEN];
-        crypto_ed25519_sign(signature, &signing_key[0], &signing_key[FWUP_PRIVATE_KEY_LEN], (const uint8_t *) configtxt, configtxt_len);
+        crypto_ed25519_sign(signature, signing_key, (const uint8_t *) configtxt, configtxt_len);
 
         entry = archive_entry_new();
         archive_entry_set_pathname(entry, "meta.conf.ed25519");

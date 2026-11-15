@@ -1359,7 +1359,7 @@ and dual-licensed under Apache-2.0 OR GPL-2.0-or-later. See
 ## Monocypher
 
 This package has been dual licensed under the 2-clause BSD and CC-0. See
-[LICENCE.md](src/3rdparty/monocypher-3.0.0/LICENCE.md).
+[LICENCE.md](src/3rdparty/monocypher-4.0.3/LICENCE.md).
 
 ## semver.c
 
