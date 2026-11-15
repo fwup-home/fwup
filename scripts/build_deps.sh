@@ -11,66 +11,66 @@ set -e
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-source $BASE_DIR/scripts/common.sh
+source "$BASE_DIR/scripts/common.sh"
 
 # Download dependencies if not done already
-$BASE_DIR/scripts/download_deps.sh
+"$BASE_DIR/scripts/download_deps.sh"
 
 # Initialize some directories
-mkdir -p $DEPS_INSTALL_DIR
-cd $DEPS_DIR
+mkdir -p "$DEPS_INSTALL_DIR"
+cd "$DEPS_DIR"
 
 # Build zlib
-if [[ ! -e $DEPS_INSTALL_DIR/lib/libz.a ]]; then
+if [[ ! -e "$DEPS_INSTALL_DIR/lib/libz.a" ]]; then
     echo Building zlib...
-    rm -fr $DEPS_DIR/zlib-*
-    tar xf $DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.gz
-    cd zlib-$ZLIB_VERSION
-    PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure --prefix=$DEPS_INSTALL_DIR --static
+    rm -fr "$DEPS_DIR/zlib-$ZLIB_VERSION"
+    tar xf "$DOWNLOAD_DIR/zlib-$ZLIB_VERSION.tar.gz"
+    cd "zlib-$ZLIB_VERSION"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH" ./configure --prefix="$DEPS_INSTALL_DIR" --static
     make $MAKE_FLAGS
     make install
-    cd $DEPS_DIR
+    cd "$DEPS_DIR"
 fi
 
 # Build libconfuse
-if [[ ! -e $DEPS_INSTALL_DIR/lib/libconfuse.a ]]; then
+if [[ ! -e "$DEPS_INSTALL_DIR/lib/libconfuse.a" ]]; then
     echo Building libconfuse...
-    rm -fr $DEPS_DIR/confuse-*
-    tar xf $DOWNLOAD_DIR/confuse-$CONFUSE_VERSION.tar.gz
-    cd confuse-$CONFUSE_VERSION
-    PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$DEPS_INSTALL_DIR --disable-examples --enable-shared=no
+    rm -fr "$DEPS_DIR/confuse-$CONFUSE_VERSION"
+    tar xf "$DOWNLOAD_DIR/confuse-$CONFUSE_VERSION.tar.gz"
+    cd "confuse-$CONFUSE_VERSION"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH" ./configure $CONFIGURE_ARGS --prefix="$DEPS_INSTALL_DIR" --disable-examples --enable-shared=no
     make $MAKE_FLAGS
     make install
-    cd $DEPS_DIR
+    cd "$DEPS_DIR"
 fi
 
 # Build libarchive
-if [[ ! -e $DEPS_INSTALL_DIR/lib/libarchive.a ]]; then
+if [[ ! -e "$DEPS_INSTALL_DIR/lib/libarchive.a" ]]; then
     echo Building libarchive...
-    rm -fr libarchive-*
-    tar xf $DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.gz
-    cd libarchive-$LIBARCHIVE_VERSION
-    PKG_CONFIG_PATH=$PKG_CONFIG_PATH LDFLAGS=-L$DEPS_INSTALL_DIR/lib CPPFLAGS=-I$DEPS_INSTALL_DIR/include ./configure \
+    rm -fr "$DEPS_DIR/libarchive-$LIBARCHIVE_VERSION"
+    tar xf "$DOWNLOAD_DIR/libarchive-$LIBARCHIVE_VERSION.tar.gz"
+    cd "libarchive-$LIBARCHIVE_VERSION"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH" LDFLAGS="-L$DEPS_INSTALL_DIR/lib" CPPFLAGS="-I$DEPS_INSTALL_DIR/include" ./configure \
         $CONFIGURE_ARGS \
-        --prefix=$DEPS_INSTALL_DIR --without-xml2 --without-openssl \
+        --prefix="$DEPS_INSTALL_DIR" --without-xml2 --without-openssl \
         --without-nettle --without-expat --without-lzo2 --without-lzma \
         --without-bz2lib --without-iconv --enable-shared=no --disable-bsdtar \
         --disable-bsdcpio --disable-bsdcat --disable-xattr \
         --without-libiconv-prefix --without-lz4 --without-zstd
     make $MAKE_FLAGS
     make install
-    cd $DEPS_DIR
+    cd "$DEPS_DIR"
 fi
 
 # Return to the base directory
-cd $BASE_DIR
+cd "$BASE_DIR"
 
 echo Dependencies built successfully!
 echo
 echo To compile fwup statically with these libraries, run:
 echo
 echo "./autogen.sh # if you're compiling from source"
-echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --enable-shared=no
+echo "PKG_CONFIG_PATH=\"$PKG_CONFIG_PATH\" ./configure $CONFIGURE_ARGS --enable-shared=no"
 echo make
 echo make check
 echo make install

@@ -19,35 +19,35 @@ set -eo pipefail
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-source $BASE_DIR/scripts/common.sh
+source "$BASE_DIR/scripts/common.sh"
 
 FWUP_VERSION=$(cat "$BASE_DIR/VERSION")
 
 # Initial sanity checks
-if [ ! -e $BASE_DIR/configure ]; then
+if [ ! -e "$BASE_DIR/configure" ]; then
     echo "Please run from the fwup base directory and make sure that the ./configure file exists."
     echo "If you're building from source, you may need to run ./autogen.sh."
     exit 1
 fi
 
-if [ -e $BASE_DIR/Makefile ]; then
+if [ -e "$BASE_DIR/Makefile" ]; then
     # Run distclean to ensure that we have a clean build.
-    make -C $BASE_DIR distclean
+    make -C "$BASE_DIR" distclean
 fi
 
 # Build the dependencies
-$BASE_DIR/scripts/build_deps.sh
+"$BASE_DIR/scripts/build_deps.sh"
 
 # Initialize some directories
-mkdir -p $BUILD_DIR
-mkdir -p $FWUP_INSTALL_DIR
+mkdir -p "$BUILD_DIR"
+mkdir -p "$FWUP_INSTALL_DIR"
 
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 
 # Build fwup (symlink now, since out-of-tree fwup build is broke)
-ln -sf $BASE_DIR $BUILD_DIR/fwup
-cd $BUILD_DIR/fwup
-if ! PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$FWUP_INSTALL_DIR --enable-shared=no; then
+ln -sf "$BASE_DIR" "$BUILD_DIR/fwup"
+cd "$BUILD_DIR/fwup"
+if ! PKG_CONFIG_PATH="$PKG_CONFIG_PATH" ./configure $CONFIGURE_ARGS --prefix="$FWUP_INSTALL_DIR" --enable-shared=no; then
     cat config.log
     exit 1
 fi
@@ -102,7 +102,7 @@ if [ "$(uname -s)" = "Linux" ] && [ -n "$SOURCE_DATE_EPOCH" ]; then
 fi
 
 # Return to the base directory
-cd $BASE_DIR
+cd "$BASE_DIR"
 
 echo "Static build successful."
 echo "The fwup installation is in $FWUP_INSTALL_DIR."

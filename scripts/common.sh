@@ -15,16 +15,16 @@ FWUP_HOMEPAGE="https://github.com/fwup-home/fwup"
 FWUP_VENDOR="fhunleth@troodon-software.com"
 FWUP_LICENSE="Apache-2.0"
 
-source $BASE_DIR/scripts/third_party_versions.sh
+source "$BASE_DIR/scripts/third_party_versions.sh"
 
 MAKE_FLAGS=-j8
 LDD=ldd
 
 if [ -z "$CROSS_COMPILE" ]; then
     # Not cross-compiling
-    BUILD_DIR=$BASE_DIR/build/host
+    BUILD_DIR="$BASE_DIR/build/host"
 
-    if [ $(uname -s) = "Darwin" ]; then
+    if [ "$(uname -s)" = "Darwin" ]; then
         LDD="otool -L"
     fi
 else
@@ -33,14 +33,14 @@ else
     export AR="${AR:-$CROSS_COMPILE-ar}"
     export RANLIB="${RANLIB:-$CROSS_COMPILE-ranlib}"
     CONFIGURE_ARGS=--host=$CROSS_COMPILE
-    BUILD_DIR=$BASE_DIR/build/$CROSS_COMPILE
+    BUILD_DIR="$BASE_DIR/build/$CROSS_COMPILE"
 fi
 
-DOWNLOAD_DIR=$BASE_DIR/build/dl
+DOWNLOAD_DIR="$BASE_DIR/build/dl"
 
-DEPS_DIR=$BUILD_DIR/deps
-DEPS_INSTALL_DIR=$DEPS_DIR/usr
-FWUP_STAGING_DIR=$BUILD_DIR/fwup-staging/
-FWUP_INSTALL_DIR=$FWUP_STAGING_DIR/usr
-PKG_CONFIG_PATH=$DEPS_INSTALL_DIR/lib/pkgconfig
+DEPS_DIR="$BUILD_DIR/deps"
+DEPS_INSTALL_DIR="$DEPS_DIR/usr"
+FWUP_STAGING_DIR="$BUILD_DIR/fwup-staging/"
+FWUP_INSTALL_DIR="$FWUP_STAGING_DIR/usr"
+PKG_CONFIG_PATH="$DEPS_INSTALL_DIR/lib/pkgconfig"
 
