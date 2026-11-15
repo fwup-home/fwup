@@ -5,7 +5,8 @@
 #
 # Inputs:
 #    CIRCLE_OS_NAME - "linux" or "osx"
-#    MODE           - "static", "dynamic", "windows", "raspberrypi", or "minimal"
+#    MODE           - "static", "dynamic", "windows", "windows-arm64",
+#                     "raspberrypi", or "minimal"
 #
 # Static builds use scripts to download libarchive and libconfuse, so those are
 # only installed on shared library builds.
@@ -15,6 +16,7 @@ set -e
 set -v
 
 FWUP_VERSION=$(cat VERSION)
+source scripts/third_party_versions.sh
 
 # Create ./configure
 ./autogen.sh
@@ -46,6 +48,13 @@ case "${CIRCLE_OS_NAME}-${MODE}" in
     linux-windows)
         CC=x86_64-w64-mingw32-gcc \
             CROSS_COMPILE=x86_64-w64-mingw32 \
+            bash -v scripts/build_pkg.sh
+        exit 0
+        ;;
+    linux-windows-arm64)
+        CC=aarch64-w64-mingw32-clang \
+            CROSS_COMPILE=aarch64-w64-mingw32 \
+            PATH="$PWD/build/toolchains/llvm-mingw-$LLVM_MINGW_VERSION-ucrt-ubuntu-22.04-x86_64/bin:$PATH" \
             bash -v scripts/build_pkg.sh
         exit 0
         ;;

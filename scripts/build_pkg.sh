@@ -139,6 +139,9 @@ if [ -z "$CROSS_COMPILE" ]; then
     # Package for the architecture we're running on (amd64, arm64, ...)
     create_fwup_deb $(dpkg --print-architecture)
     create_fwup_rpm
+elif [ "$CROSS_COMPILE" = "aarch64-w64-mingw32" ]; then
+    # ARM64 is distributed as an executable, not a Chocolatey package.
+    cp "$FWUP_INSTALL_DIR/bin/fwup.exe" .
 elif [ "$CROSS_COMPILE" = "x86_64-w64-mingw32" ]; then
     # Build Windows package
     rm -f fwup.exe

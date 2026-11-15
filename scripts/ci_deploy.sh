@@ -9,7 +9,8 @@
 #  CIRCLE_TAG          - The tag name if a tagged build
 #  CIRCLE_BRANCH       - The branch name
 #  CIRCLE_OS_NAME      - "linux" or "osx"
-#  MODE                - "static", "dynamic", "singlethread", or "windows"
+#  MODE                - "static", "dynamic", "singlethread", "windows",
+#                        or "windows-arm64"
 #
 
 set -e
@@ -45,6 +46,9 @@ case "${CIRCLE_OS_NAME}-${MODE}" in
     linux-windows)
         cp fwup.exe "artifacts/$ARTIFACT_SUBDIR/fwup-$(cat VERSION)-windows-x86_64.exe"
         cp fwup.*.nupkg artifacts/$ARTIFACT_SUBDIR/
+        ;;
+    linux-windows-arm64)
+        cp fwup.exe "artifacts/$ARTIFACT_SUBDIR/fwup-$(cat VERSION)-windows-arm64.exe"
         ;;
     linux-raspberrypi)
         cp fwup_*.deb artifacts/$ARTIFACT_SUBDIR/

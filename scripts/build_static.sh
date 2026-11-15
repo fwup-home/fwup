@@ -23,6 +23,11 @@ source "$BASE_DIR/scripts/common.sh"
 
 FWUP_VERSION=$(cat "$BASE_DIR/VERSION")
 
+if [ "$CROSS_COMPILE" = "aarch64-w64-mingw32" ]; then
+    # help2man cannot execute ARM64 Windows binaries on the build host.
+    export ac_cv_path_HELP2MAN=
+fi
+
 # Initial sanity checks
 if [ ! -e "$BASE_DIR/configure" ]; then
     echo "Please run from the fwup base directory and make sure that the ./configure file exists."
@@ -64,7 +69,10 @@ if [ -z "$CROSS_COMPILE" ]; then
     done
 fi
 
-if [ "$CROSS_COMPILE" != "arm-linux-gnueabihf" ]; then
+if [ "$CROSS_COMPILE" = "aarch64-w64-mingw32" ]; then
+    # Build the test helper; regression tests run on Windows ARM64 in CI.
+    make -C tests/fixture $MAKE_FLAGS check
+elif [ "$CROSS_COMPILE" != "arm-linux-gnueabihf" ]; then
     # Run the regression tests
     if [ "$MODE" = "windows" ]; then
         # Make sure that wine is initialized by running it once.

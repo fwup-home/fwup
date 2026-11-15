@@ -22,6 +22,8 @@ jobs:
           - mode: windows
             container: ubuntu:24.04
             runner: ubuntu-24.04
+          - mode: windows-arm64
+            container: ubuntu:22.04
           - mode: raspberrypi
             container: ubuntu:22.04
           - mode: arm64
@@ -75,6 +77,52 @@ jobs:
           path: artifacts/
           if-no-files-found: ignore
 
+      - name: Upload Windows ARM64 test binaries
+        if: matrix.mode == 'windows-arm64'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: windows-arm64-test-binaries
+          path: |
+            fwup.exe
+            tests/fixture/framing-helper.exe
+          if-no-files-found: error
+
+  windows-arm64:
+    needs: linux
+    runs-on: windows-11-arm
+    env:
+      MODE: windows
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: windows-arm64-test-binaries
+          path: .
+
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        with:
+          msystem: CLANGARM64
+          install: coreutils diffutils grep gzip unzip
+
+      - name: Test Windows ARM64 executable
+        shell: msys2 {0}
+        run: |
+          set -e
+          cp fwup.exe src/fwup.exe
+          src/fwup.exe --version
+          cd tests
+          for test in \
+            001_simple_fw.test \
+            021_create_keys.test \
+            022_signed_fw.test \
+            054_framed_metadata.test \
+            087_crypto_compat.test \
+            169_disk_crypto_aes_cbc_plain.test \
+            223_disk_crypto_aes_xts_plain64.test; do
+            sh "$test"
+          done
+
   macos:
     runs-on: macos-15
     strategy:
@@ -110,7 +158,7 @@ jobs:
           if-no-files-found: ignore
 
   release:
-    needs: [linux, macos]
+    needs: [linux, macos, windows-arm64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -123,6 +171,7 @@ jobs:
         with:
           path: downloaded-artifacts
           merge-multiple: true
+          pattern: fwup-*
 
       - name: Generate release checksums
         working-directory: downloaded-artifacts

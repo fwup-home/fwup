@@ -43,6 +43,18 @@ if [[ "$CIRCLE_OS_NAME" = "linux" ]]; then
             apt-get update
             apt-get install -qq gcc-mingw-w64-x86-64 wine
             ;;
+        windows-arm64)
+            apt-get install -qq xz-utils
+            LLVM_MINGW_ARCHIVE="llvm-mingw-$LLVM_MINGW_VERSION-ucrt-ubuntu-22.04-x86_64.tar.xz"
+            mkdir -p build/dl build/toolchains
+            if [ ! -f "build/dl/$LLVM_MINGW_ARCHIVE" ]; then
+                curl -fL --retry 3 --retry-delay 2 --max-time 120 \
+                    -o "build/dl/$LLVM_MINGW_ARCHIVE" \
+                    "https://github.com/mstorsjo/llvm-mingw/releases/download/$LLVM_MINGW_VERSION/$LLVM_MINGW_ARCHIVE"
+            fi
+            echo "$LLVM_MINGW_SHA256  build/dl/$LLVM_MINGW_ARCHIVE" | sha256sum -c -
+            tar xf "build/dl/$LLVM_MINGW_ARCHIVE" -C build/toolchains
+            ;;
         singlethread|dynamic|minimal)
             apt-get install -qq libarchive-dev
             install_confuse

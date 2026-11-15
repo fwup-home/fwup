@@ -20,6 +20,14 @@ else
     HOST_ARCH=$(uname -m)
 fi
 
+NATIVE_WINDOWS=false
+case "$HOST_OS" in
+    MINGW*|MSYS*)
+        HOST_OS=Windows
+        NATIVE_WINDOWS=true
+        ;;
+esac
+
 case "$HOST_OS" in
     Darwin)
 	# BSD stat
@@ -85,18 +93,29 @@ filesize() {
 TESTS_SRC_DIR=$(dirname $($READLINK -f $0))
 TESTS_DIR=$(pwd)
 
+if [ "$NATIVE_WINDOWS" = true ]; then
+    # Config file contents are not subject to MSYS2 argument conversion.
+    TESTS_SRC_DIR=$(cygpath -m "$TESTS_SRC_DIR")
+    TESTS_DIR=$(cygpath -m "$TESTS_DIR")
+fi
+
 # Default to testing the fwup built in the src directory,
 # but it is possible to define the version of fwup used for
 # the create and apply steps separately.
 FWUP_DEFAULT=$TESTS_DIR/../src/fwup
 FWUP_BINARY=$TESTS_DIR/../src/fwup
 FRAMING_HELPER=$TESTS_DIR/fixture/framing-helper
-if [ ! -e $FWUP_DEFAULT ]; then
+if [ ! -e "$FWUP_DEFAULT" ] || [ "$NATIVE_WINDOWS" = true ]; then
     if [ -e $FWUP_DEFAULT.exe ]; then
         EXEEXT=.exe
         FWUP_BINARY="$FWUP_DEFAULT.exe"
-        FWUP_DEFAULT="wine $FWUP_BINARY"
-        FRAMING_HELPER="wine $TESTS_DIR/fixture/framing-helper.exe"
+        if [ "$NATIVE_WINDOWS" = true ]; then
+            FWUP_DEFAULT="$FWUP_BINARY"
+            FRAMING_HELPER="$TESTS_DIR/fixture/framing-helper.exe"
+        else
+            FWUP_DEFAULT="wine $FWUP_BINARY"
+            FRAMING_HELPER="wine $TESTS_DIR/fixture/framing-helper.exe"
+        fi
     fi
 fi
 
