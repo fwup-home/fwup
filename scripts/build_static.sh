@@ -47,7 +47,10 @@ cd $BUILD_DIR
 # Build fwup (symlink now, since out-of-tree fwup build is broke)
 ln -sf $BASE_DIR $BUILD_DIR/fwup
 cd $BUILD_DIR/fwup
-PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$FWUP_INSTALL_DIR --enable-shared=no || cat config.log
+if ! PKG_CONFIG_PATH=$PKG_CONFIG_PATH ./configure $CONFIGURE_ARGS --prefix=$FWUP_INSTALL_DIR --enable-shared=no; then
+    cat config.log
+    exit 1
+fi
 make clean
 make $MAKE_FLAGS
 
