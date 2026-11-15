@@ -48,7 +48,7 @@ jobs:
       - name: Cache third-party downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: dl
+          path: build/dl
           key: fwup-dl-${{ matrix.mode }}-${{ hashFiles('scripts/third_party_versions.sh') }}
           restore-keys: |
             fwup-dl-${{ matrix.mode }}-
