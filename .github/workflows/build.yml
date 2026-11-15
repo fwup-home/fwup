@@ -21,6 +21,7 @@ jobs:
             container: ubuntu:22.04
           - mode: windows
             container: ubuntu:24.04
+            runner: ubuntu-24.04
           - mode: raspberrypi
             container: ubuntu:22.04
           - mode: arm64
