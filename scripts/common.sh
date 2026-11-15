@@ -29,6 +29,9 @@ if [ -z "$CROSS_COMPILE" ]; then
     fi
 else
     # Cross-compiling
+    export CC="${CC:-$CROSS_COMPILE-gcc}"
+    export AR="${AR:-$CROSS_COMPILE-ar}"
+    export RANLIB="${RANLIB:-$CROSS_COMPILE-ranlib}"
     CONFIGURE_ARGS=--host=$CROSS_COMPILE
     BUILD_DIR=$BASE_DIR/build/$CROSS_COMPILE
 fi
