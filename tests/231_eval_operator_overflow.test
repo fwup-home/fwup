@@ -1,0 +1,43 @@
+#!/bin/sh
+
+#
+# Test that too many unary operators in define-eval are rejected without crashing
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+# Test that this is caught during create
+cat >"$CONFIG" <<'EOF'
+define-eval(OVERFLOW, "-----------------")
+EOF
+
+set +e
+$FWUP_CREATE -c -f "$CONFIG" -o "$FWFILE"
+rc=$?
+set -e
+
+if [ $rc -ne 1 ]; then
+    echo "Expected overflowing define-eval to return an error, but fwup exited with $rc"
+    cat "$WORK/metadata.out"
+    exit 1
+fi
+
+# Test that this is caught during apply
+cat >"$WORK/meta.conf" <<EOF
+define-eval(OVERFLOW, "-----------------")
+EOF
+
+cd "$WORK"
+zip -q "$FWFILE" meta.conf
+cd - >/dev/null
+
+set +e
+$FWUP_APPLY_NO_CHECK -m -i "$FWFILE" >"$WORK/metadata.out" 2>&1
+rc=$?
+set -e
+
+if [ $rc -ne 1 ]; then
+    echo "Expected overflowing define-eval to return an error, but fwup exited with $rc"
+    cat "$WORK/metadata.out"
+    exit 1
+fi
