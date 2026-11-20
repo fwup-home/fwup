@@ -108,6 +108,10 @@ int sparse_file_get_map_from_resource(cfg_t *resource, struct sparse_file_map *s
 #else
         map[i] = cfg_getnint(resource, "length", i);
 #endif
+        if (map[i] < 0) {
+            free(map);
+            ERR_RETURN("invalid sparse segment length");
+        }
     }
 
     sfm->map = map;
