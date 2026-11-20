@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#
+# Test that a negative sparse segment length is rejected without crashing.
+#
+
+. "$(cd "$(dirname "$0")" && pwd)/common.sh"
+
+cat >"$WORK/meta.conf" <<EOF
+file-resource root.img {
+  host-path="/nonexistent-root.img"
+  length={-1,0}
+  blake2b-256=0000000000000000000000000000000000000000000000000000000000000000
+}
+task complete {
+  on-resource root.img {
+    raw_write(0)
+  }
+}
+EOF
+
+mkdir -p "$WORK/data"
+dd if=/dev/zero bs=64 count=1 2>/dev/null | tr '\000' A >"$WORK/data/root.img"
+
+# Keep meta.conf before the resource so this follows a normal firmware archive.
+cd "$WORK"
+zip -q "$FWFILE" meta.conf data/root.img
+cd - >/dev/null
+
+set +e
+$FWUP_APPLY_NO_CHECK -a -d "$IMGFILE" -i "$FWFILE" -t complete >"$WORK/apply.out" 2>&1
+rc=$?
+set -e
+
+if [ $rc -ne 1 ]; then
+    echo "Expected malformed sparse metadata to return an error, but fwup exited with $rc"
+    cat "$WORK/apply.out"
+    exit 1
+fi
