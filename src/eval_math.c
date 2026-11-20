@@ -169,6 +169,9 @@ static int push_operator(struct eval_state *s,
                          enum associativity assoc,
                          int precedence)
 {
+    if (op_count(s) >= EVAL_STACK_SIZE)
+        ERR_RETURN("operator stack overflow");
+
     while (s->next_op != s->operator_stack) {
         struct operator_token *op = s->next_op - 1;
 
