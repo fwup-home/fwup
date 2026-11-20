@@ -482,7 +482,7 @@ int mmc_eject(const char *mmc_device)
 
 int mmc_open(const char *mmc_path)
 {
-    return open(mmc_path, O_RDWR | O_DIRECT);
+    return open(mmc_path, O_RDWR | O_DIRECT | O_SYNC);
 }
 
 void mmc_init()
