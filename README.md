@@ -75,11 +75,11 @@ brew install fwup
 
 On Linux, download and install the appropriate package for your platform:
 
-* [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup_1.17.0_amd64.deb)
-* [Debian/Ubuntu ARM64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup_1.17.0_arm64.deb)
-* [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup_1.17.0_armhf.deb)
-* [RPM x86-64](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup-1.17.0-1.x86_64.rpm)
-* [RPM ARM64](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup-1.17.0-1.aarch64.rpm)
+* [Debian/Ubuntu AMD64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup_1.17.2_amd64.deb)
+* [Debian/Ubuntu ARM64 .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup_1.17.2_arm64.deb)
+* [Raspbian armhf .deb](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup_1.17.2_armhf.deb)
+* [RPM x86-64](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup-1.17.2-1.x86_64.rpm)
+* [RPM ARM64](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup-1.17.2-1.aarch64.rpm)
 * Alpine Linux - Install official [apk](https://pkgs.alpinelinux.org/packages?name=fwup&branch=edge)
 * Arch Linux - See [fwup-git package](https://aur.archlinux.org/packages/fwup-git/) on AUR
 * Buildroot - Support is included upstream since the 2016.05 release
@@ -89,11 +89,11 @@ On Windows, `fwup` can be installed from [chocolatey](http://chocolatey.org)
 
     choco install fwup
 
-Alternatively, download the [fwup executable](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup.exe)
+Alternatively, download the [fwup executable](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup.exe)
 and place it in your path.
 
 If you're using another platform or prefer to build it yourself, download the
-latest [source code release](https://github.com/fwup-home/fwup/releases/download/v1.17.0/fwup-1.17.0.tar.gz)
+latest [source code release](https://github.com/fwup-home/fwup/releases/download/v1.17.2/fwup-1.17.2.tar.gz)
 or clone this repository. Then read one of the following files:
 
 * [Linux build instructions](docs/build_linux.md)

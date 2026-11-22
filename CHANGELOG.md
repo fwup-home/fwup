@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.17.2
+
+* Fixes
+  * Fix stack overflow on too many math operators (GHSA-m98x-m5jh-gwjh)
+  * Verify sparse maps for invalid sizes (GHSA-5xfr-cr9m-rwq9)
+  * Use `O_SYNC` to further protect write ordering. This is in addition to
+    `O_DIRECT` which may not have been sufficient in all cases. No performance
+    degradation was seen in testing.
+
+* Third party software updates
+  * Monocypher 4.0.3
+  * libarchive 3.8.11 (static builds only)
+  * zlib 1.4 (static builds only)
+
 ## v1.17.1
 
 This release only fixes a macOS issue when using fwup in a sandbox and adds RPM
