@@ -668,6 +668,20 @@ uboot-environment my_uboot_env {
 }
 ```
 
+If the environment is stored in UBI volumes (U-Boot's `CONFIG_ENV_IS_IN_UBI`),
+specify the volume devices instead of block offsets. `ubi-volume-redund` is
+optional. `block-count` is the environment size (`CONFIG_ENV_SIZE`) in 512-byte
+blocks. Changes are kept in memory and written once, after everything else,
+when the task finishes. Writing requires the `--unsafe` flag and is Linux-only.
+
+```conf
+uboot-environment my_uboot_env {
+    ubi-volume = "/dev/ubi0_0"
+    ubi-volume-redund = "/dev/ubi0_1"
+    block-count = 248
+}
+```
+
 See the functions in the task section for getting and setting U-Boot variables.
 
 NOTE: Currently, I've only implemented support for U-Boot environments that I

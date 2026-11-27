@@ -231,6 +231,8 @@ TESTS = 001_simple_fw.test \
 	228_osx_no_disk_arbitration.test \
 	229_literal_dollar.test \
 	230_negative_sparse_length.test \
-	231_eval_operator_overflow.test
+	231_eval_operator_overflow.test \
+	232_uboot_ubi_bad_cfg.test \
+	233_uboot_ubi_env.test
 
 EXTRA_DIST = $(TESTS) common.sh 1K.bin 1K-corrupt.bin 150K.bin

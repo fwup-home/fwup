@@ -40,6 +40,7 @@
 #include "progress.h"
 #include "resources.h"
 #include "block_cache.h"
+#include "uboot_env.h"
 #include "fwup_xdelta3.h"
 #include "disk_crypto.h"
 
@@ -497,11 +498,13 @@ cleanup:
         // that the error handler can start fresh.
         fatfs_closefs();
         block_cache_reset(fctx->output);
+        uboot_env_discard_ubi();
 
         if (apply_event(fctx, fctx->task, "on-error", NULL, fun_run) < 0) {
             // Yet another error so throw out the cache again.
             fatfs_closefs();
             block_cache_reset(fctx->output);
+            uboot_env_discard_ubi();
         }
     }
     rlist_free(resources);
@@ -577,9 +580,11 @@ int fwup_apply(const char *fw_filename,
     // Run
     OK_OR_CLEANUP(run_task(&fctx, &pd));
 
-    // Flush everything
+    // Flush everything. U-Boot environments in UBI volumes go last so that
+    // they never refer to data that hasn't been written.
     fatfs_closefs();
     OK_OR_CLEANUP(block_cache_flush(fctx.output));
+    OK_OR_CLEANUP(uboot_env_flush_ubi());
 
     // Close everything before reporting 100% just in case the OS blocks on the close call.
     block_cache_free(fctx.output);
@@ -598,12 +603,15 @@ cleanup:
         // handled with the on-error call.
         fatfs_closefs();
         block_cache_flush(fctx.output); // Ignore errors
+        uboot_env_flush_ubi(); // Ignore errors
 
         block_cache_free(fctx.output);
         free(fctx.output);
         fctx.output = NULL;
         close(output_fd);
     }
+
+    uboot_env_discard_ubi();
 
     sparse_file_free(&pd.sfm);
 

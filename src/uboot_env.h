@@ -35,6 +35,11 @@ struct uboot_env {
     bool use_redundant;
     off_t redundant_block_offset;
 
+    // When set, the environment lives in UBI volumes instead of at
+    // block offsets on the output. These point into the cfg_t.
+    const char *ubi_volume;
+    const char *ubi_volume_redund;
+
     // These flags determine which environment gets written. When
     // not using redundant environments, write_primary is always true.
     // For redundant environments, these ping/pong.
@@ -57,5 +62,10 @@ void uboot_env_free(struct uboot_env *env);
 struct block_cache;
 int uboot_env_read(struct block_cache *bc, struct uboot_env *env);
 int uboot_env_write(struct block_cache *bc, struct uboot_env *env);
+
+// Environments in UBI volumes are cached while a task runs. Flush writes
+// them out; discard drops any unwritten changes and frees the cache.
+int uboot_env_flush_ubi();
+void uboot_env_discard_ubi();
 
 #endif // UBOOT_ENV_H
